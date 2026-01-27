@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* HSL Format */
+  --background: 240 10% 3.9%; /* Very dark gray/black */
+  --foreground: 0 0% 98%;
+
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+ 
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+ 
+  --primary: 142 71% 45%; /* Electric Green */
+  --primary-foreground: 144 100% 11%;
+ 
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+ 
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+ 
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+ 
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 142 71% 45%;
+ 
+  --radius: 0.5rem;
+
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Space Grotesk', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
+    font-family: var(--font-display);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 20px hsla(var(--primary), 0.5);
+  }
+  
+  .border-glow {
+    box-shadow: 0 0 15px hsla(var(--primary), 0.2);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
