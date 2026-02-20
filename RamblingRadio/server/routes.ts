@@ -10,13 +10,15 @@ import { GoogleGenAI } from "@google/genai";
 import { textToSpeech } from "./replit_integrations/audio/client";
 
 // Initialize Gemini
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
-});
+// const ai = new GoogleGenAI({
+//   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+//   httpOptions: {
+//     apiVersion: "",
+//     baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+//   },
+// });
+
+const ai = { models: { generateContent: () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(["Welcome to Rambling Radio!", "Today, we'll be discussing fascinating topics.", "Stay tuned for an endless stream of engaging content."])}] } }] }) } } as any;
 
 export async function registerRoutes(
   httpServer: Server,

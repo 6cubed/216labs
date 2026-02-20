@@ -50,14 +50,6 @@ export default function RadioPage() {
   const BUFFER_TARGET = 10;
   const PREFETCH_THRESHOLD = 5;
 
-  // Sync bufferRef with buffer state for use in callbacks
-  useEffect(() => {
-    bufferRef.current = buffer;
-    if (buffer.length < PREFETCH_THRESHOLD && playbackState === 'playing') {
-      fillBuffer();
-    }
-  }, [buffer, playbackState, fillBuffer]);
-
   const fillBuffer = useCallback(async () => {
     if (isFetchingRef.current || bufferRef.current.length >= BUFFER_TARGET) return;
     
@@ -81,6 +73,19 @@ export default function RadioPage() {
       isFetchingRef.current = false;
     }
   }, [sessionId, fetchContent, fetchTTS]);
+
+  // Sync bufferRef with buffer state for use in callbacks
+  useEffect(() => {
+    bufferRef.current = buffer;
+    if (buffer.length < PREFETCH_THRESHOLD && playbackState === 'playing') {
+      fillBuffer();
+    }
+  }, [buffer, playbackState, fillBuffer]);
+
+  // Call handleStart on component mount
+  useEffect(() => {
+    handleStart();
+  }, []); // Empty dependency array ensures it runs once on mount
 
   // Core Loop: Play from buffer and refill
   const playNextFromBuffer = useCallback(async () => {

@@ -1,20 +1,21 @@
-import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const sessions = pgTable("sessions", {
-  id: serial("id").primaryKey(),
+export const sessions = sqliteTable("sessions", {
+  id: integer("id", { mode: 'number' }).primaryKey({ autoIncrement: true }),
   seedInterests: text("seed_interests").notNull(),
   context: text("context").notNull(), // Stores the evolving context/history
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: integer("created_at", { mode: 'timestamp' }).default(sql`(strftime('%s', 'now'))`),
 });
 
-export const logs = pgTable("logs", {
-  id: serial("id").primaryKey(),
-  sessionId: integer("session_id").notNull().references(() => sessions.id),
+export const logs = sqliteTable("logs", {
+  id: integer("id", { mode: 'number' }).primaryKey({ autoIncrement: true }),
+  sessionId: integer("session_id", { mode: 'number' }).notNull().references(() => sessions.id),
   content: text("content").notNull(),
   feedback: text("feedback"), // 'up' | 'down' | null
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: integer("created_at", { mode: 'timestamp' }).default(sql`(strftime('%s', 'now'))`),
 });
 
 export const insertSessionSchema = createInsertSchema(sessions).omit({ id: true, createdAt: true });

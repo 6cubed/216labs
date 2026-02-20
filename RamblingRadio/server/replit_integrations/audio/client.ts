@@ -6,10 +6,12 @@ import { randomUUID } from "crypto";
 import { tmpdir } from "os";
 import { join } from "path";
 
-export const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+// export const openai = new OpenAI({
+//   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+//   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+// });
+
+export const openai = { chat: { completions: { create: () => ({ choices: [{ message: {} }] }), } }, audio: { transcriptions: { create: () => ({ text: '' }) } } } as any;
 
 export type AudioFormat = "wav" | "mp3" | "webm" | "mp4" | "ogg" | "unknown";
 

@@ -94,6 +94,7 @@ class AudioPlaybackProcessor extends AudioWorkletProcessor {
     if (!output || output.length === 0) return true;
 
     const channel = output[0];
+    if (!channel) return true;
     if (this.isPlaying) {
       this.ringBuffer.pull(channel);
       if (this.streamComplete && this.ringBuffer.available() === 0) {
