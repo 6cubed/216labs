@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #09090b;
+    color: #fafafa;
+  }
+
+  ::selection {
+    background-color: rgba(16, 185, 129, 0.3);
+    color: #fff;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(24, 24, 27, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(63, 63, 70, 0.4);
+  }
+
+  .glass-light {
+    background: rgba(39, 39, 42, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(63, 63, 70, 0.3);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-mesh {
+    background-image:
+      radial-gradient(at 27% 37%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+      radial-gradient(at 97% 21%, rgba(6, 182, 212, 0.06) 0px, transparent 50%),
+      radial-gradient(at 52% 99%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+      radial-gradient(at 10% 29%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
+  }
+
+  .glow-emerald {
+    box-shadow:
+      0 0 20px rgba(16, 185, 129, 0.15),
+      0 0 60px rgba(16, 185, 129, 0.05);
+  }
+}
