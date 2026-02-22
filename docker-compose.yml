@@ -109,6 +109,8 @@ services:
       - GITHUB_WEBHOOK_SECRET=${PIPESECURE_GITHUB_WEBHOOK_SECRET:-}
       - ENCRYPTION_KEY=${PIPESECURE_ENCRYPTION_KEY:-}
       - NEXT_PUBLIC_APP_URL=${PIPESECURE_NEXT_PUBLIC_APP_URL:-http://localhost:8006}
+    volumes:
+      - ./pipesecure/github-app-private-key.pem:/app/github-app-private-key.pem:ro
     expose:
       - "3000"
     depends_on:
@@ -133,6 +135,8 @@ services:
       - GITHUB_APP_PRIVATE_KEY_PATH=/app/github-app-private-key.pem
       - GITHUB_WEBHOOK_SECRET=${PIPESECURE_GITHUB_WEBHOOK_SECRET:-}
       - ENCRYPTION_KEY=${PIPESECURE_ENCRYPTION_KEY:-}
+    volumes:
+      - ./pipesecure/github-app-private-key.pem:/app/github-app-private-key.pem:ro
     depends_on:
       postgres:
         condition: service_started
