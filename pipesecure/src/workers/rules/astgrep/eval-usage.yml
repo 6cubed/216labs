@@ -1,0 +1,12 @@
+id: pipesecure-eval-usage
+language: javascript
+rule:
+  any:
+    - pattern: eval($$$)
+    - pattern: new Function($$$)
+    - pattern: setTimeout($STR, $$$)
+    - pattern: setInterval($STR, $$$)
+message: "Dangerous eval-like function call. This can lead to code injection if the argument contains user input."
+severity: error
+metadata:
+  cweId: "CWE-95"

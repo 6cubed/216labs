@@ -1,0 +1,37 @@
+rules:
+  - id: pipesecure.path-traversal-fs
+    patterns:
+      - pattern-either:
+          - pattern: fs.readFileSync($PATH, ...)
+          - pattern: fs.readFile($PATH, ...)
+          - pattern: fs.writeFileSync($PATH, ...)
+          - pattern: fs.writeFile($PATH, ...)
+          - pattern: fs.createReadStream($PATH, ...)
+      - pattern-not: fs.readFileSync("...", ...)
+      - pattern-not: fs.readFile("...", ...)
+      - pattern-not: fs.writeFileSync("...", ...)
+    message: >
+      File system operation with a potentially user-controlled path.
+      Validate and sanitize the path to prevent directory traversal.
+      Use path.resolve() and verify the result is within the expected directory.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe: ["CWE-22"]
+      owasp: ["A01:2021"]
+      confidence: medium
+
+  - id: pipesecure.path-traversal-python
+    patterns:
+      - pattern-either:
+          - pattern: open($PATH, ...)
+          - pattern: pathlib.Path($PATH).read_text(...)
+      - pattern-not: open("...", ...)
+    message: >
+      File operation with a potentially user-controlled path in Python.
+      Use os.path.realpath() and validate the resolved path.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: ["CWE-22"]
+      confidence: medium

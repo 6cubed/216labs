@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String?   @unique
+  emailVerified      DateTime?
+  name               String?
+  image              String?
+  githubId           Int?      @unique
+  githubAccessToken  String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  projects Project[]
+  apiKeys  ApiKey[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model ApiKey {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     String   @default("openai")
+  encryptedKey String
+  label        String   @default("Default")
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Project {
+  id                   String    @id @default(cuid())
+  userId               String
+  name                 String
+  githubRepoFullName   String
+  githubInstallationId Int?
+  githubWebhookId      Int?
+  defaultBranch        String    @default("main")
+  status               String    @default("active")
+  lastScannedAt        DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scans        Scan[]
+  findings     Finding[]
+  ignoredRules IgnoredRule[]
+
+  @@unique([userId, githubRepoFullName])
+  @@index([userId])
+}
+
+model Scan {
+  id          String    @id @default(cuid())
+  projectId   String
+  type        String    // "initial" | "commit"
+  commitSha   String?
+  branch      String?
+  status      String    @default("queued") // "queued" | "running" | "completed" | "failed"
+  summary     Json?
+  errorMessage String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  findings Finding[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model Finding {
+  id          String  @id @default(cuid())
+  scanId      String
+  projectId   String
+  severity    String  // "critical" | "high" | "medium" | "low" | "info"
+  type        String  // "sast" | "dom" | "cve"
+  title       String
+  description String  @db.Text
+  filePath    String?
+  startLine   Int?
+  endLine     Int?
+  cweId       String?
+  cveId       String?
+  cvssScore   Float?
+  cvssVector  String?
+  tool        String  // "semgrep" | "astgrep" | "osv" | "ai-review"
+  ruleId      String?
+  confidence  String? // "high" | "medium" | "low"
+  ignored     Boolean @default(false)
+  ignoredAt   DateTime?
+  ignoredBy   String?
+  ignoreReason String?
+  rawData     Json?
+  createdAt   DateTime @default(now())
+
+  scan    Scan    @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([scanId])
+  @@index([projectId])
+  @@index([severity])
+}
+
+model IgnoredRule {
+  id          String   @id @default(cuid())
+  projectId   String
+  fingerprint String
+  reason      String?
+  ignoredBy   String?
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, fingerprint])
+  @@index([projectId])
+}

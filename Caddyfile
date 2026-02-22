@@ -24,6 +24,10 @@
 	reverse_proxy hivefind:3000
 }
 
+:8006 {
+	reverse_proxy pipesecure:3000
+}
+
 :80 {
-	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004) hivefind(:8005)" 200
+	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004) hivefind(:8005) pipesecure(:8006)" 200
 }

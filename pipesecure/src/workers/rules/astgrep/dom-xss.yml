@@ -1,0 +1,10 @@
+id: pipesecure-dom-xss-innerhtml
+language: javascript
+rule:
+  any:
+    - pattern: $EL.innerHTML = $EXPR
+    - pattern: $EL.outerHTML = $EXPR
+message: "DOM-based XSS: Direct assignment to innerHTML/outerHTML with potentially untrusted data. Use textContent or sanitize with DOMPurify."
+severity: warning
+metadata:
+  cweId: "CWE-79"

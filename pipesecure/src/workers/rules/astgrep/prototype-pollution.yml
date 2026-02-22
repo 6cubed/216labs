@@ -1,0 +1,11 @@
+id: pipesecure-prototype-pollution
+language: javascript
+rule:
+  any:
+    - pattern: $OBJ[$KEY1][$KEY2] = $VAL
+    - pattern: $OBJ.__proto__ = $VAL
+    - pattern: Object.assign($TARGET, $SOURCE)
+message: "Potential prototype pollution. Dynamic property assignment with bracket notation can modify Object.prototype. Validate keys against __proto__, constructor, and prototype."
+severity: warning
+metadata:
+  cweId: "CWE-1321"

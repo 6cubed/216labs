@@ -1,0 +1,39 @@
+rules:
+  - id: pipesecure.ssrf-fetch-user-input
+    patterns:
+      - pattern-either:
+          - pattern: fetch($URL, ...)
+          - pattern: axios.get($URL, ...)
+          - pattern: axios.post($URL, ...)
+          - pattern: axios($URL, ...)
+          - pattern: $HTTP.get($URL, ...)
+          - pattern: $HTTP.request($URL, ...)
+      - pattern-not: fetch("...", ...)
+      - pattern-not: axios.get("...", ...)
+      - pattern-not: axios.post("...", ...)
+    message: >
+      HTTP request made with a potentially user-controlled URL.
+      Validate and allowlist the URL to prevent SSRF attacks.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe: ["CWE-918"]
+      owasp: ["A10:2021"]
+      confidence: medium
+
+  - id: pipesecure.ssrf-python-requests
+    patterns:
+      - pattern-either:
+          - pattern: requests.get($URL, ...)
+          - pattern: requests.post($URL, ...)
+          - pattern: urllib.request.urlopen($URL, ...)
+      - pattern-not: requests.get("...", ...)
+      - pattern-not: requests.post("...", ...)
+    message: >
+      HTTP request with a potentially user-controlled URL in Python.
+      Validate URLs against an allowlist to prevent SSRF.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: ["CWE-918"]
+      confidence: medium

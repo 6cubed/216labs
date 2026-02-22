@@ -1,0 +1,36 @@
+rules:
+  - id: pipesecure.jwt-none-algorithm
+    pattern-either:
+      - pattern: jwt.verify($TOKEN, "", ...)
+      - pattern: jwt.verify($TOKEN, null, ...)
+      - pattern: |
+          { algorithms: ["none"] }
+    message: >
+      JWT verification with empty secret or 'none' algorithm allows token forgery.
+      Always use a strong secret and specify allowed algorithms.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe: ["CWE-287"]
+      confidence: high
+
+  - id: pipesecure.express-no-auth-middleware
+    patterns:
+      - pattern: |
+          $APP.$METHOD($PATH, async (req, res) => { ... })
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: (get|post|put|patch|delete)
+      - metavariable-regex:
+          metavariable: $PATH
+          regex: .*(admin|user|account|setting|api).*
+      - pattern-not: |
+          $APP.$METHOD($PATH, $AUTH, async (req, res) => { ... })
+    message: >
+      Sensitive route appears to lack authentication middleware.
+      Ensure all admin/user routes are protected.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe: ["CWE-306"]
+      confidence: low

@@ -15,23 +15,30 @@ if [ -z "$REMOTE" ]; then
   exit 1
 fi
 
+# Format: "image-name:context-dir[:Dockerfile]"
 SERVICES=(
   "ramblingradio:./RamblingRadio"
   "stroll:./Stroll.live"
   "onefit:./onefit"
   "paperframe-frontend:./paperframe/frontend"
   "hivefind:./hivefind"
+  "pipesecure:./pipesecure"
+  "pipesecure-worker:./pipesecure:Dockerfile.worker"
 )
 
 # ── Build locally ──────────────────────────────────────────────
 echo "==> Building images locally..."
 IMAGES=()
 for svc in "${SERVICES[@]}"; do
-  NAME="${svc%%:*}"
-  CTX="${svc##*:}"
+  IFS=: read -r NAME CTX DFILE <<< "$svc"
   TAG="216labs/$NAME:latest"
+  BUILD_ARGS=(-q -t "$TAG")
+  if [ -n "${DFILE:-}" ]; then
+    BUILD_ARGS+=(-f "$CTX/$DFILE")
+  fi
+  BUILD_ARGS+=("$CTX")
   echo "  [$NAME] building..."
-  docker build -q -t "$TAG" "$CTX"
+  docker build "${BUILD_ARGS[@]}"
   IMAGES+=("$TAG")
 done
 

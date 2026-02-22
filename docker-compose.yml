@@ -11,6 +11,7 @@ services:
       - "8003:8003"
       - "8004:8004"
       - "8005:8005"
+      - "8006:8006"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -21,6 +22,7 @@ services:
       - onefit
       - paperframe-frontend
       - hivefind
+      - pipesecure
     mem_limit: 64m
 
   # ── RamblingRadio ─────────────────────────────────────────────
@@ -87,6 +89,81 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── PipeSecure ───────────────────────────────────────────────
+  pipesecure:
+    image: 216labs/pipesecure:latest
+    build: ./pipesecure
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATABASE_URL=${PIPESECURE_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - NEXTAUTH_URL=${PIPESECURE_NEXTAUTH_URL:-http://localhost:8006}
+      - NEXTAUTH_SECRET=${PIPESECURE_NEXTAUTH_SECRET}
+      - AUTH_TRUST_HOST=true
+      - GITHUB_CLIENT_ID=${PIPESECURE_GITHUB_CLIENT_ID:-}
+      - GITHUB_CLIENT_SECRET=${PIPESECURE_GITHUB_CLIENT_SECRET:-}
+      - GITHUB_APP_ID=${PIPESECURE_GITHUB_APP_ID:-}
+      - GITHUB_APP_PRIVATE_KEY_PATH=/app/github-app-private-key.pem
+      - GITHUB_WEBHOOK_SECRET=${PIPESECURE_GITHUB_WEBHOOK_SECRET:-}
+      - ENCRYPTION_KEY=${PIPESECURE_ENCRYPTION_KEY:-}
+      - NEXT_PUBLIC_APP_URL=${PIPESECURE_NEXT_PUBLIC_APP_URL:-http://localhost:8006}
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      pipesecure-migrate:
+        condition: service_completed_successfully
+    mem_limit: 256m
+
+  pipesecure-worker:
+    image: 216labs/pipesecure-worker:latest
+    build:
+      context: ./pipesecure
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${PIPESECURE_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - GITHUB_APP_ID=${PIPESECURE_GITHUB_APP_ID:-}
+      - GITHUB_APP_PRIVATE_KEY_PATH=/app/github-app-private-key.pem
+      - GITHUB_WEBHOOK_SECRET=${PIPESECURE_GITHUB_WEBHOOK_SECRET:-}
+      - ENCRYPTION_KEY=${PIPESECURE_ENCRYPTION_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      pipesecure-migrate:
+        condition: service_completed_successfully
+    mem_limit: 512m
+
+  pipesecure-migrate:
+    image: 216labs/pipesecure-worker:latest
+    build:
+      context: ./pipesecure
+      dockerfile: Dockerfile.worker
+    environment:
+      - DATABASE_URL=${PIPESECURE_DATABASE_URL}
+    command: npx prisma db push --skip-generate
+    depends_on:
+      - postgres
+    restart: "no"
+
+  # ── Redis (used by PipeSecure) ──────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    expose:
+      - "6379"
+    mem_limit: 64m
+
   # ── Paperframe ML backend ────────────────────────────────────
   # Requires ~2GB RAM. Enable with: docker compose --profile ml up -d
   paperframe-backend:
@@ -115,6 +192,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-ramblingradio}
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
     expose:
       - "5432"
     mem_limit: 128m
@@ -124,3 +202,4 @@ volumes:
   caddy_config:
   sam_models:
   pg_data:
+  redis_data:

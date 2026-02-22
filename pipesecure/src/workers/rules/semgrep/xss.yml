@@ -1,0 +1,36 @@
+rules:
+  - id: pipesecure.xss-innerHTML
+    pattern: $EL.innerHTML = $X
+    message: >
+      Direct assignment to innerHTML with potentially untrusted data.
+      Use textContent or a sanitization library like DOMPurify.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe: ["CWE-79"]
+      owasp: ["A03:2021"]
+      confidence: medium
+
+  - id: pipesecure.xss-document-write
+    pattern-either:
+      - pattern: document.write(...)
+      - pattern: document.writeln(...)
+    message: >
+      document.write() can introduce XSS vulnerabilities.
+      Use DOM manipulation methods instead.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe: ["CWE-79"]
+      confidence: medium
+
+  - id: pipesecure.xss-react-dangerouslySetInnerHTML
+    pattern: dangerouslySetInnerHTML={{__html: $X}}
+    message: >
+      dangerouslySetInnerHTML renders raw HTML. Ensure the input is sanitized
+      with DOMPurify or a similar library before rendering.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe: ["CWE-79"]
+      confidence: medium

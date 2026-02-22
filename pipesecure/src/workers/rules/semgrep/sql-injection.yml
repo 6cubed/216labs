@@ -1,0 +1,35 @@
+rules:
+  - id: pipesecure.sql-injection-string-concat
+    patterns:
+      - pattern-either:
+          - pattern: $DB.query($X + ...)
+          - pattern: $DB.query(`...${...}...`)
+          - pattern: $DB.execute($X + ...)
+          - pattern: $DB.execute(`...${...}...`)
+          - pattern: $DB.raw($X + ...)
+          - pattern: $DB.raw(`...${...}...`)
+    message: >
+      SQL query built with string concatenation or template literals.
+      This is vulnerable to SQL injection. Use parameterized queries instead.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe: ["CWE-89"]
+      owasp: ["A03:2021"]
+      confidence: high
+
+  - id: pipesecure.sql-injection-python
+    patterns:
+      - pattern-either:
+          - pattern: cursor.execute($X % ...)
+          - pattern: cursor.execute($X.format(...))
+          - pattern: cursor.execute(f"...")
+    message: >
+      SQL query built with string formatting in Python.
+      Use parameterized queries with placeholders instead.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: ["CWE-89"]
+      owasp: ["A03:2021"]
+      confidence: high
