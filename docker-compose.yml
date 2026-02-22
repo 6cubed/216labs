@@ -1,0 +1,92 @@
+services:
+  # ── Reverse Proxy ─────────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - ramblingradio
+      - stroll
+      - onefit
+      - paperframe-frontend
+
+  # ── RamblingRadio ─────────────────────────────────────────────
+  ramblingradio:
+    build: ./RamblingRadio
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - DATABASE_URL=${RAMBLINGRADIO_DATABASE_URL}
+    expose:
+      - "5000"
+
+  # ── Stroll.live ───────────────────────────────────────────────
+  stroll:
+    build: ./Stroll.live
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+    expose:
+      - "5000"
+
+  # ── OneFit ────────────────────────────────────────────────────
+  onefit:
+    build: ./onefit
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+
+  # ── Paperframe ────────────────────────────────────────────────
+  paperframe-frontend:
+    build: ./paperframe/frontend
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://paperframe-backend:8000
+    expose:
+      - "3000"
+    depends_on:
+      - paperframe-backend
+
+  paperframe-backend:
+    build: ./paperframe/backend
+    restart: unless-stopped
+    environment:
+      - SAM_CHECKPOINT=/models/sam_vit_b_01ec64.pth
+      - SAM_MODEL_TYPE=vit_b
+      - OMP_NUM_THREADS=1
+    expose:
+      - "8000"
+    volumes:
+      - sam_models:/models
+
+  # ── Databases ─────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-labs}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-labs}
+      - POSTGRES_DB=${POSTGRES_DB:-ramblingradio}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+
+volumes:
+  caddy_data:
+  caddy_config:
+  sam_models:
+  pg_data:
