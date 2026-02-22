@@ -12,6 +12,7 @@ RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY server ./server
 COPY shared ./shared
+COPY tsconfig.json ./
 ENV NODE_ENV=production
 EXPOSE 5000
 CMD ["npx", "tsx", "server/index.ts"]
