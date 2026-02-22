@@ -19,7 +19,7 @@ services:
 
   # ── RamblingRadio ─────────────────────────────────────────────
   ramblingradio:
-    image: ghcr.io/6cubed/216labs/ramblingradio:latest
+    image: 216labs/ramblingradio:latest
     build: ./RamblingRadio
     restart: unless-stopped
     environment:
@@ -34,7 +34,7 @@ services:
 
   # ── Stroll.live ───────────────────────────────────────────────
   stroll:
-    image: ghcr.io/6cubed/216labs/stroll:latest
+    image: 216labs/stroll:latest
     build: ./Stroll.live
     restart: unless-stopped
     environment:
@@ -46,7 +46,7 @@ services:
 
   # ── OneFit ────────────────────────────────────────────────────
   onefit:
-    image: ghcr.io/6cubed/216labs/onefit:latest
+    image: 216labs/onefit:latest
     build: ./onefit
     restart: unless-stopped
     environment:
@@ -58,7 +58,7 @@ services:
 
   # ── Paperframe (frontend only on small VPS) ──────────────────
   paperframe-frontend:
-    image: ghcr.io/6cubed/216labs/paperframe-frontend:latest
+    image: 216labs/paperframe-frontend:latest
     build: ./paperframe/frontend
     restart: unless-stopped
     environment:
@@ -70,11 +70,9 @@ services:
     mem_limit: 256m
 
   # ── Paperframe ML backend ────────────────────────────────────
-  # Requires ~2GB RAM for SAM + BLIP models.
-  # Excluded from default profile — enable with:
-  #   docker compose --profile ml up -d
+  # Requires ~2GB RAM. Enable with: docker compose --profile ml up -d
   paperframe-backend:
-    image: ghcr.io/6cubed/216labs/paperframe-backend:latest
+    image: 216labs/paperframe-backend:latest
     build: ./paperframe/backend
     restart: unless-stopped
     profiles:
