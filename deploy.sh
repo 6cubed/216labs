@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./deploy.sh [user@host]
+# Usage:
+#   ./deploy.sh [user@host]
 #
-# Deploys the 216labs stack to a remote droplet via SSH.
-# First run: pass your droplet address to set up Docker and clone the repo.
-# Subsequent runs: pulls latest code and rebuilds containers.
+# Builds images locally, pushes to GitHub Container Registry,
+# then SSHs to the droplet to pull and run them.
+# The droplet never builds anything — zero CPU pressure.
 #
-# Prerequisites on the droplet:
-#   - Docker + Docker Compose (installed automatically on first run)
-#   - SSH access with key-based auth
+# Prerequisites:
+#   Local:  docker, gh (GitHub CLI) or docker login ghcr.io
+#   Remote: SSH access with key-based auth
 
 REMOTE="${1:-${DEPLOY_HOST:-}}"
+REGISTRY="ghcr.io/6cubed/216labs"
 REPO="git@github.com:6cubed/216labs.git"
 APP_DIR="/opt/216labs"
 
@@ -21,12 +23,41 @@ if [ -z "$REMOTE" ]; then
   exit 1
 fi
 
-echo "==> Deploying to $REMOTE"
+# ── Build and push images locally ──────────────────────────────
+echo "==> Building images locally..."
 
-ssh "$REMOTE" bash -s "$REPO" "$APP_DIR" <<'REMOTE_SCRIPT'
+SERVICES=(
+  "ramblingradio:./RamblingRadio"
+  "stroll:./Stroll.live"
+  "onefit:./onefit"
+  "paperframe-frontend:./paperframe/frontend"
+)
+
+for svc in "${SERVICES[@]}"; do
+  NAME="${svc%%:*}"
+  CONTEXT="${svc##*:}"
+  TAG="$REGISTRY/$NAME:latest"
+  echo "  Building $TAG ..."
+  docker build -t "$TAG" "$CONTEXT"
+done
+
+echo "==> Pushing images to $REGISTRY ..."
+for svc in "${SERVICES[@]}"; do
+  NAME="${svc%%:*}"
+  TAG="$REGISTRY/$NAME:latest"
+  docker push "$TAG"
+done
+
+echo "==> Images pushed."
+
+# ── Deploy to remote ───────────────────────────────────────────
+echo "==> Deploying to $REMOTE ..."
+
+ssh "$REMOTE" bash -s "$REPO" "$APP_DIR" "$REGISTRY" <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
+REGISTRY="$3"
 
 # Install Docker if missing
 if ! command -v docker &>/dev/null; then
@@ -35,14 +66,12 @@ if ! command -v docker &>/dev/null; then
   systemctl enable --now docker
 fi
 
-# Clone or pull
+# Clone or pull repo (for compose file, Caddyfile, .env)
 if [ ! -d "$APP_DIR" ]; then
   echo "==> Cloning repo..."
   git clone "$REPO" "$APP_DIR"
-  echo "==> IMPORTANT: copy .env.example to .env and configure it:"
-  echo "    nano $APP_DIR/.env"
 else
-  echo "==> Pulling latest..."
+  echo "==> Pulling latest config..."
   cd "$APP_DIR"
   git pull --ff-only
 fi
@@ -61,8 +90,17 @@ if [ ! -f .env ]; then
   exit 0
 fi
 
-echo "==> Building and starting services..."
-docker compose up -d --build --remove-orphans
+# Login to GHCR if not already (uses token from env or prompts)
+if ! docker pull "$REGISTRY/ramblingradio:latest" &>/dev/null 2>&1; then
+  echo "==> Note: if images are private, run:"
+  echo "    echo \$GHCR_TOKEN | docker login ghcr.io -u 6cubed --password-stdin"
+fi
+
+echo "==> Pulling images..."
+docker compose pull --ignore-pull-failures
+
+echo "==> Starting services..."
+docker compose up -d --remove-orphans
 
 echo "==> Running containers:"
 docker compose ps
