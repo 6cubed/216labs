@@ -20,6 +20,7 @@ SERVICES=(
   "stroll:./Stroll.live"
   "onefit:./onefit"
   "paperframe-frontend:./paperframe/frontend"
+  "hivefind:./hivefind"
 )
 
 # ── Build locally ──────────────────────────────────────────────

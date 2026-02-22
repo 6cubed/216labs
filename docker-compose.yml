@@ -10,6 +10,7 @@ services:
       - "8002:8002"
       - "8003:8003"
       - "8004:8004"
+      - "8005:8005"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -19,6 +20,7 @@ services:
       - stroll
       - onefit
       - paperframe-frontend
+      - hivefind
     mem_limit: 64m
 
   # ── RamblingRadio ─────────────────────────────────────────────
@@ -69,6 +71,18 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${PAPERFRAME_API_URL:-}
+    expose:
+      - "3000"
+    mem_limit: 256m
+
+  # ── HiveFind ─────────────────────────────────────────────────
+  hivefind:
+    image: 216labs/hivefind:latest
+    build: ./hivefind
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
     expose:
       - "3000"
     mem_limit: 256m

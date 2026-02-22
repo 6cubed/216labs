@@ -20,6 +20,10 @@
 	reverse_proxy paperframe-frontend:3000
 }
 
+:8005 {
+	reverse_proxy hivefind:3000
+}
+
 :80 {
-	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004)" 200
+	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004) hivefind(:8005)" 200
 }
