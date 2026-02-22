@@ -1,79 +1,113 @@
 # 216labs
 
-Monorepo for 216labs web projects. Each project runs as its own Docker service, orchestrated via Docker Compose with a Caddy reverse proxy.
+Monorepo for 216labs web projects. All apps run on a single VPS via Docker Compose behind a Caddy reverse proxy with automatic HTTPS.
 
 ## Projects
 
-| App | Stack | Internal Port | Subdomain |
-|-----|-------|---------------|-----------|
-| **RamblingRadio** | Express + React + Vite, PostgreSQL | 5000 | `ramblingradio.{domain}` |
-| **Stroll.live** | Express + React + Vite, SQLite | 5000 | `stroll.{domain}` |
-| **OneFit** | Next.js, SQLite | 3000 | `onefit.{domain}` |
-| **Paperframe** | Next.js (frontend) + FastAPI (backend), SAM + BLIP | 3000 / 8000 | `paperframe.{domain}` |
+| App | Stack | Subdomain |
+|-----|-------|-----------|
+| **RamblingRadio** | Express + React + Vite, PostgreSQL | `ramblingradio.{domain}` |
+| **Stroll.live** | Express + React + Vite, SQLite | `stroll.{domain}` |
+| **OneFit** | Next.js, SQLite | `onefit.{domain}` |
+| **Paperframe** | Next.js frontend | `paperframe.{domain}` |
+| **Paperframe ML** | FastAPI, SAM + BLIP (opt-in, needs 2GB+ RAM) | via `--profile ml` |
 
-## Quick Start (Docker Compose)
+## Deploy to a droplet
+
+### 1. Create a DigitalOcean droplet
+
+- **$6/mo** (1 vCPU, 1GB RAM) works for the four lightweight apps
+- **$24/mo** (4GB RAM) if you also want the Paperframe ML backend
+- Choose the **Docker** image from the Marketplace, or any Ubuntu image
+
+### 2. Point DNS
+
+Add a wildcard A record for your domain:
+
+```
+*.216labs.com  →  <droplet IP>
+```
+
+### 3. Deploy
+
+```bash
+./deploy.sh root@<droplet-ip>
+```
+
+On first run this installs Docker (if needed), clones the repo, and creates a `.env` from the example. Edit `.env` on the droplet to set your domain and Postgres password, then run the script again:
+
+```bash
+./deploy.sh root@<droplet-ip>
+```
+
+That builds all images and starts everything. Caddy auto-provisions Let's Encrypt HTTPS.
+
+### Subsequent deploys
+
+Push to `main`, then:
+
+```bash
+./deploy.sh root@<droplet-ip>
+```
+
+### Enable the Paperframe ML backend
+
+The SAM + BLIP backend is excluded by default (needs ~2GB RAM). To include it:
+
+```bash
+# On the droplet:
+docker compose --profile ml up -d --build
+```
+
+Set `PAPERFRAME_API_URL=http://paperframe-backend:8000` in `.env` first.
+
+## Local development
 
 ```bash
 cp .env.example .env
-# Edit .env with your database credentials and domain
-
+# Set DOMAIN=localhost in .env
 docker compose up --build
 ```
 
-This starts all services behind a Caddy reverse proxy on ports 80/443.
+Apps are available at `ramblingradio.localhost`, `stroll.localhost`, etc.
 
-### Local development (port-based, no DNS)
-
-If you don't have subdomains set up, edit the `Caddyfile` to uncomment the port-based routing block at the bottom and comment out the subdomain blocks. This gives you:
-
-| App | URL |
-|-----|-----|
-| RamblingRadio | http://localhost:8001 |
-| Stroll.live | http://localhost:8002 |
-| OneFit | http://localhost:8003 |
-| Paperframe | http://localhost:8004 |
-
-### Run a single service
+Or run any project individually without Docker:
 
 ```bash
-docker compose up --build ramblingradio postgres
-docker compose up --build stroll
-docker compose up --build onefit
-docker compose up --build paperframe-frontend paperframe-backend
-```
-
-## Deploy to DigitalOcean App Platform
-
-An app spec is provided at `.do/app.yaml`. Deploy with:
-
-```bash
-doctl apps create --spec .do/app.yaml
-```
-
-Each service is built from its Dockerfile and routed to its own subdomain via DO's built-in routing. Pushes to `main` trigger automatic deploys.
-
-To update an existing app:
-
-```bash
-doctl apps update <app-id> --spec .do/app.yaml
+cd RamblingRadio && npm install && npm run dev
+cd Stroll.live && npm install && npm run dev
+cd onefit && npm install && npm run dev
 ```
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   Caddy (80/443)                    │
-│  ramblingradio.*  stroll.*  onefit.*  paperframe.*  │
-└──────┬──────────────┬─────────┬──────────┬──────────┘
-       │              │         │          │
-  ┌────▼────┐   ┌─────▼───┐ ┌──▼───┐ ┌───▼────────────┐
-  │Rambling │   │ Stroll  │ │OneFit│ │  Paperframe    │
-  │ Radio   │   │  .live  │ │      │ │ FE ──── BE     │
-  │ :5000   │   │ :5000   │ │:3000 │ │:3000    :8000  │
-  └────┬────┘   └─────────┘ └──────┘ └────────────────┘
-       │
-  ┌────▼────┐
-  │Postgres │
-  │ :5432   │
-  └─────────┘
+                     ┌──────────────────────┐
+                     │   DNS: *.domain.com  │
+                     └──────────┬───────────┘
+                                │
+                     ┌──────────▼───────────┐
+                     │   Caddy :80/:443     │
+                     │   (auto HTTPS)       │
+                     └──┬────┬────┬────┬────┘
+                        │    │    │    │
+         ┌──────────────┘    │    │    └──────────────┐
+         ▼                   ▼    ▼                   ▼
+   ┌───────────┐     ┌──────┐  ┌──────┐    ┌──────────────┐
+   │ Rambling  │     │Stroll│  │OneFit│    │  Paperframe  │
+   │  Radio    │     │ .live│  │      │    │   frontend   │
+   │  :5000    │     │:5000 │  │:3000 │    │    :3000     │
+   └─────┬─────┘     └──────┘  └──────┘    └──────────────┘
+         │
+   ┌─────▼─────┐
+   │ Postgres  │
+   │  :5432    │
+   └───────────┘
 ```
+
+## Cost
+
+| Setup | Monthly |
+|-------|---------|
+| DO App Platform (5 services + managed DB) | ~$32+ |
+| **Single droplet (this setup)** | **$6-12** |

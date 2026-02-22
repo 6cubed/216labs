@@ -1,48 +1,21 @@
-# ── 216labs Reverse Proxy ──────────────────────────────────────
+# 216labs — Caddy reverse proxy
 #
-# Routes by subdomain. Replace 216labs.example.com with your
-# actual domain, or use localhost:{port} for local dev.
-#
-# For local development without DNS, uncomment the port-based
-# block at the bottom and comment out the subdomain blocks.
+# Set DOMAIN in your .env (e.g. DOMAIN=216labs.com).
+# Caddy auto-provisions Let's Encrypt HTTPS for each subdomain.
+# On localhost, set DOMAIN=localhost to use HTTP without certs.
 
-# RamblingRadio
-ramblingradio.{$DOMAIN:localhost} {
+ramblingradio.{$DOMAIN} {
 	reverse_proxy ramblingradio:5000
 }
 
-# Stroll.live
-stroll.{$DOMAIN:localhost} {
+stroll.{$DOMAIN} {
 	reverse_proxy stroll:5000
 }
 
-# OneFit
-onefit.{$DOMAIN:localhost} {
+onefit.{$DOMAIN} {
 	reverse_proxy onefit:3000
 }
 
-# Paperframe (frontend + API passthrough)
-paperframe.{$DOMAIN:localhost} {
-	reverse_proxy /api/* paperframe-backend:8000 {
-		header_up -X-Forwarded-Prefix
-	}
+paperframe.{$DOMAIN} {
 	reverse_proxy paperframe-frontend:3000
 }
-
-# ── Local development (port-based, no DNS needed) ─────────────
-# Uncomment below and comment out the subdomain blocks above
-# if you don't have DNS/subdomains set up.
-#
-# :8001 {
-# 	reverse_proxy ramblingradio:5000
-# }
-# :8002 {
-# 	reverse_proxy stroll:5000
-# }
-# :8003 {
-# 	reverse_proxy onefit:3000
-# }
-# :8004 {
-# 	reverse_proxy /api/* paperframe-backend:8000
-# 	reverse_proxy paperframe-frontend:3000
-# }
