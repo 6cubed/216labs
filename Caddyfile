@@ -1,21 +1,25 @@
-# 216labs — Caddy reverse proxy
+# 216labs — Caddy reverse proxy (port-based routing)
 #
-# Set DOMAIN in your .env (e.g. DOMAIN=216labs.com).
-# Caddy auto-provisions Let's Encrypt HTTPS for each subdomain.
-# On localhost, set DOMAIN=localhost to use HTTP without certs.
+# Each app gets its own port so assets resolve correctly.
+# When you have a domain, switch to subdomain-based routing
+# and set DOMAIN in .env for auto HTTPS.
 
-ramblingradio.{$DOMAIN} {
+:8001 {
 	reverse_proxy ramblingradio:5000
 }
 
-stroll.{$DOMAIN} {
+:8002 {
 	reverse_proxy stroll:5000
 }
 
-onefit.{$DOMAIN} {
+:8003 {
 	reverse_proxy onefit:3000
 }
 
-paperframe.{$DOMAIN} {
+:8004 {
 	reverse_proxy paperframe-frontend:3000
+}
+
+:80 {
+	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004)" 200
 }
