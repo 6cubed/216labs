@@ -10,6 +10,9 @@ Monorepo for 216labs web projects. All apps run on a single VPS via Docker Compo
 | **Stroll.live** | Express + React + Vite, SQLite | `stroll.{domain}` |
 | **OneFit** | Next.js, SQLite | `onefit.{domain}` |
 | **Paperframe** | Next.js frontend | `paperframe.{domain}` |
+| **HiveFind** | Next.js | `hivefind.{domain}` |
+| **PipeSecure** | Next.js, PostgreSQL, Redis, BullMQ | `pipesecure.{domain}` |
+| **216labs Admin** | Next.js (pipeline dashboard) | `admin.{domain}` |
 | **Paperframe ML** | FastAPI, SAM + BLIP (opt-in, needs 2GB+ RAM) | via `--profile ml` |
 
 ## Deploy to a droplet

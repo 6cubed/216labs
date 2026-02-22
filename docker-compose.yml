@@ -12,6 +12,7 @@ services:
       - "8004:8004"
       - "8005:8005"
       - "8006:8006"
+      - "8007:8007"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -23,6 +24,7 @@ services:
       - paperframe-frontend
       - hivefind
       - pipesecure
+      - admin
     mem_limit: 64m
 
   # ── RamblingRadio ─────────────────────────────────────────────
@@ -157,6 +159,18 @@ services:
     depends_on:
       - postgres
     restart: "no"
+
+  # ── 216labs Admin Dashboard ─────────────────────────────────
+  admin:
+    image: 216labs/admin:latest
+    build: ./216labs_admin
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 128m
 
   # ── Redis (used by PipeSecure) ──────────────────────────────
   redis:

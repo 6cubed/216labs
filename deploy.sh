@@ -24,6 +24,7 @@ SERVICES=(
   "hivefind:./hivefind"
   "pipesecure:./pipesecure"
   "pipesecure-worker:./pipesecure:Dockerfile.worker"
+  "admin:./216labs_admin"
 )
 
 # ── Build locally ──────────────────────────────────────────────
