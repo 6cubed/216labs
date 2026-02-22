@@ -1,0 +1,13 @@
+node_modules/
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+.next/
+.env
+.env.local
+__pycache__/
+*.pyc
+.DS_Store
