@@ -4,6 +4,7 @@ import { CategoryBadge } from "./CategoryBadge";
 import { DeployToggle } from "./DeployToggle";
 
 function formatDate(dateStr: string) {
+  if (!dateStr) return "—";
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -39,13 +40,7 @@ function DetailRow({
   );
 }
 
-export function AppCard({
-  app,
-  deployEnabled,
-}: {
-  app: AppInfo;
-  deployEnabled: boolean;
-}) {
+export function AppCard({ app }: { app: AppInfo }) {
   const stackItems = [
     app.stack.frontend,
     app.stack.backend,
@@ -56,7 +51,7 @@ export function AppCard({
   return (
     <div
       className={`group bg-surface border border-border rounded-2xl overflow-hidden transition-all duration-300 ${
-        deployEnabled
+        app.deployEnabled
           ? "hover:border-accent/30"
           : "opacity-50 hover:opacity-70"
       }`}
@@ -76,14 +71,14 @@ export function AppCard({
             <p className="text-sm text-muted">{app.tagline}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <DeployToggle appId={app.id} enabled={deployEnabled} />
+            <DeployToggle appId={app.id} enabled={app.deployEnabled} />
             <StatusBadge
-              status={deployEnabled ? app.deploymentStatus : "stopped"}
+              status={app.deployEnabled ? "running" : "stopped"}
             />
           </div>
         </div>
 
-        {/* Category + Image Size */}
+        {/* Category + Image Size + Startup Time */}
         <div className="flex items-center gap-2 mb-4">
           <CategoryBadge category={app.category} />
           <span
@@ -97,6 +92,11 @@ export function AppCard({
           >
             {formatSize(app.imageSizeMB)}
           </span>
+          {app.startupTimeMs != null && (
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded border bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
+              {app.startupTimeMs}ms
+            </span>
+          )}
         </div>
 
         {/* Description */}
@@ -117,8 +117,20 @@ export function AppCard({
           <DetailRow label="Last Updated">
             {formatDate(app.lastUpdated)}
           </DetailRow>
+          {app.lastDeployedAt && (
+            <DetailRow label="Last Deployed">
+              {formatDate(app.lastDeployedAt)}
+            </DetailRow>
+          )}
           <DetailRow label="Commits">{app.totalCommits}</DetailRow>
           <DetailRow label="Memory Limit">{app.memoryLimit}</DetailRow>
+          {app.startupTimeMs != null && (
+            <DetailRow label="Startup Time">
+              <span className="font-mono text-[11px] text-cyan-400">
+                {app.startupTimeMs}ms
+              </span>
+            </DetailRow>
+          )}
           <DetailRow label="Image Size">
             <span className="font-mono text-[11px]">
               {formatSize(app.imageSizeMB)}

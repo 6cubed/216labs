@@ -1,27 +1,22 @@
-import { apps, infrastructure } from "@/data/apps";
+import { getAllApps } from "@/lib/db";
+import { dbRowToAppInfo, infrastructure } from "@/data/apps";
 import { AppCard } from "@/components/AppCard";
 import { MetricCard } from "@/components/MetricCard";
 import { InfraOverview } from "@/components/InfraOverview";
 import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
 import { SizeOverview } from "@/components/SizeOverview";
-import { readDeployConfig, isAppEnabled } from "@/lib/deploy-config";
 
 export const dynamic = "force-dynamic";
 
 export default function DashboardPage() {
-  const config = readDeployConfig();
-  const enabledApps = new Set(
-    apps.map((a) => a.id).filter((id) => isAppEnabled(config, id))
-  );
-  const enabledCount = enabledApps.size;
+  const rows = getAllApps();
+  const apps = rows.map(dbRowToAppInfo);
 
+  const enabledApps = new Set(apps.filter((a) => a.deployEnabled).map((a) => a.id));
+  const enabledCount = enabledApps.size;
   const totalCommits = apps.reduce((sum, a) => sum + a.totalCommits, 0);
-  const totalMarketingSpend = apps.reduce(
-    (sum, a) => sum + (a.marketingSpend?.monthly ?? 0),
-    0
-  );
   const enabledImageSizeMB = apps
-    .filter((a) => enabledApps.has(a.id))
+    .filter((a) => a.deployEnabled)
     .reduce((sum, a) => sum + a.imageSizeMB, 0);
 
   return (
@@ -99,11 +94,7 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in">
             {apps.map((app) => (
-              <AppCard
-                key={app.id}
-                app={app}
-                deployEnabled={enabledApps.has(app.id)}
-              />
+              <AppCard key={app.id} app={app} />
             ))}
           </div>
         </section>
@@ -116,8 +107,7 @@ export default function DashboardPage() {
         {/* Footer */}
         <footer className="text-center py-6 border-t border-border">
           <p className="text-xs text-muted">
-            216labs Pipeline Dashboard &mdash; Deploy config:{" "}
-            <span className="font-mono">deploy-config.json</span> &mdash;{" "}
+            216labs Pipeline Dashboard &mdash; Powered by SQLite &mdash;{" "}
             <span className="font-mono">
               {new Date().toISOString().split("T")[0]}
             </span>

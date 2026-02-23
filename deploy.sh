@@ -3,23 +3,21 @@ set -euo pipefail
 
 # Usage: ./deploy.sh user@host
 #
-# Reads deploy-config.json to decide which apps to build/transfer.
-# Toggle apps on/off via the 216labs_admin dashboard or by editing
-# deploy-config.json directly.
-#
-# Only changed images are transferred (digest comparison).
+# Reads 216labs.db (SQLite) to decide which apps to build/transfer.
+# Toggle apps on/off via the admin dashboard at :8007.
+# After deploy, records image sizes and startup times back to the DB.
 
 REMOTE="${1:-${DEPLOY_HOST:-}}"
 REPO="git@github.com:6cubed/216labs.git"
 APP_DIR="/opt/216labs"
-CONFIG_FILE="deploy-config.json"
+DB_FILE="216labs.db"
 
 if [ -z "$REMOTE" ]; then
   echo "Usage: ./deploy.sh user@droplet-ip"
   exit 1
 fi
 
-# ── Read deploy config ────────────────────────────────────────
+# ── Read deploy config from SQLite ────────────────────────────
 declare -A ALL_SERVICES=(
   [ramblingradio]="./RamblingRadio"
   [stroll]="./Stroll.live"
@@ -29,20 +27,18 @@ declare -A ALL_SERVICES=(
   [pipesecure]="./pipesecure"
   [pipesecure-worker]="./pipesecure:Dockerfile.worker"
   [admin]="./216labs_admin"
+  [agimemes]="./agimemes.com"
 )
 
 declare -A SERVICE_DEPS=(
   [pipesecure]="redis pipesecure-worker pipesecure-migrate"
 )
 
-if [ -f "$CONFIG_FILE" ]; then
-  ENABLED_APPS=$(node -e "
-    const c = JSON.parse(require('fs').readFileSync('$CONFIG_FILE','utf8'));
-    console.log(Object.entries(c.apps).filter(([,v])=>v.enabled).map(([k])=>k).join(' '));
-  ")
-  echo "==> Deploy config: $ENABLED_APPS"
+if [ -f "$DB_FILE" ]; then
+  ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1" | tr '\n' ' ')
+  echo "==> Deploy config (from DB): $ENABLED_APPS"
 else
-  echo "==> No $CONFIG_FILE found, deploying all apps"
+  echo "==> No $DB_FILE found, deploying all apps"
   ENABLED_APPS="${!ALL_SERVICES[*]}"
 fi
 
@@ -55,7 +51,7 @@ for app in $ENABLED_APPS; do
 done
 
 if [ ${#SERVICES[@]} -eq 0 ]; then
-  echo "ERROR: No apps enabled in $CONFIG_FILE"
+  echo "ERROR: No apps enabled"
   exit 1
 fi
 
@@ -74,6 +70,17 @@ for svc in "${SERVICES[@]}"; do
   docker build "${BUILD_ARGS[@]}"
   IMAGES+=("$TAG")
 done
+
+# ── Record image sizes to DB ──────────────────────────────────
+if [ -f "$DB_FILE" ]; then
+  echo "==> Recording image sizes..."
+  for TAG in "${IMAGES[@]}"; do
+    SIZE_BYTES=$(docker image inspect --format '{{.Size}}' "$TAG" 2>/dev/null || echo 0)
+    SIZE_MB=$(echo "scale=0; $SIZE_BYTES / 1048576" | bc)
+    sqlite3 "$DB_FILE" "UPDATE apps SET image_size_mb = $SIZE_MB WHERE docker_image = '$TAG';" 2>/dev/null || true
+    echo "  $TAG → ${SIZE_MB} MB"
+  done
+fi
 
 # ── Incremental transfer (only changed images) ────────────────
 echo "==> Checking which images changed..."
@@ -142,9 +149,35 @@ if [ ! -f .env ]; then
   exit 0
 fi
 
-# Only start enabled services (stops anything no longer enabled)
 # shellcheck disable=SC2086
 docker compose up -d --remove-orphans $COMPOSE_SERVICES
 docker compose ps
 echo "==> Done."
 REMOTE_SCRIPT
+
+# ── Collect startup times from container logs ─────────────────
+if [ -f "$DB_FILE" ]; then
+  echo "==> Collecting startup times..."
+  sleep 3
+
+  STARTUP_DATA=$(ssh "$REMOTE" 'cd /opt/216labs && for svc in '"$COMPOSE_SERVICES"'; do
+    MS=$(docker compose logs --tail 20 "$svc" 2>/dev/null | grep -oE "Ready in [0-9]+" | grep -oE "[0-9]+" | tail -1)
+    if [ -n "$MS" ]; then
+      echo "$svc=$MS"
+    fi
+  done')
+
+  NOW=$(date -u +"%Y-%m-%d")
+  while IFS='=' read -r SVC MS; do
+    [ -z "$SVC" ] && continue
+    sqlite3 "$DB_FILE" "UPDATE apps SET startup_time_ms = $MS, last_deployed_at = '$NOW' WHERE docker_service = '$SVC';" 2>/dev/null || true
+    echo "  $SVC → ${MS}ms startup"
+  done <<< "$STARTUP_DATA"
+
+  # Mark deploy time for all enabled apps
+  for app in $ENABLED_APPS; do
+    sqlite3 "$DB_FILE" "UPDATE apps SET last_deployed_at = '$NOW' WHERE id = '$app';" 2>/dev/null || true
+  done
+
+  echo "==> Metadata saved to $DB_FILE"
+fi

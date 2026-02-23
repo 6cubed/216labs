@@ -1,0 +1,5 @@
+runtime: python39
+
+handlers:
+- url: /.*
+  script: main.py  # Replace with your main application file

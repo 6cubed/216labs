@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meme Gallery</title>
+  <style>
+    /* Centering the image gallery */
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 20px auto;
+    }
+    
+    /* Styling for each image container */
+    .image-container {
+      margin: 10px;
+      position: relative;
+    }
+    
+    /* Styling for the image */
+    img {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+    }
+    
+    /* Button styling */
+    .download-btn {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="gallery">
+    <div class="image-container">
+      <img src="https://i.imgflip.com/8ja5so.jpg" alt="Meme Image">
+      <button class="download-btn">Download Meme</button>
+    </div>
+    </div>
+</body>
+</html>

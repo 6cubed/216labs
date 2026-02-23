@@ -1,11 +1,9 @@
 "use server";
 
-import { readDeployConfig, writeDeployConfig } from "@/lib/deploy-config";
+import { setDeployEnabled } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function toggleAppDeploy(appId: string, enabled: boolean) {
-  const config = readDeployConfig();
-  config.apps[appId] = { enabled };
-  writeDeployConfig(config);
+  setDeployEnabled(appId, enabled);
   revalidatePath("/");
 }

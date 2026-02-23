@@ -1,0 +1,3 @@
+newsapi-python
+requests
+flask

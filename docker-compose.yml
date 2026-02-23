@@ -13,6 +13,7 @@ services:
       - "8005:8005"
       - "8006:8006"
       - "8007:8007"
+      - "8008:8008"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -160,8 +161,25 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
+      - DATABASE_PATH=/app/216labs.db
+    volumes:
+      - ./216labs.db:/app/216labs.db
     expose:
       - "3000"
+    mem_limit: 128m
+
+  # ── AGI Memes ────────────────────────────────────────────────
+  agimemes:
+    image: 216labs/agimemes:latest
+    build: ./agimemes.com
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - NEWS_API_KEY=${AGIMEMES_NEWS_API_KEY:-}
+      - IMG_FLIP_USERNAME=${AGIMEMES_IMG_FLIP_USERNAME:-}
+      - IMG_FLIP_PASSWORD=${AGIMEMES_IMG_FLIP_PASSWORD:-}
+    expose:
+      - "5000"
     mem_limit: 128m
 
   # ── Redis (used by PipeSecure) ──────────────────────────────

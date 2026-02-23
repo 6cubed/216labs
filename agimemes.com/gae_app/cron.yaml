@@ -1,0 +1,5 @@
+# run meme creation every hour
+cron:
+- description: "meme creation job"
+  url: /tasks/meme_creation
+  schedule: every hour

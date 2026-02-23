@@ -23,9 +23,7 @@ export function SizeOverview({
   return (
     <div className="bg-surface border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-semibold text-foreground">
-          Deploy Size
-        </h2>
+        <h2 className="text-lg font-semibold text-foreground">Deploy Size</h2>
         <div className="text-right">
           <p className="text-sm font-mono text-foreground">
             {formatSize(enabledTotal + infraSizeMB)}
@@ -39,13 +37,20 @@ export function SizeOverview({
       <div className="space-y-2.5">
         {apps.map((app) => {
           const enabled = enabledApps.has(app.id);
-          const pct = (app.imageSizeMB / maxSize) * 100;
+          const pct = maxSize > 0 ? (app.imageSizeMB / maxSize) * 100 : 0;
           return (
             <div key={app.id} className={enabled ? "" : "opacity-40"}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-foreground font-medium truncate">
-                  {app.name}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-foreground font-medium truncate">
+                    {app.name}
+                  </span>
+                  {app.startupTimeMs != null && (
+                    <span className="text-[10px] font-mono text-cyan-400">
+                      {app.startupTimeMs}ms
+                    </span>
+                  )}
+                </div>
                 <span className="text-[11px] font-mono text-muted ml-2 shrink-0">
                   {formatSize(app.imageSizeMB)}
                 </span>
