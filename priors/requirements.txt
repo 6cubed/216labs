@@ -1,0 +1,7 @@
+Flask
+google-auth
+google-auth-oauthlib
+requests
+google-generativeai
+cachecontrol
+gunicorn

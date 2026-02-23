@@ -28,6 +28,8 @@ declare -A ALL_SERVICES=(
   [pipesecure-worker]="./pipesecure:Dockerfile.worker"
   [admin]="./216labs_admin"
   [agimemes]="./agimemes.com"
+  [agitshirts]="./agitshirts"
+  [priors]="./priors"
 )
 
 declare -A SERVICE_DEPS=(

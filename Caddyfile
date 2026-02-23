@@ -36,6 +36,14 @@
 	reverse_proxy agimemes:5000
 }
 
+:8009 {
+	reverse_proxy agitshirts:5000
+}
+
+:8010 {
+	reverse_proxy priors:5000
+}
+
 :80 {
-	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004) hivefind(:8005) pipesecure(:8006) admin(:8007) agimemes(:8008)" 200
+	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004) hivefind(:8005) pipesecure(:8006) admin(:8007) agimemes(:8008) agitshirts(:8009) priors(:8010)" 200
 }

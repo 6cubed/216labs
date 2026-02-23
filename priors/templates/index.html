@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Priors - Your Priors</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Hello, {{ name }}!</h1>
+        <p><a href="{{ url_for('logout') }}">Logout</a></p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <h2>Your Priors</h2>
+        <form action="{{ url_for('add_prior') }}" method="post" class="add-prior-form">
+            <input type="text" name="question" placeholder="Add a new yes/no question" required>
+            <button type="submit">Add Prior</button>
+        </form>
+
+        {% if priors %}
+            <ul class="priors-list">
+                {% for prior in priors %}
+                    <li>
+                        {{ prior.question }}
+                        {% if prior.likelihood is not none %}
+                            (Likelihood: {{ "{:.2f}".format(prior.likelihood * 100) }}%)
+                        {% else %}
+                            (Likelihood: Not yet calculated)
+                        {% endif %}
+                        <a href="{{ url_for('delete_prior', prior_id=prior.id) }}" class="delete-button">Delete</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You haven't added any priors yet. Add one above!</p>
+        {% endif %}
+    </div>
+</body>
+</html>

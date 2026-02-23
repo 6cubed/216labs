@@ -78,7 +78,7 @@ export const infrastructure = {
   monthlyCost: "$6-12",
   reverseProxy: "Caddy 2 (auto HTTPS)",
   databases: ["PostgreSQL 16", "Redis 7", "SQLite (embedded)"],
-  portRange: "8001-8007",
+  portRange: "8001-8010",
   deployMethod: "Docker images built locally, transferred via SSH",
 };
 

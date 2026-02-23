@@ -82,6 +82,9 @@ function initSchema(db: Database.Database) {
   ).count;
   if (count === 0) {
     seed(db);
+  } else {
+    backfillAgitShirts(db);
+    backfillPriors(db);
   }
 }
 
@@ -261,12 +264,174 @@ function seed(db: Database.Database) {
       marketing_channel: "Organic",
       marketing_notes: "Developer tool — targeting GitHub marketplace",
     },
+    {
+      id: "agitshirts",
+      name: "AgitShirts",
+      tagline: "Daily AI-designed limited-edition t-shirt drops",
+      description:
+        "Flask app that auto-generates one collectible t-shirt concept per day using AI prompts, with a direct checkout link for limited daily editions.",
+      category: "ai",
+      port: 8009,
+      docker_service: "agitshirts",
+      docker_image: "216labs/agitshirts:latest",
+      directory: "agitshirts",
+      repo_path: "agitshirts",
+      stack_frontend: "Flask templates",
+      stack_backend: "Flask + Python",
+      stack_database: "JSON file store",
+      stack_other: '["OpenAI API (optional)","Gunicorn"]',
+      deploy_enabled: 1,
+      image_size_mb: 120,
+      memory_limit: "128 MB",
+      created_at: "2026-02-23",
+      last_updated: "2026-02-23",
+      total_commits: 1,
+      marketing_monthly: 0,
+      marketing_channel: "Organic",
+      marketing_notes: "Limited daily drops with direct buy CTA",
+    },
+    {
+      id: "priors",
+      name: "Priors",
+      tagline: "Question probabilities with AI",
+      description:
+        "Flask app for tracking personal yes/no priors with Google sign-in and Gemini-assisted likelihood estimates.",
+      category: "ai",
+      port: 8010,
+      docker_service: "priors",
+      docker_image: "216labs/priors:latest",
+      directory: "priors",
+      repo_path: "priors",
+      stack_frontend: "Flask templates",
+      stack_backend: "Flask + Gunicorn",
+      stack_database: "SQLite",
+      stack_other: '["Google OAuth","Gemini API"]',
+      deploy_enabled: 1,
+      image_size_mb: 128,
+      memory_limit: "128 MB",
+      created_at: "2026-02-23",
+      last_updated: "2026-02-23",
+      total_commits: 1,
+      marketing_monthly: 0,
+      marketing_channel: "Organic",
+      marketing_notes: "Pre-launch phase",
+    },
   ];
 
   const insertMany = db.transaction((rows: typeof apps) => {
     for (const row of rows) insert.run(row);
   });
   insertMany(apps);
+}
+
+function backfillAgitShirts(db: Database.Database) {
+  const exists = (
+    db.prepare("SELECT COUNT(*) as count FROM apps WHERE id = 'agitshirts'").get() as {
+      count: number;
+    }
+  ).count;
+
+  if (exists > 0) {
+    return;
+  }
+
+  db.prepare(`
+    INSERT INTO apps (
+      id, name, tagline, description, category, port,
+      docker_service, docker_image, directory, repo_path,
+      stack_frontend, stack_backend, stack_database, stack_other,
+      deploy_enabled, image_size_mb, memory_limit,
+      created_at, last_updated, total_commits,
+      marketing_monthly, marketing_channel, marketing_notes
+    ) VALUES (
+      @id, @name, @tagline, @description, @category, @port,
+      @docker_service, @docker_image, @directory, @repo_path,
+      @stack_frontend, @stack_backend, @stack_database, @stack_other,
+      @deploy_enabled, @image_size_mb, @memory_limit,
+      @created_at, @last_updated, @total_commits,
+      @marketing_monthly, @marketing_channel, @marketing_notes
+    )
+  `).run({
+    id: "agitshirts",
+    name: "AgitShirts",
+    tagline: "Daily AI-designed limited-edition t-shirt drops",
+    description:
+      "Flask app that auto-generates one collectible t-shirt concept per day using AI prompts, with a direct checkout link for limited daily editions.",
+    category: "ai",
+    port: 8009,
+    docker_service: "agitshirts",
+    docker_image: "216labs/agitshirts:latest",
+    directory: "agitshirts",
+    repo_path: "agitshirts",
+    stack_frontend: "Flask templates",
+    stack_backend: "Flask + Python",
+    stack_database: "JSON file store",
+    stack_other: '["OpenAI API (optional)","Gunicorn"]',
+    deploy_enabled: 1,
+    image_size_mb: 120,
+    memory_limit: "128 MB",
+    created_at: "2026-02-23",
+    last_updated: "2026-02-23",
+    total_commits: 1,
+    marketing_monthly: 0,
+    marketing_channel: "Organic",
+    marketing_notes: "Limited daily drops with direct buy CTA",
+  });
+}
+
+function backfillPriors(db: Database.Database) {
+  const exists = (
+    db.prepare("SELECT COUNT(*) as count FROM apps WHERE id = 'priors'").get() as {
+      count: number;
+    }
+  ).count;
+
+  if (exists > 0) {
+    return;
+  }
+
+  db.prepare(`
+    INSERT INTO apps (
+      id, name, tagline, description, category, port,
+      docker_service, docker_image, directory, repo_path,
+      stack_frontend, stack_backend, stack_database, stack_other,
+      deploy_enabled, image_size_mb, memory_limit,
+      created_at, last_updated, total_commits,
+      marketing_monthly, marketing_channel, marketing_notes
+    ) VALUES (
+      @id, @name, @tagline, @description, @category, @port,
+      @docker_service, @docker_image, @directory, @repo_path,
+      @stack_frontend, @stack_backend, @stack_database, @stack_other,
+      @deploy_enabled, @image_size_mb, @memory_limit,
+      @created_at, @last_updated, @total_commits,
+      @marketing_monthly, @marketing_channel, @marketing_notes
+    )
+  `).run({
+    id: "priors",
+    name: "Priors",
+    tagline: "Question probabilities with AI",
+    description:
+      "Flask app for tracking personal yes/no priors with Google sign-in and Gemini-assisted likelihood estimates.",
+    category: "ai",
+    port: 8010,
+    docker_service: "priors",
+    docker_image: "216labs/priors:latest",
+    directory: "priors",
+    repo_path: "priors",
+    stack_frontend: "Flask templates",
+    stack_backend: "Flask + Gunicorn",
+    stack_database: "SQLite",
+    stack_other: '["Google OAuth","Gemini API"]',
+    deploy_enabled: 1,
+    image_size_mb: 128,
+    memory_limit: "128 MB",
+    created_at: "2026-02-23",
+    last_updated: "2026-02-23",
+    total_commits: 1,
+    marketing_monthly: 0,
+    marketing_channel: "Organic",
+    marketing_notes: "Pre-launch phase",
+  });
 }
 
 export function getAllApps(): DbApp[] {

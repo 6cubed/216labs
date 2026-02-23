@@ -13,6 +13,8 @@ Monorepo for 216labs web projects. All apps run on a single VPS via Docker Compo
 | **HiveFind** | Next.js | `hivefind.{domain}` |
 | **PipeSecure** | Next.js, PostgreSQL, Redis, BullMQ | `pipesecure.{domain}` |
 | **216labs Admin** | Next.js (pipeline dashboard) | `admin.{domain}` |
+| **AgitShirts** | Flask, daily AI generation | `agitshirts.{domain}` |
+| **Priors** | Flask, Google OAuth, Gemini | `priors.{domain}` |
 | **Paperframe ML** | FastAPI, SAM + BLIP (opt-in, needs 2GB+ RAM) | via `--profile ml` |
 
 ## Deploy to a droplet

@@ -14,6 +14,8 @@ services:
       - "8006:8006"
       - "8007:8007"
       - "8008:8008"
+      - "8009:8009"
+      - "8010:8010"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -178,6 +180,40 @@ services:
       - NEWS_API_KEY=${AGIMEMES_NEWS_API_KEY:-}
       - IMG_FLIP_USERNAME=${AGIMEMES_IMG_FLIP_USERNAME:-}
       - IMG_FLIP_PASSWORD=${AGIMEMES_IMG_FLIP_PASSWORD:-}
+    expose:
+      - "5000"
+    mem_limit: 128m
+
+  # ── Priors ───────────────────────────────────────────────────
+  priors:
+    image: 216labs/priors:latest
+    build: ./priors
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - PRIORS_DATABASE_PATH=/app/data/database.db
+      - PRIORS_SECRET_KEY=${PRIORS_SECRET_KEY:-change-me}
+      - PRIORS_GOOGLE_CLIENT_SECRETS_FILE=/app/client_secret.json
+      - PRIORS_OAUTH_REDIRECT_URI=${PRIORS_OAUTH_REDIRECT_URI:-http://localhost:8010/callback}
+      - GOOGLE_CLIENT_ID=${PRIORS_GOOGLE_CLIENT_ID:-}
+      - GEMINI_API_KEY=${PRIORS_GEMINI_API_KEY:-}
+    volumes:
+      - ./priors/data:/app/data
+      - ./priors/client_secret.json:/app/client_secret.json:ro
+    expose:
+      - "5000"
+    mem_limit: 128m
+
+  # ── AgitShirts ────────────────────────────────────────────────
+  agitshirts:
+    image: 216labs/agitshirts:latest
+    build: ./agitshirts
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - AGITSHIRTS_OPENAI_API_KEY=${AGITSHIRTS_OPENAI_API_KEY:-}
+      - AGITSHIRTS_MODEL=${AGITSHIRTS_MODEL:-gpt-4o-mini}
+      - AGITSHIRTS_CHECKOUT_BASE_URL=${AGITSHIRTS_CHECKOUT_BASE_URL:-}
     expose:
       - "5000"
     mem_limit: 128m
