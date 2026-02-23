@@ -11,44 +11,80 @@ REMOTE="${1:-${DEPLOY_HOST:-}}"
 REPO="git@github.com:6cubed/216labs.git"
 APP_DIR="/opt/216labs"
 DB_FILE="216labs.db"
+DB_ENV_FILE="$(mktemp)"
+
+cleanup() {
+  rm -f "$DB_ENV_FILE"
+}
+trap cleanup EXIT
+
+escape_env_value() {
+  local value="$1"
+  value="${value//$'\r'/}"
+  value="${value//$'\n'/}"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//\$/\\$}"
+  printf '%s' "$value"
+}
 
 if [ -z "$REMOTE" ]; then
   echo "Usage: ./deploy.sh user@droplet-ip"
   exit 1
 fi
 
-# ── Read deploy config from SQLite ────────────────────────────
-declare -A ALL_SERVICES=(
-  [ramblingradio]="./RamblingRadio"
-  [stroll]="./Stroll.live"
-  [onefit]="./onefit"
-  [paperframe-frontend]="./paperframe/frontend"
-  [hivefind]="./hivefind"
-  [pipesecure]="./pipesecure"
-  [pipesecure-worker]="./pipesecure:Dockerfile.worker"
-  [admin]="./216labs_admin"
-  [agimemes]="./agimemes.com"
-  [agitshirts]="./agitshirts"
-  [priors]="./priors"
-)
+# ── Service mapping helpers (Bash 3 compatible) ───────────────
+service_spec() {
+  case "$1" in
+    ramblingradio) echo "./RamblingRadio" ;;
+    stroll) echo "./Stroll.live" ;;
+    onefit) echo "./onefit" ;;
+    paperframe|paperframe-frontend) echo "./paperframe/frontend" ;;
+    hivefind) echo "./hivefind" ;;
+    pipesecure) echo "./pipesecure" ;;
+    pipesecure-worker) echo "./pipesecure:Dockerfile.worker" ;;
+    admin) echo "./216labs_admin" ;;
+    agimemes) echo "./agimemes.com" ;;
+    agitshirts) echo "./agitshirts" ;;
+    priors) echo "./priors" ;;
+    *) echo "" ;;
+  esac
+}
 
-declare -A SERVICE_DEPS=(
-  [pipesecure]="redis pipesecure-worker pipesecure-migrate"
-)
+service_deps() {
+  case "$1" in
+    pipesecure) echo "redis pipesecure-worker pipesecure-migrate" ;;
+    *) echo "" ;;
+  esac
+}
 
 if [ -f "$DB_FILE" ]; then
   ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1" | tr '\n' ' ')
   echo "==> Deploy config (from DB): $ENABLED_APPS"
+  echo "==> Building deploy env from admin DB..."
+  HAS_ENV_TABLE=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='env_vars';")
+  if [ "$HAS_ENV_TABLE" = "1" ]; then
+    sqlite3 -separator '|' "$DB_FILE" "SELECT key, value FROM env_vars WHERE value IS NOT NULL AND value != '' ORDER BY key;" \
+      | while IFS='|' read -r key value; do
+          [ -z "${key:-}" ] && continue
+          printf '%s="%s"\n' "$key" "$(escape_env_value "$value")" >> "$DB_ENV_FILE"
+        done
+    ENV_COUNT=$(wc -l < "$DB_ENV_FILE" | tr -d ' ')
+    echo "==> Loaded $ENV_COUNT env vars from admin DB"
+  else
+    echo "==> env_vars table not found yet, using .env defaults only"
+  fi
 else
   echo "==> No $DB_FILE found, deploying all apps"
-  ENABLED_APPS="${!ALL_SERVICES[*]}"
+  ENABLED_APPS="ramblingradio stroll onefit paperframe-frontend hivefind pipesecure admin agimemes agitshirts priors"
 fi
 
 # ── Filter to enabled services ────────────────────────────────
 SERVICES=()
 for app in $ENABLED_APPS; do
-  if [ -n "${ALL_SERVICES[$app]:-}" ]; then
-    SERVICES+=("$app:${ALL_SERVICES[$app]}")
+  SPEC=$(service_spec "$app")
+  if [ -n "$SPEC" ]; then
+    SERVICES+=("$app:$SPEC")
   fi
 done
 
@@ -114,19 +150,22 @@ fi
 COMPOSE_SERVICES="caddy postgres"
 for app in $ENABLED_APPS; do
   COMPOSE_SERVICES="$COMPOSE_SERVICES $app"
-  if [ -n "${SERVICE_DEPS[$app]:-}" ]; then
-    COMPOSE_SERVICES="$COMPOSE_SERVICES ${SERVICE_DEPS[$app]}"
+  DEPS=$(service_deps "$app")
+  if [ -n "$DEPS" ]; then
+    COMPOSE_SERVICES="$COMPOSE_SERVICES $DEPS"
   fi
 done
 
 # ── Start on droplet ──────────────────────────────────────────
 echo "==> Starting stack on $REMOTE..."
 echo "    Services: $COMPOSE_SERVICES"
-ssh "$REMOTE" bash -s "$REPO" "$APP_DIR" "$COMPOSE_SERVICES" <<'REMOTE_SCRIPT'
+ENV_B64="$(base64 < "$DB_ENV_FILE" | tr -d '\n')"
+ssh "$REMOTE" bash -s "$REPO" "$APP_DIR" "$COMPOSE_SERVICES" "$ENV_B64" <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
 COMPOSE_SERVICES="$3"
+ENV_B64="$4"
 
 if ! command -v docker &>/dev/null; then
   echo "==> Installing Docker..."
@@ -151,8 +190,14 @@ if [ ! -f .env ]; then
   exit 0
 fi
 
+if [ -n "$ENV_B64" ]; then
+  echo "$ENV_B64" | base64 --decode > .env.admin
+else
+  : > .env.admin
+fi
+
 # shellcheck disable=SC2086
-docker compose up -d --remove-orphans $COMPOSE_SERVICES
+docker compose --env-file .env --env-file .env.admin up -d --remove-orphans $COMPOSE_SERVICES
 docker compose ps
 echo "==> Done."
 REMOTE_SCRIPT

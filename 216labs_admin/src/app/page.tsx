@@ -1,16 +1,18 @@
-import { getAllApps } from "@/lib/db";
+import { getAllApps, getAllEnvVars } from "@/lib/db";
 import { dbRowToAppInfo, infrastructure } from "@/data/apps";
 import { AppCard } from "@/components/AppCard";
 import { MetricCard } from "@/components/MetricCard";
 import { InfraOverview } from "@/components/InfraOverview";
 import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
 import { SizeOverview } from "@/components/SizeOverview";
+import { EnvVarEditor } from "@/components/EnvVarEditor";
 
 export const dynamic = "force-dynamic";
 
 export default function DashboardPage() {
   const rows = getAllApps();
   const apps = rows.map(dbRowToAppInfo);
+  const envVars = getAllEnvVars();
 
   const enabledApps = new Set(apps.filter((a) => a.deployEnabled).map((a) => a.id));
   const enabledCount = enabledApps.size;
@@ -98,6 +100,8 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+
+        <EnvVarEditor vars={envVars} />
 
         {/* Architecture */}
         <section className="animate-fade-in">

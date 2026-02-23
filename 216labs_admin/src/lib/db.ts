@@ -29,6 +29,14 @@ export interface DbApp {
   marketing_notes: string | null;
 }
 
+export interface DbEnvVar {
+  key: string;
+  value: string;
+  description: string;
+  is_secret: number;
+  updated_at: string | null;
+}
+
 const DB_PATH =
   process.env.DATABASE_PATH || join(process.cwd(), "..", "216labs.db");
 
@@ -74,6 +82,15 @@ function initSchema(db: Database.Database) {
       marketing_notes TEXT
     );
   `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS env_vars (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '',
+      is_secret INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT
+    );
+  `);
 
   const count = (
     db.prepare("SELECT COUNT(*) as count FROM apps").get() as {
@@ -82,9 +99,11 @@ function initSchema(db: Database.Database) {
   ).count;
   if (count === 0) {
     seed(db);
+    seedEnvVars(db);
   } else {
     backfillAgitShirts(db);
     backfillPriors(db);
+    backfillEnvVars(db);
   }
 }
 
@@ -434,8 +453,57 @@ function backfillPriors(db: Database.Database) {
   });
 }
 
+const DEFAULT_ENV_VARS: Array<{
+  key: string;
+  description: string;
+  is_secret: number;
+}> = [
+  { key: "RAMBLINGRADIO_DATABASE_URL", description: "RamblingRadio Postgres connection string", is_secret: 1 },
+  { key: "PAPERFRAME_API_URL", description: "Paperframe ML backend URL (optional)", is_secret: 0 },
+  { key: "PIPESECURE_DATABASE_URL", description: "PipeSecure Postgres connection string", is_secret: 1 },
+  { key: "PIPESECURE_NEXTAUTH_URL", description: "PipeSecure public URL", is_secret: 0 },
+  { key: "PIPESECURE_NEXTAUTH_SECRET", description: "PipeSecure NextAuth secret", is_secret: 1 },
+  { key: "PIPESECURE_GITHUB_CLIENT_ID", description: "PipeSecure GitHub OAuth client ID", is_secret: 1 },
+  { key: "PIPESECURE_GITHUB_CLIENT_SECRET", description: "PipeSecure GitHub OAuth client secret", is_secret: 1 },
+  { key: "PIPESECURE_GITHUB_APP_ID", description: "PipeSecure GitHub App ID", is_secret: 1 },
+  { key: "PIPESECURE_GITHUB_WEBHOOK_SECRET", description: "PipeSecure webhook secret", is_secret: 1 },
+  { key: "PIPESECURE_ENCRYPTION_KEY", description: "PipeSecure data encryption key", is_secret: 1 },
+  { key: "PIPESECURE_NEXT_PUBLIC_APP_URL", description: "PipeSecure frontend URL", is_secret: 0 },
+  { key: "AGIMEMES_NEWS_API_KEY", description: "AGI Memes News API key", is_secret: 1 },
+  { key: "AGIMEMES_IMG_FLIP_USERNAME", description: "AGI Memes Imgflip username", is_secret: 1 },
+  { key: "AGIMEMES_IMG_FLIP_PASSWORD", description: "AGI Memes Imgflip password", is_secret: 1 },
+  { key: "AGITSHIRTS_OPENAI_API_KEY", description: "AgitShirts OpenAI API key", is_secret: 1 },
+  { key: "AGITSHIRTS_MODEL", description: "AgitShirts model name", is_secret: 0 },
+  { key: "AGITSHIRTS_CHECKOUT_BASE_URL", description: "AgitShirts checkout base URL", is_secret: 0 },
+  { key: "PRIORS_SECRET_KEY", description: "Priors Flask secret key", is_secret: 1 },
+  { key: "PRIORS_OAUTH_REDIRECT_URI", description: "Priors OAuth redirect URL", is_secret: 0 },
+  { key: "PRIORS_GOOGLE_CLIENT_ID", description: "Priors Google client ID", is_secret: 1 },
+  { key: "PRIORS_GEMINI_API_KEY", description: "Priors Gemini API key", is_secret: 1 },
+];
+
+function seedEnvVars(db: Database.Database) {
+  const insert = db.prepare(`
+    INSERT OR IGNORE INTO env_vars (key, value, description, is_secret, updated_at)
+    VALUES (@key, '', @description, @is_secret, NULL)
+  `);
+  const insertMany = db.transaction((rows: typeof DEFAULT_ENV_VARS) => {
+    for (const row of rows) insert.run(row);
+  });
+  insertMany(DEFAULT_ENV_VARS);
+}
+
+function backfillEnvVars(db: Database.Database) {
+  seedEnvVars(db);
+}
+
 export function getAllApps(): DbApp[] {
   return getDb().prepare("SELECT * FROM apps ORDER BY port").all() as DbApp[];
+}
+
+export function getAllEnvVars(): DbEnvVar[] {
+  return getDb()
+    .prepare("SELECT * FROM env_vars ORDER BY key")
+    .all() as DbEnvVar[];
 }
 
 export function getEnabledApps(): DbApp[] {
@@ -448,6 +516,14 @@ export function setDeployEnabled(appId: string, enabled: boolean): void {
   getDb()
     .prepare("UPDATE apps SET deploy_enabled = ? WHERE id = ?")
     .run(enabled ? 1 : 0, appId);
+}
+
+export function setEnvVarValue(key: string, value: string): void {
+  getDb()
+    .prepare(
+      "UPDATE env_vars SET value = ?, updated_at = date('now') WHERE key = ?"
+    )
+    .run(value, key);
 }
 
 export function updateAppMetadata(
