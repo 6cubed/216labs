@@ -1,5 +1,5 @@
-# run meme creation every hour
+# run meme creation once per day
 cron:
 - description: "meme creation job"
   url: /tasks/meme_creation
-  schedule: every hour
+  schedule: every day 09:00

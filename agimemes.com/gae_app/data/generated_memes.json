@@ -1,0 +1,9 @@
+{
+  "memes": [],
+  "meta": {
+    "last_run_at": null,
+    "last_status": "never_ran",
+    "last_message": "No generation run has completed yet.",
+    "last_generated_count": 0
+  }
+}
