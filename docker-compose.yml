@@ -17,14 +17,6 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
-    depends_on:
-      - ramblingradio
-      - stroll
-      - onefit
-      - paperframe-frontend
-      - hivefind
-      - pipesecure
-      - admin
     mem_limit: 64m
 
   # ── RamblingRadio ─────────────────────────────────────────────
@@ -210,7 +202,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-ramblingradio}
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d
+      - ./pipesecure/init-db.sh:/docker-entrypoint-initdb.d/create-pipesecure-db.sh:ro
     expose:
       - "5432"
     mem_limit: 128m

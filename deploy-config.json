@@ -1,0 +1,11 @@
+{
+  "apps": {
+    "ramblingradio": { "enabled": true },
+    "stroll": { "enabled": true },
+    "onefit": { "enabled": true },
+    "paperframe-frontend": { "enabled": true },
+    "hivefind": { "enabled": true },
+    "pipesecure": { "enabled": false },
+    "admin": { "enabled": true }
+  }
+}

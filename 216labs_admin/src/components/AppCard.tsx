@@ -1,6 +1,7 @@
 import type { AppInfo } from "@/data/apps";
 import { StatusBadge } from "./StatusBadge";
 import { CategoryBadge } from "./CategoryBadge";
+import { DeployToggle } from "./DeployToggle";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
@@ -8,6 +9,11 @@ function formatDate(dateStr: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+function formatSize(mb: number): string {
+  if (mb >= 1000) return `${(mb / 1000).toFixed(1)} GB`;
+  return `${mb} MB`;
 }
 
 function StackTag({ label }: { label: string }) {
@@ -33,7 +39,13 @@ function DetailRow({
   );
 }
 
-export function AppCard({ app }: { app: AppInfo }) {
+export function AppCard({
+  app,
+  deployEnabled,
+}: {
+  app: AppInfo;
+  deployEnabled: boolean;
+}) {
   const stackItems = [
     app.stack.frontend,
     app.stack.backend,
@@ -42,9 +54,15 @@ export function AppCard({ app }: { app: AppInfo }) {
   ].filter(Boolean);
 
   return (
-    <div className="group bg-surface border border-border rounded-2xl overflow-hidden hover:border-accent/30 transition-all duration-300">
+    <div
+      className={`group bg-surface border border-border rounded-2xl overflow-hidden transition-all duration-300 ${
+        deployEnabled
+          ? "hover:border-accent/30"
+          : "opacity-50 hover:opacity-70"
+      }`}
+    >
       <div className="p-6">
-        {/* Header */}
+        {/* Header with deploy toggle */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -57,12 +75,28 @@ export function AppCard({ app }: { app: AppInfo }) {
             </div>
             <p className="text-sm text-muted">{app.tagline}</p>
           </div>
-          <StatusBadge status={app.deploymentStatus} />
+          <div className="flex items-center gap-2 shrink-0">
+            <DeployToggle appId={app.id} enabled={deployEnabled} />
+            <StatusBadge
+              status={deployEnabled ? app.deploymentStatus : "stopped"}
+            />
+          </div>
         </div>
 
-        {/* Category */}
+        {/* Category + Image Size */}
         <div className="flex items-center gap-2 mb-4">
           <CategoryBadge category={app.category} />
+          <span
+            className={`text-[11px] font-mono px-2 py-0.5 rounded border ${
+              app.imageSizeMB >= 800
+                ? "bg-red-500/10 text-red-400 border-red-500/20"
+                : app.imageSizeMB >= 500
+                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                  : "bg-white/5 text-muted border-white/5"
+            }`}
+          >
+            {formatSize(app.imageSizeMB)}
+          </span>
         </div>
 
         {/* Description */}
@@ -85,6 +119,11 @@ export function AppCard({ app }: { app: AppInfo }) {
           </DetailRow>
           <DetailRow label="Commits">{app.totalCommits}</DetailRow>
           <DetailRow label="Memory Limit">{app.memoryLimit}</DetailRow>
+          <DetailRow label="Image Size">
+            <span className="font-mono text-[11px]">
+              {formatSize(app.imageSizeMB)}
+            </span>
+          </DetailRow>
           <DetailRow label="Docker Image">
             <span className="font-mono text-[11px]">{app.dockerImage}</span>
           </DetailRow>

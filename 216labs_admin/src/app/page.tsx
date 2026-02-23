@@ -3,16 +3,26 @@ import { AppCard } from "@/components/AppCard";
 import { MetricCard } from "@/components/MetricCard";
 import { InfraOverview } from "@/components/InfraOverview";
 import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
+import { SizeOverview } from "@/components/SizeOverview";
+import { readDeployConfig, isAppEnabled } from "@/lib/deploy-config";
+
+export const dynamic = "force-dynamic";
 
 export default function DashboardPage() {
-  const runningCount = apps.filter(
-    (a) => a.deploymentStatus === "running"
-  ).length;
+  const config = readDeployConfig();
+  const enabledApps = new Set(
+    apps.map((a) => a.id).filter((id) => isAppEnabled(config, id))
+  );
+  const enabledCount = enabledApps.size;
+
   const totalCommits = apps.reduce((sum, a) => sum + a.totalCommits, 0);
   const totalMarketingSpend = apps.reduce(
     (sum, a) => sum + (a.marketingSpend?.monthly ?? 0),
     0
   );
+  const enabledImageSizeMB = apps
+    .filter((a) => enabledApps.has(a.id))
+    .reduce((sum, a) => sum + a.imageSizeMB, 0);
 
   return (
     <div className="min-h-screen">
@@ -28,8 +38,8 @@ export default function DashboardPage() {
                 </span>
               </h1>
               <p className="text-sm text-muted mt-1">
-                Monorepo overview &mdash; {apps.length} applications on a single
-                VPS
+                Monorepo overview &mdash; {apps.length} applications,{" "}
+                {enabledCount} deployed
               </p>
             </div>
             <div className="hidden sm:flex items-center gap-2 text-xs text-muted">
@@ -48,12 +58,16 @@ export default function DashboardPage() {
           <MetricCard
             label="Applications"
             value={apps.length}
-            sublabel={`${runningCount} running`}
+            sublabel={`${enabledCount} deployed`}
           />
           <MetricCard
-            label="Total Commits"
-            value={totalCommits}
-            sublabel="Across all apps"
+            label="Deploy Size"
+            value={
+              enabledImageSizeMB >= 1000
+                ? `${(enabledImageSizeMB / 1000).toFixed(1)} GB`
+                : `${enabledImageSizeMB} MB`
+            }
+            sublabel="App images only"
           />
           <MetricCard
             label="Monthly Cost"
@@ -61,14 +75,16 @@ export default function DashboardPage() {
             sublabel={infrastructure.provider}
           />
           <MetricCard
-            label="Marketing Spend"
-            value={
-              totalMarketingSpend === 0
-                ? "$0"
-                : `$${totalMarketingSpend}/mo`
-            }
-            sublabel="All channels combined"
+            label="Total Commits"
+            value={totalCommits}
+            sublabel="Across all apps"
           />
+        </section>
+
+        {/* Deploy Size Overview + Infrastructure */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in">
+          <SizeOverview apps={apps} enabledApps={enabledApps} />
+          <InfraOverview />
         </section>
 
         {/* Application cards */}
@@ -78,27 +94,30 @@ export default function DashboardPage() {
               Applications
             </h2>
             <p className="text-xs text-muted">
-              Sorted by port assignment
+              Toggle deploy to control which apps are transferred to the server
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in">
             {apps.map((app) => (
-              <AppCard key={app.id} app={app} />
+              <AppCard
+                key={app.id}
+                app={app}
+                deployEnabled={enabledApps.has(app.id)}
+              />
             ))}
           </div>
         </section>
 
-        {/* Architecture + Infrastructure */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in">
+        {/* Architecture */}
+        <section className="animate-fade-in">
           <ArchitectureDiagram />
-          <InfraOverview />
         </section>
 
         {/* Footer */}
         <footer className="text-center py-6 border-t border-border">
           <p className="text-xs text-muted">
-            216labs Pipeline Dashboard &mdash; Last data refresh: static build
-            time &mdash;{" "}
+            216labs Pipeline Dashboard &mdash; Deploy config:{" "}
+            <span className="font-mono">deploy-config.json</span> &mdash;{" "}
             <span className="font-mono">
               {new Date().toISOString().split("T")[0]}
             </span>

@@ -22,6 +22,7 @@ export interface AppInfo {
   totalCommits: number;
   deploymentStatus: DeploymentStatus;
   memoryLimit: string;
+  imageSizeMB: number;
   marketingSpend?: {
     monthly: number;
     channel: string;
@@ -53,6 +54,7 @@ export const apps: AppInfo[] = [
     totalCommits: 4,
     deploymentStatus: "running",
     memoryLimit: "256 MB",
+    imageSizeMB: 1020,
     marketingSpend: {
       monthly: 0,
       channel: "Organic",
@@ -81,6 +83,7 @@ export const apps: AppInfo[] = [
     totalCommits: 4,
     deploymentStatus: "running",
     memoryLimit: "256 MB",
+    imageSizeMB: 422,
     marketingSpend: {
       monthly: 0,
       channel: "Organic",
@@ -109,6 +112,7 @@ export const apps: AppInfo[] = [
     totalCommits: 3,
     deploymentStatus: "running",
     memoryLimit: "256 MB",
+    imageSizeMB: 334,
     marketingSpend: {
       monthly: 0,
       channel: "Organic",
@@ -136,6 +140,7 @@ export const apps: AppInfo[] = [
     totalCommits: 3,
     deploymentStatus: "running",
     memoryLimit: "256 MB (frontend) / 2 GB (ML backend)",
+    imageSizeMB: 440,
     marketingSpend: {
       monthly: 0,
       channel: "Organic",
@@ -162,6 +167,7 @@ export const apps: AppInfo[] = [
     totalCommits: 2,
     deploymentStatus: "running",
     memoryLimit: "256 MB",
+    imageSizeMB: 435,
     marketingSpend: {
       monthly: 0,
       channel: "Organic",
@@ -190,6 +196,7 @@ export const apps: AppInfo[] = [
     totalCommits: 1,
     deploymentStatus: "running",
     memoryLimit: "256 MB (app) / 512 MB (worker)",
+    imageSizeMB: 480,
     marketingSpend: {
       monthly: 0,
       channel: "Organic",
