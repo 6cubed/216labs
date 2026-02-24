@@ -1,6 +1,9 @@
-import { apps } from "@/data/apps";
+import { dbRowToAppInfo } from "@/data/apps";
+import { getAllApps } from "@/lib/db";
 
 export function ArchitectureDiagram() {
+  const apps = getAllApps().map(dbRowToAppInfo);
+
   return (
     <div className="bg-surface border border-border rounded-2xl p-6">
       <h2 className="text-lg font-semibold text-foreground mb-1">

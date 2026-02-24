@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Choose your nickname — Big Leroy's Guessing Bonanza{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-badge">👋</div>
+    <h1 class="auth-title">Welcome, <span>{{ name.split()[0] if name else 'player' }}</span>!</h1>
+    <p class="auth-sub">Pick a nickname that will appear on the leaderboard.</p>
+
+    <form method="POST" action="{{ url_for('save_nickname') }}" class="nickname-form">
+      <input
+        type="text"
+        name="nickname"
+        class="nickname-input"
+        placeholder="e.g. BigLeroy, TacticalGenius…"
+        minlength="2"
+        maxlength="30"
+        required
+        autofocus
+        pattern="[\w\s\-]+"
+        title="Letters, numbers, spaces and hyphens only"
+      />
+      <button type="submit" class="btn btn-primary btn-full">Let's go →</button>
+    </form>
+    <p class="auth-note">2–30 characters, letters / numbers / spaces / hyphens.</p>
+  </div>
+</div>
+{% endblock %}

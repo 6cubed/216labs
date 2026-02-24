@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Report — 1PageResearch{% endblock %}
+
+{% block head %}
+<style>
+  .generate-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  .generate-wrap h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.4rem;
+  }
+
+  .generate-wrap > p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    max-width: 500px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .input-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.95rem;
+    padding: 0.7rem 1rem;
+    outline: none;
+    font-family: var(--font);
+    transition: border-color 0.15s;
+  }
+
+  .input-row input:focus { border-color: var(--accent); }
+  .input-row input::placeholder { color: var(--muted); }
+
+  .model-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+  }
+
+  .progress-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 2rem;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-card.visible { display: block; }
+
+  .progress-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .raw-stream {
+    padding: 1rem 1.25rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    max-height: 320px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .done-banner {
+    padding: 1rem 1.25rem;
+    background: rgba(52,211,153,0.08);
+    border-top: 1px solid rgba(52,211,153,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    display: none;
+  }
+
+  .done-banner.visible { display: flex; }
+  .done-banner .msg { color: var(--green); font-weight: 600; }
+
+  .error-banner {
+    padding: 0.9rem 1.25rem;
+    background: rgba(248,113,113,0.08);
+    border-top: 1px solid rgba(248,113,113,0.2);
+    font-size: 0.85rem;
+    color: var(--red);
+    display: none;
+  }
+
+  .error-banner.visible { display: block; }
+
+  .examples {
+    margin-top: 1.5rem;
+  }
+
+  .examples p {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .chip:hover { color: var(--text); border-color: var(--subtle); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="generate-wrap">
+  <h1>Generate a Report</h1>
+  <p>
+    Enter a topic and the agent will write a 1-page research brief, extracting a statistically
+    significant signal from community discourse. The report will be saved to the library.
+  </p>
+
+  <div class="input-row">
+    <input id="topicInput" type="text" placeholder="e.g. berberine and blood glucose, r/ADHD and caffeine…" autofocus />
+    <button class="btn" id="genBtn" onclick="generate()">Generate</button>
+  </div>
+  <div class="model-note">Powered by <strong>OpenRouter</strong> · Results saved automatically</div>
+
+  <div class="examples">
+    <p>Topic ideas:</p>
+    <div class="chips">
+      <span class="chip" onclick="setTopic('Berberine and blood glucose control according to r/diabetes and r/Supplements')">Berberine + blood glucose</span>
+      <span class="chip" onclick="setTopic('Caffeine and ADHD symptom management from r/ADHD community reports')">Caffeine + ADHD</span>
+      <span class="chip" onclick="setTopic('Ashwagandha and cortisol / stress reduction from r/Nootropics')">Ashwagandha + stress</span>
+      <span class="chip" onclick="setTopic('Intermittent fasting and mental clarity from r/intermittentfasting')">IF + mental clarity</span>
+      <span class="chip" onclick="setTopic('Blue light glasses and sleep quality from r/sleep')">Blue light + sleep</span>
+      <span class="chip" onclick="setTopic('Nofap / semen retention and self-reported energy levels from r/NoFap')">NoFap + energy</span>
+    </div>
+  </div>
+
+  <div class="progress-card" id="progressCard">
+    <div class="progress-header">
+      <span>Agent writing report…</span>
+      <div class="spinner" id="spinner"></div>
+    </div>
+    <div class="raw-stream" id="rawStream"></div>
+    <div class="done-banner" id="doneBanner">
+      <span class="msg">✓ Report saved to library</span>
+      <a id="reportLink" href="#" class="btn">View Report →</a>
+    </div>
+    <div class="error-banner" id="errorBanner"></div>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById('topicInput');
+  const btn = document.getElementById('genBtn');
+  const card = document.getElementById('progressCard');
+  const stream = document.getElementById('rawStream');
+  const doneBanner = document.getElementById('doneBanner');
+  const errorBanner = document.getElementById('errorBanner');
+  const spinner = document.getElementById('spinner');
+  const reportLink = document.getElementById('reportLink');
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+
+  function setTopic(t) { input.value = t; }
+
+  async function generate() {
+    const topic = input.value.trim();
+    if (!topic) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    card.classList.add('visible');
+    stream.textContent = '';
+    doneBanner.classList.remove('visible');
+    errorBanner.classList.remove('visible');
+    spinner.style.display = 'block';
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Request failed');
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.error) { throw new Error(data.error); }
+            if (data.chunk) {
+              stream.textContent += data.chunk;
+              stream.scrollTop = stream.scrollHeight;
+            }
+            if (data.done) {
+              spinner.style.display = 'none';
+              if (data.slug) {
+                reportLink.href = `/report/${data.slug}`;
+                doneBanner.classList.add('visible');
+              } else if (data.error) {
+                errorBanner.textContent = data.error;
+                errorBanner.classList.add('visible');
+              }
+            }
+          } catch (e) {
+            if (e.message !== 'Unexpected end of JSON input') throw e;
+          }
+        }
+      }
+    } catch (e) {
+      errorBanner.textContent = e.message;
+      errorBanner.classList.add('visible');
+      spinner.style.display = 'none';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Generate';
+    }
+  }
+</script>
+{% endblock %}

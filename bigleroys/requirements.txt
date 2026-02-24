@@ -1,0 +1,8 @@
+Flask
+google-auth
+google-auth-oauthlib
+requests
+cachecontrol
+APScheduler
+beautifulsoup4
+gunicorn

@@ -44,6 +44,27 @@
 	reverse_proxy priors:5000
 }
 
+:8011 {
+	reverse_proxy calibratedai:3000
+}
+
+:8012 {
+	reverse_proxy bigleroys:5000
+}
+
+:8013 {
+	handle /api/* {
+		reverse_proxy anchor-api:8000
+	}
+	handle {
+		reverse_proxy anchor-web:80
+	}
+}
+
+:8014 {
+	reverse_proxy 1pageresearch:5000
+}
+
 :80 {
-	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004) hivefind(:8005) pipesecure(:8006) admin(:8007) agimemes(:8008) agitshirts(:8009) priors(:8010)" 200
+	respond "216labs — ramblingradio(:8001) stroll(:8002) onefit(:8003) paperframe(:8004) hivefind(:8005) pipesecure(:8006) admin(:8007) agimemes(:8008) agitshirts(:8009) priors(:8010) calibratedai(:8011) bigleroys(:8012) anchor(:8013) 1pageresearch(:8014)" 200
 }

@@ -14,11 +14,13 @@ export default function DashboardPage() {
   const apps = rows.map(dbRowToAppInfo);
   const envVars = getAllEnvVars();
 
-  const enabledApps = new Set(apps.filter((a) => a.deployEnabled).map((a) => a.id));
+  const enabledApps = new Set(
+    apps.filter((a) => a.deployEnabled || a.id === "admin").map((a) => a.id)
+  );
   const enabledCount = enabledApps.size;
   const totalCommits = apps.reduce((sum, a) => sum + a.totalCommits, 0);
   const enabledImageSizeMB = apps
-    .filter((a) => a.deployEnabled)
+    .filter((a) => a.deployEnabled || a.id === "admin")
     .reduce((sum, a) => sum + a.imageSizeMB, 0);
 
   return (
@@ -91,7 +93,7 @@ export default function DashboardPage() {
               Applications
             </h2>
             <p className="text-xs text-muted">
-              Toggle deploy to control which apps are transferred to the server
+              Toggle deploy to control which apps are transferred (admin is always on)
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in">

@@ -16,6 +16,10 @@ services:
       - "8008:8008"
       - "8009:8009"
       - "8010:8010"
+      - "8011:8011"
+      - "8012:8012"
+      - "8013:8013"
+      - "8014:8014"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -164,8 +168,10 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - DATABASE_PATH=/app/216labs.db
+      - PROJECTS_ROOT=/workspace
     volumes:
       - ./216labs.db:/app/216labs.db
+      - ./:/workspace:ro
     expose:
       - "3000"
     mem_limit: 128m
@@ -204,6 +210,25 @@ services:
       - "5000"
     mem_limit: 128m
 
+  # ── Big Leroy's Premier League Guessing Bonanza ──────────────
+  bigleroys:
+    image: 216labs/bigleroys:latest
+    build: ./bigleroys
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - BIGLEROYS_SECRET_KEY=${BIGLEROYS_SECRET_KEY:-change-me}
+      - BIGLEROYS_GOOGLE_CLIENT_SECRETS_FILE=/app/client_secret.json
+      - BIGLEROYS_OAUTH_REDIRECT_URI=${BIGLEROYS_OAUTH_REDIRECT_URI:-http://localhost:8012/callback}
+      - BIGLEROYS_GOOGLE_CLIENT_ID=${BIGLEROYS_GOOGLE_CLIENT_ID:-}
+      - BIGLEROYS_DATABASE_PATH=/app/data/bigleroys.db
+    volumes:
+      - ./bigleroys/data:/app/data
+      - ./bigleroys/client_secret.json:/app/client_secret.json:ro
+    expose:
+      - "5000"
+    mem_limit: 256m
+
   # ── AgitShirts ────────────────────────────────────────────────
   agitshirts:
     image: 216labs/agitshirts:latest
@@ -214,6 +239,35 @@ services:
       - AGITSHIRTS_OPENAI_API_KEY=${AGITSHIRTS_OPENAI_API_KEY:-}
       - AGITSHIRTS_MODEL=${AGITSHIRTS_MODEL:-gpt-4o-mini}
       - AGITSHIRTS_CHECKOUT_BASE_URL=${AGITSHIRTS_CHECKOUT_BASE_URL:-}
+    expose:
+      - "5000"
+    mem_limit: 128m
+
+  # ── CalibratedAI ─────────────────────────────────────────────
+  calibratedai:
+    image: 216labs/calibratedai:latest
+    build: ./calibratedai
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - CALIBRATEDAI_OPENROUTER_API_KEY=${CALIBRATEDAI_OPENROUTER_API_KEY:-}
+      - CALIBRATEDAI_DB_PATH=/app/data/calibratedai.db
+    volumes:
+      - ./calibratedai/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 256m
+
+  # ── 1PageResearch ────────────────────────────────────────────
+  1pageresearch:
+    image: 216labs/1pageresearch:latest
+    build: ./1pageresearch
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - ONEPAGE_OPENROUTER_API_KEY=${ONEPAGE_OPENROUTER_API_KEY:-}
+      - ONEPAGE_MODEL=${ONEPAGE_MODEL:-google/gemini-flash-1.5}
     expose:
       - "5000"
     mem_limit: 128m
@@ -246,9 +300,31 @@ services:
       - sam_models:/models
     mem_limit: 2048m
 
+  # ── Anchor ───────────────────────────────────────────────────
+  anchor-api:
+    image: 216labs/anchor-api:latest
+    build: ./anchor/backend
+    restart: unless-stopped
+    environment:
+      - ANCHOR_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-labs}:${POSTGRES_PASSWORD:-labs}@postgres:5432/anchor
+      - ANCHOR_SECRET_KEY=${ANCHOR_SECRET_KEY:-change-me}
+    expose:
+      - "8000"
+    depends_on:
+      - postgres
+    mem_limit: 256m
+
+  anchor-web:
+    image: 216labs/anchor-web:latest
+    build: ./anchor/frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    mem_limit: 64m
+
   # ── Databases ─────────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
+    image: postgis/postgis:16-3.4-alpine
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-labs}
@@ -256,10 +332,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-ramblingradio}
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./pipesecure/init-db.sh:/docker-entrypoint-initdb.d/create-pipesecure-db.sh:ro
+      - ./pipesecure/init-db.sh:/docker-entrypoint-initdb.d/10-create-pipesecure-db.sh:ro
+      - ./anchor/init-anchor-db.sh:/docker-entrypoint-initdb.d/20-create-anchor-db.sh:ro
     expose:
       - "5432"
-    mem_limit: 128m
+    mem_limit: 256m
 
 volumes:
   caddy_data:

@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { existsSync, readdirSync } from "fs";
 import { join } from "path";
 
 export interface DbApp {
@@ -39,6 +40,35 @@ export interface DbEnvVar {
 
 const DB_PATH =
   process.env.DATABASE_PATH || join(process.cwd(), "..", "216labs.db");
+const PROJECTS_ROOT =
+  process.env.PROJECTS_ROOT || join(process.cwd(), "..");
+
+const NON_PROJECT_DIRS = new Set([
+  "node_modules",
+  ".next",
+  ".git",
+  "dist",
+  "build",
+  "coverage",
+  "__pycache__",
+  "venv",
+]);
+
+const SPECIAL_APP_IDS: Record<string, string> = {
+  "216labs_admin": "admin",
+  "RamblingRadio": "ramblingradio",
+  "Stroll.live": "stroll",
+  "agimemes.com": "agimemes",
+};
+
+const SPECIAL_APP_NAMES: Record<string, string> = {
+  admin: "216labs Admin",
+  ramblingradio: "RamblingRadio",
+  stroll: "Stroll.live",
+  agimemes: "AGI Memes",
+};
+const AUTO_DISCOVERED_TAGLINE = "Auto-discovered monorepo project";
+const AUTO_DISCOVERED_NOTE = "Auto-discovered. Update metadata in admin DB.";
 
 let _db: Database.Database | null = null;
 
@@ -105,6 +135,8 @@ function initSchema(db: Database.Database) {
     backfillPriors(db);
     backfillEnvVars(db);
   }
+  syncTopLevelProjects(db);
+  ensureAdminAlwaysEnabled(db);
 }
 
 function seed(db: Database.Database) {
@@ -496,8 +528,147 @@ function backfillEnvVars(db: Database.Database) {
   seedEnvVars(db);
 }
 
+function normalizeAppId(directory: string): string {
+  const specialId = SPECIAL_APP_IDS[directory];
+  if (specialId) return specialId;
+  return directory
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function toDisplayName(directory: string, id: string): string {
+  return (
+    SPECIAL_APP_NAMES[id] ||
+    directory
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (match) => match.toUpperCase())
+  );
+}
+
+function discoverTopLevelProjects() {
+  if (!existsSync(PROJECTS_ROOT)) return [];
+
+  return readdirSync(PROJECTS_ROOT, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        !entry.name.startsWith(".") &&
+        !NON_PROJECT_DIRS.has(entry.name) &&
+        existsSync(join(PROJECTS_ROOT, entry.name, "Dockerfile"))
+    )
+    .map((entry) => entry.name);
+}
+
+function pruneInvalidAutoDiscoveredApps(db: Database.Database, validDirs: Set<string>) {
+  const rows = db
+    .prepare("SELECT id, repo_path, tagline, marketing_notes FROM apps")
+    .all() as Array<{
+    id: string;
+    repo_path: string;
+    tagline: string | null;
+    marketing_notes: string | null;
+  }>;
+
+  const removableIds = rows
+    .filter((row) => {
+      const autoDiscovered =
+        row.tagline === AUTO_DISCOVERED_TAGLINE ||
+        row.marketing_notes === AUTO_DISCOVERED_NOTE;
+      return autoDiscovered && !validDirs.has(row.repo_path);
+    })
+    .map((row) => row.id);
+
+  if (removableIds.length === 0) return;
+
+  const removeOne = db.prepare("DELETE FROM apps WHERE id = ?");
+  const removeMany = db.transaction((ids: string[]) => {
+    for (const id of ids) removeOne.run(id);
+  });
+  removeMany(removableIds);
+}
+
+function syncTopLevelProjects(db: Database.Database) {
+  const discoveredDirs = discoverTopLevelProjects();
+  pruneInvalidAutoDiscoveredApps(db, new Set(discoveredDirs));
+  if (discoveredDirs.length === 0) return;
+
+  const existingRows = db
+    .prepare("SELECT id, repo_path FROM apps")
+    .all() as Array<{ id: string; repo_path: string }>;
+  const existingIds = new Set(existingRows.map((row) => row.id));
+  const existingRepoPaths = new Set(existingRows.map((row) => row.repo_path));
+  const today = new Date().toISOString().split("T")[0];
+
+  const insert = db.prepare(`
+    INSERT INTO apps (
+      id, name, tagline, description, category, port,
+      docker_service, docker_image, directory, repo_path,
+      stack_frontend, stack_backend, stack_database, stack_other,
+      deploy_enabled, image_size_mb, memory_limit,
+      created_at, last_updated, total_commits,
+      marketing_monthly, marketing_channel, marketing_notes
+    ) VALUES (
+      @id, @name, @tagline, @description, @category, @port,
+      @docker_service, @docker_image, @directory, @repo_path,
+      @stack_frontend, @stack_backend, @stack_database, @stack_other,
+      @deploy_enabled, @image_size_mb, @memory_limit,
+      @created_at, @last_updated, @total_commits,
+      @marketing_monthly, @marketing_channel, @marketing_notes
+    )
+  `);
+
+  const insertMany = db.transaction((dirs: string[]) => {
+    for (const dir of dirs) {
+      if (existingRepoPaths.has(dir)) continue;
+      const id = normalizeAppId(dir);
+      if (!id || existingIds.has(id)) continue;
+
+      const isAdmin = id === "admin";
+      insert.run({
+        id,
+        name: toDisplayName(dir, id),
+        tagline: AUTO_DISCOVERED_TAGLINE,
+        description:
+          "Automatically discovered from top-level directories in the 216labs repo.",
+        category: isAdmin ? "admin" : "tool",
+        port: 0,
+        docker_service: isAdmin ? "admin" : id,
+        docker_image: `216labs/${isAdmin ? "admin" : id}:latest`,
+        directory: dir,
+        repo_path: dir,
+        stack_frontend: null,
+        stack_backend: null,
+        stack_database: null,
+        stack_other: null,
+        deploy_enabled: isAdmin ? 1 : 0,
+        image_size_mb: null,
+        memory_limit: "256 MB",
+        created_at: today,
+        last_updated: today,
+        total_commits: 0,
+        marketing_monthly: 0,
+        marketing_channel: "Organic",
+        marketing_notes: AUTO_DISCOVERED_NOTE,
+      });
+
+      existingIds.add(id);
+      existingRepoPaths.add(dir);
+    }
+  });
+
+  insertMany(discoveredDirs);
+}
+
+function ensureAdminAlwaysEnabled(db: Database.Database) {
+  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'admin'").run();
+}
+
 export function getAllApps(): DbApp[] {
-  return getDb().prepare("SELECT * FROM apps ORDER BY port").all() as DbApp[];
+  const db = getDb();
+  syncTopLevelProjects(db);
+  ensureAdminAlwaysEnabled(db);
+  return db.prepare("SELECT * FROM apps ORDER BY port").all() as DbApp[];
 }
 
 export function getAllEnvVars(): DbEnvVar[] {
@@ -513,9 +684,11 @@ export function getEnabledApps(): DbApp[] {
 }
 
 export function setDeployEnabled(appId: string, enabled: boolean): void {
+  // Keep admin dashboard always deployable so deployment controls never disappear.
+  const nextEnabled = appId === "admin" ? 1 : enabled ? 1 : 0;
   getDb()
     .prepare("UPDATE apps SET deploy_enabled = ? WHERE id = ?")
-    .run(enabled ? 1 : 0, appId);
+    .run(nextEnabled, appId);
 }
 
 export function setEnvVarValue(key: string, value: string): void {

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}GW{{ gw_number }} Predictions — Big Leroy's Guessing Bonanza{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      {% if locked %}🔒{% else %}⚽{% endif %}
+      Gameweek {{ gw_number }}
+      {% if locked %}<span class="locked-badge">LOCKED</span>{% endif %}
+    </h1>
+    {% if lock_time %}
+      {% if locked %}
+        <p class="lock-info">Predictions closed {{ lock_time | datefmt }}</p>
+      {% else %}
+        <p class="lock-info">Predictions lock <strong>{{ lock_time | datefmt }}</strong></p>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {% if gw_numbers %}
+  <div class="gw-nav">
+    {% for gwn in gw_numbers %}
+      <a href="{{ url_for('index', gw=gwn) }}"
+         class="gw-pill {% if gwn == gw_number %}active{% endif %}">
+        GW{{ gwn }}
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% if not fixtures %}
+  <div class="empty-state">
+    <div class="empty-icon">📅</div>
+    <h2>No fixtures loaded yet</h2>
+    <p>The app syncs with the Premier League website daily. Check back soon, or ask an admin to trigger a manual sync.</p>
+  </div>
+{% else %}
+
+<div class="fixtures-grid">
+  {% for fx in fixtures %}
+  <div class="fixture-card {% if fx.result %}finished{% elif fx.status == 'L' %}live{% endif %}">
+
+    <!-- Score / Status banner -->
+    <div class="fixture-status-bar">
+      {% if fx.result %}
+        <span class="status-chip finished">FT</span>
+        <span class="score-display">{{ fx.home_score }} – {{ fx.away_score }}</span>
+      {% elif fx.status == 'L' %}
+        <span class="status-chip live">LIVE</span>
+      {% else %}
+        <span class="status-chip upcoming">{{ fx.kickoff | datefmt }}</span>
+      {% endif %}
+    </div>
+
+    <!-- Teams -->
+    <div class="teams-row">
+      <div class="team-block {% if fx.result == 'H' %}winner{% endif %}">
+        <span class="team-name">{{ fx.home_team }}</span>
+        <span class="team-label">HOME</span>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="team-block away {% if fx.result == 'A' %}winner{% endif %}">
+        <span class="team-name">{{ fx.away_team }}</span>
+        <span class="team-label">AWAY</span>
+      </div>
+    </div>
+
+    <!-- Prediction bar (visible when locked or finished) -->
+    {% if locked or fx.result %}
+    <div class="pred-bar-wrap">
+      {% set total = fx.total_preds %}
+      <div class="pred-bar">
+        <div class="pred-seg home" style="width: {{ fx.count_H | pct(total) }}%"
+             title="{{ fx.count_H }} home win">
+          {% if (fx.count_H | pct(total)) > 12 %}{{ fx.count_H | pct(total) }}%{% endif %}
+        </div>
+        <div class="pred-seg draw" style="width: {{ fx.count_D | pct(total) }}%"
+             title="{{ fx.count_D }} draw">
+          {% if (fx.count_D | pct(total)) > 12 %}{{ fx.count_D | pct(total) }}%{% endif %}
+        </div>
+        <div class="pred-seg away" style="width: {{ fx.count_A | pct(total) }}%"
+             title="{{ fx.count_A }} away win">
+          {% if (fx.count_A | pct(total)) > 12 %}{{ fx.count_A | pct(total) }}%{% endif %}
+        </div>
+      </div>
+      <div class="pred-counts">
+        <span>{{ fx.count_H }}H</span>
+        <span>{{ fx.count_D }}D</span>
+        <span>{{ fx.count_A }}A</span>
+        <span class="pred-total">{{ total }} pick{{ 's' if total != 1 }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Prediction buttons / result -->
+    <div class="prediction-area">
+      {% if not session.get('google_id') %}
+        <a href="{{ url_for('login') }}" class="btn btn-secondary btn-sm">Sign in to predict</a>
+
+      {% elif locked or fx.result %}
+        <!-- Show my prediction read-only -->
+        {% if fx.my_prediction %}
+          <div class="my-pred-display">
+            <span class="my-pred-label">Your pick:</span>
+            <span class="pred-chip
+              {% if fx.my_prediction == 'H' %}pred-home
+              {% elif fx.my_prediction == 'D' %}pred-draw
+              {% else %}pred-away{% endif %}
+              {% if fx.result and fx.my_prediction == fx.result %} correct{% elif fx.result %} wrong{% endif %}">
+              {% if fx.my_prediction == 'H' %}{{ fx.home_team }} Win
+              {% elif fx.my_prediction == 'D' %}Draw
+              {% else %}{{ fx.away_team }} Win{% endif %}
+            </span>
+            {% if fx.my_points %}
+              <span class="pts-earned">+{{ '%.2f' | format(fx.my_points) }} pts</span>
+            {% elif fx.result and fx.my_prediction != fx.result %}
+              <span class="pts-zero">+0 pts</span>
+            {% endif %}
+          </div>
+        {% else %}
+          <p class="no-pred">You didn't predict this fixture.</p>
+        {% endif %}
+
+      {% else %}
+        <!-- Active prediction buttons -->
+        <form method="POST" action="{{ url_for('predict') }}" class="pred-form">
+          <input type="hidden" name="fixture_id" value="{{ fx.id }}" />
+          <input type="hidden" name="gw" value="{{ gw_number }}" />
+          <button type="submit" name="prediction" value="H"
+                  class="pred-btn home {% if fx.my_prediction == 'H' %}selected{% endif %}">
+            {{ fx.home_team }}<br/><small>Home Win</small>
+          </button>
+          <button type="submit" name="prediction" value="D"
+                  class="pred-btn draw {% if fx.my_prediction == 'D' %}selected{% endif %}">
+            Draw
+          </button>
+          <button type="submit" name="prediction" value="A"
+                  class="pred-btn away {% if fx.my_prediction == 'A' %}selected{% endif %}">
+            {{ fx.away_team }}<br/><small>Away Win</small>
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+
+{% endif %}
+
+<!-- Points explanation -->
+<div class="rules-note">
+  <strong>Scoring:</strong> 10 pts per match, shared equally among correct predictors — so picking the underdog pays more. 
+  Minimum 3.33 pts when flying solo.
+</div>
+{% endblock %}

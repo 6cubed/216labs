@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Big Leroy's Premier League Guessing Bonanza{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="{{ url_for('index') }}" class="logo">
+        <span class="logo-badge">PL</span>
+        <span class="logo-text">Big Leroy's <em>Guessing Bonanza</em></span>
+      </a>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Predictions</a>
+        <a href="{{ url_for('leaderboard') }}" class="nav-link {% if request.endpoint == 'leaderboard' %}active{% endif %}">Leaderboard</a>
+        {% if session.get('google_id') %}
+          <span class="nav-user">{{ session.get('nickname') or session.get('name') }}</span>
+          <a href="{{ url_for('logout') }}" class="nav-link nav-logout">Sign out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">Sign in</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for msg in messages %}
+            <div class="flash">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Big Leroy's Premier League Guessing Bonanza &mdash; predictions locked 2 hours before kick-off</p>
+    </div>
+  </footer>
+</body>
+</html>

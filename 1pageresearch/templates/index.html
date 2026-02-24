@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}1PageResearch — Community-Sourced Statistical Research{% endblock %}
+
+{% block head %}
+<style>
+  .hero {
+    padding: 4rem 0 3rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent2);
+  }
+
+  .hero p {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 560px;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .hero-meta strong { color: var(--text); }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 2.5rem 0 1.25rem;
+  }
+
+  .section-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-size: 0.78rem;
+  }
+
+  .reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    padding-bottom: 4rem;
+  }
+
+  .report-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.35rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+
+  .report-card:hover {
+    border-color: var(--subtle);
+    background: var(--surface2);
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .card-title {
+    font-size: 0.93rem;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .card-communities {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 500;
+    opacity: 0.9;
+  }
+
+  .card-effect {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .card-stats {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .stat-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .stat-chip .label { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.3px; }
+  .stat-chip .value { color: var(--text); font-family: var(--mono); font-weight: 600; }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+  }
+
+  .card-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+
+  .empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    color: var(--muted);
+  }
+
+  .empty-state h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text); }
+  .empty-state p { font-size: 0.875rem; margin-bottom: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="hero">
+    <h1>Research reports, <em>sourced from<br>the internet.</em></h1>
+    <p>
+      Agent-written 1-page briefs that extract statistically significant signals from
+      Reddit, forums, and community discourse. Each report includes sample sizes,
+      effect sizes, p-values, and honest limitations.
+    </p>
+    <div class="hero-meta">
+      <span><strong>{{ reports|length }}</strong> reports</span>
+      <span>Observational · Self-reported · Not clinical evidence</span>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2>All Reports</h2>
+    <a href="/generate" class="btn">+ Generate New Report</a>
+  </div>
+
+  {% if reports %}
+  <div class="reports-grid">
+    {% for r in reports %}
+    <a href="/report/{{ r.slug }}" class="report-card">
+      <div class="card-top">
+        <div class="card-title">{{ r.title }}</div>
+      </div>
+      <div class="card-communities">{{ r.source_communities }}</div>
+      <div class="card-effect">{{ r.effect_summary }}</div>
+
+      <div class="card-stats">
+        {% if r.sample_size %}
+        <div class="stat-chip">
+          <span class="label">N</span>
+          <span class="value">{{ "{:,}".format(r.sample_size) }}</span>
+        </div>
+        {% endif %}
+        {% if r.p_value_display %}
+        <div class="stat-chip">
+          <span class="label">p-value</span>
+          <span class="value">{{ r.p_value_display }}</span>
+        </div>
+        {% endif %}
+        {% if r.effect_size %}
+        <div class="stat-chip">
+          <span class="label">Effect</span>
+          <span class="value">{{ r.effect_size }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="card-footer">
+        <div class="card-tags">
+          {% if r.tags %}
+            {% for tag in r.tags.split(',')[:3] %}
+            <span class="tag">{{ tag.strip() }}</span>
+            {% endfor %}
+          {% endif %}
+        </div>
+        {% if r.p_value and r.p_value < 0.05 %}
+        <span class="p-value-badge sig">stat. sig.</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <h3>No reports yet</h3>
+    <p>The database is empty. Seed some reports to get started.</p>
+    <a href="/generate" class="btn">Generate First Report</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

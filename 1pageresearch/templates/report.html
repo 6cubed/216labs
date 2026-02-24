@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block title %}{{ report.title }} — 1PageResearch{% endblock %}
+
+{% block head %}
+<style>
+  .report-header {
+    padding: 3rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .breadcrumb a { color: var(--accent); }
+  .breadcrumb a:hover { color: var(--accent2); }
+
+  .report-title {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #fff;
+    line-height: 1.25;
+    margin-bottom: 1rem;
+    max-width: 700px;
+  }
+
+  .report-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .report-meta-row strong { color: var(--text); }
+
+  .effect-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 0.85rem 1.25rem;
+    font-size: 0.9rem;
+    color: var(--text);
+    max-width: 640px;
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+  }
+
+  .report-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+  /* ── Stats panel ── */
+  .stats-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 2.5rem 0;
+    overflow: hidden;
+  }
+
+  .stats-panel-header {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .stats-panel-header h3 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .stats-panel-header .sig-badge {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 5px;
+    background: rgba(52,211,153,0.12);
+    color: var(--green);
+    border: 1px solid rgba(52,211,153,0.25);
+    font-weight: 600;
+  }
+
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stats-summary-item {
+    padding: 1rem 1.25rem;
+    border-right: 1px solid var(--border);
+  }
+
+  .stats-summary-item:last-child { border-right: none; }
+
+  .stats-summary-item .label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+  }
+
+  .stats-summary-item .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: var(--mono);
+    line-height: 1.2;
+  }
+
+  .stats-summary-item .sub {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .stats-table th {
+    text-align: left;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    font-weight: 600;
+    background: var(--surface2);
+  }
+
+  .stats-table td {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .stats-table td:nth-child(2) {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .stats-table td:nth-child(3) {
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .stats-table tr:hover td { background: var(--surface2); }
+
+  /* ── Markdown report body ── */
+  .report-body {
+    margin: 0 0 3rem;
+    font-size: 0.93rem;
+    line-height: 1.75;
+  }
+
+  .report-body h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 2rem 0 0.6rem;
+    color: #fff;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-body h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.4rem;
+    color: var(--text);
+  }
+
+  .report-body p { margin-bottom: 0.9rem; }
+
+  .report-body strong { color: #fff; font-weight: 600; }
+  .report-body em { color: var(--accent2); font-style: normal; }
+
+  .report-body ul, .report-body ol {
+    padding-left: 1.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .report-body li { margin-bottom: 0.3rem; }
+
+  .report-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.25rem 0;
+    font-size: 0.84rem;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .report-body th {
+    background: var(--surface2);
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-body td {
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .report-body td:nth-child(2) {
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+
+  .report-body tr:hover td { background: var(--surface2); }
+
+  .report-body hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+
+  .report-body code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: var(--surface2);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    color: var(--accent2);
+  }
+
+  .disclaimer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+
+  .disclaimer strong { color: var(--yellow); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-narrow">
+  <div class="report-header">
+    <div class="breadcrumb">
+      <a href="/">← All Reports</a>
+    </div>
+
+    <h1 class="report-title">{{ report.title }}</h1>
+
+    <div class="report-meta-row">
+      <span><strong>Intervention:</strong> {{ report.intervention }}</span>
+      <span><strong>Outcome:</strong> {{ report.outcome }}</span>
+    </div>
+    <div class="report-meta-row">
+      <span><strong>Sources:</strong> {{ report.source_communities }}</span>
+      {% if report.sample_size %}
+      <span><strong>N =</strong> {{ "{:,}".format(report.sample_size) }}</span>
+      {% endif %}
+    </div>
+
+    <div class="effect-summary">{{ report.effect_summary }}</div>
+
+    <div class="report-tags">
+      {% if report.tags %}
+        {% for tag in report.tags.split(',') %}
+        <span class="tag">{{ tag.strip() }}</span>
+        {% endfor %}
+      {% endif %}
+      {% if report.p_value and report.p_value < 0.05 %}
+      <span class="p-value-badge sig" style="font-size:0.75rem;padding:0.15rem 0.6rem;">stat. sig.</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stats panel -->
+  <div class="stats-panel">
+    <div class="stats-panel-header">
+      <h3>Statistical Summary</h3>
+      {% if report.p_value and report.p_value < 0.05 %}
+      <span class="sig-badge">p {{ report.p_value_display or report.p_value }}</span>
+      {% endif %}
+    </div>
+
+    <div class="stats-summary">
+      {% if report.sample_size %}
+      <div class="stats-summary-item">
+        <div class="label">Sample Size</div>
+        <div class="value">{{ "{:,}".format(report.sample_size) }}</div>
+        <div class="sub">Unique accounts</div>
+      </div>
+      {% endif %}
+      {% if report.p_value_display %}
+      <div class="stats-summary-item">
+        <div class="label">p-value</div>
+        <div class="value" style="font-size:1.1rem;color:var(--green);">{{ report.p_value_display }}</div>
+        <div class="sub">Statistical significance</div>
+      </div>
+      {% endif %}
+      {% if report.effect_size %}
+      <div class="stats-summary-item">
+        <div class="label">Effect Size</div>
+        <div class="value">{{ report.effect_size }}</div>
+        <div class="sub">{{ report.effect_size_label or '' }}</div>
+      </div>
+      {% endif %}
+      {% if report.confidence_interval %}
+      <div class="stats-summary-item">
+        <div class="label">95% CI</div>
+        <div class="value" style="font-size:0.85rem;padding-top:0.3rem;">{{ report.confidence_interval }}</div>
+        <div class="sub">Confidence interval</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if report.stats %}
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Value</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.stats %}
+        <tr>
+          <td>{{ row.metric }}</td>
+          <td>{{ row.value }}</td>
+          <td>{{ row.notes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+  <div class="disclaimer">
+    <strong>⚠ Observational Data:</strong> This report is an analysis of public internet discourse (Reddit and similar communities).
+    All figures are derived from self-reported, community-generated data. This is not a clinical trial. Findings should be treated as
+    hypothesis-generating signals, not medical advice.
+  </div>
+
+  <!-- Full markdown report -->
+  <div class="report-body" id="reportBody">
+    {{ report.report_markdown }}
+  </div>
+</div>
+
+<script>
+  // Minimal markdown renderer for the report body
+  const el = document.getElementById('reportBody');
+  const raw = el.textContent;
+  el.innerHTML = renderMd(raw);
+
+  function renderMd(md) {
+    const lines = md.split('\n');
+    let html = '';
+    let inList = false;
+    let inTable = false;
+    let tableHeader = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Table rows
+      if (line.trim().startsWith('|')) {
+        if (!inTable) { html += '<table>'; inTable = true; tableHeader = true; }
+        const cells = line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        if (cells.every(c => /^[-:]+$/.test(c))) { tableHeader = false; continue; }
+        const tag = tableHeader ? 'th' : 'td';
+        html += '<tr>' + cells.map(c => `<${tag}>${inline(c)}</${tag}>`).join('') + '</tr>';
+        if (tableHeader && i + 1 < lines.length && lines[i+1].trim().startsWith('|')) { tableHeader = false; }
+        continue;
+      } else if (inTable) {
+        html += '</table>';
+        inTable = false;
+      }
+
+      if (line.startsWith('## ')) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<h2>${inline(line.slice(3))}</h2>`;
+      } else if (line.startsWith('### ')) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<h3>${inline(line.slice(4))}</h3>`;
+      } else if (line.startsWith('- ')) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        html += `<li>${inline(line.slice(2))}</li>`;
+      } else if (/^\d+\.\s/.test(line)) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<li>${inline(line.replace(/^\d+\.\s/, ''))}</li>`;
+      } else if (line.trim() === '---') {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += '<hr>';
+      } else if (line.trim() === '') {
+        if (inList) { html += '</ul>'; inList = false; }
+      } else {
+        if (inList) { html += '</ul>'; inList = false; }
+        const rendered = inline(line);
+        if (rendered) html += `<p>${rendered}</p>`;
+      }
+    }
+    if (inList) html += '</ul>';
+    if (inTable) html += '</table>';
+    return html;
+  }
+
+  function inline(s) {
+    return s
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>');
+  }
+</script>
+{% endblock %}

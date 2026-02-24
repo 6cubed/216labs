@@ -33,6 +33,12 @@ if [ -z "$REMOTE" ]; then
   exit 1
 fi
 
+SSH_OPTS=(
+  -o BatchMode=yes
+  -o StrictHostKeyChecking=accept-new
+  -o ConnectTimeout=20
+)
+
 # ── Service mapping helpers (Bash 3 compatible) ───────────────
 service_spec() {
   case "$1" in
@@ -47,6 +53,9 @@ service_spec() {
     agimemes) echo "./agimemes.com" ;;
     agitshirts) echo "./agitshirts" ;;
     priors) echo "./priors" ;;
+    calibratedai) echo "./calibratedai" ;;
+    anchor-api) echo "./anchor/backend" ;;
+    anchor-web) echo "./anchor/frontend" ;;
     *) echo "" ;;
   esac
 }
@@ -59,7 +68,10 @@ service_deps() {
 }
 
 if [ -f "$DB_FILE" ]; then
-  ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1" | tr '\n' ' ')
+  ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1 OR id = 'admin'" | tr '\n' ' ')
+  if [[ " $ENABLED_APPS " != *" admin "* ]]; then
+    ENABLED_APPS="$ENABLED_APPS admin"
+  fi
   echo "==> Deploy config (from DB): $ENABLED_APPS"
   echo "==> Building deploy env from admin DB..."
   HAS_ENV_TABLE=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='env_vars';")
@@ -122,7 +134,7 @@ fi
 
 # ── Incremental transfer (only changed images) ────────────────
 echo "==> Checking which images changed..."
-REMOTE_DIGESTS=$(ssh "$REMOTE" 'for img in '"$(printf '%s ' "${IMAGES[@]}")"'; do
+REMOTE_DIGESTS=$(ssh "${SSH_OPTS[@]}" "$REMOTE" 'for img in '"$(printf '%s ' "${IMAGES[@]}")"'; do
   id=$(docker image inspect --format "{{.Id}}" "$img" 2>/dev/null || echo "missing")
   echo "$img=$id"
 done')
@@ -143,7 +155,7 @@ if [ ${#CHANGED_IMAGES[@]} -eq 0 ]; then
   echo "==> All images up to date, skipping transfer"
 else
   echo "==> Transferring ${#CHANGED_IMAGES[@]}/${#IMAGES[@]} images to $REMOTE..."
-  docker save "${CHANGED_IMAGES[@]}" | gzip | ssh "$REMOTE" 'docker load'
+  docker save "${CHANGED_IMAGES[@]}" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
 fi
 
 # ── Determine which compose services to start ─────────────────
@@ -159,8 +171,11 @@ done
 # ── Start on droplet ──────────────────────────────────────────
 echo "==> Starting stack on $REMOTE..."
 echo "    Services: $COMPOSE_SERVICES"
-ENV_B64="$(base64 < "$DB_ENV_FILE" | tr -d '\n')"
-ssh "$REMOTE" bash -s "$REPO" "$APP_DIR" "$COMPOSE_SERVICES" "$ENV_B64" <<'REMOTE_SCRIPT'
+ENV_B64=""
+if [ -s "$DB_ENV_FILE" ]; then
+  ENV_B64="$(base64 < "$DB_ENV_FILE" | tr -d '\n')"
+fi
+ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$COMPOSE_SERVICES" "$ENV_B64" <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
@@ -196,8 +211,25 @@ else
   : > .env.admin
 fi
 
+# Guardrail: never let a malformed env override break deploys.
+if LC_ALL=C grep -q '[^[:print:][:space:]]' .env.admin; then
+  echo "==> WARNING: .env.admin contains non-text bytes; ignoring admin env overrides"
+  : > .env.admin
+fi
+
+if ! awk '
+  /^[[:space:]]*$/ { next }
+  /^[[:space:]]*#/ { next }
+  /^[A-Za-z_][A-Za-z0-9_]*=.*/ { next }
+  { exit 1 }
+' .env.admin; then
+  echo "==> WARNING: .env.admin has invalid lines; ignoring admin env overrides"
+  : > .env.admin
+fi
+
 # shellcheck disable=SC2086
-docker compose --env-file .env --env-file .env.admin up -d --remove-orphans $COMPOSE_SERVICES
+# Important: never build on droplet; only run pre-loaded images.
+docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build $COMPOSE_SERVICES
 docker compose ps
 echo "==> Done."
 REMOTE_SCRIPT
@@ -207,7 +239,7 @@ if [ -f "$DB_FILE" ]; then
   echo "==> Collecting startup times..."
   sleep 3
 
-  STARTUP_DATA=$(ssh "$REMOTE" 'cd /opt/216labs && for svc in '"$COMPOSE_SERVICES"'; do
+  STARTUP_DATA=$(ssh "${SSH_OPTS[@]}" "$REMOTE" 'cd /opt/216labs && for svc in '"$COMPOSE_SERVICES"'; do
     MS=$(docker compose logs --tail 20 "$svc" 2>/dev/null | grep -oE "Ready in [0-9]+" | grep -oE "[0-9]+" | tail -1)
     if [ -n "$MS" ]; then
       echo "$svc=$MS"

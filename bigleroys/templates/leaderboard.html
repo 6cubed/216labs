@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — Big Leroy's Guessing Bonanza{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🏆 Leaderboard</h1>
+    <p class="lock-info">Rankings by total points earned across all gameweeks</p>
+  </div>
+  <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">← Back to predictions</a>
+</div>
+
+{% if not rows %}
+  <div class="empty-state">
+    <div class="empty-icon">🏆</div>
+    <h2>No scores yet</h2>
+    <p>Points are awarded when gameweek results are confirmed. Check back after the first set of games!</p>
+  </div>
+{% else %}
+
+<div class="leaderboard-wrap">
+  <table class="leaderboard-table">
+    <thead>
+      <tr>
+        <th class="rank-col">#</th>
+        <th>Player</th>
+        <th class="num-col">Correct</th>
+        {% for gwn in gw_nums %}
+          <th class="num-col gw-col">GW{{ gwn }}</th>
+        {% endfor %}
+        <th class="num-col total-col">Total pts</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}{% set idx = loop.index0 %}
+      <tr class="{% if row.nickname == me %}my-row{% endif %} {% if idx == 0 %}rank-1{% elif idx == 1 %}rank-2{% elif idx == 2 %}rank-3{% endif %}">
+        <td class="rank-col">
+          {% if idx == 0 %}🥇
+          {% elif idx == 1 %}🥈
+          {% elif idx == 2 %}🥉
+          {% else %}{{ idx + 1 }}{% endif %}
+        </td>
+        <td class="player-col">
+          {{ row.nickname }}
+          {% if row.nickname == me %}<span class="you-badge">you</span>{% endif %}
+        </td>
+        <td class="num-col">{{ row.correct_predictions }}</td>
+        {% for gwn in gw_nums %}
+          <td class="num-col gw-col">
+            {% set pts = breakdown.get(row.nickname, {}).get(gwn, 0) %}
+            {% if pts > 0 %}{{ '%.1f' | format(pts) }}{% else %}<span class="zero">—</span>{% endif %}
+          </td>
+        {% endfor %}
+        <td class="num-col total-col">
+          <strong>{{ '%.2f' | format(row.total_points) }}</strong>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endif %}
+
+<div class="rules-note">
+  <strong>How points work:</strong>
+  For each match, 10 pts are split among correct predictors proportionally to how rare their pick was.
+  Example: if 9 pick Arsenal and 1 picks Liverpool, and Arsenal win — each of the 9 earns 10/9 ≈ 1.11 pts.
+  If Liverpool win — the lone wolf earns all 10 pts. Minimum payout: 3.33 pts (1/3 of the pot).
+</div>
+{% endblock %}
