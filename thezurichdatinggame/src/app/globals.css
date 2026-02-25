@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+:root {
+  --swiss-red: #d52b1e;
+  --swiss-red-dark: #b02318;
+  --cream: #faf8f5;
+  --charcoal: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--charcoal);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.swiss-red {
+  color: var(--swiss-red);
+}
+
+.bg-swiss-red {
+  background-color: var(--swiss-red);
+}
+
+/* Countdown digit animation */
+@keyframes flip {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(-90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+.digit-flip {
+  animation: flip 0.4s ease-in-out;
+}
+
+/* Smooth underline hover */
+.hover-underline {
+  position: relative;
+}
+
+.hover-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--swiss-red);
+  transition: width 0.3s ease;
+}
+
+.hover-underline:hover::after {
+  width: 100%;
+}
