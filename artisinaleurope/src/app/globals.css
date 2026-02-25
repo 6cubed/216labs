@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-playfair: 'Playfair Display', Georgia, serif;
+  --font-inter: 'Inter', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: #f8f4ed;
+  color: #1a2340;
+}
+
+.prose-editorial p {
+  font-family: var(--font-inter);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+  color: #2d3a52;
+  margin-bottom: 1.5rem;
+}
+
+.rank-badge {
+  font-family: var(--font-playfair);
+  font-weight: 700;
+  font-style: italic;
+}
+
+@layer utilities {
+  .text-shadow-sm {
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  .text-shadow {
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+}

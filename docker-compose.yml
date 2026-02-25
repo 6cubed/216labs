@@ -20,6 +20,7 @@ services:
       - "8012:8012"
       - "8013:8013"
       - "8014:8014"
+      - "8015:8015"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -243,6 +244,18 @@ services:
       - "5000"
     mem_limit: 128m
 
+  # ── Artisanal Europe ─────────────────────────────────────────
+  artisinaleurope:
+    image: 216labs/artisinaleurope:latest
+    build: ./artisinaleurope
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── CalibratedAI ─────────────────────────────────────────────
   calibratedai:
     image: 216labs/calibratedai:latest
@@ -267,7 +280,10 @@ services:
     environment:
       - PORT=5000
       - ONEPAGE_OPENROUTER_API_KEY=${ONEPAGE_OPENROUTER_API_KEY:-}
-      - ONEPAGE_MODEL=${ONEPAGE_MODEL:-google/gemini-flash-1.5}
+      - ONEPAGE_MODEL=${ONEPAGE_MODEL:-google/gemini-2.0-flash-001}
+      - ONEPAGE_DB_PATH=/app/data/1pageresearch.db
+    volumes:
+      - ./1pageresearch/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m

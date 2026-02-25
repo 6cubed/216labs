@@ -56,6 +56,7 @@ service_spec() {
     calibratedai) echo "./calibratedai" ;;
     anchor-api) echo "./anchor/backend" ;;
     anchor-web) echo "./anchor/frontend" ;;
+    artisinaleurope) echo "./artisinaleurope" ;;
     *) echo "" ;;
   esac
 }
