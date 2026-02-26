@@ -22,6 +22,7 @@ services:
       - "8014:8014"
       - "8015:8015"
       - "8016:8016"
+      - "8017:8017"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
