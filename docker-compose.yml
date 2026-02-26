@@ -55,6 +55,18 @@ services:
       - "5000"
     mem_limit: 256m
 
+  # ── OneRoom ───────────────────────────────────────────────────
+  oneroom:
+    image: 216labs/oneroom:latest
+    build: ./oneroom
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── OneFit ────────────────────────────────────────────────────
   onefit:
     image: 216labs/onefit:latest
