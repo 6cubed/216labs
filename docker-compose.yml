@@ -7,6 +7,9 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+    environment:
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -308,6 +311,26 @@ services:
       - ZDGAME_MODEL=${ZDGAME_MODEL:-google/gemini-2.0-flash-001}
     volumes:
       - ./thezurichdatinggame/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 256m
+
+  # ── StoryMagic ───────────────────────────────────────────────
+  storybook:
+    image: 216labs/storybook:latest
+    build: ./storybook
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - STORYBOOK_OPENAI_API_KEY=${STORYBOOK_OPENAI_API_KEY:-}
+      - STORYBOOK_STRIPE_SECRET_KEY=${STORYBOOK_STRIPE_SECRET_KEY:-}
+      - STORYBOOK_STRIPE_WEBHOOK_SECRET=${STORYBOOK_STRIPE_WEBHOOK_SECRET:-}
+      - NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY:-}
+      - STORYBOOK_BOOK_PRICE_CENTS=${STORYBOOK_BOOK_PRICE_CENTS:-2499}
+      - DATA_DIR=/app/data
+    volumes:
+      - ./storybook/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m

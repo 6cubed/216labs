@@ -28,6 +28,9 @@ pipesecure.agimemes.com {
 }
 
 admin.agimemes.com {
+	basicauth {
+		{env.ADMIN_USER} {env.ADMIN_PASSWORD_HASH}
+	}
 	reverse_proxy admin:3000
 }
 
@@ -78,4 +81,8 @@ oneroom.agimemes.com {
 
 audioaicheckup.agimemes.com {
 	reverse_proxy audioaicheckup:3000
+}
+
+storybook.agimemes.com {
+	reverse_proxy storybook:3000
 }
