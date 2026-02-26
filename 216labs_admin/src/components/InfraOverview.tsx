@@ -39,7 +39,7 @@ export function InfraOverview() {
           label="Memory Allocated"
           value={infrastructure.totalMemoryAllocated}
         />
-        <InfraRow label="Port Range" value={infrastructure.portRange} />
+        <InfraRow label="Domain" value={infrastructure.domain} />
         <InfraRow label="Deploy Method" value={infrastructure.deployMethod} />
       </div>
     </div>

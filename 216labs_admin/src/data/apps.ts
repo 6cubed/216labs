@@ -80,7 +80,7 @@ export const infrastructure = {
   databases: ["PostgreSQL 16", "Redis 7", "SQLite (embedded)"],
   totalApps: 13,
   totalMemoryAllocated: "~2.1 GB (without ML profile)",
-  portRange: "8001-8013",
+  domain: "*.agimemes.com",
   deployMethod: "Docker images built locally, transferred via SSH",
 };
 

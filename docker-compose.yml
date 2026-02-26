@@ -6,23 +6,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8001:8001"
-      - "8002:8002"
-      - "8003:8003"
-      - "8004:8004"
-      - "8005:8005"
-      - "8006:8006"
-      - "8007:8007"
-      - "8008:8008"
-      - "8009:8009"
-      - "8010:8010"
-      - "8011:8011"
-      - "8012:8012"
-      - "8013:8013"
-      - "8014:8014"
-      - "8015:8015"
-      - "8016:8016"
-      - "8017:8017"
+      - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -64,6 +48,9 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
+      - LLM_PROVIDER=${ONEROOM_LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${ONEROOM_OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${ONEROOM_GEMINI_API_KEY:-}
     expose:
       - "3000"
     mem_limit: 256m
@@ -76,6 +63,9 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
+      - LLM_PROVIDER=${ONEFIT_LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${ONEFIT_OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${ONEFIT_GEMINI_API_KEY:-}
     expose:
       - "3000"
     mem_limit: 256m
@@ -115,7 +105,7 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=${PIPESECURE_DATABASE_URL}
       - REDIS_URL=redis://redis:6379
-      - NEXTAUTH_URL=${PIPESECURE_NEXTAUTH_URL:-http://localhost:8006}
+      - NEXTAUTH_URL=${PIPESECURE_NEXTAUTH_URL:-https://pipesecure.agimemes.com}
       - NEXTAUTH_SECRET=${PIPESECURE_NEXTAUTH_SECRET}
       - AUTH_TRUST_HOST=true
       - GITHUB_CLIENT_ID=${PIPESECURE_GITHUB_CLIENT_ID:-}
@@ -124,7 +114,7 @@ services:
       - GITHUB_APP_PRIVATE_KEY_PATH=/app/github-app-private-key.pem
       - GITHUB_WEBHOOK_SECRET=${PIPESECURE_GITHUB_WEBHOOK_SECRET:-}
       - ENCRYPTION_KEY=${PIPESECURE_ENCRYPTION_KEY:-}
-      - NEXT_PUBLIC_APP_URL=${PIPESECURE_NEXT_PUBLIC_APP_URL:-http://localhost:8006}
+      - NEXT_PUBLIC_APP_URL=${PIPESECURE_NEXT_PUBLIC_APP_URL:-https://pipesecure.agimemes.com}
     volumes:
       - ./pipesecure/github-app-private-key.pem:/app/github-app-private-key.pem:ro
     expose:
@@ -184,7 +174,7 @@ services:
       - NODE_ENV=production
       - DATABASE_PATH=/app/216labs.db
       - PROJECTS_ROOT=/workspace
-      - NEXT_PUBLIC_APP_HOST=${APP_HOST:-46.101.88.197}
+      - NEXT_PUBLIC_APP_HOST=${APP_HOST:-agimemes.com}
     volumes:
       - ./216labs.db:/app/216labs.db
       - ./:/workspace:ro
@@ -217,7 +207,7 @@ services:
       - PRIORS_DATABASE_PATH=/app/data/database.db
       - PRIORS_SECRET_KEY=${PRIORS_SECRET_KEY:-change-me}
       - PRIORS_GOOGLE_CLIENT_SECRETS_FILE=/app/client_secret.json
-      - PRIORS_OAUTH_REDIRECT_URI=${PRIORS_OAUTH_REDIRECT_URI:-http://localhost:8010/callback}
+      - PRIORS_OAUTH_REDIRECT_URI=${PRIORS_OAUTH_REDIRECT_URI:-https://priors.agimemes.com/callback}
       - GOOGLE_CLIENT_ID=${PRIORS_GOOGLE_CLIENT_ID:-}
       - GEMINI_API_KEY=${PRIORS_GEMINI_API_KEY:-}
     volumes:
@@ -236,7 +226,7 @@ services:
       - PORT=5000
       - BIGLEROYS_SECRET_KEY=${BIGLEROYS_SECRET_KEY:-change-me}
       - BIGLEROYS_GOOGLE_CLIENT_SECRETS_FILE=/app/client_secret.json
-      - BIGLEROYS_OAUTH_REDIRECT_URI=${BIGLEROYS_OAUTH_REDIRECT_URI:-http://localhost:8012/callback}
+      - BIGLEROYS_OAUTH_REDIRECT_URI=${BIGLEROYS_OAUTH_REDIRECT_URI:-https://bigleroys.agimemes.com/callback}
       - BIGLEROYS_GOOGLE_CLIENT_ID=${BIGLEROYS_GOOGLE_CLIENT_ID:-}
       - BIGLEROYS_DATABASE_PATH=/app/data/bigleroys.db
     volumes:
@@ -321,6 +311,23 @@ services:
     expose:
       - "3000"
     mem_limit: 256m
+
+  # ── Audio AI Checkup ─────────────────────────────────────────
+  audioaicheckup:
+    image: 216labs/audioaicheckup:latest
+    build: ./audioaicheckup
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - AUDIOAICHECKUP_OPENAI_API_KEY=${AUDIOAICHECKUP_OPENAI_API_KEY:-}
+      - AUDIOAICHECKUP_GEMINI_API_KEY=${AUDIOAICHECKUP_GEMINI_API_KEY:-}
+      - DATA_DIR=/app/data
+    volumes:
+      - ./audioaicheckup/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 512m
 
   # ── Redis (used by PipeSecure) ──────────────────────────────
   redis:

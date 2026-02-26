@@ -3,6 +3,13 @@ import { StatusBadge } from "./StatusBadge";
 import { CategoryBadge } from "./CategoryBadge";
 import { DeployToggle } from "./DeployToggle";
 
+const APP_HOST = process.env.NEXT_PUBLIC_APP_HOST || "";
+
+function appUrl(appId: string): string | null {
+  if (!APP_HOST || APP_HOST === "localhost") return null;
+  return `https://${appId}.${APP_HOST}`;
+}
+
 function formatDate(dateStr: string) {
   if (!dateStr) return "—";
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
@@ -40,7 +47,13 @@ function DetailRow({
   );
 }
 
-export function AppCard({ app }: { app: AppInfo }) {
+export function AppCard({
+  app,
+  isRunning,
+}: {
+  app: AppInfo;
+  isRunning: boolean;
+}) {
   const stackItems = [
     app.stack.frontend,
     app.stack.backend,
@@ -48,10 +61,12 @@ export function AppCard({ app }: { app: AppInfo }) {
     ...(app.stack.other ?? []),
   ].filter(Boolean);
 
+  const url = appUrl(app.id);
+
   return (
     <div
       className={`group bg-surface border border-border rounded-2xl overflow-hidden transition-all duration-300 ${
-        app.deployEnabled
+        isRunning
           ? "hover:border-accent/30"
           : "opacity-50 hover:opacity-70"
       }`}
@@ -61,20 +76,63 @@ export function AppCard({ app }: { app: AppInfo }) {
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-semibold text-foreground truncate">
-                {app.name}
-              </h3>
-              <span className="text-xs font-mono text-muted bg-white/5 px-1.5 py-0.5 rounded">
-                :{app.port}
-              </span>
+              {url && isRunning ? (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group/link flex items-center gap-1.5 hover:text-accent transition-colors"
+                >
+                  <h3 className="text-lg font-semibold text-foreground truncate group-hover/link:text-accent transition-colors">
+                    {app.name}
+                  </h3>
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-muted/50 group-hover/link:text-accent shrink-0 transition-colors mt-0.5"
+                  >
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              ) : (
+                <h3 className="text-lg font-semibold text-foreground truncate">
+                  {app.name}
+                </h3>
+              )}
+              {url ? (
+                isRunning ? (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-mono text-accent/70 bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded hover:bg-accent/20 hover:text-accent transition-colors"
+                  >
+                    {app.id}
+                  </a>
+                ) : (
+                  <span className="text-xs font-mono text-muted bg-white/5 px-1.5 py-0.5 rounded">
+                    {app.id}
+                  </span>
+                )
+              ) : app.port > 0 ? (
+                <span className="text-xs font-mono text-muted bg-white/5 px-1.5 py-0.5 rounded">
+                  :{app.port}
+                </span>
+              ) : null}
             </div>
             <p className="text-sm text-muted">{app.tagline}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <DeployToggle appId={app.id} enabled={app.deployEnabled} />
-            <StatusBadge
-              status={app.deployEnabled ? "running" : "stopped"}
-            />
+            <DeployToggle appId={app.id} isRunning={isRunning} />
+            <StatusBadge status={isRunning ? "running" : "stopped"} />
           </div>
         </div>
 
