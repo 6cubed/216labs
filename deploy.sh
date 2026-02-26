@@ -4,7 +4,7 @@ set -euo pipefail
 # Usage: ./deploy.sh user@host
 #
 # Reads 216labs.db (SQLite) to decide which apps to build/transfer.
-# Toggle apps on/off via the admin dashboard at :8007.
+# Toggle apps on/off via the admin dashboard at https://admin.agimemes.com
 # After deploy, records image sizes and startup times back to the DB.
 
 REMOTE="${1:-${DEPLOY_HOST:-}}"
@@ -44,6 +44,7 @@ service_spec() {
   case "$1" in
     ramblingradio) echo "./RamblingRadio" ;;
     stroll) echo "./Stroll.live" ;;
+    oneroom) echo "./oneroom" ;;
     onefit) echo "./onefit" ;;
     paperframe|paperframe-frontend) echo "./paperframe/frontend" ;;
     hivefind) echo "./hivefind" ;;
@@ -59,6 +60,7 @@ service_spec() {
     artisinaleurope) echo "./artisinaleurope" ;;
     thezurichdatinggame) echo "./thezurichdatinggame" ;;
     1pageresearch) echo "./1pageresearch" ;;
+    audioaicheckup) echo "./audioaicheckup" ;;
     *) echo "" ;;
   esac
 }

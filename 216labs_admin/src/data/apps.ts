@@ -75,6 +75,7 @@ export function dbRowToAppInfo(row: DbApp): AppInfo {
 export const infrastructure = {
   provider: "DigitalOcean",
   dropletIp: "46.101.88.197",
+  adminUrl: "https://admin.agimemes.com",
   monthlyCost: "$6-12",
   reverseProxy: "Caddy 2 (auto HTTPS)",
   databases: ["PostgreSQL 16", "Redis 7", "SQLite (embedded)"],

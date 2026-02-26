@@ -3,14 +3,27 @@ import { infrastructure } from "@/data/apps";
 function InfraRow({
   label,
   value,
+  href,
 }: {
   label: string;
   value: string | number;
+  href?: string;
 }) {
   return (
     <div className="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
       <span className="text-sm text-muted">{label}</span>
-      <span className="text-sm text-foreground font-medium">{value}</span>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-accent font-medium hover:underline"
+        >
+          {value}
+        </a>
+      ) : (
+        <span className="text-sm text-foreground font-medium">{value}</span>
+      )}
     </div>
   );
 }
@@ -40,6 +53,11 @@ export function InfraOverview() {
           value={infrastructure.totalMemoryAllocated}
         />
         <InfraRow label="Domain" value={infrastructure.domain} />
+        <InfraRow
+          label="Admin"
+          value={infrastructure.adminUrl}
+          href={infrastructure.adminUrl}
+        />
         <InfraRow label="Deploy Method" value={infrastructure.deployMethod} />
       </div>
     </div>
