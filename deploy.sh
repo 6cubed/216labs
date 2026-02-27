@@ -79,18 +79,27 @@ if [ -f "$DB_FILE" ]; then
     ENABLED_APPS="$ENABLED_APPS admin"
   fi
   echo "==> Deploy config (from DB): $ENABLED_APPS"
-  echo "==> Building deploy env from admin DB..."
-  HAS_ENV_TABLE=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='env_vars';")
-  if [ "$HAS_ENV_TABLE" = "1" ]; then
-    sqlite3 -separator '|' "$DB_FILE" "SELECT key, value FROM env_vars WHERE value IS NOT NULL AND value != '' ORDER BY key;" \
-      | while IFS='|' read -r key value; do
-          [ -z "${key:-}" ] && continue
-          printf '%s="%s"\n' "$key" "$(escape_env_value "$value")" >> "$DB_ENV_FILE"
-        done
+  echo "==> Fetching env vars from remote admin DB..."
+  REMOTE_ENV=$(ssh "${SSH_OPTS[@]}" "$REMOTE" '
+    ADMIN=$(docker ps --filter name=admin --format "{{.Names}}" | head -1)
+    if [ -n "$ADMIN" ]; then
+      docker exec "$ADMIN" node -e "
+const Database = require(\"better-sqlite3\");
+const db = new Database(\"/app/216labs.db\");
+const rows = db.prepare(\"SELECT key, value FROM env_vars WHERE value IS NOT NULL AND value != ?\").all(\"\");
+rows.forEach(r => process.stdout.write(r.key + \"|\" + r.value + \"\n\"));
+" 2>/dev/null
+    fi
+  ' 2>/dev/null || true)
+  if [ -n "$REMOTE_ENV" ]; then
+    echo "$REMOTE_ENV" | while IFS='|' read -r key value; do
+      [ -z "${key:-}" ] && continue
+      printf '%s="%s"\n' "$key" "$(escape_env_value "$value")" >> "$DB_ENV_FILE"
+    done
     ENV_COUNT=$(wc -l < "$DB_ENV_FILE" | tr -d ' ')
-    echo "==> Loaded $ENV_COUNT env vars from admin DB"
+    echo "==> Loaded $ENV_COUNT env vars from remote admin DB"
   else
-    echo "==> env_vars table not found yet, using .env defaults only"
+    echo "==> Could not reach remote admin DB, using .env defaults only"
   fi
 else
   echo "==> No $DB_FILE found, deploying all apps"
