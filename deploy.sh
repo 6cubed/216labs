@@ -237,11 +237,8 @@ fi
 
 # shellcheck disable=SC2086
 # Important: never build on droplet; only run pre-loaded images.
-docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build $COMPOSE_SERVICES
-# Force-recreate any services whose image was just updated (compose won't auto-recreate on tag match).
-for svc in $COMPOSE_SERVICES; do
-  docker compose --env-file .env --env-file .env.admin up -d --no-build --force-recreate "$svc" 2>/dev/null || true
-done
+# --force-recreate ensures all containers pick up any changed env vars from .env.admin.
+docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build --force-recreate $COMPOSE_SERVICES
 docker compose ps
 echo "==> Done."
 REMOTE_SCRIPT
