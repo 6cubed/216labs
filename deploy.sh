@@ -269,5 +269,17 @@ if [ -f "$DB_FILE" ]; then
     sqlite3 "$DB_FILE" "UPDATE apps SET last_deployed_at = '$NOW' WHERE id = '$app';" 2>/dev/null || true
   done
 
+  # Update commit counts from git log for each service
+  echo "==> Updating commit counts..."
+  for svc in "${SERVICES[@]}"; do
+    IFS=: read -r NAME CTX _DFILE <<< "$svc"
+    GITPATH="${CTX#./}"
+    COMMITS=$(git log --oneline -- "$GITPATH" 2>/dev/null | wc -l | xargs)
+    if [ -n "$COMMITS" ] && [ "$COMMITS" -gt 0 ] 2>/dev/null; then
+      sqlite3 "$DB_FILE" "UPDATE apps SET total_commits = $COMMITS WHERE id = '$NAME';" 2>/dev/null || true
+      echo "  $NAME → $COMMITS commits"
+    fi
+  done
+
   echo "==> Metadata saved to $DB_FILE"
 fi

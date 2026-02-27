@@ -15,13 +15,17 @@ const PREFIX_TO_DIR: Array<[string, string]> = [
   ["ONEFIT_", "onefit"],
   ["NEXT_PUBLIC_ONEROOM_", "oneroom"],
   ["ONEROOM_", "oneroom"],
-  ["AGIMEMES_", "agimemes"],
+  ["AGIMEMES_", "agimemes.com"],
   ["PIPESECURE_", "pipesecure"],
   ["PRIORS_", "priors"],
   ["AGITSHIRTS_", "agitshirts"],
   ["RAMBLINGRADIO_", "RamblingRadio"],
   ["PAPERFRAME_", "paperframe"],
   ["HIVEFIND_", "hivefind"],
+  ["CALIBRATEDAI_", "calibratedai"],
+  ["BIGLEROYS_", "bigleroys"],
+  ["ONEPAGE_", "1pageresearch"],
+  ["ZDGAME_", "thezurichdatinggame"],
 ];
 
 function getAppDirForKey(key: string): string | null {
@@ -115,4 +119,13 @@ export async function saveEnvVar(key: string, value: string) {
   const appDir = getAppDirForKey(key);
   if (appDir) writeEnvLocal(appDir);
   revalidatePath("/");
+}
+
+export async function fetchAppLogs(appId: string): Promise<string[]> {
+  const row = getDb()
+    .prepare("SELECT docker_service FROM apps WHERE id = ?")
+    .get(appId) as { docker_service: string } | undefined;
+  if (!row) return [];
+  const { getContainerLogs } = await import("@/lib/docker");
+  return getContainerLogs(row.docker_service);
 }

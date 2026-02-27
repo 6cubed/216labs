@@ -2,6 +2,7 @@ import type { AppInfo } from "@/data/apps";
 import { StatusBadge } from "./StatusBadge";
 import { CategoryBadge } from "./CategoryBadge";
 import { DeployToggle } from "./DeployToggle";
+import { LogsButton } from "./LogsButton";
 
 const APP_HOST = process.env.NEXT_PUBLIC_APP_HOST || "";
 
@@ -220,6 +221,8 @@ export function AppCard({
             </>
           )}
         </div>
+
+        {isRunning && <LogsButton appId={app.id} />}
       </div>
     </div>
   );

@@ -79,7 +79,7 @@ export const infrastructure = {
   monthlyCost: "$6-12",
   reverseProxy: "Caddy 2 (auto HTTPS)",
   databases: ["PostgreSQL 16", "Redis 7", "SQLite (embedded)"],
-  totalApps: 13,
+  totalApps: 20,
   totalMemoryAllocated: "~2.1 GB (without ML profile)",
   domain: "*.agimemes.com",
   deployMethod: "Docker images built locally, transferred via SSH",

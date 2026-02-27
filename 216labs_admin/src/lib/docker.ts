@@ -62,6 +62,55 @@ export async function getContainerStatus(
 }
 
 /**
+ * Returns the last `tail` log lines from a container's stdout+stderr.
+ * Docker wraps logs in a multiplexed stream — each frame has an 8-byte header:
+ *   byte 0 = stream type (1=stdout, 2=stderr), bytes 4-7 = uint32 BE frame size.
+ */
+export async function getContainerLogs(
+  dockerService: string,
+  tail = 60
+): Promise<string[]> {
+  const docker = getClient();
+  if (!docker) return [];
+  try {
+    const container = docker.getContainer(containerName(dockerService));
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      container.logs(
+        { stdout: true, stderr: true, tail, follow: false },
+        (err: Error | null, data?: Buffer | NodeJS.ReadableStream) => {
+          if (err) return reject(err);
+          if (Buffer.isBuffer(data)) return resolve(data);
+          const chunks: Buffer[] = [];
+          const stream = data as NodeJS.ReadableStream;
+          stream.on("data", (c: Buffer) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+          stream.on("end", () => resolve(Buffer.concat(chunks)));
+          stream.on("error", reject);
+        }
+      );
+    });
+
+    const lines: string[] = [];
+    let offset = 0;
+    while (offset + 8 <= buffer.length) {
+      const frameSize = buffer.readUInt32BE(offset + 4);
+      if (frameSize > 0) {
+        const chunk = buffer
+          .slice(offset + 8, offset + 8 + frameSize)
+          .toString("utf8");
+        for (const line of chunk.split("\n")) {
+          const trimmed = line.trimEnd();
+          if (trimmed) lines.push(trimmed);
+        }
+      }
+      offset += 8 + frameSize;
+    }
+    return lines;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Returns the set of docker_service names that are currently running,
  * identified by matching the compose project label.
  */
