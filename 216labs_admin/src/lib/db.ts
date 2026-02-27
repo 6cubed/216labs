@@ -527,6 +527,11 @@ const DEFAULT_ENV_VARS: Array<{
   { key: "STORYBOOK_STRIPE_WEBHOOK_SECRET", description: "StoryMagic Stripe webhook signing secret (whsec_...)", is_secret: 1 },
   { key: "NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY", description: "StoryMagic Stripe publishable key (pk_live_...)", is_secret: 0 },
   { key: "STORYBOOK_BOOK_PRICE_CENTS", description: "StoryMagic printed book price in cents (default: 2499 = $24.99)", is_secret: 0 },
+  { key: "STORYBOOK_ADMIN_TOKEN", description: "StoryMagic shared secret for admin→storybook API calls", is_secret: 1 },
+  { key: "STORYBOOK_RESEND_API_KEY", description: "StoryMagic Resend API key for order notification emails", is_secret: 1 },
+  { key: "STORYBOOK_ADMIN_EMAIL", description: "StoryMagic email address to notify on new orders", is_secret: 0 },
+  { key: "STORYBOOK_FROM_EMAIL", description: "StoryMagic sender address (e.g. StoryMagic <orders@yourdomain.com>)", is_secret: 0 },
+  { key: "STORYBOOK_INTERNAL_URL", description: "StoryMagic internal Docker URL for admin to query orders (http://storybook:3000)", is_secret: 0 },
 ];
 
 function seedEnvVars(db: Database.Database) {

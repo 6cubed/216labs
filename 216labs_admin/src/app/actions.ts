@@ -99,6 +99,17 @@ export async function toggleAppDeploy(
   return { success: true };
 }
 
+export async function fulfillStorybookOrder(orderId: string): Promise<ActionResult> {
+  try {
+    const { patchStorybookOrder } = await import("@/lib/storybook");
+    await patchStorybookOrder(orderId, "fulfilled");
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to update order" };
+  }
+}
+
 export async function saveEnvVar(key: string, value: string) {
   setEnvVarValue(key, value);
   const appDir = getAppDirForKey(key);

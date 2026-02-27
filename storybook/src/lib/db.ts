@@ -152,6 +152,55 @@ export function updateOrderStatus(
     );
 }
 
+export interface OrderWithBook extends Order {
+  bookTitle: string;
+  bookChildName: string;
+  bookAge: number;
+}
+
+export function getAllOrders(): OrderWithBook[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT o.*, b.title AS book_title, b.child_name AS book_child_name, b.age AS book_age
+       FROM orders o
+       LEFT JOIN books b ON o.book_id = b.id
+       ORDER BY o.created_at DESC`
+    )
+    .all() as Array<{
+      id: string;
+      book_id: string;
+      stripe_session_id: string;
+      status: string;
+      customer_email: string | null;
+      customer_name: string | null;
+      shipping_address: string | null;
+      created_at: string;
+      book_title: string | null;
+      book_child_name: string | null;
+      book_age: number | null;
+    }>;
+
+  return rows.map((row) => ({
+    id: row.id,
+    bookId: row.book_id,
+    stripeSessionId: row.stripe_session_id,
+    status: row.status as Order["status"],
+    customerEmail: row.customer_email,
+    customerName: row.customer_name,
+    shippingAddress: row.shipping_address,
+    createdAt: row.created_at,
+    bookTitle: row.book_title ?? "Unknown",
+    bookChildName: row.book_child_name ?? "",
+    bookAge: row.book_age ?? 0,
+  }));
+}
+
+export function setOrderStatus(orderId: string, status: Order["status"]): void {
+  getDb()
+    .prepare("UPDATE orders SET status = ? WHERE id = ?")
+    .run(status, orderId);
+}
+
 export function getOrderBySession(stripeSessionId: string): Order | null {
   const row = getDb()
     .prepare("SELECT * FROM orders WHERE stripe_session_id = ?")

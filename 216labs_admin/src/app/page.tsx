@@ -6,7 +6,9 @@ import { InfraOverview } from "@/components/InfraOverview";
 import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
 import { SizeOverview } from "@/components/SizeOverview";
 import { EnvVarEditor } from "@/components/EnvVarEditor";
+import { OrdersSection } from "@/components/OrdersSection";
 import { getRunningServices } from "@/lib/docker";
+import { fetchStorybookOrders } from "@/lib/storybook";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,10 @@ export default async function DashboardPage() {
   const rows = getAllApps();
   const apps = rows.map(dbRowToAppInfo);
   const envVars = getAllEnvVars();
-  const runningServices = await getRunningServices();
+  const [runningServices, storybookOrders] = await Promise.all([
+    getRunningServices(),
+    fetchStorybookOrders(),
+  ]);
 
   const enabledApps = new Set(
     apps.filter((a) => a.deployEnabled || a.id === "admin").map((a) => a.id)
@@ -108,6 +113,8 @@ export default async function DashboardPage() {
             ))}
           </div>
         </section>
+
+        <OrdersSection orders={storybookOrders} />
 
         <EnvVarEditor vars={envVars} />
 

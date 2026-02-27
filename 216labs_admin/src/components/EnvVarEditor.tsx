@@ -24,6 +24,11 @@ const APP_PREFIXES = [
   "PIPESECURE_",
   "PRIORS_",
   "AGITSHIRTS_",
+  "STORYBOOK_",
+  "NEXT_PUBLIC_STORYBOOK_",
+  "AUDIOAICHECKUP_",
+  "RAMBLINGRADIO_",
+  "PAPERFRAME_",
 ] as const;
 
 export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
@@ -34,12 +39,16 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
   const grouped = useMemo(() => {
     const isKnown = (key: string) => APP_PREFIXES.some((p) => key.startsWith(p));
     return {
+      storybook: vars.filter((v) => v.key.startsWith("STORYBOOK_") || v.key.startsWith("NEXT_PUBLIC_STORYBOOK_")),
+      audioaicheckup: vars.filter((v) => v.key.startsWith("AUDIOAICHECKUP_")),
       oneroom: vars.filter((v) => v.key.startsWith("ONEROOM_")),
       onefit: vars.filter((v) => v.key.startsWith("ONEFIT_")),
       agimemes: vars.filter((v) => v.key.startsWith("AGIMEMES_")),
       pipesecure: vars.filter((v) => v.key.startsWith("PIPESECURE_")),
       priors: vars.filter((v) => v.key.startsWith("PRIORS_")),
       agitshirts: vars.filter((v) => v.key.startsWith("AGITSHIRTS_")),
+      ramblingradio: vars.filter((v) => v.key.startsWith("RAMBLINGRADIO_")),
+      paperframe: vars.filter((v) => v.key.startsWith("PAPERFRAME_")),
       shared: vars.filter((v) => !isKnown(v.key)),
     };
   }, [vars]);
@@ -119,13 +128,17 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {renderGroup("StoryMagic", grouped.storybook)}
+        {renderGroup("Audio AI Checkup", grouped.audioaicheckup)}
         {renderGroup("OneRoom", grouped.oneroom)}
         {renderGroup("OneFit", grouped.onefit)}
         {renderGroup("AGI Memes", grouped.agimemes)}
         {renderGroup("PipeSecure", grouped.pipesecure)}
         {renderGroup("Priors", grouped.priors)}
         {renderGroup("AgitShirts", grouped.agitshirts)}
-        {renderGroup("Shared", grouped.shared)}
+        {renderGroup("RamblingRadio", grouped.ramblingradio)}
+        {renderGroup("Paperframe", grouped.paperframe)}
+        {renderGroup("Shared / Other", grouped.shared)}
       </div>
     </section>
   );
