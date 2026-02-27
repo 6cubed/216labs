@@ -3,6 +3,57 @@
 import { setDeployEnabled, setEnvVarValue, getDb } from "@/lib/db";
 import { startContainer, stopContainer } from "@/lib/docker";
 import { revalidatePath } from "next/cache";
+import { writeFileSync, existsSync } from "fs";
+import { join } from "path";
+
+// Ordered longest-first so more-specific prefixes (NEXT_PUBLIC_STORYBOOK_) match before shorter ones.
+const PREFIX_TO_DIR: Array<[string, string]> = [
+  ["NEXT_PUBLIC_STORYBOOK_", "storybook"],
+  ["STORYBOOK_", "storybook"],
+  ["AUDIOAICHECKUP_", "audioaicheckup"],
+  ["NEXT_PUBLIC_ONEFIT_", "onefit"],
+  ["ONEFIT_", "onefit"],
+  ["NEXT_PUBLIC_ONEROOM_", "oneroom"],
+  ["ONEROOM_", "oneroom"],
+  ["AGIMEMES_", "agimemes"],
+  ["PIPESECURE_", "pipesecure"],
+  ["PRIORS_", "priors"],
+  ["AGITSHIRTS_", "agitshirts"],
+  ["RAMBLINGRADIO_", "RamblingRadio"],
+  ["PAPERFRAME_", "paperframe"],
+  ["HIVEFIND_", "hivefind"],
+];
+
+function getAppDirForKey(key: string): string | null {
+  for (const [prefix, dir] of PREFIX_TO_DIR) {
+    if (key.startsWith(prefix)) return dir;
+  }
+  return null;
+}
+
+function writeEnvLocal(appDir: string): void {
+  const projectsRoot =
+    process.env.PROJECTS_ROOT || join(process.cwd(), "..");
+  const appPath = join(projectsRoot, appDir);
+  if (!existsSync(appPath)) return;
+
+  const appPrefixes = PREFIX_TO_DIR
+    .filter(([, dir]) => dir === appDir)
+    .map(([prefix]) => prefix);
+
+  const allVars = getDb()
+    .prepare("SELECT key, value FROM env_vars ORDER BY key")
+    .all() as Array<{ key: string; value: string }>;
+
+  const appVars = allVars.filter(({ key }) =>
+    appPrefixes.some((prefix) => key.startsWith(prefix))
+  );
+
+  if (appVars.length === 0) return;
+
+  const content = appVars.map(({ key, value }) => `${key}=${value}`).join("\n") + "\n";
+  writeFileSync(join(appPath, ".env.local"), content, "utf-8");
+}
 
 type ActionResult = { error: string } | { success: true } | undefined;
 
@@ -50,5 +101,7 @@ export async function toggleAppDeploy(
 
 export async function saveEnvVar(key: string, value: string) {
   setEnvVarValue(key, value);
+  const appDir = getAppDirForKey(key);
+  if (appDir) writeEnvLocal(appDir);
   revalidatePath("/");
 }
