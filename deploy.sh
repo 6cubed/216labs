@@ -79,28 +79,7 @@ if [ -f "$DB_FILE" ]; then
     ENABLED_APPS="$ENABLED_APPS admin"
   fi
   echo "==> Deploy config (from DB): $ENABLED_APPS"
-  echo "==> Fetching env vars from remote admin DB..."
-  REMOTE_ENV=$(ssh "${SSH_OPTS[@]}" "$REMOTE" '
-    ADMIN=$(docker ps --filter name=admin --format "{{.Names}}" | head -1)
-    if [ -n "$ADMIN" ]; then
-      docker exec "$ADMIN" node -e "
-const Database = require(\"better-sqlite3\");
-const db = new Database(\"/app/216labs.db\");
-const rows = db.prepare(\"SELECT key, value FROM env_vars WHERE value IS NOT NULL AND value != ?\").all(\"\");
-rows.forEach(r => process.stdout.write(r.key + \"|\" + r.value + \"\n\"));
-" 2>/dev/null
-    fi
-  ' 2>/dev/null || true)
-  if [ -n "$REMOTE_ENV" ]; then
-    echo "$REMOTE_ENV" | while IFS='|' read -r key value; do
-      [ -z "${key:-}" ] && continue
-      printf '%s="%s"\n' "$key" "$(escape_env_value "$value")" >> "$DB_ENV_FILE"
-    done
-    ENV_COUNT=$(wc -l < "$DB_ENV_FILE" | tr -d ' ')
-    echo "==> Loaded $ENV_COUNT env vars from remote admin DB"
-  else
-    echo "==> Could not reach remote admin DB, using .env defaults only"
-  fi
+  echo "==> Env vars will be written from admin container on server"
 else
   echo "==> No $DB_FILE found, deploying all apps"
   ENABLED_APPS="ramblingradio stroll onefit paperframe-frontend hivefind pipesecure admin agimemes agitshirts priors"
@@ -212,16 +191,11 @@ done
 # ── Start on droplet ──────────────────────────────────────────
 echo "==> Starting stack on $REMOTE..."
 echo "    Services: $COMPOSE_SERVICES"
-ENV_B64=""
-if [ -s "$DB_ENV_FILE" ]; then
-  ENV_B64="$(base64 < "$DB_ENV_FILE" | tr -d '\n')"
-fi
-ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$COMPOSE_SERVICES" "$ENV_B64" <<'REMOTE_SCRIPT'
+ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$COMPOSE_SERVICES" <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
 COMPOSE_SERVICES="$3"
-ENV_B64="$4"
 
 if ! command -v docker &>/dev/null; then
   echo "==> Installing Docker..."
@@ -246,26 +220,19 @@ if [ ! -f .env ]; then
   exit 0
 fi
 
-if [ -n "$ENV_B64" ]; then
-  echo "$ENV_B64" | base64 --decode > .env.admin
+# Write env vars directly from the running admin container — the authoritative source.
+ADMIN_CTR=$(docker ps --filter name=admin --format "{{.Names}}" 2>/dev/null | head -1 || true)
+if [ -n "$ADMIN_CTR" ]; then
+  docker exec "$ADMIN_CTR" node -e "
+const db = require('better-sqlite3')('/app/216labs.db');
+const rows = db.prepare(\"SELECT key, value FROM env_vars WHERE value IS NOT NULL AND value != ''\").all();
+rows.forEach(r => process.stdout.write(r.key + '=' + r.value + '\n'));
+" > .env.admin 2>/dev/null || : > .env.admin
+  ENV_COUNT=$(wc -l < .env.admin | tr -d ' ')
+  echo "==> Loaded ${ENV_COUNT} env vars from admin container"
 else
   : > .env.admin
-fi
-
-# Guardrail: never let a malformed env override break deploys.
-if LC_ALL=C grep -q '[^[:print:][:space:]]' .env.admin; then
-  echo "==> WARNING: .env.admin contains non-text bytes; ignoring admin env overrides"
-  : > .env.admin
-fi
-
-if ! awk '
-  /^[[:space:]]*$/ { next }
-  /^[[:space:]]*#/ { next }
-  /^[A-Za-z_][A-Za-z0-9_]*=.*/ { next }
-  { exit 1 }
-' .env.admin; then
-  echo "==> WARNING: .env.admin has invalid lines; ignoring admin env overrides"
-  : > .env.admin
+  echo "==> No admin container running yet, using .env defaults only"
 fi
 
 # shellcheck disable=SC2086
