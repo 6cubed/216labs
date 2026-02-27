@@ -192,11 +192,12 @@ done
 # ── Start on droplet ──────────────────────────────────────────
 echo "==> Starting stack on $REMOTE..."
 echo "    Services: $COMPOSE_SERVICES"
-ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$COMPOSE_SERVICES" <<'REMOTE_SCRIPT'
+ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
-COMPOSE_SERVICES="$3"
+shift 2
+COMPOSE_SERVICES="$*"
 
 if ! command -v docker &>/dev/null; then
   echo "==> Installing Docker..."
