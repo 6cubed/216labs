@@ -111,26 +111,61 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-# ── Build locally ──────────────────────────────────────────────
-echo "==> Building ${#SERVICES[@]} images locally..."
-IMAGES=()
+# ── Source-change detection (git-based) ──────────────────────
+# docker build always produces a new image ID (timestamps differ), so
+# comparing local vs remote IDs always shows "changed". Instead we hash
+# the last git commit touching each context dir plus any uncommitted diff.
+HASH_FILE=".deploy-hashes"
+
+get_context_hash() {
+  local ctx="$1"
+  local commit_hash diff_hash
+  commit_hash=$(git log -1 --format="%H" -- "$ctx" 2>/dev/null || echo "unknown")
+  diff_hash=$(git diff HEAD -- "$ctx" | git hash-object --stdin 2>/dev/null || echo "clean")
+  echo "${commit_hash}:${diff_hash}"
+}
+
+echo "==> Checking for source changes..."
+SERVICES_TO_BUILD=()
+ALL_IMAGES=()
 for svc in "${SERVICES[@]}"; do
   IFS=: read -r NAME CTX DFILE <<< "$svc"
   TAG="216labs/$NAME:latest"
-  BUILD_ARGS=(-q -t "$TAG")
-  if [ -n "${DFILE:-}" ]; then
-    BUILD_ARGS+=(-f "$CTX/$DFILE")
+  ALL_IMAGES+=("$TAG")
+  CTX_HASH=$(get_context_hash "$CTX")
+  STORED=$(grep "^$TAG=" "$HASH_FILE" 2>/dev/null | head -1 | sed 's/^[^=]*=//' || true)
+  if [ "$CTX_HASH" = "$STORED" ] && docker image inspect "$TAG" &>/dev/null 2>&1; then
+    echo "  [skip]  $NAME (source unchanged)"
+  else
+    echo "  [build] $NAME"
+    SERVICES_TO_BUILD+=("$svc")
   fi
-  BUILD_ARGS+=("$CTX")
-  echo "  [$NAME] building..."
-  docker build "${BUILD_ARGS[@]}"
-  IMAGES+=("$TAG")
 done
 
+# ── Build locally (only changed) ──────────────────────────────
+BUILT_IMAGES=()
+if [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
+  echo "==> Building ${#SERVICES_TO_BUILD[@]}/${#ALL_IMAGES[@]} images locally..."
+  for svc in "${SERVICES_TO_BUILD[@]}"; do
+    IFS=: read -r NAME CTX DFILE <<< "$svc"
+    TAG="216labs/$NAME:latest"
+    BUILD_ARGS=(-q -t "$TAG")
+    if [ -n "${DFILE:-}" ]; then
+      BUILD_ARGS+=(-f "$CTX/$DFILE")
+    fi
+    BUILD_ARGS+=("$CTX")
+    echo "  [$NAME] building..."
+    docker build "${BUILD_ARGS[@]}"
+    BUILT_IMAGES+=("$TAG")
+  done
+else
+  echo "==> No source changes detected, skipping all builds"
+fi
+
 # ── Record image sizes to DB ──────────────────────────────────
-if [ -f "$DB_FILE" ]; then
+if [ -f "$DB_FILE" ] && [ ${#BUILT_IMAGES[@]} -gt 0 ]; then
   echo "==> Recording image sizes..."
-  for TAG in "${IMAGES[@]}"; do
+  for TAG in "${BUILT_IMAGES[@]}"; do
     SIZE_BYTES=$(docker image inspect --format '{{.Size}}' "$TAG" 2>/dev/null || echo 0)
     SIZE_MB=$(echo "scale=0; $SIZE_BYTES / 1048576" | bc)
     sqlite3 "$DB_FILE" "UPDATE apps SET image_size_mb = $SIZE_MB WHERE docker_image = '$TAG';" 2>/dev/null || true
@@ -138,30 +173,21 @@ if [ -f "$DB_FILE" ]; then
   done
 fi
 
-# ── Incremental transfer (only changed images) ────────────────
-echo "==> Checking which images changed..."
-REMOTE_DIGESTS=$(ssh "${SSH_OPTS[@]}" "$REMOTE" 'for img in '"$(printf '%s ' "${IMAGES[@]}")"'; do
-  id=$(docker image inspect --format "{{.Id}}" "$img" 2>/dev/null || echo "missing")
-  echo "$img=$id"
-done')
-
-CHANGED_IMAGES=()
-for TAG in "${IMAGES[@]}"; do
-  LOCAL_ID=$(docker image inspect --format "{{.Id}}" "$TAG" 2>/dev/null || echo "local-missing")
-  REMOTE_ID=$(echo "$REMOTE_DIGESTS" | grep "^$TAG=" | cut -d= -f2)
-  if [ "$LOCAL_ID" != "$REMOTE_ID" ]; then
-    CHANGED_IMAGES+=("$TAG")
-    echo "  [changed] $TAG"
-  else
-    echo "  [skip]    $TAG (unchanged)"
-  fi
-done
-
-if [ ${#CHANGED_IMAGES[@]} -eq 0 ]; then
+# ── Transfer newly built images ───────────────────────────────
+if [ ${#BUILT_IMAGES[@]} -eq 0 ]; then
   echo "==> All images up to date, skipping transfer"
 else
-  echo "==> Transferring ${#CHANGED_IMAGES[@]}/${#IMAGES[@]} images to $REMOTE..."
-  docker save "${CHANGED_IMAGES[@]}" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
+  echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE..."
+  docker save "${BUILT_IMAGES[@]}" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
+  # Persist source hashes so next deploy can skip unchanged apps
+  for svc in "${SERVICES_TO_BUILD[@]}"; do
+    IFS=: read -r NAME CTX DFILE <<< "$svc"
+    TAG="216labs/$NAME:latest"
+    CTX_HASH=$(get_context_hash "$CTX")
+    TMP=$(mktemp)
+    { grep -v "^$TAG=" "$HASH_FILE" 2>/dev/null || true; echo "$TAG=$CTX_HASH"; } > "$TMP"
+    mv "$TMP" "$HASH_FILE"
+  done
 fi
 
 # ── Determine which compose services to start ─────────────────
