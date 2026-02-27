@@ -29,6 +29,10 @@ const APP_PREFIXES = [
   "AUDIOAICHECKUP_",
   "RAMBLINGRADIO_",
   "PAPERFRAME_",
+  "CALIBRATEDAI_",
+  "BIGLEROYS_",
+  "ONEPAGE_",
+  "ZDGAME_",
 ] as const;
 
 export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
@@ -49,6 +53,10 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
       agitshirts: vars.filter((v) => v.key.startsWith("AGITSHIRTS_")),
       ramblingradio: vars.filter((v) => v.key.startsWith("RAMBLINGRADIO_")),
       paperframe: vars.filter((v) => v.key.startsWith("PAPERFRAME_")),
+      calibratedai: vars.filter((v) => v.key.startsWith("CALIBRATEDAI_")),
+      bigleroys: vars.filter((v) => v.key.startsWith("BIGLEROYS_")),
+      onepage: vars.filter((v) => v.key.startsWith("ONEPAGE_")),
+      zdgame: vars.filter((v) => v.key.startsWith("ZDGAME_")),
       shared: vars.filter((v) => !isKnown(v.key)),
     };
   }, [vars]);
@@ -138,6 +146,10 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
         {renderGroup("AgitShirts", grouped.agitshirts)}
         {renderGroup("RamblingRadio", grouped.ramblingradio)}
         {renderGroup("Paperframe", grouped.paperframe)}
+        {renderGroup("CalibratedAI", grouped.calibratedai)}
+        {renderGroup("BigLeRoys", grouped.bigleroys)}
+        {renderGroup("1PageResearch", grouped.onepage)}
+        {renderGroup("The Zurich Dating Game", grouped.zdgame)}
         {renderGroup("Shared / Other", grouped.shared)}
       </div>
     </section>

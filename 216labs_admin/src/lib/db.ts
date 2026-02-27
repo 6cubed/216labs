@@ -135,6 +135,12 @@ function initSchema(db: Database.Database) {
     backfillPriors(db);
     backfillAudioAiCheckup(db);
     backfillStorybook(db);
+    backfillBigleroys(db);
+    backfillCalibratedAI(db);
+    backfill1PageResearch(db);
+    backfillArtisinalEurope(db);
+    backfillZurichDatingGame(db);
+    backfillOneRoom(db);
     backfillEnvVars(db);
   }
   syncTopLevelProjects(db);
@@ -520,6 +526,15 @@ const DEFAULT_ENV_VARS: Array<{
   { key: "ONEFIT_LLM_PROVIDER", description: "OneFit LLM provider: openai or gemini (default: openai)", is_secret: 0 },
   { key: "ONEFIT_OPENAI_API_KEY", description: "OneFit OpenAI API key (server-side)", is_secret: 1 },
   { key: "ONEFIT_GEMINI_API_KEY", description: "OneFit Gemini API key (server-side)", is_secret: 1 },
+  { key: "CALIBRATEDAI_OPENROUTER_API_KEY", description: "CalibratedAI OpenRouter API key", is_secret: 1 },
+  { key: "BIGLEROYS_SECRET_KEY", description: "BigLeRoys Flask secret key", is_secret: 1 },
+  { key: "BIGLEROYS_GOOGLE_CLIENT_ID", description: "BigLeRoys Google OAuth client ID", is_secret: 1 },
+  { key: "BIGLEROYS_OAUTH_REDIRECT_URI", description: "BigLeRoys OAuth redirect URI (default: https://bigleroys.agimemes.com/callback)", is_secret: 0 },
+  { key: "ONEPAGE_OPENROUTER_API_KEY", description: "1PageResearch OpenRouter API key", is_secret: 1 },
+  { key: "ONEPAGE_MODEL", description: "1PageResearch model name (default: google/gemini-2.0-flash-001)", is_secret: 0 },
+  { key: "ZDGAME_ADMIN_KEY", description: "Zurich Dating Game admin secret key", is_secret: 1 },
+  { key: "ZDGAME_OPENROUTER_API_KEY", description: "Zurich Dating Game OpenRouter API key", is_secret: 1 },
+  { key: "ZDGAME_MODEL", description: "Zurich Dating Game model name (default: google/gemini-2.0-flash-001)", is_secret: 0 },
   { key: "AUDIOAICHECKUP_OPENAI_API_KEY", description: "Audio AI Checkup OpenAI API key (for gpt-4o-audio-preview)", is_secret: 1 },
   { key: "AUDIOAICHECKUP_GEMINI_API_KEY", description: "Audio AI Checkup Gemini API key (for gemini-2.0-flash and gemini-1.5-pro)", is_secret: 1 },
   { key: "STORYBOOK_OPENAI_API_KEY", description: "StoryMagic OpenAI API key (GPT-4o story generation + DALL-E 3 illustrations)", is_secret: 1 },
@@ -653,6 +668,181 @@ function backfillStorybook(db: Database.Database) {
   });
 }
 
+function backfillAppMetadata(
+  db: Database.Database,
+  id: string,
+  data: {
+    name: string;
+    tagline: string;
+    description: string;
+    category: string;
+    port: number;
+    docker_service: string;
+    docker_image: string;
+    directory: string;
+    repo_path: string;
+    stack_frontend: string | null;
+    stack_backend: string | null;
+    stack_database: string | null;
+    stack_other: string | null;
+    deploy_enabled: number;
+    memory_limit: string;
+    created_at: string;
+  }
+) {
+  const row = db
+    .prepare("SELECT tagline FROM apps WHERE id = ?")
+    .get(id) as { tagline: string } | undefined;
+
+  if (!row) return;
+  if (row.tagline !== AUTO_DISCOVERED_TAGLINE) return;
+
+  db.prepare(`
+    UPDATE apps SET
+      name = @name, tagline = @tagline, description = @description,
+      category = @category, port = @port,
+      docker_service = @docker_service, docker_image = @docker_image,
+      directory = @directory, repo_path = @repo_path,
+      stack_frontend = @stack_frontend, stack_backend = @stack_backend,
+      stack_database = @stack_database, stack_other = @stack_other,
+      deploy_enabled = @deploy_enabled, memory_limit = @memory_limit,
+      created_at = @created_at, marketing_notes = NULL
+    WHERE id = @id
+  `).run({ ...data, id });
+}
+
+function backfillBigleroys(db: Database.Database) {
+  backfillAppMetadata(db, "bigleroys", {
+    name: "BigLeRoys",
+    tagline: "Premier League prediction game",
+    description:
+      "Flask + Google OAuth app for predicting Premier League match results. Tracks points across gameweeks with automated fixture syncing and leaderboards.",
+    category: "consumer",
+    port: 8012,
+    docker_service: "bigleroys",
+    docker_image: "216labs/bigleroys:latest",
+    directory: "bigleroys",
+    repo_path: "bigleroys",
+    stack_frontend: "Flask templates + Jinja2",
+    stack_backend: "Flask + Python + Gunicorn",
+    stack_database: "SQLite",
+    stack_other: '["Google OAuth","APScheduler","Premier League API"]',
+    deploy_enabled: 1,
+    memory_limit: "256 MB",
+    created_at: "2026-02-01",
+  });
+}
+
+function backfillCalibratedAI(db: Database.Database) {
+  backfillAppMetadata(db, "calibratedai", {
+    name: "CalibratedAI",
+    tagline: "AI probability calibration dashboard",
+    description:
+      "Track and improve your AI predictions by comparing estimated probabilities against real outcomes. Powered by OpenRouter for AI-assisted calibration analysis.",
+    category: "ai",
+    port: 8011,
+    docker_service: "calibratedai",
+    docker_image: "216labs/calibratedai:latest",
+    directory: "calibratedai",
+    repo_path: "calibratedai",
+    stack_frontend: "Next.js",
+    stack_backend: null,
+    stack_database: "SQLite (better-sqlite3)",
+    stack_other: '["OpenRouter API"]',
+    deploy_enabled: 1,
+    memory_limit: "256 MB",
+    created_at: "2026-02-01",
+  });
+}
+
+function backfill1PageResearch(db: Database.Database) {
+  backfillAppMetadata(db, "1pageresearch", {
+    name: "1PageResearch",
+    tagline: "AI-generated one-page research reports",
+    description:
+      "Enter any topic and get a concise, rigorous one-page research report generated by AI — complete with effect sizes, p-values, and source communities.",
+    category: "ai",
+    port: 8014,
+    docker_service: "1pageresearch",
+    docker_image: "216labs/1pageresearch:latest",
+    directory: "1pageresearch",
+    repo_path: "1pageresearch",
+    stack_frontend: "Flask templates + Jinja2",
+    stack_backend: "Flask + Python + Gunicorn",
+    stack_database: "SQLite",
+    stack_other: '["OpenRouter API","Server-Sent Events"]',
+    deploy_enabled: 1,
+    memory_limit: "128 MB",
+    created_at: "2026-02-01",
+  });
+}
+
+function backfillArtisinalEurope(db: Database.Database) {
+  backfillAppMetadata(db, "artisinaleurope", {
+    name: "ArtisinalEurope",
+    tagline: "European artisan experiences directory",
+    description:
+      "Discover and book authentic artisan experiences across Europe — from cheese-making in France to pottery in Portugal.",
+    category: "consumer",
+    port: 8015,
+    docker_service: "artisinaleurope",
+    docker_image: "216labs/artisinaleurope:latest",
+    directory: "artisinaleurope",
+    repo_path: "artisinaleurope",
+    stack_frontend: "Next.js",
+    stack_backend: null,
+    stack_database: null,
+    stack_other: null,
+    deploy_enabled: 1,
+    memory_limit: "256 MB",
+    created_at: "2026-02-01",
+  });
+}
+
+function backfillZurichDatingGame(db: Database.Database) {
+  backfillAppMetadata(db, "thezurichdatinggame", {
+    name: "The Zurich Dating Game",
+    tagline: "AI-powered dating event matchmaker",
+    description:
+      "Speed-dating meets AI — participants register and get AI-generated match scores and conversation starters before the event. Built for live dating events in Zurich.",
+    category: "consumer",
+    port: 8016,
+    docker_service: "thezurichdatinggame",
+    docker_image: "216labs/thezurichdatinggame:latest",
+    directory: "thezurichdatinggame",
+    repo_path: "thezurichdatinggame",
+    stack_frontend: "Next.js",
+    stack_backend: null,
+    stack_database: "SQLite (better-sqlite3)",
+    stack_other: '["OpenRouter API"]',
+    deploy_enabled: 1,
+    memory_limit: "256 MB",
+    created_at: "2026-02-01",
+  });
+}
+
+function backfillOneRoom(db: Database.Database) {
+  backfillAppMetadata(db, "oneroom", {
+    name: "OneRoom",
+    tagline: "AI room designer",
+    description:
+      "Upload a photo of any room and get AI-generated redesign suggestions. Supports OpenAI GPT-4o Vision and Google Gemini for analysis and visualization.",
+    category: "ai",
+    port: 8017,
+    docker_service: "oneroom",
+    docker_image: "216labs/oneroom:latest",
+    directory: "oneroom",
+    repo_path: "oneroom",
+    stack_frontend: "Next.js",
+    stack_backend: null,
+    stack_database: "SQLite (better-sqlite3)",
+    stack_other: '["OpenAI GPT-4o Vision","Google Gemini","DALL-E 3"]',
+    deploy_enabled: 1,
+    memory_limit: "256 MB",
+    created_at: "2026-02-01",
+  });
+}
+
 function backfillEnvVars(db: Database.Database) {
   seedEnvVars(db);
 }
@@ -674,6 +864,7 @@ const KNOWN_PORTS: Record<string, number> = {
   "1pageresearch": 8014,
   artisinaleurope: 8015,
   thezurichdatinggame: 8016,
+  oneroom: 8017,
   audioaicheckup: 8018,
   storybook: 8019,
 };

@@ -53,6 +53,7 @@ service_spec() {
     admin) echo "./216labs_admin" ;;
     agimemes) echo "./agimemes.com" ;;
     agitshirts) echo "./agitshirts" ;;
+    bigleroys) echo "./bigleroys" ;;
     priors) echo "./priors" ;;
     calibratedai) echo "./calibratedai" ;;
     anchor-api) echo "./anchor/backend" ;;
