@@ -131,19 +131,22 @@ function initSchema(db: Database.Database) {
     seed(db);
     seedEnvVars(db);
   } else {
+    // Backfill apps that were added after the initial seed
     backfillAgitShirts(db);
     backfillPriors(db);
     backfillAudioAiCheckup(db);
     backfillStorybook(db);
-    backfillBigleroys(db);
-    backfillCalibratedAI(db);
-    backfill1PageResearch(db);
-    backfillArtisinalEurope(db);
-    backfillZurichDatingGame(db);
-    backfillOneRoom(db);
     backfillEnvVars(db);
   }
+  // syncTopLevelProjects must run before metadata backfills so auto-discovered
+  // stubs exist for the backfill functions to upgrade with proper metadata.
   syncTopLevelProjects(db);
+  backfillBigleroys(db);
+  backfillCalibratedAI(db);
+  backfill1PageResearch(db);
+  backfillArtisinalEurope(db);
+  backfillZurichDatingGame(db);
+  backfillOneRoom(db);
   backfillKnownPorts(db);
   ensureAdminAlwaysEnabled(db);
 }
