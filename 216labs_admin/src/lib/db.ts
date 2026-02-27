@@ -133,9 +133,12 @@ function initSchema(db: Database.Database) {
   } else {
     backfillAgitShirts(db);
     backfillPriors(db);
+    backfillAudioAiCheckup(db);
+    backfillStorybook(db);
     backfillEnvVars(db);
   }
   syncTopLevelProjects(db);
+  backfillKnownPorts(db);
   ensureAdminAlwaysEnabled(db);
 }
 
@@ -511,6 +514,19 @@ const DEFAULT_ENV_VARS: Array<{
   { key: "PRIORS_OAUTH_REDIRECT_URI", description: "Priors OAuth redirect URL", is_secret: 0 },
   { key: "PRIORS_GOOGLE_CLIENT_ID", description: "Priors Google client ID", is_secret: 1 },
   { key: "PRIORS_GEMINI_API_KEY", description: "Priors Gemini API key", is_secret: 1 },
+  { key: "ONEROOM_LLM_PROVIDER", description: "OneRoom LLM provider: openai or gemini (default: openai)", is_secret: 0 },
+  { key: "ONEROOM_OPENAI_API_KEY", description: "OneRoom OpenAI API key (server-side)", is_secret: 1 },
+  { key: "ONEROOM_GEMINI_API_KEY", description: "OneRoom Gemini API key (server-side)", is_secret: 1 },
+  { key: "ONEFIT_LLM_PROVIDER", description: "OneFit LLM provider: openai or gemini (default: openai)", is_secret: 0 },
+  { key: "ONEFIT_OPENAI_API_KEY", description: "OneFit OpenAI API key (server-side)", is_secret: 1 },
+  { key: "ONEFIT_GEMINI_API_KEY", description: "OneFit Gemini API key (server-side)", is_secret: 1 },
+  { key: "AUDIOAICHECKUP_OPENAI_API_KEY", description: "Audio AI Checkup OpenAI API key (for gpt-4o-audio-preview)", is_secret: 1 },
+  { key: "AUDIOAICHECKUP_GEMINI_API_KEY", description: "Audio AI Checkup Gemini API key (for gemini-2.0-flash and gemini-1.5-pro)", is_secret: 1 },
+  { key: "STORYBOOK_OPENAI_API_KEY", description: "StoryMagic OpenAI API key (GPT-4o story generation + DALL-E 3 illustrations)", is_secret: 1 },
+  { key: "STORYBOOK_STRIPE_SECRET_KEY", description: "StoryMagic Stripe secret key (sk_live_...)", is_secret: 1 },
+  { key: "STORYBOOK_STRIPE_WEBHOOK_SECRET", description: "StoryMagic Stripe webhook signing secret (whsec_...)", is_secret: 1 },
+  { key: "NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY", description: "StoryMagic Stripe publishable key (pk_live_...)", is_secret: 0 },
+  { key: "STORYBOOK_BOOK_PRICE_CENTS", description: "StoryMagic printed book price in cents (default: 2499 = $24.99)", is_secret: 0 },
 ];
 
 function seedEnvVars(db: Database.Database) {
@@ -524,8 +540,149 @@ function seedEnvVars(db: Database.Database) {
   insertMany(DEFAULT_ENV_VARS);
 }
 
+function backfillAudioAiCheckup(db: Database.Database) {
+  const exists = (
+    db.prepare("SELECT COUNT(*) as count FROM apps WHERE id = 'audioaicheckup'").get() as {
+      count: number;
+    }
+  ).count;
+
+  if (exists > 0) return;
+
+  const today = new Date().toISOString().split("T")[0];
+  db.prepare(`
+    INSERT INTO apps (
+      id, name, tagline, description, category, port,
+      docker_service, docker_image, directory, repo_path,
+      stack_frontend, stack_backend, stack_database, stack_other,
+      deploy_enabled, image_size_mb, memory_limit,
+      created_at, last_updated, total_commits,
+      marketing_monthly, marketing_channel, marketing_notes
+    ) VALUES (
+      @id, @name, @tagline, @description, @category, @port,
+      @docker_service, @docker_image, @directory, @repo_path,
+      @stack_frontend, @stack_backend, @stack_database, @stack_other,
+      @deploy_enabled, @image_size_mb, @memory_limit,
+      @created_at, @last_updated, @total_commits,
+      @marketing_monthly, @marketing_channel, @marketing_notes
+    )
+  `).run({
+    id: "audioaicheckup",
+    name: "Audio AI Checkup",
+    tagline: "Benchmark multimodal LLMs on audio",
+    description:
+      "Record audio (up to 30 min) and provide a question with a verifiable answer. GPT-4o Audio, Gemini 2.0 Flash, and Gemini 1.5 Pro are evaluated simultaneously — compare which models correctly classify audio.",
+    category: "ai",
+    port: 8018,
+    docker_service: "audioaicheckup",
+    docker_image: "216labs/audioaicheckup:latest",
+    directory: "audioaicheckup",
+    repo_path: "audioaicheckup",
+    stack_frontend: "Next.js 14",
+    stack_backend: null,
+    stack_database: "SQLite (better-sqlite3)",
+    stack_other: '["OpenAI gpt-4o-audio-preview","Gemini 2.0 Flash","Gemini 1.5 Pro","ffmpeg"]',
+    deploy_enabled: 1,
+    image_size_mb: null,
+    memory_limit: "512 MB",
+    created_at: today,
+    last_updated: today,
+    total_commits: 1,
+    marketing_monthly: 0,
+    marketing_channel: "Organic",
+    marketing_notes: null,
+  });
+}
+
+function backfillStorybook(db: Database.Database) {
+  const exists = (
+    db.prepare("SELECT COUNT(*) as count FROM apps WHERE id = 'storybook'").get() as {
+      count: number;
+    }
+  ).count;
+
+  if (exists > 0) return;
+
+  const today = new Date().toISOString().split("T")[0];
+  db.prepare(`
+    INSERT INTO apps (
+      id, name, tagline, description, category, port,
+      docker_service, docker_image, directory, repo_path,
+      stack_frontend, stack_backend, stack_database, stack_other,
+      deploy_enabled, image_size_mb, memory_limit,
+      created_at, last_updated, total_commits,
+      marketing_monthly, marketing_channel, marketing_notes
+    ) VALUES (
+      @id, @name, @tagline, @description, @category, @port,
+      @docker_service, @docker_image, @directory, @repo_path,
+      @stack_frontend, @stack_backend, @stack_database, @stack_other,
+      @deploy_enabled, @image_size_mb, @memory_limit,
+      @created_at, @last_updated, @total_commits,
+      @marketing_monthly, @marketing_channel, @marketing_notes
+    )
+  `).run({
+    id: "storybook",
+    name: "StoryMagic",
+    tagline: "AI-generated personalised children's storybooks",
+    description:
+      "Enter a child's age, name, and story idea — AI writes and illustrates a full colour 6-page children's storybook. Order a professionally printed hardback via Stripe checkout.",
+    category: "ai",
+    port: 8019,
+    docker_service: "storybook",
+    docker_image: "216labs/storybook:latest",
+    directory: "storybook",
+    repo_path: "storybook",
+    stack_frontend: "Next.js 14",
+    stack_backend: null,
+    stack_database: "SQLite (better-sqlite3)",
+    stack_other: '["OpenAI GPT-4o","DALL-E 3","Stripe","Framer Motion"]',
+    deploy_enabled: 1,
+    image_size_mb: null,
+    memory_limit: "256 MB",
+    created_at: today,
+    last_updated: today,
+    total_commits: 1,
+    marketing_monthly: 0,
+    marketing_channel: "Organic",
+    marketing_notes: "Print-on-demand revenue via Stripe",
+  });
+}
+
 function backfillEnvVars(db: Database.Database) {
   seedEnvVars(db);
+}
+
+// Known ports for apps that may have been auto-discovered with port=0.
+const KNOWN_PORTS: Record<string, number> = {
+  ramblingradio: 8001,
+  stroll: 8002,
+  onefit: 8003,
+  paperframe: 8004,
+  hivefind: 8005,
+  pipesecure: 8006,
+  admin: 8007,
+  agimemes: 8008,
+  agitshirts: 8009,
+  priors: 8010,
+  calibratedai: 8011,
+  bigleroys: 8012,
+  "1pageresearch": 8014,
+  artisinaleurope: 8015,
+  thezurichdatinggame: 8016,
+  audioaicheckup: 8018,
+  storybook: 8019,
+};
+
+function backfillKnownPorts(db: Database.Database) {
+  const update = db.prepare(
+    "UPDATE apps SET port = ? WHERE id = ? AND port = 0"
+  );
+  const run = db.transaction(() => {
+    for (const [id, port] of Object.entries(KNOWN_PORTS)) {
+      update.run(port, id);
+    }
+  });
+  run();
 }
 
 function normalizeAppId(directory: string): string {

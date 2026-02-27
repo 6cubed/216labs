@@ -61,6 +61,7 @@ service_spec() {
     thezurichdatinggame) echo "./thezurichdatinggame" ;;
     1pageresearch) echo "./1pageresearch" ;;
     audioaicheckup) echo "./audioaicheckup" ;;
+    storybook) echo "./storybook" ;;
     *) echo "" ;;
   esac
 }

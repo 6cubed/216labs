@@ -1,9 +1,22 @@
 import OpenAI, { toFile } from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-function getClient(apiKey?: string): OpenAI {
+type LLMProvider = "openai" | "gemini";
+
+function getActiveProvider(): LLMProvider {
+  return process.env.LLM_PROVIDER === "gemini" ? "gemini" : "openai";
+}
+
+function getOpenAIClient(apiKey?: string): OpenAI {
   const key = apiKey || process.env.OPENAI_API_KEY;
   if (!key) throw new Error("OpenAI API key is required. Please enter your key above.");
   return new OpenAI({ apiKey: key });
+}
+
+function getGeminiClient(apiKey?: string): GoogleGenerativeAI {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("Gemini API key is required. Please enter your key above.");
+  return new GoogleGenerativeAI(key);
 }
 
 export interface OutfitRecommendation {
@@ -85,7 +98,7 @@ Respond ONLY with valid JSON in this exact schema (no markdown, no backticks):
   ]
 }`;
 
-export async function analyzeAndRecommend(
+async function analyzeAndRecommendOpenAI(
   imageBase64: string,
   occasion: string,
   preferences: string,
@@ -93,7 +106,7 @@ export async function analyzeAndRecommend(
 ): Promise<{ analysis: string; outfits: OutfitRecommendation[] }> {
   const userMessage = `OCCASION: ${occasion}\n${preferences ? `STYLE PREFERENCES: ${preferences}` : "No specific preferences — surprise me!"}`;
 
-  const response = await getClient(apiKey).chat.completions.create({
+  const response = await getOpenAIClient(apiKey).chat.completions.create({
     model: "gpt-4o",
     max_tokens: 4000,
     temperature: 0.8,
@@ -113,6 +126,36 @@ export async function analyzeAndRecommend(
   });
 
   const raw = response.choices[0]?.message?.content ?? "{}";
+  return parseOutfitResponse(raw);
+}
+
+async function analyzeAndRecommendGemini(
+  imageBase64: string,
+  occasion: string,
+  preferences: string,
+  apiKey?: string
+): Promise<{ analysis: string; outfits: OutfitRecommendation[] }> {
+  const userMessage = `OCCASION: ${occasion}\n${preferences ? `STYLE PREFERENCES: ${preferences}` : "No specific preferences — surprise me!"}`;
+
+  const model = getGeminiClient(apiKey).getGenerativeModel({
+    model: "gemini-2.0-flash",
+    generationConfig: { temperature: 0.8, maxOutputTokens: 4000 },
+  });
+
+  const result = await model.generateContent([
+    { text: STYLIST_SYSTEM_PROMPT + "\n\n" + userMessage },
+    { inlineData: { mimeType: "image/jpeg", data: imageBase64 } },
+  ]);
+
+  const raw = result.response.text();
+  // Strip markdown fences Gemini may wrap around JSON
+  const json = raw.replace(/^```(?:json)?\s*/m, "").replace(/\s*```\s*$/m, "").trim();
+  return parseOutfitResponse(json);
+}
+
+function parseOutfitResponse(
+  raw: string
+): { analysis: string; outfits: OutfitRecommendation[] } {
   const parsed = JSON.parse(raw);
 
   const outfits: OutfitRecommendation[] = parsed.outfits.map(
@@ -127,6 +170,18 @@ export async function analyzeAndRecommend(
   );
 
   return { analysis: parsed.analysis, outfits };
+}
+
+export async function analyzeAndRecommend(
+  imageBase64: string,
+  occasion: string,
+  preferences: string,
+  apiKey?: string
+): Promise<{ analysis: string; outfits: OutfitRecommendation[] }> {
+  if (getActiveProvider() === "gemini") {
+    return analyzeAndRecommendGemini(imageBase64, occasion, preferences, apiKey);
+  }
+  return analyzeAndRecommendOpenAI(imageBase64, occasion, preferences, apiKey);
 }
 
 export async function generateOutfitImage(
@@ -151,7 +206,7 @@ export async function generateOutfitImage(
     { type: "image/png" }
   );
 
-  const response = await getClient(apiKey).images.edit({
+  const response = await getOpenAIClient(apiKey).images.edit({
     model: "gpt-image-1",
     image: imageFile,
     prompt,

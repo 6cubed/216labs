@@ -6,13 +6,15 @@ import { InfraOverview } from "@/components/InfraOverview";
 import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
 import { SizeOverview } from "@/components/SizeOverview";
 import { EnvVarEditor } from "@/components/EnvVarEditor";
+import { getRunningServices } from "@/lib/docker";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   const rows = getAllApps();
   const apps = rows.map(dbRowToAppInfo);
   const envVars = getAllEnvVars();
+  const runningServices = await getRunningServices();
 
   const enabledApps = new Set(
     apps.filter((a) => a.deployEnabled || a.id === "admin").map((a) => a.id)
@@ -98,7 +100,11 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in">
             {apps.map((app) => (
-              <AppCard key={app.id} app={app} />
+              <AppCard
+                key={app.id}
+                app={app}
+                isRunning={runningServices.has(app.dockerService)}
+              />
             ))}
           </div>
         </section>

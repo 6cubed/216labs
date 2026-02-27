@@ -1,9 +1,22 @@
 import OpenAI, { toFile } from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-function getClient(apiKey?: string): OpenAI {
+type LLMProvider = "openai" | "gemini";
+
+function getActiveProvider(): LLMProvider {
+  return process.env.LLM_PROVIDER === "gemini" ? "gemini" : "openai";
+}
+
+function getOpenAIClient(apiKey?: string): OpenAI {
   const key = apiKey || process.env.OPENAI_API_KEY;
   if (!key) throw new Error("OpenAI API key is required. Please enter your key above.");
   return new OpenAI({ apiKey: key });
+}
+
+function getGeminiClient(apiKey?: string): GoogleGenerativeAI {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("Gemini API key is required. Please enter your key above.");
+  return new GoogleGenerativeAI(key);
 }
 
 export interface DesignRecommendation {
@@ -277,7 +290,7 @@ Respond ONLY with valid JSON in this exact schema (no markdown, no backticks):
   ]
 }`;
 
-export async function analyzeAndDesign(
+async function analyzeAndDesignOpenAI(
   imageBase64: string,
   goal: string,
   preferences: string,
@@ -290,7 +303,7 @@ export async function analyzeAndDesign(
     `COUNTRY: ${country}`,
   ].join("\n");
 
-  const response = await getClient(apiKey).chat.completions.create({
+  const response = await getOpenAIClient(apiKey).chat.completions.create({
     model: "gpt-4o",
     max_tokens: 4000,
     temperature: 0.8,
@@ -310,6 +323,42 @@ export async function analyzeAndDesign(
   });
 
   const raw = response.choices[0]?.message?.content ?? "{}";
+  return parseDesignResponse(raw, country);
+}
+
+async function analyzeAndDesignGemini(
+  imageBase64: string,
+  goal: string,
+  preferences: string,
+  country: string,
+  apiKey?: string
+): Promise<{ analysis: string; schemes: DesignRecommendation[] }> {
+  const userMessage = [
+    `ROOM GOAL: ${goal}`,
+    preferences ? `DESIGN PREFERENCES: ${preferences}` : "No specific preferences — surprise me!",
+    `COUNTRY: ${country}`,
+  ].join("\n");
+
+  const model = getGeminiClient(apiKey).getGenerativeModel({
+    model: "gemini-2.0-flash",
+    generationConfig: { temperature: 0.8, maxOutputTokens: 4000 },
+  });
+
+  const result = await model.generateContent([
+    { text: DESIGNER_SYSTEM_PROMPT + "\n\n" + userMessage },
+    { inlineData: { mimeType: "image/jpeg", data: imageBase64 } },
+  ]);
+
+  const raw = result.response.text();
+  // Strip markdown fences Gemini may wrap around JSON
+  const json = raw.replace(/^```(?:json)?\s*/m, "").replace(/\s*```\s*$/m, "").trim();
+  return parseDesignResponse(json, country);
+}
+
+function parseDesignResponse(
+  raw: string,
+  country: string
+): { analysis: string; schemes: DesignRecommendation[] } {
   const parsed = JSON.parse(raw);
 
   const schemes: DesignRecommendation[] = parsed.schemes.map(
@@ -324,6 +373,19 @@ export async function analyzeAndDesign(
   );
 
   return { analysis: parsed.analysis, schemes };
+}
+
+export async function analyzeAndDesign(
+  imageBase64: string,
+  goal: string,
+  preferences: string,
+  country: string,
+  apiKey?: string
+): Promise<{ analysis: string; schemes: DesignRecommendation[] }> {
+  if (getActiveProvider() === "gemini") {
+    return analyzeAndDesignGemini(imageBase64, goal, preferences, country, apiKey);
+  }
+  return analyzeAndDesignOpenAI(imageBase64, goal, preferences, country, apiKey);
 }
 
 export async function generateRoomImage(
@@ -348,7 +410,7 @@ export async function generateRoomImage(
     { type: "image/png" }
   );
 
-  const response = await getClient(apiKey).images.edit({
+  const response = await getOpenAIClient(apiKey).images.edit({
     model: "gpt-image-1",
     image: imageFile,
     prompt,
