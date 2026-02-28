@@ -272,7 +272,7 @@ if [ -f "$DB_FILE" ]; then
   sleep 3
 
   STARTUP_DATA=$(ssh "${SSH_OPTS[@]}" "$REMOTE" 'cd /opt/216labs && for svc in '"$COMPOSE_SERVICES"'; do
-    MS=$(docker compose logs --tail 20 "$svc" 2>/dev/null | grep -oE "Ready in [0-9]+" | grep -oE "[0-9]+" | tail -1)
+    MS=$(docker compose logs --no-follow --tail 20 "$svc" 2>/dev/null | grep -oE "Ready in [0-9]+" | grep -oE "[0-9]+" | tail -1)
     if [ -n "$MS" ]; then
       echo "$svc=$MS"
     fi
