@@ -186,7 +186,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - "3000"
-    mem_limit: 128m
+    mem_limit: 256m
 
   # ── AGI Memes ────────────────────────────────────────────────
   agimemes:
@@ -239,7 +239,7 @@ services:
       - ./bigleroys/client_secret.json:/app/client_secret.json:ro
     expose:
       - "5000"
-    mem_limit: 256m
+    mem_limit: 128m
 
   # ── AgitShirts ────────────────────────────────────────────────
   agitshirts:
@@ -384,7 +384,7 @@ services:
       - "8000"
     volumes:
       - sam_models:/models
-    mem_limit: 2048m
+    mem_limit: 512m
 
   # ── Anchor ───────────────────────────────────────────────────
   anchor-api:

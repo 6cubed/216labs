@@ -210,15 +210,28 @@ for app in $ENABLED_APPS; do
   fi
 done
 
+# Build a list of compose-service names for newly built images only.
+# These are the only containers that need --force-recreate; everything else
+# just needs to be "ensure running" which avoids the OOM spike of mass restart.
+CHANGED_COMPOSE_SVCS=""
+for svc in "${SERVICES_TO_BUILD[@]}"; do
+  IFS=: read -r NAME CTX DFILE <<< "$svc"
+  CHANGED_COMPOSE_SVCS="$CHANGED_COMPOSE_SVCS $(compose_svc_name "$NAME")"
+done
+CHANGED_COMPOSE_SVCS="${CHANGED_COMPOSE_SVCS# }"  # trim leading space
+
 # ── Start on droplet ──────────────────────────────────────────
 echo "==> Starting stack on $REMOTE..."
-echo "    Services: $COMPOSE_SERVICES"
-ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
+echo "    All services: $COMPOSE_SERVICES"
+echo "    Changed (will restart): ${CHANGED_COMPOSE_SVCS:-none}"
+# Pass changed services as a single quoted arg ($3), then all services as individual args ($4+)
+ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$CHANGED_COMPOSE_SVCS" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
-shift 2
-COMPOSE_SERVICES="$*"
+CHANGED_SERVICES="$3"   # space-separated, may be empty
+shift 3
+COMPOSE_SERVICES="$*"   # all services as individual args
 
 if ! command -v docker &>/dev/null; then
   echo "==> Installing Docker..."
@@ -243,7 +256,7 @@ if [ ! -f .env ]; then
   exit 0
 fi
 
-# Write env vars directly from the running admin container — the authoritative source.
+# Write env vars from running admin container — the authoritative source.
 ADMIN_CTR=$(docker ps --filter name=admin --format "{{.Names}}" 2>/dev/null | head -1 || true)
 if [ -n "$ADMIN_CTR" ]; then
   docker exec "$ADMIN_CTR" node -e "
@@ -258,10 +271,50 @@ else
   echo "==> No admin container running yet, using .env defaults only"
 fi
 
-# shellcheck disable=SC2086
-# Important: never build on droplet; only run pre-loaded images.
-# --force-recreate ensures all containers pick up any changed env vars from .env.admin.
-docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build --force-recreate $COMPOSE_SERVICES
+# Count currently running containers to decide startup strategy.
+RUNNING=$(docker ps --filter 'label=com.docker.compose.project=216labs' --format '{{.Names}}' 2>/dev/null | wc -l | tr -d ' ')
+
+if [ "${RUNNING:-0}" -lt 4 ]; then
+  # Initial startup (fresh server / post-reboot with no containers).
+  # Start in batches to avoid OOM on memory-constrained hosts.
+  echo "==> Initial startup — bringing up services in batches to avoid OOM..."
+  docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build caddy postgres
+  echo "==> Infrastructure up. Waiting 15s..."
+  sleep 15
+
+  batch="" count=0
+  for svc in $COMPOSE_SERVICES; do
+    case "$svc" in caddy|postgres) continue ;; esac
+    batch="$batch $svc" ; count=$((count+1))
+    if [ "$count" -ge 4 ]; then
+      echo "==> Starting batch:$batch"
+      # shellcheck disable=SC2086
+      docker compose --env-file .env --env-file .env.admin up -d --no-build $batch
+      echo "==> Waiting 25s..."
+      sleep 25
+      batch="" ; count=0
+    fi
+  done
+  if [ -n "$(echo "$batch" | tr -d ' ')" ]; then
+    echo "==> Starting final batch:$batch"
+    # shellcheck disable=SC2086
+    docker compose --env-file .env --env-file .env.admin up -d --no-build $batch
+    sleep 10
+  fi
+else
+  # Normal deploy — ensure all services are running, then only restart the ones
+  # with new images. This avoids mass-restart OOM spikes.
+  echo "==> Normal deploy — ensuring all services are up..."
+  # shellcheck disable=SC2086
+  docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build $COMPOSE_SERVICES
+
+  if [ -n "$(echo "${CHANGED_SERVICES:-}" | tr -d ' ')" ]; then
+    echo "==> Restarting changed services: $CHANGED_SERVICES"
+    # shellcheck disable=SC2086
+    docker compose --env-file .env --env-file .env.admin up -d --no-build --force-recreate $CHANGED_SERVICES
+  fi
+fi
+
 docker compose ps
 echo "==> Done."
 REMOTE_SCRIPT
