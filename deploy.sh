@@ -74,6 +74,14 @@ service_deps() {
   esac
 }
 
+# Map app ID to docker-compose service name (where they differ)
+compose_svc_name() {
+  case "$1" in
+    paperframe) echo "paperframe-frontend" ;;
+    *) echo "$1" ;;
+  esac
+}
+
 # The server's admin container is the authoritative source for which apps are enabled.
 # Fall back to the local DB (legacy), then to a hardcoded list.
 ADMIN_CTR=$(ssh "${SSH_OPTS[@]}" "$REMOTE" \
@@ -195,7 +203,7 @@ fi
 # ── Determine which compose services to start ─────────────────
 COMPOSE_SERVICES="caddy postgres"
 for app in $ENABLED_APPS; do
-  COMPOSE_SERVICES="$COMPOSE_SERVICES $app"
+  COMPOSE_SERVICES="$COMPOSE_SERVICES $(compose_svc_name "$app")"
   DEPS=$(service_deps "$app")
   if [ -n "$DEPS" ]; then
     COMPOSE_SERVICES="$COMPOSE_SERVICES $DEPS"
