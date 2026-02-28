@@ -214,10 +214,12 @@ done
 # These are the only containers that need --force-recreate; everything else
 # just needs to be "ensure running" which avoids the OOM spike of mass restart.
 CHANGED_COMPOSE_SVCS=""
-for svc in "${SERVICES_TO_BUILD[@]}"; do
-  IFS=: read -r NAME CTX DFILE <<< "$svc"
-  CHANGED_COMPOSE_SVCS="$CHANGED_COMPOSE_SVCS $(compose_svc_name "$NAME")"
-done
+if [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
+  for svc in "${SERVICES_TO_BUILD[@]}"; do
+    IFS=: read -r NAME CTX DFILE <<< "$svc"
+    CHANGED_COMPOSE_SVCS="$CHANGED_COMPOSE_SVCS $(compose_svc_name "$NAME")"
+  done
+fi
 CHANGED_COMPOSE_SVCS="${CHANGED_COMPOSE_SVCS# }"  # trim leading space
 
 # ── Start on droplet ──────────────────────────────────────────
