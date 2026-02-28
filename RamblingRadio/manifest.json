@@ -1,0 +1,20 @@
+{
+  "id": "ramblingradio",
+  "name": "RamblingRadio",
+  "tagline": "Community radio & podcasting",
+  "description": "Express + React + Vite full-stack application with PostgreSQL backend via Drizzle ORM. Community-driven audio content platform.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "256m",
+  "docker_service": "ramblingradio",
+  "build_context": "./RamblingRadio",
+  "stack": {
+    "frontend": "React 18 + Vite",
+    "backend": "Express 5",
+    "database": "PostgreSQL (Drizzle ORM)",
+    "other": null
+  },
+  "env_vars": [
+    { "key": "RAMBLINGRADIO_DATABASE_URL", "description": "RamblingRadio Postgres connection string", "is_secret": true }
+  ]
+}

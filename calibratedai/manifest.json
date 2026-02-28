@@ -1,0 +1,20 @@
+{
+  "id": "calibratedai",
+  "name": "CalibratedAI",
+  "tagline": "AI probability calibration dashboard",
+  "description": "Track and improve your AI predictions by comparing estimated probabilities against real outcomes. Powered by OpenRouter for AI-assisted calibration analysis.",
+  "category": "ai",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "calibratedai",
+  "build_context": "./calibratedai",
+  "stack": {
+    "frontend": "Next.js",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": ["OpenRouter API"]
+  },
+  "env_vars": [
+    { "key": "CALIBRATEDAI_OPENROUTER_API_KEY", "description": "CalibratedAI OpenRouter API key", "is_secret": true }
+  ]
+}

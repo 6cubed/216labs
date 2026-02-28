@@ -1,0 +1,29 @@
+{
+  "id": "storybook",
+  "name": "StoryMagic",
+  "tagline": "AI-generated personalised children's storybooks",
+  "description": "Enter a child's age, name, and story idea — AI writes and illustrates a full colour 6-page children's storybook. Order a professionally printed hardback via Stripe checkout.",
+  "category": "ai",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "storybook",
+  "build_context": "./storybook",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": ["OpenAI GPT-4o", "DALL-E 3", "Stripe", "Framer Motion"]
+  },
+  "env_vars": [
+    { "key": "STORYBOOK_OPENAI_API_KEY", "description": "StoryMagic OpenAI API key (GPT-4o story generation + DALL-E 3 illustrations)", "is_secret": true },
+    { "key": "STORYBOOK_STRIPE_SECRET_KEY", "description": "StoryMagic Stripe secret key (sk_live_...)", "is_secret": true },
+    { "key": "STORYBOOK_STRIPE_WEBHOOK_SECRET", "description": "StoryMagic Stripe webhook signing secret (whsec_...)", "is_secret": true },
+    { "key": "NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY", "description": "StoryMagic Stripe publishable key (pk_live_...)", "is_secret": false },
+    { "key": "STORYBOOK_BOOK_PRICE_CENTS", "description": "StoryMagic printed book price in cents (default: 2499 = $24.99)", "is_secret": false },
+    { "key": "STORYBOOK_ADMIN_TOKEN", "description": "StoryMagic shared secret for admin→storybook API calls", "is_secret": true },
+    { "key": "STORYBOOK_RESEND_API_KEY", "description": "StoryMagic Resend API key for order notification emails", "is_secret": true },
+    { "key": "STORYBOOK_ADMIN_EMAIL", "description": "StoryMagic email address to notify on new orders", "is_secret": false },
+    { "key": "STORYBOOK_FROM_EMAIL", "description": "StoryMagic sender address (e.g. StoryMagic <orders@yourdomain.com>)", "is_secret": false },
+    { "key": "STORYBOOK_INTERNAL_URL", "description": "StoryMagic internal Docker URL for admin to query orders (http://storybook:3000)", "is_secret": false }
+  ]
+}

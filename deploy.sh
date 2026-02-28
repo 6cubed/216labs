@@ -39,30 +39,22 @@ SSH_OPTS=(
   -o ConnectTimeout=20
 )
 
-# ── Service mapping helpers (Bash 3 compatible) ───────────────
+# ── Service mapping helpers ───────────────────────────────────
+# Try manifest.json first; fall back to hardcoded cases for apps
+# without manifests (anchor multi-service, pipesecure worker).
+
 service_spec() {
+  local result
+  result=$(python3 scripts/app-lookup.py "$1" build_spec 2>/dev/null)
+  if [ -n "$result" ]; then
+    echo "$result"
+    return
+  fi
+  # Fallback for apps without manifests
   case "$1" in
-    ramblingradio) echo "./RamblingRadio" ;;
-    stroll) echo "./Stroll.live" ;;
-    oneroom) echo "./oneroom" ;;
-    onefit) echo "./onefit" ;;
-    paperframe|paperframe-frontend) echo "./paperframe/frontend" ;;
-    hivefind) echo "./hivefind" ;;
-    pipesecure) echo "./pipesecure" ;;
+    anchor-api)        echo "./anchor/backend" ;;
+    anchor-web)        echo "./anchor/frontend" ;;
     pipesecure-worker) echo "./pipesecure:Dockerfile.worker" ;;
-    admin) echo "./216labs_admin" ;;
-    agimemes) echo "./agimemes.com" ;;
-    agitshirts) echo "./agitshirts" ;;
-    bigleroys) echo "./bigleroys" ;;
-    priors) echo "./priors" ;;
-    calibratedai) echo "./calibratedai" ;;
-    anchor-api) echo "./anchor/backend" ;;
-    anchor-web) echo "./anchor/frontend" ;;
-    artisinaleurope) echo "./artisinaleurope" ;;
-    thezurichdatinggame) echo "./thezurichdatinggame" ;;
-    1pageresearch) echo "./1pageresearch" ;;
-    audioaicheckup) echo "./audioaicheckup" ;;
-    storybook) echo "./storybook" ;;
     *) echo "" ;;
   esac
 }
@@ -74,12 +66,16 @@ service_deps() {
   esac
 }
 
-# Map app ID to docker-compose service name (where they differ)
+# Map app ID to docker-compose service name (where they differ).
+# Reads from manifest docker_service field; falls back to the ID itself.
 compose_svc_name() {
-  case "$1" in
-    paperframe) echo "paperframe-frontend" ;;
-    *) echo "$1" ;;
-  esac
+  local result
+  result=$(python3 scripts/app-lookup.py "$1" docker_service 2>/dev/null)
+  if [ -n "$result" ]; then
+    echo "$result"
+    return
+  fi
+  echo "$1"
 }
 
 # The server's admin container is the authoritative source for which apps are enabled.

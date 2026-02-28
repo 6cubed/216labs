@@ -1,0 +1,22 @@
+{
+  "id": "bigleroys",
+  "name": "BigLeRoys",
+  "tagline": "Premier League prediction game",
+  "description": "Flask + Google OAuth app for predicting Premier League match results. Tracks points across gameweeks with automated fixture syncing and leaderboards.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "256m",
+  "docker_service": "bigleroys",
+  "build_context": "./bigleroys",
+  "stack": {
+    "frontend": "Flask templates + Jinja2",
+    "backend": "Flask + Python + Gunicorn",
+    "database": "SQLite",
+    "other": ["Google OAuth", "APScheduler", "Premier League API"]
+  },
+  "env_vars": [
+    { "key": "BIGLEROYS_SECRET_KEY", "description": "BigLeRoys Flask secret key", "is_secret": true },
+    { "key": "BIGLEROYS_GOOGLE_CLIENT_ID", "description": "BigLeRoys Google OAuth client ID", "is_secret": true },
+    { "key": "BIGLEROYS_OAUTH_REDIRECT_URI", "description": "BigLeRoys OAuth redirect URI (default: https://bigleroys.agimemes.com/callback)", "is_secret": false }
+  ]
+}

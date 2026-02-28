@@ -1,0 +1,18 @@
+{
+  "id": "artisinaleurope",
+  "name": "ArtisinalEurope",
+  "tagline": "European artisan experiences directory",
+  "description": "Discover and book authentic artisan experiences across Europe — from cheese-making in France to pottery in Portugal.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "artisinaleurope",
+  "build_context": "./artisinaleurope",
+  "stack": {
+    "frontend": "Next.js",
+    "backend": null,
+    "database": null,
+    "other": null
+  },
+  "env_vars": []
+}

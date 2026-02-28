@@ -1,0 +1,22 @@
+{
+  "id": "thezurichdatinggame",
+  "name": "The Zurich Dating Game",
+  "tagline": "AI-powered dating event matchmaker",
+  "description": "Speed-dating meets AI — participants register and get AI-generated match scores and conversation starters before the event. Built for live dating events in Zurich.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "thezurichdatinggame",
+  "build_context": "./thezurichdatinggame",
+  "stack": {
+    "frontend": "Next.js",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": ["OpenRouter API"]
+  },
+  "env_vars": [
+    { "key": "ZDGAME_ADMIN_KEY", "description": "Zurich Dating Game admin secret key", "is_secret": true },
+    { "key": "ZDGAME_OPENROUTER_API_KEY", "description": "Zurich Dating Game OpenRouter API key", "is_secret": true },
+    { "key": "ZDGAME_MODEL", "description": "Zurich Dating Game model name (default: google/gemini-2.0-flash-001)", "is_secret": false }
+  ]
+}

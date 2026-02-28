@@ -1,0 +1,21 @@
+{
+  "id": "audioaicheckup",
+  "name": "Audio AI Checkup",
+  "tagline": "Benchmark multimodal LLMs on audio",
+  "description": "Record audio (up to 30 min) and provide a question with a verifiable answer. GPT-4o Audio, Gemini 2.0 Flash, and Gemini 1.5 Pro are evaluated simultaneously — compare which models correctly classify audio.",
+  "category": "ai",
+  "internal_port": 3000,
+  "memory_limit": "512m",
+  "docker_service": "audioaicheckup",
+  "build_context": "./audioaicheckup",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": ["OpenAI gpt-4o-audio-preview", "Gemini 2.0 Flash", "Gemini 1.5 Pro", "ffmpeg"]
+  },
+  "env_vars": [
+    { "key": "AUDIOAICHECKUP_OPENAI_API_KEY", "description": "Audio AI Checkup OpenAI API key (for gpt-4o-audio-preview)", "is_secret": true },
+    { "key": "AUDIOAICHECKUP_GEMINI_API_KEY", "description": "Audio AI Checkup Gemini API key (for gemini-2.0-flash and gemini-1.5-pro)", "is_secret": true }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "paperframe",
+  "name": "Paperframe",
+  "tagline": "AI image segmentation & captioning",
+  "description": "Segment and caption images using SAM (Segment Anything Model) and BLIP. Includes optional ML backend requiring ~2GB RAM, enabled via Docker profile.",
+  "category": "ai",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "paperframe-frontend",
+  "build_context": "./paperframe/frontend",
+  "stack": {
+    "frontend": "Next.js 15 + React 19",
+    "backend": "FastAPI (optional ML profile)",
+    "database": null,
+    "other": ["SAM (Segment Anything)", "BLIP (Salesforce)"]
+  },
+  "env_vars": [
+    { "key": "PAPERFRAME_API_URL", "description": "Paperframe ML backend URL (optional)", "is_secret": false }
+  ]
+}

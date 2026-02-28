@@ -1,0 +1,22 @@
+{
+  "id": "agitshirts",
+  "name": "AgitShirts",
+  "tagline": "Daily AI-designed limited-edition t-shirt drops",
+  "description": "Flask app that auto-generates one collectible t-shirt concept per day using AI prompts, with a direct checkout link for limited daily editions.",
+  "category": "ai",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "agitshirts",
+  "build_context": "./agitshirts",
+  "stack": {
+    "frontend": "Flask templates",
+    "backend": "Flask + Python",
+    "database": "JSON file store",
+    "other": ["OpenAI API (optional)", "Gunicorn"]
+  },
+  "env_vars": [
+    { "key": "AGITSHIRTS_OPENAI_API_KEY", "description": "AgitShirts OpenAI API key", "is_secret": true },
+    { "key": "AGITSHIRTS_MODEL", "description": "AgitShirts model name (default: gpt-4o-mini)", "is_secret": false },
+    { "key": "AGITSHIRTS_CHECKOUT_BASE_URL", "description": "AgitShirts checkout base URL", "is_secret": false }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "oneroom",
+  "name": "OneRoom",
+  "tagline": "AI room designer",
+  "description": "Upload a photo of any room and get AI-generated redesign suggestions. Supports OpenAI GPT-4o Vision and Google Gemini for analysis and visualization.",
+  "category": "ai",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "oneroom",
+  "build_context": "./oneroom",
+  "stack": {
+    "frontend": "Next.js",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": ["OpenAI GPT-4o Vision", "Google Gemini", "DALL-E 3"]
+  },
+  "env_vars": [
+    { "key": "ONEROOM_LLM_PROVIDER", "description": "OneRoom LLM provider: openai or gemini (default: openai)", "is_secret": false },
+    { "key": "ONEROOM_OPENAI_API_KEY", "description": "OneRoom OpenAI API key (server-side)", "is_secret": true },
+    { "key": "ONEROOM_GEMINI_API_KEY", "description": "OneRoom Gemini API key (server-side)", "is_secret": true }
+  ]
+}

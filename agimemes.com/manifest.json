@@ -1,0 +1,22 @@
+{
+  "id": "agimemes",
+  "name": "AGI Memes",
+  "tagline": "AI-generated AGI news memes",
+  "description": "Auto-generates AGI-themed memes from the latest AI news headlines. Uses Imgflip for meme generation and a news API for fresh content.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "agimemes",
+  "build_context": "./agimemes.com",
+  "stack": {
+    "frontend": "Flask templates",
+    "backend": "Flask + Python",
+    "database": null,
+    "other": null
+  },
+  "env_vars": [
+    { "key": "AGIMEMES_NEWS_API_KEY", "description": "AGI Memes News API key", "is_secret": true },
+    { "key": "AGIMEMES_IMG_FLIP_USERNAME", "description": "AGI Memes Imgflip username", "is_secret": true },
+    { "key": "AGIMEMES_IMG_FLIP_PASSWORD", "description": "AGI Memes Imgflip password", "is_secret": true }
+  ]
+}

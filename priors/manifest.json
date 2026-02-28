@@ -1,0 +1,23 @@
+{
+  "id": "priors",
+  "name": "Priors",
+  "tagline": "Question probabilities with AI",
+  "description": "Flask app for tracking personal yes/no priors with Google sign-in and Gemini-assisted likelihood estimates.",
+  "category": "ai",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "priors",
+  "build_context": "./priors",
+  "stack": {
+    "frontend": "Flask templates",
+    "backend": "Flask + Gunicorn",
+    "database": "SQLite",
+    "other": ["Google OAuth", "Gemini API"]
+  },
+  "env_vars": [
+    { "key": "PRIORS_SECRET_KEY", "description": "Priors Flask secret key", "is_secret": true },
+    { "key": "PRIORS_OAUTH_REDIRECT_URI", "description": "Priors OAuth redirect URL", "is_secret": false },
+    { "key": "PRIORS_GOOGLE_CLIENT_ID", "description": "Priors Google client ID", "is_secret": true },
+    { "key": "PRIORS_GEMINI_API_KEY", "description": "Priors Gemini API key", "is_secret": true }
+  ]
+}

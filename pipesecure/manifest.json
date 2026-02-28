@@ -1,0 +1,28 @@
+{
+  "id": "pipesecure",
+  "name": "PipeSecure",
+  "tagline": "AI-powered security scanning for GitHub",
+  "description": "Continuous security scanning for GitHub repositories. Uses AI analysis with Semgrep and ast-grep for vulnerability detection. Features GitHub App integration, background job processing via BullMQ + Redis.",
+  "category": "security",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "pipesecure",
+  "build_context": "./pipesecure",
+  "stack": {
+    "frontend": "Next.js 16",
+    "backend": "NextAuth.js v5 + BullMQ worker",
+    "database": "PostgreSQL (Prisma)",
+    "other": ["Redis", "OpenAI SDK", "Semgrep", "ast-grep"]
+  },
+  "env_vars": [
+    { "key": "PIPESECURE_DATABASE_URL", "description": "PipeSecure Postgres connection string", "is_secret": true },
+    { "key": "PIPESECURE_NEXTAUTH_URL", "description": "PipeSecure public URL", "is_secret": false },
+    { "key": "PIPESECURE_NEXTAUTH_SECRET", "description": "PipeSecure NextAuth secret", "is_secret": true },
+    { "key": "PIPESECURE_GITHUB_CLIENT_ID", "description": "PipeSecure GitHub OAuth client ID", "is_secret": true },
+    { "key": "PIPESECURE_GITHUB_CLIENT_SECRET", "description": "PipeSecure GitHub OAuth client secret", "is_secret": true },
+    { "key": "PIPESECURE_GITHUB_APP_ID", "description": "PipeSecure GitHub App ID", "is_secret": true },
+    { "key": "PIPESECURE_GITHUB_WEBHOOK_SECRET", "description": "PipeSecure webhook secret", "is_secret": true },
+    { "key": "PIPESECURE_ENCRYPTION_KEY", "description": "PipeSecure data encryption key", "is_secret": true },
+    { "key": "PIPESECURE_NEXT_PUBLIC_APP_URL", "description": "PipeSecure frontend URL", "is_secret": false }
+  ]
+}

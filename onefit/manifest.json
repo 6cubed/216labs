@@ -1,0 +1,22 @@
+{
+  "id": "onefit",
+  "name": "OneFit",
+  "tagline": "AI personal stylist",
+  "description": "Upload photos and get AI-generated outfit recommendations. Powered by OpenAI GPT-4o Vision for analysis and DALL-E 3 for visualization.",
+  "category": "ai",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "onefit",
+  "build_context": "./onefit",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": ["OpenAI GPT-4o Vision", "DALL-E 3", "Framer Motion"]
+  },
+  "env_vars": [
+    { "key": "ONEFIT_LLM_PROVIDER", "description": "OneFit LLM provider: openai or gemini (default: openai)", "is_secret": false },
+    { "key": "ONEFIT_OPENAI_API_KEY", "description": "OneFit OpenAI API key (server-side)", "is_secret": true },
+    { "key": "ONEFIT_GEMINI_API_KEY", "description": "OneFit Gemini API key (server-side)", "is_secret": true }
+  ]
+}

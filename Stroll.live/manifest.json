@@ -1,0 +1,18 @@
+{
+  "id": "stroll",
+  "name": "Stroll.live",
+  "tagline": "Live walking & exploration",
+  "description": "Express + React + Vite application with SQLite via Drizzle ORM. Real-time walking and exploration experience platform.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "256m",
+  "docker_service": "stroll",
+  "build_context": "./Stroll.live",
+  "stack": {
+    "frontend": "React 18 + Vite",
+    "backend": "Express 5",
+    "database": "SQLite (Drizzle ORM)",
+    "other": null
+  },
+  "env_vars": []
+}

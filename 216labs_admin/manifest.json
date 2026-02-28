@@ -1,0 +1,18 @@
+{
+  "id": "admin",
+  "name": "216labs Admin",
+  "tagline": "Central management dashboard",
+  "description": "Admin dashboard for managing all 216labs projects — toggle deployments, manage environment variables, view metrics.",
+  "category": "admin",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "admin",
+  "build_context": "./216labs_admin",
+  "stack": {
+    "frontend": "Next.js",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": null
+  },
+  "env_vars": []
+}

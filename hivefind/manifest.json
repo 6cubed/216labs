@@ -1,0 +1,18 @@
+{
+  "id": "hivefind",
+  "name": "HiveFind",
+  "tagline": "Crowd-sourced mystery investigation",
+  "description": "A crowd-sourced platform for gathering clues, tips, and timelines about unsolved mysteries. Join the hive and help solve the case.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "hivefind",
+  "build_context": "./hivefind",
+  "stack": {
+    "frontend": "Next.js 16 + React 19",
+    "backend": null,
+    "database": null,
+    "other": ["Tailwind CSS 4"]
+  },
+  "env_vars": []
+}
