@@ -226,12 +226,16 @@ CHANGED_COMPOSE_SVCS="${CHANGED_COMPOSE_SVCS# }"  # trim leading space
 echo "==> Starting stack on $REMOTE..."
 echo "    All services: $COMPOSE_SERVICES"
 echo "    Changed (will restart): ${CHANGED_COMPOSE_SVCS:-none}"
-# Pass changed services as a single quoted arg ($3), then all services as individual args ($4+)
-ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$CHANGED_COMPOSE_SVCS" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
+# Use __none__ sentinel so the empty string survives SSH argument passing
+# (SSH joins args with spaces, collapsing empty strings and shifting positions).
+CHANGED_ARG="${CHANGED_COMPOSE_SVCS:-__none__}"
+# Pass changed-services sentinel as $3, then all services as individual args ($4+)
+ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
-CHANGED_SERVICES="$3"   # space-separated, may be empty
+CHANGED_SERVICES="$3"   # "__none__" when nothing changed, else space-separated names
+[ "$CHANGED_SERVICES" = "__none__" ] && CHANGED_SERVICES=""
 shift 3
 COMPOSE_SERVICES="$*"   # all services as individual args
 
