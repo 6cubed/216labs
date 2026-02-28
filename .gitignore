@@ -13,3 +13,4 @@ __pycache__/
 *.pem
 .DS_Store
 .deploy-hashes
+client_secret.json

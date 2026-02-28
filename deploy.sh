@@ -74,16 +74,29 @@ service_deps() {
   esac
 }
 
-if [ -f "$DB_FILE" ]; then
+# The server's admin container is the authoritative source for which apps are enabled.
+# Fall back to the local DB (legacy), then to a hardcoded list.
+ADMIN_CTR=$(ssh "${SSH_OPTS[@]}" "$REMOTE" \
+  "docker ps --filter name=216labs-admin-1 --format '{{.Names}}'" 2>/dev/null | head -1 || true)
+
+if [ -n "$ADMIN_CTR" ]; then
+  ENABLED_APPS=$(ssh "${SSH_OPTS[@]}" "$REMOTE" \
+    "docker exec $ADMIN_CTR node -e \"
+const db = require('better-sqlite3')('/app/216labs.db');
+const rows = db.prepare(\\\"SELECT id FROM apps WHERE deploy_enabled = 1 OR id = 'admin' ORDER BY port\\\").all();
+rows.forEach(r => process.stdout.write(r.id + ' '));
+\"" 2>/dev/null | tr -s ' ')
+  echo "==> Deploy config (from server DB): $ENABLED_APPS"
+elif [ -f "$DB_FILE" ]; then
   ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1 OR id = 'admin'" | tr '\n' ' ')
-  if [[ " $ENABLED_APPS " != *" admin "* ]]; then
-    ENABLED_APPS="$ENABLED_APPS admin"
-  fi
-  echo "==> Deploy config (from DB): $ENABLED_APPS"
-  echo "==> Env vars will be written from admin container on server"
+  echo "==> Deploy config (from local DB): $ENABLED_APPS"
 else
-  echo "==> No $DB_FILE found, deploying all apps"
-  ENABLED_APPS="ramblingradio stroll onefit paperframe-frontend hivefind pipesecure admin agimemes agitshirts priors"
+  echo "==> No DB found, deploying all apps"
+  ENABLED_APPS="ramblingradio stroll onefit paperframe-frontend hivefind admin agimemes agitshirts priors"
+fi
+
+if [[ " $ENABLED_APPS " != *" admin "* ]]; then
+  ENABLED_APPS="$ENABLED_APPS admin"
 fi
 
 # ── Filter to enabled services ────────────────────────────────
