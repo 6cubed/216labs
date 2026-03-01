@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+asyncpg://labs:labs@postgres:5432/anchor"
+    database_url: str = "sqlite+aiosqlite:///./data/anchor.db"
     secret_key: str = "dev-secret-change-me"
     algorithm: str = "HS256"
     access_token_expire_days: int = 30

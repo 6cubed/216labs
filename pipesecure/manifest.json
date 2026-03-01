@@ -11,11 +11,10 @@
   "stack": {
     "frontend": "Next.js 16",
     "backend": "NextAuth.js v5 + BullMQ worker",
-    "database": "PostgreSQL (Prisma)",
+    "database": "SQLite (Prisma)",
     "other": ["Redis", "OpenAI SDK", "Semgrep", "ast-grep"]
   },
   "env_vars": [
-    { "key": "PIPESECURE_DATABASE_URL", "description": "PipeSecure Postgres connection string", "is_secret": true },
     { "key": "PIPESECURE_NEXTAUTH_URL", "description": "PipeSecure public URL", "is_secret": false },
     { "key": "PIPESECURE_NEXTAUTH_SECRET", "description": "PipeSecure NextAuth secret", "is_secret": true },
     { "key": "PIPESECURE_GITHUB_CLIENT_ID", "description": "PipeSecure GitHub OAuth client ID", "is_secret": true },

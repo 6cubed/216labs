@@ -11,7 +11,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Dummy URL so Prisma generate + Next.js build succeed without a live DB
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV DATABASE_URL="file:./dummy.db"
 ENV NEXTAUTH_SECRET="build-time-placeholder"
 ENV NEXT_TELEMETRY_DISABLED=1
 

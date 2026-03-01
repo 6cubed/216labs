@@ -1,0 +1,21 @@
+{
+  "id": "anchor",
+  "name": "Anchor",
+  "tagline": "Location-based anonymous discussions",
+  "description": "FastAPI + React Native app for anonymous geo-located posts and replies. Users register via device ID only; all posts are anchored to a physical location with a configurable radius feed.",
+  "category": "consumer",
+  "internal_port": 8000,
+  "memory_limit": "256m",
+  "docker_service": "anchor-api",
+  "build_context": "./anchor/backend",
+  "stack": {
+    "frontend": "React Native (Expo)",
+    "backend": "FastAPI (Python 3.12)",
+    "database": "SQLite (SQLAlchemy async + aiosqlite)",
+    "other": null
+  },
+  "env_vars": [
+    { "key": "ANCHOR_DATABASE_URL", "description": "Anchor SQLite DB path (sqlite+aiosqlite:///...)", "is_secret": false },
+    { "key": "ANCHOR_SECRET_KEY", "description": "Anchor JWT signing secret", "is_secret": true }
+  ]
+}

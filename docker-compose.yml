@@ -24,11 +24,11 @@ services:
     environment:
       - PORT=5000
       - NODE_ENV=production
-      - DATABASE_URL=${RAMBLINGRADIO_DATABASE_URL}
+      - DATABASE_URL=file:/app/data/ramblingradio.db
+    volumes:
+      - ./RamblingRadio/data:/app/data
     expose:
       - "5000"
-    depends_on:
-      - postgres
     mem_limit: 256m
 
   # ── Stroll.live ───────────────────────────────────────────────
@@ -106,7 +106,7 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
-      - DATABASE_URL=${PIPESECURE_DATABASE_URL}
+      - DATABASE_URL=file:/app/data/pipesecure.db
       - REDIS_URL=redis://redis:6379
       - NEXTAUTH_URL=${PIPESECURE_NEXTAUTH_URL:-https://pipesecure.agimemes.com}
       - NEXTAUTH_SECRET=${PIPESECURE_NEXTAUTH_SECRET}
@@ -120,11 +120,10 @@ services:
       - NEXT_PUBLIC_APP_URL=${PIPESECURE_NEXT_PUBLIC_APP_URL:-https://pipesecure.agimemes.com}
     volumes:
       - ./pipesecure/github-app-private-key.pem:/app/github-app-private-key.pem:ro
+      - ./pipesecure/data:/app/data
     expose:
       - "3000"
     depends_on:
-      postgres:
-        condition: service_started
       redis:
         condition: service_started
       pipesecure-migrate:
@@ -138,7 +137,7 @@ services:
       dockerfile: Dockerfile.worker
     restart: unless-stopped
     environment:
-      - DATABASE_URL=${PIPESECURE_DATABASE_URL}
+      - DATABASE_URL=file:/app/data/pipesecure.db
       - REDIS_URL=redis://redis:6379
       - GITHUB_APP_ID=${PIPESECURE_GITHUB_APP_ID:-}
       - GITHUB_APP_PRIVATE_KEY_PATH=/app/github-app-private-key.pem
@@ -146,9 +145,8 @@ services:
       - ENCRYPTION_KEY=${PIPESECURE_ENCRYPTION_KEY:-}
     volumes:
       - ./pipesecure/github-app-private-key.pem:/app/github-app-private-key.pem:ro
+      - ./pipesecure/data:/app/data
     depends_on:
-      postgres:
-        condition: service_started
       redis:
         condition: service_started
       pipesecure-migrate:
@@ -161,10 +159,10 @@ services:
       context: ./pipesecure
       dockerfile: Dockerfile.worker
     environment:
-      - DATABASE_URL=${PIPESECURE_DATABASE_URL}
+      - DATABASE_URL=file:/app/data/pipesecure.db
+    volumes:
+      - ./pipesecure/data:/app/data
     command: npx prisma db push --skip-generate
-    depends_on:
-      - postgres
     restart: "no"
 
   # ── 216labs Admin Dashboard ─────────────────────────────────
@@ -392,12 +390,12 @@ services:
     build: ./anchor/backend
     restart: unless-stopped
     environment:
-      - ANCHOR_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-labs}:${POSTGRES_PASSWORD:-labs}@postgres:5432/anchor
+      - ANCHOR_DATABASE_URL=sqlite+aiosqlite:///./data/anchor.db
       - ANCHOR_SECRET_KEY=${ANCHOR_SECRET_KEY:-change-me}
+    volumes:
+      - ./anchor/data:/app/data
     expose:
       - "8000"
-    depends_on:
-      - postgres
     mem_limit: 256m
 
   anchor-web:
@@ -408,25 +406,8 @@ services:
       - "80"
     mem_limit: 64m
 
-  # ── Databases ─────────────────────────────────────────────────
-  postgres:
-    image: postgis/postgis:16-3.4-alpine
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-labs}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-labs}
-      - POSTGRES_DB=${POSTGRES_DB:-ramblingradio}
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-      - ./pipesecure/init-db.sh:/docker-entrypoint-initdb.d/10-create-pipesecure-db.sh:ro
-      - ./anchor/init-anchor-db.sh:/docker-entrypoint-initdb.d/20-create-anchor-db.sh:ro
-    expose:
-      - "5432"
-    mem_limit: 256m
-
 volumes:
   caddy_data:
   caddy_config:
   sam_models:
-  pg_data:
   redis_data:
