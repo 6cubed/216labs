@@ -197,7 +197,7 @@ else
 fi
 
 # ── Determine which compose services to start ─────────────────
-COMPOSE_SERVICES="caddy postgres"
+COMPOSE_SERVICES="caddy"
 for app in $ENABLED_APPS; do
   COMPOSE_SERVICES="$COMPOSE_SERVICES $(compose_svc_name "$app")"
   DEPS=$(service_deps "$app")
@@ -280,13 +280,13 @@ if [ "${RUNNING:-0}" -lt 4 ]; then
   # Initial startup (fresh server / post-reboot with no containers).
   # Start in batches to avoid OOM on memory-constrained hosts.
   echo "==> Initial startup — bringing up services in batches to avoid OOM..."
-  docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build caddy postgres
+  docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build caddy
   echo "==> Infrastructure up. Waiting 15s..."
   sleep 15
 
   batch="" count=0
   for svc in $COMPOSE_SERVICES; do
-    case "$svc" in caddy|postgres) continue ;; esac
+    case "$svc" in caddy) continue ;; esac
     batch="$batch $svc" ; count=$((count+1))
     if [ "$count" -ge 4 ]; then
       echo "==> Starting batch:$batch"
