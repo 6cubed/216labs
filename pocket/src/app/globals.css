@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a12;
+  --surface: #111120;
+  --border: #1e1e32;
+  --accent: #7c3aed;
+  --accent-glow: rgba(124, 58, 237, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--bg);
+  color: #e4e4f0;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2e2e48;
+  border-radius: 2px;
+}
+
+/* Blinking cursor for streaming text */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.streaming-cursor::after {
+  content: '▋';
+  animation: blink 0.7s step-end infinite;
+  color: #a78bfa;
+  margin-left: 1px;
+}
+
+/* Progress bar shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.progress-shimmer {
+  background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 50%, #7c3aed 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Message fade-in */
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.msg-in {
+  animation: msgIn 0.25s ease-out forwards;
+}

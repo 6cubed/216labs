@@ -68,6 +68,10 @@ pipesecure.agimemes.com {
 	reverse_proxy pipesecure:3000
 }
 
+pocket.agimemes.com {
+	reverse_proxy pocket:3000
+}
+
 priors.agimemes.com {
 	reverse_proxy priors:5000
 }

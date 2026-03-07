@@ -339,6 +339,18 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── Pocket ───────────────────────────────────────────────────────
+  pocket:
+    image: 216labs/pocket:latest
+    build: ./pocket
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── Audio AI Checkup ─────────────────────────────────────────
   audioaicheckup:
     image: 216labs/audioaicheckup:latest
