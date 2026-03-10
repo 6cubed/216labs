@@ -1,7 +1,9 @@
 import { runScan } from "./scan";
+import { startStatusServer } from "./status";
 
 const INTERVAL_MS =
   parseFloat(process.env.SCAN_INTERVAL_HOURS || "24") * 60 * 60 * 1000;
+const PORT = parseInt(process.env.PORT || "3000", 10);
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -10,8 +12,10 @@ function sleep(ms: number): Promise<void> {
 async function main(): Promise<void> {
   console.log("[pipesecure] Starting up");
   console.log(
-    `[pipesecure] Scanning ${process.env.GITHUB_REPO || "216labs/216labs"} every ${process.env.SCAN_INTERVAL_HOURS || "24"}h`
+    `[pipesecure] Scanning ${process.env.GITHUB_REPO || "6cubed/216labs"} every ${process.env.SCAN_INTERVAL_HOURS || "24"}h`
   );
+
+  startStatusServer(PORT);
 
   while (true) {
     try {

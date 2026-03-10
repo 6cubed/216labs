@@ -1,5 +1,5 @@
 import { scanRepo } from "./scanner";
-import { issueStore } from "./db";
+import { issueStore, scanLog } from "./db";
 import { createIssue, closeIssue, ensureLabels } from "./issues";
 
 let scanning = false;
@@ -11,6 +11,7 @@ export async function runScan(commitSha?: string): Promise<void> {
   }
   scanning = true;
   const start = Date.now();
+  const logId = scanLog.start();
 
   try {
     console.log(
@@ -70,6 +71,7 @@ export async function runScan(commitSha?: string): Promise<void> {
       }
     }
 
+    scanLog.finish(logId, findings.length, created, closed);
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     console.log(
       `[scan] Done in ${elapsed}s — ${findings.length} findings, ${created} issues opened, ${closed} closed`

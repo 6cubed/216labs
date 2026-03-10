@@ -20,6 +20,15 @@ db.exec(`
     created_at   TEXT NOT NULL DEFAULT (datetime('now')),
     resolved_at  TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS scan_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    finished_at TEXT,
+    findings    INTEGER,
+    opened      INTEGER,
+    closed      INTEGER
+  );
 `);
 
 export interface TrackedIssue {
@@ -73,3 +82,38 @@ export const issueStore = {
     ).run(issueNumber, fingerprint);
   },
 };
+
+export const scanLog = {
+  start(): number {
+    const result = db
+      .prepare("INSERT INTO scan_log (started_at) VALUES (datetime('now'))")
+      .run();
+    return result.lastInsertRowid as number;
+  },
+
+  finish(id: number, findings: number, opened: number, closed: number) {
+    db.prepare(
+      "UPDATE scan_log SET finished_at = datetime('now'), findings = ?, opened = ?, closed = ? WHERE id = ?"
+    ).run(findings, opened, closed, id);
+  },
+
+  latest() {
+    return db
+      .prepare("SELECT * FROM scan_log ORDER BY id DESC LIMIT 1")
+      .get() as { started_at: string; finished_at: string | null; findings: number | null; opened: number | null; closed: number | null } | undefined;
+  },
+};
+
+export function getStatusData() {
+  const open = issueStore.getAllOpen();
+  const bySeverity = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  for (const issue of open) {
+    const s = issue.severity as keyof typeof bySeverity;
+    if (s in bySeverity) bySeverity[s]++;
+  }
+  return {
+    openIssues: open,
+    bySeverity,
+    lastScan: scanLog.latest(),
+  };
+}

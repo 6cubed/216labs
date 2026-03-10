@@ -13,6 +13,7 @@ export const config = {
     branch: process.env.GITHUB_BRANCH || "main",
   },
   dataDir: process.env.DATA_DIR || "/app/data",
+  port: parseInt(process.env.PORT || "3000", 10),
 };
 
 export const [GITHUB_OWNER, GITHUB_REPO_NAME] = config.github.repo.split("/");

@@ -20,5 +20,8 @@ RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
 ENV DATA_DIR=/app/data
+ENV PORT=3000
+
+EXPOSE 3000
 
 CMD ["npx", "tsx", "src/main.ts"]

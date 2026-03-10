@@ -109,8 +109,11 @@ services:
       - GITHUB_TOKEN=${PIPESECURE_GITHUB_TOKEN:-}
       - GITHUB_REPO=${PIPESECURE_GITHUB_REPO:-6cubed/216labs}
       - SCAN_INTERVAL_HOURS=${PIPESECURE_SCAN_INTERVAL_HOURS:-24}
+      - PORT=3000
     volumes:
       - ./pipesecure/data:/app/data
+    expose:
+      - "3000"
     mem_limit: 512m
 
   # ── 216labs Admin Dashboard ─────────────────────────────────
