@@ -100,6 +100,13 @@ fi
 if [[ " $ENABLED_APPS " != *" admin "* ]]; then
   ENABLED_APPS="$ENABLED_APPS admin"
 fi
+# Force-include apps that must exist on server before they can be toggled in admin
+for force in happypath; do
+  if [[ " $ENABLED_APPS " != *" $force "* ]]; then
+    ENABLED_APPS="$ENABLED_APPS $force"
+    echo "==> Force-including $force (not yet in server DB)"
+  fi
+done
 
 # ── Filter to enabled services ────────────────────────────────
 SERVICES=()
