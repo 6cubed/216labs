@@ -116,6 +116,25 @@ services:
       - "3000"
     mem_limit: 512m
 
+  # ── Happy Path (clickthrough tests) ──────────────────────────
+  happypath:
+    image: 216labs/happypath:latest
+    build: ./happypath
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - DATABASE_PATH=/app/216labs.db
+      - APP_HOST=${APP_HOST:-agimemes.com}
+      - TEST_INTERVAL_HOURS=${HAPPYPATH_TEST_INTERVAL_HOURS:-6}
+      - PORT=3000
+    volumes:
+      - ./216labs.db:/app/216labs.db:ro
+      - ./happypath/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 512m
+
   # ── 216labs Admin Dashboard ─────────────────────────────────
   admin:
     image: 216labs/admin:latest

@@ -22,6 +22,7 @@ const APP_PREFIXES = [
   "ONEFIT_",
   "AGIMEMES_",
   "PIPESECURE_",
+  "HAPPYPATH_",
   "PRIORS_",
   "AGITSHIRTS_",
   "STORYBOOK_",
@@ -49,6 +50,7 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
       onefit: vars.filter((v) => v.key.startsWith("ONEFIT_")),
       agimemes: vars.filter((v) => v.key.startsWith("AGIMEMES_")),
       pipesecure: vars.filter((v) => v.key.startsWith("PIPESECURE_")),
+      happypath: vars.filter((v) => v.key.startsWith("HAPPYPATH_")),
       priors: vars.filter((v) => v.key.startsWith("PRIORS_")),
       agitshirts: vars.filter((v) => v.key.startsWith("AGITSHIRTS_")),
       ramblingradio: vars.filter((v) => v.key.startsWith("RAMBLINGRADIO_")),
@@ -142,6 +144,7 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
         {renderGroup("OneFit", grouped.onefit)}
         {renderGroup("AGI Memes", grouped.agimemes)}
         {renderGroup("PipeSecure", grouped.pipesecure)}
+        {renderGroup("Happy Path", grouped.happypath)}
         {renderGroup("Priors", grouped.priors)}
         {renderGroup("AgitShirts", grouped.agitshirts)}
         {renderGroup("RamblingRadio", grouped.ramblingradio)}

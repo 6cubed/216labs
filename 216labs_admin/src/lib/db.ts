@@ -105,6 +105,7 @@ const KNOWN_PORTS: Record<string, number> = {
   storybook: 8019,
   muinteoir: 8020,
   pocket: 8021,
+  happypath: 8022,
 };
 
 let _db: Database.Database | null = null;
@@ -163,6 +164,7 @@ function initSchema(db: Database.Database) {
   backfillKnownPorts(db);
   ensureAdminAlwaysEnabled(db);
   ensurePocketEnabled(db);
+  ensureHappyPathEnabled(db);
 }
 
 function readManifest(manifestPath: string): AppManifest | null {
@@ -423,6 +425,10 @@ function ensureAdminAlwaysEnabled(db: Database.Database) {
 
 function ensurePocketEnabled(db: Database.Database) {
   db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'pocket'").run();
+}
+
+function ensureHappyPathEnabled(db: Database.Database) {
+  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'happypath'").run();
 }
 
 export function getAllApps(): DbApp[] {

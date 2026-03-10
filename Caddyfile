@@ -48,8 +48,16 @@ calibratedai.agimemes.com {
 	reverse_proxy calibratedai:3000
 }
 
+happypath.agimemes.com {
+	reverse_proxy happypath:3000
+}
+
 hivefind.agimemes.com {
 	reverse_proxy hivefind:3000
+}
+
+muinteoir.agimemes.com {
+	reverse_proxy muinteoir:3000
 }
 
 onefit.agimemes.com {
@@ -90,9 +98,5 @@ stroll.agimemes.com {
 
 thezurichdatinggame.agimemes.com {
 	reverse_proxy thezurichdatinggame:3000
-}
-
-muinteoir.agimemes.com {
-	reverse_proxy muinteoir:3000
 }
 
