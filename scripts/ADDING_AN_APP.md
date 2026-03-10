@@ -47,7 +47,7 @@ Env vars defined in `manifest.json` are seeded into the admin DB (empty values, 
 | `docker-compose.yml` | Service definitions (still manual — too many unique configs) |
 | `Caddyfile` | Auto-generated from manifests via `scripts/generate-caddyfile.py` |
 | `deploy.sh` | Reads `manifest.json` via `scripts/app-lookup.py` for build contexts |
-| `216labs_admin/src/lib/db.ts` | Reads manifests on startup to upsert app metadata & seed env vars |
+| `216labs_admin` | Reads all `manifest.json` files on startup to upsert app metadata & seed env vars |
 
 ## Special cases (no manifest needed)
 
