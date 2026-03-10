@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Loader2, Zap, ZapOff, Users, MessageSquare, Radio, X, ChevronRight, Cpu, Wifi } from 'lucide-react'
+import { Loader2, Zap, ZapOff, Users, MessageSquare, Radio, X, ChevronRight, Cpu, Wifi, Brain, ChevronDown, ChevronUp } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -33,10 +33,22 @@ interface Conversation {
   turnCount: number
 }
 
+interface MonologueEntry {
+  content: string
+  context: string
+  timestamp: number
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MAX_TURNS = 6
+const MAX_CONCURRENT_CONVERSATIONS = 5
 const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC'
+
+// Pending reply item for round-robin queue (reply to someone, or opening message)
+type PendingReply =
+  | { type: 'reply'; convId: string; messages: ConvMessage[]; theirMessage: string; theirAgentName: string; peerId: string; isAgent_message: boolean }
+  | { type: 'opening'; convId: string; peerId: string; peerAgentPersona: string }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -82,6 +94,12 @@ export default function PocketPage() {
   const conversationsRef = useRef<Record<string, Conversation>>({})
   const [activeConvId, setActiveConvId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const replyQueueRef = useRef<PendingReply[]>([])
+  const isProcessingRef = useRef<boolean>(false)
+
+  // Internal monologue (agent thinks before each reply)
+  const [internalMonologue, setInternalMonologue] = useState<MonologueEntry[]>([])
+  const [monologueOpen, setMonologueOpen] = useState(false)
 
   // Keep refs in sync
   useEffect(() => { myIdRef.current = myId }, [myId])
@@ -228,81 +246,156 @@ export default function PocketPage() {
     }
   }, [])
 
+  // ── Internal monologue (one short thought before replying) ─────────────────
+  const generateMonologueEntry = useCallback(async (context: string): Promise<string> => {
+    const engine = engineRef.current as {
+      chat: { completions: { create: (opts: unknown) => Promise<AsyncIterable<{ choices: { delta: { content?: string } }[] }>> } }
+    } | null
+    if (!engine) return ''
+    const persona = myAgentPersonaRef.current
+    try {
+      const stream = await engine.chat.completions.create({
+        messages: [
+          { role: 'system', content: `You are ${persona}. Think to yourself in one short sentence before replying. Internal thought only — do not address anyone.` },
+          { role: 'user', content: context },
+        ],
+        max_tokens: 60,
+        temperature: 0.7,
+        stream: true,
+      })
+      let full = ''
+      for await (const chunk of stream) {
+        const token = chunk.choices[0]?.delta?.content || ''
+        full += token
+      }
+      return full.trim() || ''
+    } catch {
+      return ''
+    }
+  }, [])
+
   // ── WebSocket send helper ─────────────────────────────────────────────────
   const sendWS = useCallback((msg: object) => {
     wsRef.current?.send(JSON.stringify(msg))
   }, [])
 
-  // ── Advance conversation turn ─────────────────────────────────────────────
+  // ── Round-robin reply queue: monologue once, then reply ─────────────────────
+  const processReplyQueue = useCallback(() => {
+    if (isProcessingRef.current || replyQueueRef.current.length === 0) {
+      if (replyQueueRef.current.length === 0) {
+        setTimeout(() => {
+          const activeConvs = Object.values(conversationsRef.current).filter((c) => c.status === 'active')
+          sendWS({ type: 'busy_status', busyWith: activeConvs[0]?.id ?? null })
+        }, 0)
+      }
+      return
+    }
+
+    const item = replyQueueRef.current.shift()!
+    isProcessingRef.current = true
+
+    const runAfterMonologue = () => {
+      if (item.type === 'opening') {
+        const openingPrompt = `Say hello to ${item.peerAgentPersona} and introduce yourself briefly. Start the conversation.`
+        generateAndStream(item.convId, [], openingPrompt, (response) => {
+          setConversations((prev) => {
+            const conv = prev[item.convId]
+            if (!conv || conv.status === 'ended') return prev
+            const updated: Conversation = { ...conv, turnCount: 1, isMyTurn: false }
+            return { ...prev, [item.convId]: updated }
+          })
+          sendWS({ type: 'agent_message', targetId: item.peerId, message: response, conversationId: item.convId })
+          isProcessingRef.current = false
+          processReplyQueue()
+        })
+      } else {
+        generateAndStream(item.convId, item.messages, item.theirMessage, (response) => {
+          let willEnd = false
+          let sendMsgType: string | null = null
+          setConversations((prev) => {
+            const afterGenConv = prev[item.convId]
+            if (!afterGenConv || afterGenConv.status === 'ended') {
+              willEnd = true
+              return prev
+            }
+            const finalTurnCount = afterGenConv.turnCount + 1
+            if (finalTurnCount >= MAX_TURNS) {
+              willEnd = true
+              const endedConv = { ...afterGenConv, isMyTurn: false, turnCount: finalTurnCount, status: 'ended' as const }
+              return { ...prev, [item.convId]: endedConv }
+            }
+            sendMsgType = item.isAgent_message ? 'agent_response' : 'agent_message'
+            const nextConv: Conversation = { ...afterGenConv, isMyTurn: false, turnCount: finalTurnCount }
+            return { ...prev, [item.convId]: nextConv }
+          })
+          if (willEnd) {
+            setTimeout(() => {
+              const active = Object.values(conversationsRef.current).filter((c) => c.status === 'active')
+              sendWS({ type: 'busy_status', busyWith: active[0]?.id ?? null })
+            }, 0)
+          } else if (sendMsgType) {
+            sendWS({ type: sendMsgType, targetId: item.peerId, message: response, conversationId: item.convId })
+          }
+          isProcessingRef.current = false
+          processReplyQueue()
+        })
+      }
+    }
+
+    const context = item.type === 'opening'
+      ? `About to introduce yourself to ${item.peerAgentPersona}.`
+      : `About to reply to ${item.theirAgentName} who said: "${item.theirMessage.slice(0, 120)}${item.theirMessage.length > 120 ? '…' : ''}"`
+    generateMonologueEntry(context).then((thought) => {
+      if (thought) {
+        setInternalMonologue((prev) => [...prev, { content: thought, context, timestamp: Date.now() }])
+      }
+      runAfterMonologue()
+    })
+  }, [generateAndStream, generateMonologueEntry, sendWS])
+
+  // ── Advance conversation turn (enqueue reply; round-robin) ──────────────────
   const advanceTurn = useCallback((
     convId: string,
     theirMessage: string,
     theirAgentName: string,
     peerId: string,
-    isAgent_message: boolean, // true = we are the responder, false = we are the initiator
+    isAgent_message: boolean,
   ) => {
-    const conv = conversationsRef.current[convId]
-    if (!conv || conv.status === 'ended') return
-
-    // Add their message to our conversation
-    const newTurnCount = conv.turnCount + 1
     const theirEntry: ConvMessage = {
       speaker: 'theirs',
       agentName: theirAgentName,
       content: theirMessage,
       timestamp: Date.now(),
     }
-    const updatedConv: Conversation = {
-      ...conv,
-      messages: [...conv.messages, theirEntry],
-      isMyTurn: true,
-      turnCount: newTurnCount,
-    }
-    conversationsRef.current[convId] = updatedConv
-    setConversations((prev) => ({ ...prev, [convId]: updatedConv }))
 
-    if (newTurnCount >= MAX_TURNS) {
-      setConversations((prev) => ({
-        ...prev,
-        [convId]: { ...updatedConv, status: 'ended' },
-      }))
-      sendWS({ type: 'busy_status', busyWith: null })
-      return
-    }
+    setConversations((prev) => {
+      const conv = prev[convId]
+      if (!conv || conv.status === 'ended') return prev
 
-    // Generate our reply
-    generateAndStream(convId, updatedConv.messages, theirMessage, (response) => {
-      let willEnd = false
-      let sendMsgType: string | null = null
-
-      setConversations((prev) => {
-        const afterGenConv = prev[convId]
-        if (!afterGenConv || afterGenConv.status === 'ended') {
-          willEnd = true
-          return prev
-        }
-        const finalTurnCount = afterGenConv.turnCount + 1
-
-        if (finalTurnCount >= MAX_TURNS) {
-          willEnd = true
-          const endedConv = { ...afterGenConv, isMyTurn: false, turnCount: finalTurnCount, status: 'ended' as const }
-          conversationsRef.current[convId] = endedConv
-          return { ...prev, [convId]: endedConv }
-        }
-
-        sendMsgType = isAgent_message ? 'agent_response' : 'agent_message'
-        const nextConv: Conversation = { ...afterGenConv, isMyTurn: false, turnCount: finalTurnCount }
-        conversationsRef.current[convId] = nextConv
-        return { ...prev, [convId]: nextConv }
-      })
-
-      if (willEnd) {
-        sendWS({ type: 'busy_status', busyWith: null })
-      } else if (sendMsgType) {
-        sendWS({ type: sendMsgType, targetId: peerId, message: response, conversationId: convId })
+      const newTurnCount = conv.turnCount + 1
+      const updatedConv: Conversation = {
+        ...conv,
+        messages: [...conv.messages, theirEntry],
+        isMyTurn: true,
+        turnCount: newTurnCount,
       }
+
+      if (newTurnCount >= MAX_TURNS) {
+        return { ...prev, [convId]: { ...updatedConv, status: 'ended' } }
+      }
+      replyQueueRef.current.push({
+        type: 'reply',
+        convId,
+        messages: updatedConv.messages,
+        theirMessage,
+        theirAgentName,
+        peerId,
+        isAgent_message,
+      })
+      return { ...prev, [convId]: updatedConv }
     })
-  }, [generateAndStream, sendWS])
+    setTimeout(processReplyQueue, 0)
+  }, [processReplyQueue])
 
   // ── WebSocket setup ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -355,7 +448,7 @@ export default function PocketPage() {
         const existing = conversationsRef.current[convId]
 
         if (!existing) {
-          // New conversation from peer
+          // New conversation from peer — only update state; ref is synced by useEffect
           const newConv: Conversation = {
             id: convId,
             peerId: msg.fromId,
@@ -366,13 +459,15 @@ export default function PocketPage() {
             isMyTurn: true,
             turnCount: 0,
           }
-          conversationsRef.current[convId] = newConv
           setConversations((prev) => ({ ...prev, [convId]: newConv }))
           setActiveConvId(convId)
           sendWS({ type: 'busy_status', busyWith: convId })
+        } else {
+          // Existing conversation: ensure friend is looking at this thread
+          setActiveConvId(convId)
         }
 
-        // Advance turn (we're the responder → isAgent_message = true)
+        // Advance turn after state has settled (ref will have latest via useEffect)
         setTimeout(() => {
           advanceTurn(convId, msg.message, msg.fromAgentPersona, msg.fromId, true)
         }, 300)
@@ -381,7 +476,7 @@ export default function PocketPage() {
       // Response to our message: remote is responding, we are the initiator
       if (msg.type === 'agent_response_incoming') {
         const convId: string = msg.conversationId
-        // Advance turn (we're the initiator → isAgent_message = false)
+        setActiveConvId(convId) // Ensure we're viewing this conversation
         setTimeout(() => {
           advanceTurn(convId, msg.message, msg.fromAgentPersona, msg.fromId, false)
         }, 300)
@@ -402,7 +497,7 @@ export default function PocketPage() {
     // handlers already use refs; nothing to do
   }, [advanceTurn, sendWS])
 
-  // ── Initiate conversation ─────────────────────────────────────────────────
+  // ── Initiate conversation (enqueue opening; round-robin) ─────────────────────
   const pairAgents = useCallback((peer: OnlineUser) => {
     const id = myIdRef.current
     if (!id || modelStatus !== 'ready') return
@@ -418,35 +513,29 @@ export default function PocketPage() {
       isMyTurn: true,
       turnCount: 0,
     }
-    conversationsRef.current[convId] = newConv
     setConversations((prev) => ({ ...prev, [convId]: newConv }))
     setActiveConvId(convId)
     sendWS({ type: 'busy_status', busyWith: convId })
 
-    const openingPrompt = `Say hello to ${peer.agentPersona} and introduce yourself briefly. Start the conversation.`
-    generateAndStream(convId, [], openingPrompt, (response) => {
-      let active = false
-      setConversations((prev) => {
-        const conv = prev[convId]
-        if (!conv || conv.status === 'ended') return prev
-        active = true
-        const updated: Conversation = { ...conv, turnCount: 1, isMyTurn: false }
-        conversationsRef.current[convId] = updated
-        return { ...prev, [convId]: updated }
-      })
-      if (active) {
-        sendWS({ type: 'agent_message', targetId: peer.id, message: response, conversationId: convId })
-      }
+    replyQueueRef.current.push({
+      type: 'opening',
+      convId,
+      peerId: peer.id,
+      peerAgentPersona: peer.agentPersona,
     })
-  }, [modelStatus, generateAndStream, sendWS])
+    setTimeout(processReplyQueue, 0)
+  }, [modelStatus, processReplyQueue, sendWS])
 
   // ── Stop conversation ─────────────────────────────────────────────────────
   const stopConversation = useCallback((convId: string) => {
     setConversations((prev) => ({
       ...prev,
-      [convId]: { ...prev[convId], status: 'ended' },
+      [convId]: { ...prev[convId], status: 'ended' as const },
     }))
-    sendWS({ type: 'busy_status', busyWith: null })
+    setTimeout(() => {
+      const active = Object.values(conversationsRef.current).filter((c) => c.status === 'active')
+      sendWS({ type: 'busy_status', busyWith: active[0]?.id ?? null })
+    }, 0)
   }, [sendWS])
 
   // ── Join ──────────────────────────────────────────────────────────────────
@@ -515,8 +604,9 @@ export default function PocketPage() {
             )}
             {otherUsers.map((user) => {
               const busy = !!user.busyWith
-              const iAmBusy = Object.values(conversations).some((c) => c.status === 'active')
-              const canPair = modelStatus === 'ready' && !busy && !iAmBusy
+              const activeConvs = Object.values(conversations).filter((c) => c.status === 'active')
+              const hasConvWithPeer = activeConvs.some((c) => c.peerId === user.id)
+              const canPair = modelStatus === 'ready' && !busy && !hasConvWithPeer && activeConvs.length < MAX_CONCURRENT_CONVERSATIONS
               const isActive = activeConv?.peerId === user.id && activeConv.status === 'active'
 
               return (
@@ -574,6 +664,38 @@ export default function PocketPage() {
 
         {/* Conversation panel */}
         <main className="flex-1 flex flex-col min-w-0">
+          {/* Internal monologue (collapsible) */}
+          <div className="shrink-0 border-b border-[#1e1e32]">
+            <button
+              type="button"
+              onClick={() => setMonologueOpen((o) => !o)}
+              className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-[#111120] transition-colors"
+            >
+              <span className="flex items-center gap-2 text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+                <Brain className="w-3.5 h-3.5 text-amber-500/80" />
+                Internal monologue
+                {internalMonologue.length > 0 && (
+                  <span className="text-zinc-600 normal-case font-normal">({internalMonologue.length})</span>
+                )}
+              </span>
+              {monologueOpen ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+            </button>
+            {monologueOpen && (
+              <div className="max-h-40 overflow-y-auto px-4 pb-3 space-y-2 border-t border-[#1e1e32] pt-2">
+                {internalMonologue.length === 0 ? (
+                  <p className="text-xs text-zinc-600">One thought will appear here before each reply.</p>
+                ) : (
+                  internalMonologue.map((entry, i) => (
+                    <div key={`${entry.timestamp}-${i}`} className="text-xs rounded-lg bg-amber-950/30 border border-amber-800/30 px-3 py-2 text-amber-200/90">
+                      <p className="leading-relaxed">{entry.content}</p>
+                      <p className="mt-1 text-amber-600/80 truncate">{entry.context}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
           {activeConv ? (
             <>
               {/* Conv header */}
@@ -617,7 +739,7 @@ export default function PocketPage() {
                 )}
                 {activeConv.messages.map((msg, i) => (
                   <div
-                    key={msg.timestamp + i}
+                    key={`${activeConv.id}-${i}-${msg.timestamp}`}
                     className={`flex msg-in ${msg.speaker === 'mine' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`max-w-[70%] space-y-1 ${msg.speaker === 'mine' ? 'items-end' : 'items-start'} flex flex-col`}>
