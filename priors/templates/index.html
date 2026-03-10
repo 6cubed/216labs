@@ -3,13 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Priors - Your Priors</title>
+    <title>Priors - AI Markets</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Hello, {{ name }}!</h1>
-        <p><a href="{{ url_for('logout') }}">Logout</a></p>
+        <div class="header-row">
+            <h1>AI Markets</h1>
+            {% if logged_in %}
+                <span class="user-info">{{ name }} &mdash; <a href="{{ url_for('logout') }}">Logout</a></span>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="login-button-small">Login with Google</a>
+            {% endif %}
+        </div>
+
+        <p class="subtitle">Yes/no questions scored by AI probability.</p>
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -21,28 +29,35 @@
             {% endif %}
         {% endwith %}
 
-        <h2>Your Priors</h2>
-        <form action="{{ url_for('add_prior') }}" method="post" class="add-prior-form">
-            <input type="text" name="question" placeholder="Add a new yes/no question" required>
-            <button type="submit">Add Prior</button>
-        </form>
+        {% if logged_in %}
+            <form action="{{ url_for('add_prior') }}" method="post" class="add-prior-form">
+                <input type="text" name="question" placeholder="Ask a yes/no question…" required>
+                <button type="submit">Add</button>
+            </form>
+        {% else %}
+            <p class="login-prompt"><a href="{{ url_for('login') }}">Login with Google</a> to add your own question.</p>
+        {% endif %}
 
         {% if priors %}
             <ul class="priors-list">
                 {% for prior in priors %}
                     <li>
-                        {{ prior.question }}
-                        {% if prior.likelihood is not none %}
-                            (Likelihood: {{ "{:.2f}".format(prior.likelihood * 100) }}%)
-                        {% else %}
-                            (Likelihood: Not yet calculated)
+                        <span class="question">{{ prior.question }}</span>
+                        <span class="likelihood">
+                            {% if prior.likelihood is not none %}
+                                {{ "{:.0f}".format(prior.likelihood * 100) }}%
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                        {% if logged_in and prior.user_id == current_user_id %}
+                            <a href="{{ url_for('delete_prior', prior_id=prior.id) }}" class="delete-button">✕</a>
                         {% endif %}
-                        <a href="{{ url_for('delete_prior', prior_id=prior.id) }}" class="delete-button">Delete</a>
                     </li>
                 {% endfor %}
             </ul>
         {% else %}
-            <p>You haven't added any priors yet. Add one above!</p>
+            <p class="empty">No questions yet. Be the first to add one!</p>
         {% endif %}
     </div>
 </body>

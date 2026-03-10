@@ -58,16 +58,15 @@ def before_request():
 
 @app.route("/")
 def index():
-    if "google_id" in session:
-        user_id = session["google_id"]
-        db = get_db()
-        priors = db.execute(
-            "SELECT id, question, likelihood FROM priors WHERE user_id = ? ORDER BY created_at DESC",
-            (user_id,),
-        ).fetchall()
-        db.close()
-        return render_template("index.html", name=session["name"], priors=priors)
-    return render_template("login.html")
+    db = get_db()
+    priors = db.execute(
+        "SELECT id, question, likelihood, user_id FROM priors ORDER BY created_at DESC",
+    ).fetchall()
+    db.close()
+    logged_in = "google_id" in session
+    name = session.get("name") if logged_in else None
+    user_id = session.get("google_id") if logged_in else None
+    return render_template("index.html", name=name, priors=priors, logged_in=logged_in, current_user_id=user_id)
 
 
 @app.route("/login")

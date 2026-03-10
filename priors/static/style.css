@@ -15,8 +15,27 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-h1, h2 {
+h1 {
     color: #0056b3;
+    margin: 0;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.user-info {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.subtitle {
+    color: #666;
+    margin: 0 0 20px;
+    font-size: 0.95em;
 }
 
 .login-button {
@@ -31,6 +50,27 @@ h1, h2 {
 
 .login-button:hover {
     background-color: #357ae8;
+}
+
+.login-button-small {
+    display: inline-block;
+    background-color: #4285F4;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.login-button-small:hover {
+    background-color: #357ae8;
+}
+
+.login-prompt {
+    color: #555;
+    font-size: 0.9em;
+    margin-bottom: 20px;
 }
 
 .add-prior-form {
@@ -66,25 +106,44 @@ h1, h2 {
 
 .priors-list li {
     background-color: #e9ecef;
-    margin-bottom: 10px;
-    padding: 10px;
+    margin-bottom: 8px;
+    padding: 10px 14px;
     border-radius: 4px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+}
+
+.priors-list li .question {
+    flex: 1;
+}
+
+.priors-list li .likelihood {
+    font-weight: bold;
+    color: #0056b3;
+    white-space: nowrap;
+    min-width: 40px;
+    text-align: right;
 }
 
 .priors-list li .delete-button {
     background-color: #dc3545;
     color: white;
-    padding: 5px 10px;
+    padding: 3px 8px;
     border-radius: 4px;
     text-decoration: none;
-    font-size: 0.9em;
+    font-size: 0.85em;
+    line-height: 1;
 }
 
 .priors-list li .delete-button:hover {
     background-color: #c82333;
+}
+
+.empty {
+    color: #888;
+    font-style: italic;
 }
 
 .flashes {
