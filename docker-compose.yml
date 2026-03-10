@@ -426,9 +426,9 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
-      - OPENAI_API_KEY=${MUINTEOIR_OPENAI_API_KEY:-}
     volumes:
       - ./muinteoir/data:/app/data
+      - ./216labs.db:/app/216labs.db:ro
     expose:
       - "3000"
     mem_limit: 256m
