@@ -16,7 +16,6 @@ const PREFIX_TO_DIR: Array<[string, string]> = [
   ["NEXT_PUBLIC_ONEROOM_", "oneroom"],
   ["ONEROOM_", "oneroom"],
   ["AGIMEMES_", "agimemes.com"],
-  ["PIPESECURE_", "pipesecure"],
   ["PRIORS_", "priors"],
   ["AGITSHIRTS_", "agitshirts"],
   ["RAMBLINGRADIO_", "RamblingRadio"],
