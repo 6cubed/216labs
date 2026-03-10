@@ -52,16 +52,14 @@ service_spec() {
   fi
   # Fallback for apps without manifests
   case "$1" in
-    anchor-api)        echo "./anchor/backend" ;;
-    anchor-web)        echo "./anchor/frontend" ;;
-    pipesecure-worker) echo "./pipesecure:Dockerfile.worker" ;;
+    anchor-api) echo "./anchor/backend" ;;
+    anchor-web) echo "./anchor/frontend" ;;
     *) echo "" ;;
   esac
 }
 
 service_deps() {
   case "$1" in
-    pipesecure) echo "redis pipesecure-worker pipesecure-migrate" ;;
     *) echo "" ;;
   esac
 }
