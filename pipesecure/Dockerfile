@@ -1,40 +1,26 @@
-FROM node:20-alpine AS base
+FROM node:20-slim
 
-FROM base AS deps
+# Install system deps: git for cloning, python3+pip for semgrep
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git python3 python3-pip ca-certificates \
+    && pip3 install semgrep --break-system-packages \
+    && npm install -g @ast-grep/cli \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
 
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY package*.json ./
+RUN npm ci --omit=dev
 
-# Dummy URL so Prisma generate + Next.js build succeed without a live DB
-ENV DATABASE_URL="file:./dummy.db"
-ENV NEXTAUTH_SECRET="build-time-placeholder"
-ENV NEXT_TELEMETRY_DISABLED=1
+COPY tsconfig.json ./
+COPY src ./src
 
-RUN npx prisma generate
-RUN npm run build
+RUN mkdir -p /app/data
 
-FROM base AS runner
-WORKDIR /app
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/prisma ./prisma
-
-USER nextjs
-EXPOSE 3000
+ENV DATA_DIR=/app/data
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-CMD ["node", "server.js"]
+
+EXPOSE 3000
+
+CMD ["npx", "tsx", "src/server.ts"]

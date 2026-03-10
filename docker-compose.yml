@@ -106,64 +106,17 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/pipesecure.db
-      - REDIS_URL=redis://redis:6379
-      - NEXTAUTH_URL=${PIPESECURE_NEXTAUTH_URL:-https://pipesecure.agimemes.com}
-      - NEXTAUTH_SECRET=${PIPESECURE_NEXTAUTH_SECRET}
-      - AUTH_TRUST_HOST=true
-      - GITHUB_CLIENT_ID=${PIPESECURE_GITHUB_CLIENT_ID:-}
-      - GITHUB_CLIENT_SECRET=${PIPESECURE_GITHUB_CLIENT_SECRET:-}
-      - GITHUB_APP_ID=${PIPESECURE_GITHUB_APP_ID:-}
-      - GITHUB_APP_PRIVATE_KEY_PATH=/app/github-app-private-key.pem
+      - DATA_DIR=/app/data
+      - GITHUB_TOKEN=${PIPESECURE_GITHUB_TOKEN:-}
+      - GITHUB_REPO=${PIPESECURE_GITHUB_REPO:-216labs/216labs}
       - GITHUB_WEBHOOK_SECRET=${PIPESECURE_GITHUB_WEBHOOK_SECRET:-}
-      - ENCRYPTION_KEY=${PIPESECURE_ENCRYPTION_KEY:-}
-      - NEXT_PUBLIC_APP_URL=${PIPESECURE_NEXT_PUBLIC_APP_URL:-https://pipesecure.agimemes.com}
+      - OPENAI_API_KEY=${PIPESECURE_OPENAI_API_KEY:-}
+      - SCAN_ON_STARTUP=${PIPESECURE_SCAN_ON_STARTUP:-false}
     volumes:
-      - ./pipesecure/github-app-private-key.pem:/app/github-app-private-key.pem:ro
       - ./pipesecure/data:/app/data
     expose:
       - "3000"
-    depends_on:
-      redis:
-        condition: service_started
-      pipesecure-migrate:
-        condition: service_completed_successfully
-    mem_limit: 256m
-
-  pipesecure-worker:
-    image: 216labs/pipesecure-worker:latest
-    build:
-      context: ./pipesecure
-      dockerfile: Dockerfile.worker
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=file:/app/data/pipesecure.db
-      - REDIS_URL=redis://redis:6379
-      - GITHUB_APP_ID=${PIPESECURE_GITHUB_APP_ID:-}
-      - GITHUB_APP_PRIVATE_KEY_PATH=/app/github-app-private-key.pem
-      - GITHUB_WEBHOOK_SECRET=${PIPESECURE_GITHUB_WEBHOOK_SECRET:-}
-      - ENCRYPTION_KEY=${PIPESECURE_ENCRYPTION_KEY:-}
-    volumes:
-      - ./pipesecure/github-app-private-key.pem:/app/github-app-private-key.pem:ro
-      - ./pipesecure/data:/app/data
-    depends_on:
-      redis:
-        condition: service_started
-      pipesecure-migrate:
-        condition: service_completed_successfully
     mem_limit: 512m
-
-  pipesecure-migrate:
-    image: 216labs/pipesecure-worker:latest
-    build:
-      context: ./pipesecure
-      dockerfile: Dockerfile.worker
-    environment:
-      - DATABASE_URL=file:/app/data/pipesecure.db
-    volumes:
-      - ./pipesecure/data:/app/data
-    command: npx prisma db push --skip-generate
-    restart: "no"
 
   # ── 216labs Admin Dashboard ─────────────────────────────────
   admin:
@@ -368,15 +321,6 @@ services:
       - "3000"
     mem_limit: 512m
 
-  # ── Redis (used by PipeSecure) ──────────────────────────────
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-    expose:
-      - "6379"
-    mem_limit: 64m
 
   # ── Paperframe ML backend ────────────────────────────────────
   # Requires ~2GB RAM. Enable with: docker compose --profile ml up -d
@@ -436,4 +380,3 @@ volumes:
   caddy_data:
   caddy_config:
   sam_models:
-  redis_data:

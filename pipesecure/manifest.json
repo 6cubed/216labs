@@ -1,27 +1,23 @@
 {
   "id": "pipesecure",
   "name": "PipeSecure",
-  "tagline": "AI-powered security scanning for GitHub",
-  "description": "Continuous security scanning for GitHub repositories. Uses AI analysis with Semgrep and ast-grep for vulnerability detection. Features GitHub App integration, background job processing via BullMQ + Redis.",
+  "tagline": "Security watchguard for the 216labs repo",
+  "description": "Watches the 216labs GitHub repo for security vulnerabilities. On every push, clones the repo, runs Semgrep and ast-grep, and automatically creates GitHub issues for new findings. Issues are closed automatically when vulnerabilities are resolved.",
   "category": "security",
   "internal_port": 3000,
-  "memory_limit": "256m",
+  "memory_limit": "512m",
   "docker_service": "pipesecure",
   "build_context": "./pipesecure",
   "stack": {
-    "frontend": "Next.js 16",
-    "backend": "NextAuth.js v5 + BullMQ worker",
-    "database": "SQLite (Prisma)",
-    "other": ["Redis", "OpenAI SDK", "Semgrep", "ast-grep"]
+    "backend": "Node.js + Express",
+    "database": "SQLite (better-sqlite3)",
+    "other": ["Semgrep", "ast-grep", "GitHub Issues API"]
   },
   "env_vars": [
-    { "key": "PIPESECURE_NEXTAUTH_URL", "description": "PipeSecure public URL", "is_secret": false },
-    { "key": "PIPESECURE_NEXTAUTH_SECRET", "description": "PipeSecure NextAuth secret", "is_secret": true },
-    { "key": "PIPESECURE_GITHUB_CLIENT_ID", "description": "PipeSecure GitHub OAuth client ID", "is_secret": true },
-    { "key": "PIPESECURE_GITHUB_CLIENT_SECRET", "description": "PipeSecure GitHub OAuth client secret", "is_secret": true },
-    { "key": "PIPESECURE_GITHUB_APP_ID", "description": "PipeSecure GitHub App ID", "is_secret": true },
-    { "key": "PIPESECURE_GITHUB_WEBHOOK_SECRET", "description": "PipeSecure webhook secret", "is_secret": true },
-    { "key": "PIPESECURE_ENCRYPTION_KEY", "description": "PipeSecure data encryption key", "is_secret": true },
-    { "key": "PIPESECURE_NEXT_PUBLIC_APP_URL", "description": "PipeSecure frontend URL", "is_secret": false }
+    { "key": "PIPESECURE_GITHUB_TOKEN", "description": "GitHub PAT with repo and issues write access", "is_secret": true },
+    { "key": "PIPESECURE_GITHUB_REPO", "description": "Repo to watch (default: 216labs/216labs)", "is_secret": false },
+    { "key": "PIPESECURE_GITHUB_WEBHOOK_SECRET", "description": "Shared secret for GitHub webhook HMAC verification", "is_secret": true },
+    { "key": "PIPESECURE_OPENAI_API_KEY", "description": "Optional OpenAI key for AI triage of findings", "is_secret": true },
+    { "key": "PIPESECURE_SCAN_ON_STARTUP", "description": "Set to 'true' to run a full scan when the container starts", "is_secret": false }
   ]
 }
