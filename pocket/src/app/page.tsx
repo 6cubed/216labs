@@ -272,26 +272,35 @@ export default function PocketPage() {
 
     // Generate our reply
     generateAndStream(convId, updatedConv.messages, theirMessage, (response) => {
-      const afterGenConv = conversationsRef.current[convId]
-      if (!afterGenConv || afterGenConv.status === 'ended') return
-      const finalTurnCount = afterGenConv.turnCount + 1
-      const nextConv: Conversation = {
-        ...afterGenConv,
-        isMyTurn: false,
-        turnCount: finalTurnCount,
-      }
-      conversationsRef.current[convId] = nextConv
-      setConversations((prev) => ({ ...prev, [convId]: nextConv }))
+      let willEnd = false
+      let sendMsgType: string | null = null
 
-      if (finalTurnCount >= MAX_TURNS) {
-        setConversations((prev) => ({ ...prev, [convId]: { ...nextConv, status: 'ended' } }))
+      setConversations((prev) => {
+        const afterGenConv = prev[convId]
+        if (!afterGenConv || afterGenConv.status === 'ended') {
+          willEnd = true
+          return prev
+        }
+        const finalTurnCount = afterGenConv.turnCount + 1
+
+        if (finalTurnCount >= MAX_TURNS) {
+          willEnd = true
+          const endedConv = { ...afterGenConv, isMyTurn: false, turnCount: finalTurnCount, status: 'ended' as const }
+          conversationsRef.current[convId] = endedConv
+          return { ...prev, [convId]: endedConv }
+        }
+
+        sendMsgType = isAgent_message ? 'agent_response' : 'agent_message'
+        const nextConv: Conversation = { ...afterGenConv, isMyTurn: false, turnCount: finalTurnCount }
+        conversationsRef.current[convId] = nextConv
+        return { ...prev, [convId]: nextConv }
+      })
+
+      if (willEnd) {
         sendWS({ type: 'busy_status', busyWith: null })
-        return
+      } else if (sendMsgType) {
+        sendWS({ type: sendMsgType, targetId: peerId, message: response, conversationId: convId })
       }
-
-      // Send message: initiator uses 'agent_message', responder uses 'agent_response'
-      const msgType = isAgent_message ? 'agent_response' : 'agent_message'
-      sendWS({ type: msgType, targetId: peerId, message: response, conversationId: convId })
     })
   }, [generateAndStream, sendWS])
 
@@ -416,12 +425,18 @@ export default function PocketPage() {
 
     const openingPrompt = `Say hello to ${peer.agentPersona} and introduce yourself briefly. Start the conversation.`
     generateAndStream(convId, [], openingPrompt, (response) => {
-      const conv = conversationsRef.current[convId]
-      if (!conv || conv.status === 'ended') return
-      const updated: Conversation = { ...conv, turnCount: 1, isMyTurn: false }
-      conversationsRef.current[convId] = updated
-      setConversations((prev) => ({ ...prev, [convId]: updated }))
-      sendWS({ type: 'agent_message', targetId: peer.id, message: response, conversationId: convId })
+      let active = false
+      setConversations((prev) => {
+        const conv = prev[convId]
+        if (!conv || conv.status === 'ended') return prev
+        active = true
+        const updated: Conversation = { ...conv, turnCount: 1, isMyTurn: false }
+        conversationsRef.current[convId] = updated
+        return { ...prev, [convId]: updated }
+      })
+      if (active) {
+        sendWS({ type: 'agent_message', targetId: peer.id, message: response, conversationId: convId })
+      }
     })
   }, [modelStatus, generateAndStream, sendWS])
 
