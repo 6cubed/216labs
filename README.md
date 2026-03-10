@@ -74,6 +74,33 @@ docker compose --profile ml up -d
 
 Set `PAPERFRAME_API_URL=http://paperframe-backend:8000` in the admin env vars first.
 
+## Contributing to a single project
+
+If you only want to work on one project, you can clone just that subdirectory using Git sparse checkout — no need to download the entire monorepo.
+
+```bash
+# Clone without downloading file contents (fast)
+git clone --filter=blob:none --sparse https://github.com/216labs/216labs.git
+cd 216labs
+
+# Check out only the project you want, e.g. onefit
+git sparse-checkout set onefit
+```
+
+To also include shared infrastructure files:
+
+```bash
+git sparse-checkout set onefit docker-compose.yml deploy.sh Caddyfile
+```
+
+You can expand your checkout at any time:
+
+```bash
+git sparse-checkout add anotherapp
+```
+
+> Requires Git 2.25+ (January 2020).
+
 ## Local development
 
 ```bash
