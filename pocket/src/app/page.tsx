@@ -138,6 +138,8 @@ export default function PocketPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const replyQueueRef = useRef<PendingReply[]>([])
   const isProcessingRef = useRef<boolean>(false)
+  const advanceTurnRef = useRef<(convId: string, theirMessage: string, theirAgentName: string, peerId: string, isAgent_message: boolean) => void>(() => {})
+  const processReplyQueueRef = useRef<() => void>(() => {})
 
   // Internal monologue (agent thinks before each reply)
   const [internalMonologue, setInternalMonologue] = useState<MonologueEntry[]>([])
@@ -409,9 +411,13 @@ export default function PocketPage() {
       ? `About to introduce yourself to ${item.peerAgentPersona}.`
       : `About to reply to ${item.theirAgentName} who said: "${item.theirMessage.slice(0, 120)}${item.theirMessage.length > 120 ? '…' : ''}"`
     generateMonologueEntry(context).then((thought) => {
-      if (thought) {
-        setInternalMonologue((prev) => [...prev, { content: thought, context, timestamp: Date.now() }])
-      }
+      setInternalMonologue((prev) => [
+        ...prev,
+        { content: thought || '…', context, timestamp: Date.now() },
+      ])
+      runAfterMonologue()
+    }).catch(() => {
+      setInternalMonologue((prev) => [...prev, { content: '…', context, timestamp: Date.now() }])
       runAfterMonologue()
     })
   }, [generateAndStream, generateMonologueEntry, sendWS])
@@ -457,8 +463,11 @@ export default function PocketPage() {
       })
       return { ...prev, [convId]: updatedConv }
     })
-    setTimeout(processReplyQueue, 0)
+    setTimeout(() => processReplyQueueRef.current(), 0)
   }, [processReplyQueue])
+
+  useEffect(() => { advanceTurnRef.current = advanceTurn }, [advanceTurn])
+  useEffect(() => { processReplyQueueRef.current = processReplyQueue }, [processReplyQueue])
 
   // ── WebSocket setup ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -530,9 +539,9 @@ export default function PocketPage() {
           setActiveConvId(convId)
         }
 
-        // Advance turn after state has settled (ref will have latest via useEffect)
+        // Use ref so we always call latest advanceTurn (effect has [] deps)
         setTimeout(() => {
-          advanceTurn(convId, msg.message, msg.fromAgentPersona, msg.fromId, true)
+          advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, true)
         }, 300)
       }
 
@@ -541,7 +550,7 @@ export default function PocketPage() {
         const convId: string = msg.conversationId
         setActiveConvId(convId) // Ensure we're viewing this conversation
         setTimeout(() => {
-          advanceTurn(convId, msg.message, msg.fromAgentPersona, msg.fromId, false)
+          advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, false)
         }, 300)
       }
     }
