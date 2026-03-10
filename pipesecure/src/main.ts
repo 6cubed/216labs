@@ -1,0 +1,28 @@
+import { runScan } from "./scan";
+
+const INTERVAL_MS =
+  parseFloat(process.env.SCAN_INTERVAL_HOURS || "24") * 60 * 60 * 1000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function main(): Promise<void> {
+  console.log("[pipesecure] Starting up");
+  console.log(
+    `[pipesecure] Scanning ${process.env.GITHUB_REPO || "216labs/216labs"} every ${process.env.SCAN_INTERVAL_HOURS || "24"}h`
+  );
+
+  while (true) {
+    await runScan();
+    console.log(
+      `[pipesecure] Next scan in ${process.env.SCAN_INTERVAL_HOURS || "24"}h`
+    );
+    await sleep(INTERVAL_MS);
+  }
+}
+
+main().catch((err) => {
+  console.error("[pipesecure] Fatal error:", err);
+  process.exit(1);
+});

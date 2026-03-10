@@ -1,6 +1,5 @@
 FROM node:20-slim
 
-# Install git, Python, semgrep, and ast-grep
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git python3 python3-pip ca-certificates \
     && pip3 install --no-cache-dir semgrep --break-system-packages \
@@ -21,8 +20,5 @@ RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
 ENV DATA_DIR=/app/data
-ENV PORT=3000
 
-EXPOSE 3000
-
-CMD ["npx", "tsx", "src/server.ts"]
+CMD ["npx", "tsx", "src/main.ts"]

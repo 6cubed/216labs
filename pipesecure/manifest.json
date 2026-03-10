@@ -1,23 +1,20 @@
 {
   "id": "pipesecure",
   "name": "PipeSecure",
-  "tagline": "Security watchguard for the 216labs repo",
-  "description": "Watches the 216labs GitHub repo for security vulnerabilities. On every push, clones the repo, runs Semgrep and ast-grep, and automatically creates GitHub issues for new findings. Issues are closed automatically when vulnerabilities are resolved.",
+  "tagline": "Periodic security scanner for the 216labs repo",
+  "description": "Clones the 216labs repo on a schedule, runs Semgrep and ast-grep, and automatically opens GitHub Issues for new vulnerabilities. Issues are closed automatically when the vulnerability is no longer detected.",
   "category": "security",
-  "internal_port": 3000,
   "memory_limit": "512m",
   "docker_service": "pipesecure",
   "build_context": "./pipesecure",
   "stack": {
-    "backend": "Node.js + Express",
-    "database": "SQLite (better-sqlite3)",
+    "backend": "Node.js (scheduled runner)",
+    "database": "SQLite (fingerprint dedup)",
     "other": ["Semgrep", "ast-grep", "GitHub Issues API"]
   },
   "env_vars": [
-    { "key": "PIPESECURE_GITHUB_TOKEN", "description": "GitHub PAT with repo and issues write access", "is_secret": true },
-    { "key": "PIPESECURE_GITHUB_REPO", "description": "Repo to watch (default: 216labs/216labs)", "is_secret": false },
-    { "key": "PIPESECURE_GITHUB_WEBHOOK_SECRET", "description": "Shared secret for GitHub webhook HMAC verification", "is_secret": true },
-    { "key": "PIPESECURE_OPENAI_API_KEY", "description": "Optional OpenAI key for AI triage of findings", "is_secret": true },
-    { "key": "PIPESECURE_SCAN_ON_STARTUP", "description": "Set to 'true' to run a full scan when the container starts", "is_secret": false }
+    { "key": "PIPESECURE_GITHUB_TOKEN", "description": "GitHub PAT — needs repo (clone) and issues (read/write) scopes", "is_secret": true },
+    { "key": "PIPESECURE_GITHUB_REPO", "description": "Repo to scan (default: 216labs/216labs)", "is_secret": false },
+    { "key": "PIPESECURE_SCAN_INTERVAL_HOURS", "description": "How often to scan in hours (default: 24)", "is_secret": false }
   ]
 }

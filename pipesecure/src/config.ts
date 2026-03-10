@@ -7,17 +7,11 @@ function required(key: string): string {
 }
 
 export const config = {
-  port: parseInt(process.env.PORT || "3000", 10),
   github: {
     token: required("GITHUB_TOKEN"),
     repo: process.env.GITHUB_REPO || "216labs/216labs",
-    webhookSecret: process.env.GITHUB_WEBHOOK_SECRET || "",
     branch: process.env.GITHUB_BRANCH || "main",
   },
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY || "",
-  },
-  scanOnStartup: process.env.SCAN_ON_STARTUP === "true",
   dataDir: process.env.DATA_DIR || "/app/data",
 };
 

@@ -104,18 +104,13 @@ services:
     build: ./pipesecure
     restart: unless-stopped
     environment:
-      - PORT=3000
       - NODE_ENV=production
       - DATA_DIR=/app/data
       - GITHUB_TOKEN=${PIPESECURE_GITHUB_TOKEN:-}
       - GITHUB_REPO=${PIPESECURE_GITHUB_REPO:-216labs/216labs}
-      - GITHUB_WEBHOOK_SECRET=${PIPESECURE_GITHUB_WEBHOOK_SECRET:-}
-      - OPENAI_API_KEY=${PIPESECURE_OPENAI_API_KEY:-}
-      - SCAN_ON_STARTUP=${PIPESECURE_SCAN_ON_STARTUP:-false}
+      - SCAN_INTERVAL_HOURS=${PIPESECURE_SCAN_INTERVAL_HOURS:-24}
     volumes:
       - ./pipesecure/data:/app/data
-    expose:
-      - "3000"
     mem_limit: 512m
 
   # ── 216labs Admin Dashboard ─────────────────────────────────
