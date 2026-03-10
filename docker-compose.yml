@@ -428,7 +428,6 @@ services:
       - NODE_ENV=production
     volumes:
       - ./muinteoir/data:/app/data
-      - ./216labs.db:/app/216labs.db:ro
     expose:
       - "3000"
     mem_limit: 256m

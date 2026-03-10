@@ -1,24 +1,26 @@
 import OpenAI from "openai";
-import Database from "better-sqlite3";
-import fs from "fs";
 
-const ADMIN_DB_PATH = "/app/216labs.db";
+const ADMIN_ENV_URL = "http://admin:3000/internal/env";
 
-/** Read the key live from the shared admin DB so changes take effect instantly. */
-function getApiKey(overrideKey?: string): string {
+/**
+ * Fetch the API key live from the admin service so changes in the admin panel
+ * take effect on the next request — no redeploy required.
+ * Falls back to process env for local development (where admin isn't running).
+ */
+async function getApiKey(overrideKey?: string): Promise<string> {
   if (overrideKey) return overrideKey;
 
-  if (fs.existsSync(ADMIN_DB_PATH)) {
-    try {
-      const db = new Database(ADMIN_DB_PATH, { readonly: true, fileMustExist: true });
-      const row = db.prepare(
-        "SELECT value FROM env_vars WHERE key = 'MUINTEOIR_OPENAI_API_KEY' LIMIT 1"
-      ).get() as { value: string } | undefined;
-      db.close();
-      if (row?.value) return row.value;
-    } catch {
-      // fall through to env var
+  try {
+    const res = await fetch(
+      `${ADMIN_ENV_URL}?key=MUINTEOIR_OPENAI_API_KEY`,
+      { cache: "no-store" }
+    );
+    if (res.ok) {
+      const { value } = await res.json();
+      if (value) return value;
     }
+  } catch {
+    // admin not reachable — fall through to env var (local dev)
   }
 
   const key = process.env.MUINTEOIR_OPENAI_API_KEY ?? process.env.OPENAI_API_KEY ?? "";
@@ -26,8 +28,8 @@ function getApiKey(overrideKey?: string): string {
   return key;
 }
 
-function getClient(apiKey?: string): OpenAI {
-  return new OpenAI({ apiKey: getApiKey(apiKey) });
+async function getClient(apiKey?: string): Promise<OpenAI> {
+  return new OpenAI({ apiKey: await getApiKey(apiKey) });
 }
 
 export interface ChatMessage {
@@ -43,7 +45,7 @@ export async function streamChat(
   messages: ChatMessage[],
   apiKey?: string
 ): Promise<ReadableStream<Uint8Array>> {
-  const client = getClient(apiKey);
+  const client = await getClient(apiKey);
 
   const stream = await client.chat.completions.create({
     model: "gpt-4o",
