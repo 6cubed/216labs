@@ -1,18 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import {
-  Send,
-  RotateCcw,
-  ChevronDown,
-  ChevronUp,
-  Lock,
-  Cpu,
-  AlertTriangle,
-  Download,
-} from "lucide-react";
+import { Send, RotateCcw, Lock, Cpu, AlertTriangle, Download } from "lucide-react";
 import type { MLCEngineInterface, InitProgressReport } from "@mlc-ai/web-llm";
-import { getConversationSystemPrompt } from "@/lib/prompts";
+
+const SYSTEM_PROMPT = `You are a native Irish (Gaeilge) speaker. Reply only in Irish — never use English. Keep your replies natural and conversational. If the user writes in English, respond in Irish anyway.`;
 
 const MODELS = [
   {
@@ -51,45 +43,18 @@ function AssistantMessage({
   content: string;
   streaming?: boolean;
 }) {
-  const [showFeedback, setShowFeedback] = useState(true);
-  const dividerIdx = content.indexOf("\n---");
-  const irishPart = dividerIdx >= 0 ? content.slice(0, dividerIdx).trim() : content;
-  const feedbackPart = dividerIdx >= 0 ? content.slice(dividerIdx + 4).trim() : null;
-
   return (
     <div className="flex gap-3 items-start">
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-surface-700 flex items-center justify-center text-white text-sm">
         <Lock size={12} />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="glass-card rounded-2xl rounded-tl-sm p-4 max-w-prose">
-          <p className="text-surface-900 whitespace-pre-wrap leading-relaxed">
-            {irishPart}
-            {streaming && !feedbackPart && (
-              <span className="inline-block w-0.5 h-4 bg-surface-600 ml-0.5 animate-cursor" />
-            )}
-          </p>
-        </div>
-
-        {feedbackPart && (
-          <div className="mt-2">
-            <button
-              onClick={() => setShowFeedback((s) => !s)}
-              className="flex items-center gap-1.5 text-xs text-surface-500 hover:text-surface-700 font-medium transition-colors mb-1"
-            >
-              {showFeedback ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              {showFeedback ? "Hide" : "Show"} feedback
-            </button>
-            {showFeedback && (
-              <div className="bg-surface-50/80 border border-surface-200 rounded-xl p-3 text-sm text-surface-700 whitespace-pre-wrap leading-relaxed">
-                {feedbackPart}
-                {streaming && (
-                  <span className="inline-block w-0.5 h-3.5 bg-surface-500 ml-0.5 animate-cursor" />
-                )}
-              </div>
-            )}
-          </div>
-        )}
+      <div className="glass-card rounded-2xl rounded-tl-sm p-4 max-w-prose">
+        <p className="text-surface-900 whitespace-pre-wrap leading-relaxed">
+          {content}
+          {streaming && (
+            <span className="inline-block w-0.5 h-4 bg-surface-600 ml-0.5 animate-cursor" />
+          )}
+        </p>
       </div>
     </div>
   );
@@ -180,7 +145,7 @@ export default function PrivateChatInterface() {
 
         const chunks = await engineRef.current.chat.completions.create({
           messages: [
-            { role: "system", content: getConversationSystemPrompt() },
+            { role: "system", content: SYSTEM_PROMPT },
             ...history,
           ],
           stream: true,
