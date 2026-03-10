@@ -1,12 +1,7 @@
 import os
-import pathlib
+import uuid
 
-import google.auth.transport.requests
-import requests
-from cachecontrol import CacheControl
-from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
-from google.oauth2 import id_token
-from google_auth_oauthlib.flow import Flow
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 
 from database import get_db, init_db
 from llm_service import get_likelihood_of_yes
@@ -14,38 +9,7 @@ from llm_service import get_likelihood_of_yes
 app = Flask(__name__)
 app.secret_key = os.environ.get("PRIORS_SECRET_KEY", "dev-secret-change-me")
 
-if os.environ.get("FLASK_ENV") != "production":
-    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
-CLIENT_SECRETS_FILE = os.environ.get(
-    "PRIORS_GOOGLE_CLIENT_SECRETS_FILE",
-    os.path.join(pathlib.Path(__file__).parent, "client_secret.json"),
-)
-OAUTH_REDIRECT_URI = os.environ.get(
-    "PRIORS_OAUTH_REDIRECT_URI",
-    "http://localhost:8010/callback",
-)
-SCOPES = [
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
-    "openid",
-]
 DB_INITIALIZED = False
-
-
-def get_flow(state=None):
-    if not os.path.exists(CLIENT_SECRETS_FILE):
-        raise RuntimeError(
-            "Google OAuth client secret file is missing. "
-            "Set PRIORS_GOOGLE_CLIENT_SECRETS_FILE or add client_secret.json."
-        )
-
-    return Flow.from_client_secrets_file(
-        client_secrets_file=CLIENT_SECRETS_FILE,
-        scopes=SCOPES,
-        state=state,
-        redirect_uri=OAUTH_REDIRECT_URI,
-    )
 
 
 @app.before_request
@@ -54,92 +18,58 @@ def before_request():
     if not DB_INITIALIZED:
         init_db()
         DB_INITIALIZED = True
+    # Assign a persistent anonymous session ID on first visit
+    if "user_id" not in session:
+        session["user_id"] = str(uuid.uuid4())
+        session.permanent = True
 
 
 @app.route("/")
 def index():
     db = get_db()
     priors = db.execute(
-        "SELECT id, question, likelihood, user_id FROM priors ORDER BY created_at DESC",
+        "SELECT id, question, likelihood, user_id, author_name FROM priors ORDER BY created_at DESC",
     ).fetchall()
     db.close()
-    logged_in = "google_id" in session
-    name = session.get("name") if logged_in else None
-    user_id = session.get("google_id") if logged_in else None
-    return render_template("index.html", name=name, priors=priors, logged_in=logged_in, current_user_id=user_id)
+    name = session.get("name", "")
+    user_id = session["user_id"]
+    return render_template("index.html", name=name, priors=priors, user_id=user_id)
 
 
-@app.route("/login")
-def login():
-    try:
-        flow = get_flow()
-    except RuntimeError as error:
-        flash(str(error))
-        return redirect(url_for("index"))
-
-    authorization_url, state = flow.authorization_url()
-    session["state"] = state
-    return redirect(authorization_url)
-
-
-@app.route("/callback")
-def callback():
-    flow = get_flow(state=session.get("state"))
-    flow.fetch_token(authorization_response=request.url)
-
-    if not session.get("state") == request.args.get("state"):
-        abort(500)
-
-    credentials = flow.credentials
-    request_session = requests.session()
-    cached_session = CacheControl(request_session)
-    token_request = google.auth.transport.requests.Request(session=cached_session)
-
-    id_info = id_token.verify_oauth2_token(
-        id_token=credentials._id_token,
-        request=token_request,
-        audience=os.environ.get("GOOGLE_CLIENT_ID"),
-    )
-
-    session["google_id"] = id_info.get("sub")
-    session["name"] = id_info.get("name")
-    return redirect("/")
-
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/")
+@app.route("/set_name", methods=["POST"])
+def set_name():
+    name = request.form.get("name", "").strip()[:50]
+    if name:
+        session["name"] = name
+    else:
+        session.pop("name", None)
+    return redirect(url_for("index"))
 
 
 @app.route("/add_prior", methods=["POST"])
 def add_prior():
-    if "google_id" not in session:
-        flash("Please log in to add a prior.")
+    question = request.form.get("question", "").strip()
+    if not question:
+        flash("Question cannot be empty.")
         return redirect(url_for("index"))
 
-    question = request.form["question"]
-    user_id = session["google_id"]
+    user_id = session["user_id"]
+    author_name = session.get("name") or None
     likelihood = get_likelihood_of_yes(question)
 
     db = get_db()
     db.execute(
-        "INSERT INTO priors (user_id, question, likelihood) VALUES (?, ?, ?)",
-        (user_id, question, likelihood),
+        "INSERT INTO priors (user_id, author_name, question, likelihood) VALUES (?, ?, ?, ?)",
+        (user_id, author_name, question, likelihood),
     )
     db.commit()
     db.close()
-    flash("Prior added successfully!")
     return redirect(url_for("index"))
 
 
-@app.route("/delete_prior/<int:prior_id>")
+@app.route("/delete_prior/<int:prior_id>", methods=["POST"])
 def delete_prior(prior_id):
-    if "google_id" not in session:
-        flash("Please log in to delete a prior.")
-        return redirect(url_for("index"))
-
-    user_id = session["google_id"]
+    user_id = session["user_id"]
     db = get_db()
     cursor = db.execute(
         "DELETE FROM priors WHERE id = ? AND user_id = ?",
@@ -149,9 +79,7 @@ def delete_prior(prior_id):
     db.close()
 
     if cursor.rowcount == 0:
-        flash("Prior not found or you don't have permission to delete it.")
-    else:
-        flash("Prior deleted successfully!")
+        flash("Not found or you don't own this question.")
     return redirect(url_for("index"))
 
 

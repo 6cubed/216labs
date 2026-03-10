@@ -19,5 +19,9 @@ def init_db():
     db = get_db()
     with open(BASE_DIR / "schema.sql", "r", encoding="utf-8") as schema_file:
         db.executescript(schema_file.read())
+    # Migrate: add author_name if the column doesn't exist yet
+    cols = {row[1] for row in db.execute("PRAGMA table_info(priors)")}
+    if "author_name" not in cols:
+        db.execute("ALTER TABLE priors ADD COLUMN author_name TEXT")
     db.commit()
     db.close()

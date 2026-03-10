@@ -1,64 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Priors - AI Markets</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Priors — AI Prediction Market</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <div class="header-row">
-            <h1>AI Markets</h1>
-            {% if logged_in %}
-                <span class="user-info">{{ name }} &mdash; <a href="{{ url_for('logout') }}">Logout</a></span>
-            {% else %}
-                <a href="{{ url_for('login') }}" class="login-button-small">Login with Google</a>
-            {% endif %}
-        </div>
-
-        <p class="subtitle">Yes/no questions scored by AI probability.</p>
-
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul class="flashes">
-                    {% for message in messages %}
-                        <li>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
-
-        {% if logged_in %}
-            <form action="{{ url_for('add_prior') }}" method="post" class="add-prior-form">
-                <input type="text" name="question" placeholder="Ask a yes/no question…" required>
-                <button type="submit">Add</button>
-            </form>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-icon">◎</span>
+        <span class="brand-name">Priors</span>
+        <span class="brand-tag">AI Prediction Market</span>
+      </div>
+      <div class="identity">
+        {% if name %}
+          <span class="identity-label">Posting as <strong>{{ name }}</strong></span>
+          <button class="btn-ghost" onclick="toggleNameForm()">Change</button>
         {% else %}
-            <p class="login-prompt"><a href="{{ url_for('login') }}">Login with Google</a> to add your own question.</p>
+          <button class="btn-ghost" onclick="toggleNameForm()">Set your name</button>
         {% endif %}
-
-        {% if priors %}
-            <ul class="priors-list">
-                {% for prior in priors %}
-                    <li>
-                        <span class="question">{{ prior.question }}</span>
-                        <span class="likelihood">
-                            {% if prior.likelihood is not none %}
-                                {{ "{:.0f}".format(prior.likelihood * 100) }}%
-                            {% else %}
-                                —
-                            {% endif %}
-                        </span>
-                        {% if logged_in and prior.user_id == current_user_id %}
-                            <a href="{{ url_for('delete_prior', prior_id=prior.id) }}" class="delete-button">✕</a>
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="empty">No questions yet. Be the first to add one!</p>
-        {% endif %}
+      </div>
     </div>
+    <div class="name-form" id="nameForm" style="display:none">
+      <form action="{{ url_for('set_name') }}" method="post" class="name-form-inner">
+        <input type="text" name="name" placeholder="Your name or handle" value="{{ name }}" maxlength="50" autofocus>
+        <button type="submit" class="btn-primary">Save</button>
+        <button type="button" class="btn-ghost" onclick="toggleNameForm()">Cancel</button>
+      </form>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1>What does the AI think<br>will happen?</h1>
+      <p class="hero-sub">Submit any yes/no question. Gemini scores the probability instantly.</p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flashes">
+          {% for message in messages %}
+            <div class="flash">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('add_prior') }}" method="post" class="submit-form" id="submitForm">
+      <div class="submit-row">
+        <input
+          type="text"
+          name="question"
+          id="questionInput"
+          placeholder="Will AI surpass human performance on all tasks by 2030?"
+          maxlength="300"
+          required
+          autocomplete="off"
+        >
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <span class="btn-text">Ask AI</span>
+          <span class="btn-spinner" style="display:none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+      <div class="submit-hint">AI will score the probability from 0–100%. Takes a few seconds.</div>
+    </form>
+
+    <div class="market-header">
+      <h2>Market</h2>
+      <span class="market-count">{{ priors|length }} question{% if priors|length != 1 %}s{% endif %}</span>
+    </div>
+
+    {% if priors %}
+      <ul class="market-list">
+        {% for prior in priors %}
+          {% set pct = (prior.likelihood * 100)|int if prior.likelihood is not none else none %}
+          {% set is_owner = prior.user_id == user_id %}
+          <li class="market-card {% if pct is not none %}{% if pct >= 70 %}card-high{% elif pct <= 30 %}card-low{% else %}card-mid{% endif %}{% endif %}">
+            <div class="card-main">
+              <div class="card-question">{{ prior.question }}</div>
+              <div class="card-meta">
+                {% if prior.author_name %}
+                  <span class="card-author">{{ prior.author_name }}</span>
+                {% else %}
+                  <span class="card-author anon">anonymous</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="card-right">
+              {% if pct is not none %}
+                <div class="prob-circle {% if pct >= 70 %}prob-yes{% elif pct <= 30 %}prob-no{% else %}prob-mid{% endif %}">
+                  <span class="prob-value">{{ pct }}</span>
+                  <span class="prob-unit">%</span>
+                </div>
+                <div class="prob-bar-wrap">
+                  <div class="prob-bar" style="width: {{ pct }}%"></div>
+                </div>
+              {% else %}
+                <div class="prob-circle prob-pending">—</div>
+              {% endif %}
+              {% if is_owner %}
+                <form action="{{ url_for('delete_prior', prior_id=prior.id) }}" method="post" class="delete-form">
+                  <button type="submit" class="btn-delete" title="Delete">✕</button>
+                </form>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">◎</div>
+        <p>No questions yet. Ask the first one.</p>
+      </div>
+    {% endif %}
+  </main>
+
+  <script>
+    function toggleNameForm() {
+      const f = document.getElementById('nameForm');
+      f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    document.getElementById('submitForm').addEventListener('submit', function() {
+      const btn = document.getElementById('submitBtn');
+      const text = btn.querySelector('.btn-text');
+      const spinner = btn.querySelector('.btn-spinner');
+      text.style.display = 'none';
+      spinner.style.display = 'inline-flex';
+      btn.disabled = true;
+    });
+  </script>
 </body>
 </html>
