@@ -14,7 +14,11 @@ async function main(): Promise<void> {
   );
 
   while (true) {
-    await runScan();
+    try {
+      await runScan();
+    } catch (err) {
+      console.error("[pipesecure] Scan error:", err);
+    }
     console.log(
       `[pipesecure] Next scan in ${process.env.SCAN_INTERVAL_HOURS || "24"}h`
     );

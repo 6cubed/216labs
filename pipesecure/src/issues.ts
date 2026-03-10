@@ -29,10 +29,13 @@ export async function ensureLabels(): Promise<void> {
         repo: GITHUB_REPO_NAME,
         name,
         color,
-        description: name === "security" ? "Security vulnerability" : `${name.split(":")[1]} severity security issue`,
+        description:
+          name === "security"
+            ? "Security vulnerability"
+            : `${name.split(":")[1]} severity security issue`,
       });
-    } catch (err: any) {
-      if (err.status !== 422) throw err;
+    } catch {
+      // 422 = already exists, any other error is non-fatal (labels are cosmetic)
     }
   }
 }

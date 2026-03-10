@@ -9,7 +9,7 @@ function required(key: string): string {
 export const config = {
   github: {
     token: required("GITHUB_TOKEN"),
-    repo: process.env.GITHUB_REPO || "216labs/216labs",
+    repo: process.env.GITHUB_REPO || "6cubed/216labs",
     branch: process.env.GITHUB_BRANCH || "main",
   },
   dataDir: process.env.DATA_DIR || "/app/data",
