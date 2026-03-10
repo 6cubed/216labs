@@ -104,6 +104,7 @@ const KNOWN_PORTS: Record<string, number> = {
   audioaicheckup: 8018,
   storybook: 8019,
   muinteoir: 8020,
+  pocket: 8021,
 };
 
 let _db: Database.Database | null = null;
@@ -161,6 +162,7 @@ function initSchema(db: Database.Database) {
   syncTopLevelProjects(db);
   backfillKnownPorts(db);
   ensureAdminAlwaysEnabled(db);
+  ensurePocketEnabled(db);
 }
 
 function readManifest(manifestPath: string): AppManifest | null {
@@ -417,6 +419,10 @@ function backfillKnownPorts(db: Database.Database) {
 
 function ensureAdminAlwaysEnabled(db: Database.Database) {
   db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'admin'").run();
+}
+
+function ensurePocketEnabled(db: Database.Database) {
+  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'pocket'").run();
 }
 
 export function getAllApps(): DbApp[] {
