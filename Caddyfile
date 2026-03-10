@@ -92,3 +92,7 @@ thezurichdatinggame.agimemes.com {
 	reverse_proxy thezurichdatinggame:3000
 }
 
+muinteoir.agimemes.com {
+	reverse_proxy muinteoir:3000
+}
+

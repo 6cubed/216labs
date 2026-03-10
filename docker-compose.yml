@@ -418,6 +418,21 @@ services:
       - "80"
     mem_limit: 64m
 
+  # ── Múinteoir ─────────────────────────────────────────────────
+  muinteoir:
+    image: 216labs/muinteoir:latest
+    build: ./muinteoir
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - OPENAI_API_KEY=${MUINTEOIR_OPENAI_API_KEY:-}
+    volumes:
+      - ./muinteoir/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 256m
+
 volumes:
   caddy_data:
   caddy_config:

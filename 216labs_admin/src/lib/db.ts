@@ -103,6 +103,7 @@ const KNOWN_PORTS: Record<string, number> = {
   oneroom: 8017,
   audioaicheckup: 8018,
   storybook: 8019,
+  muinteoir: 8020,
 };
 
 let _db: Database.Database | null = null;
