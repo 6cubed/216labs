@@ -56,6 +56,41 @@ function initials(name: string) {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
+// Hidden personality twist from a random seed (unique per agent session, not shown in UI)
+const PERSONALITY_TWISTS = [
+  'You occasionally use a nautical metaphor.',
+  'You sometimes reference food or cooking.',
+  'You have a soft spot for bad puns.',
+  'You tend to ask one curious follow-up question.',
+  'You occasionally use a word from another language.',
+  'You sometimes compare things to animals.',
+  'You like to tie ideas to the weather or seasons.',
+  'You occasionally quote or paraphrase a proverb.',
+  'You sometimes mention books or reading.',
+  'You have a slight tendency to be melodramatic.',
+  'You occasionally use understatement.',
+  'You sometimes bring up travel or places.',
+  'You like to use a touch of sarcasm.',
+  'You occasionally speak in lists of three.',
+  'You sometimes reference music or rhythm.',
+  'You have a mild tendency to be whimsical.',
+  'You occasionally use an unexpected adjective.',
+  'You sometimes mention time or timing.',
+  'You like to acknowledge the other speaker briefly.',
+  'You occasionally use a rhetorical question.',
+]
+function getTwistFromSeed(seed: number): string {
+  const idx = Math.floor(seed * PERSONALITY_TWISTS.length) % PERSONALITY_TWISTS.length
+  return PERSONALITY_TWISTS[idx]
+}
+
+function buildSystemPrompt(persona: string, personality: string, mission: string, twist: string, base: string): string {
+  const parts = [`You are ${persona}.`, `Your mission: ${mission.trim()}.`]
+  if (personality.trim()) parts.push(`Your personality: ${personality.trim()}.`)
+  parts.push(twist, base)
+  return parts.join(' ')
+}
+
 const AVATAR_COLORS = [
   'bg-violet-600', 'bg-indigo-600', 'bg-fuchsia-600',
   'bg-sky-600', 'bg-teal-600', 'bg-rose-600',
@@ -73,14 +108,21 @@ export default function PocketPage() {
   const wsRef = useRef<WebSocket | null>(null)
   const myIdRef = useRef<string | null>(null)
   const myAgentPersonaRef = useRef<string>('')
+  const myPersonalityRef = useRef<string>('')
+  const myMissionRef = useRef<string>('')
+  const myTwistRef = useRef<string>('')
 
   // ── App state ─────────────────────────────────────────────────────────────
   const [myId, setMyId] = useState<string | null>(null)
   const [hasJoined, setHasJoined] = useState(false)
   const [myName, setMyName] = useState('')
   const [myAgentPersona, setMyAgentPersona] = useState('')
+  const [myPersonality, setMyPersonality] = useState('')
+  const [myMission, setMyMission] = useState('')
   const [nameInput, setNameInput] = useState('')
   const [personaInput, setPersonaInput] = useState('')
+  const [personalityInput, setPersonalityInput] = useState('')
+  const [missionInput, setMissionInput] = useState('')
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
 
   // ── Model state ───────────────────────────────────────────────────────────
@@ -104,6 +146,7 @@ export default function PocketPage() {
   // Keep refs in sync
   useEffect(() => { myIdRef.current = myId }, [myId])
   useEffect(() => { myAgentPersonaRef.current = myAgentPersona }, [myAgentPersona])
+  useEffect(() => { myPersonalityRef.current = myPersonality }, [myPersonality])
   useEffect(() => { conversationsRef.current = conversations }, [conversations])
 
   // Auto-scroll to newest message
@@ -164,8 +207,18 @@ export default function PocketPage() {
     }
 
     const persona = myAgentPersonaRef.current
+    const personality = myPersonalityRef.current
+    const mission = myMissionRef.current
+    const twist = myTwistRef.current
+    const systemContent = buildSystemPrompt(
+      persona,
+      personality,
+      mission,
+      twist,
+      "You are having a fun, brief conversation with another user's AI agent. Be friendly, curious, and concise — 2 sentences max per reply."
+    )
     const msgs = [
-      { role: 'system', content: `You are ${persona}. You are having a fun, brief conversation with another user's AI agent. Be friendly, curious, and concise — 2 sentences max per reply.` },
+      { role: 'system', content: systemContent },
       ...history.map((m) => ({ role: m.speaker === 'mine' ? 'assistant' : 'user', content: m.content })),
       { role: 'user', content: prompt },
     ]
@@ -253,10 +306,20 @@ export default function PocketPage() {
     } | null
     if (!engine) return ''
     const persona = myAgentPersonaRef.current
+    const personality = myPersonalityRef.current
+    const mission = myMissionRef.current
+    const twist = myTwistRef.current
+    const monologueSystem = buildSystemPrompt(
+      persona,
+      personality,
+      mission,
+      twist,
+      'Think to yourself in one short sentence before replying. Internal thought only — do not address anyone.'
+    )
     try {
       const stream = await engine.chat.completions.create({
         messages: [
-          { role: 'system', content: `You are ${persona}. Think to yourself in one short sentence before replying. Internal thought only — do not address anyone.` },
+          { role: 'system', content: monologueSystem },
           { role: 'user', content: context },
         ],
         max_tokens: 60,
@@ -542,15 +605,26 @@ export default function PocketPage() {
   const handleJoin = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     const name = nameInput.trim()
-    if (!name) return
+    const mission = missionInput.trim()
+    if (!name || !mission) return
     const persona = personaInput.trim() || `${name}'s Agent`
+    const personality = personalityInput.trim()
+    const twistSeed = typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? crypto.getRandomValues(new Uint32Array(1))[0]! / (0xffff_ffff + 1)
+      : Math.random()
+    const twist = getTwistFromSeed(twistSeed)
     setMyName(name)
     setMyAgentPersona(persona)
+    setMyPersonality(personality)
+    setMyMission(mission)
     myAgentPersonaRef.current = persona
+    myPersonalityRef.current = personality
+    myMissionRef.current = mission
+    myTwistRef.current = twist
     setHasJoined(true)
     sendWS({ type: 'join', name, agentPersona: persona })
     loadModel()
-  }, [nameInput, personaInput, sendWS, loadModel])
+  }, [nameInput, personaInput, personalityInput, missionInput, sendWS, loadModel])
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -560,6 +634,10 @@ export default function PocketPage() {
       setNameInput={(v) => { setNameInput(v); setPersonaInput('') }}
       personaInput={personaInput || (nameInput ? `${nameInput}'s Agent` : '')}
       setPersonaInput={setPersonaInput}
+      personalityInput={personalityInput}
+      setPersonalityInput={setPersonalityInput}
+      missionInput={missionInput}
+      setMissionInput={setMissionInput}
       webGPUSupported={webGPUSupported}
       onJoin={handleJoin}
     />
@@ -818,12 +896,16 @@ function ModelStatusBadge({ status, progress }: { status: ModelStatus; progress:
 }
 
 function JoinScreen({
-  nameInput, setNameInput, personaInput, setPersonaInput, webGPUSupported, onJoin,
+  nameInput, setNameInput, personaInput, setPersonaInput, personalityInput, setPersonalityInput, missionInput, setMissionInput, webGPUSupported, onJoin,
 }: {
   nameInput: string
   setNameInput: (v: string) => void
   personaInput: string
   setPersonaInput: (v: string) => void
+  personalityInput: string
+  setPersonalityInput: (v: string) => void
+  missionInput: string
+  setMissionInput: (v: string) => void
   webGPUSupported: boolean | null
   onJoin: (e: React.FormEvent) => void
 }) {
@@ -881,10 +963,35 @@ function JoinScreen({
               className="w-full bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+              Agent mission <span className="text-amber-400/80">(required)</span>
+            </label>
+            <input
+              value={missionInput}
+              onChange={(e) => setMissionInput(e.target.value)}
+              placeholder="e.g. learn what others care about, or spread good vibes"
+              maxLength={120}
+              required
+              className="w-full bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+              Personality <span className="text-zinc-600">(optional)</span>
+            </label>
+            <input
+              value={personalityInput}
+              onChange={(e) => setPersonalityInput(e.target.value)}
+              placeholder="e.g. curious and dry-humored, or warm and encouraging"
+              maxLength={80}
+              className="w-full bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+            />
+          </div>
 
           <button
             type="submit"
-            disabled={!nameInput.trim()}
+            disabled={!nameInput.trim() || !missionInput.trim()}
             className="w-full mt-2 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2"
           >
             <Radio className="w-4 h-4" />
