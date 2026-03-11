@@ -45,10 +45,30 @@ const MAX_TURNS = 6
 const MAX_CONCURRENT_CONVERSATIONS = 5
 const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC'
 
-// Pending reply item for round-robin queue (reply to someone, or opening message)
+// Pending reply item for the reply queue (opening line vs replying to a message).
 type PendingReply =
-  | { type: 'reply'; convId: string; messages: ConvMessage[]; theirMessage: string; theirAgentName: string; peerId: string; isAgent_message: boolean }
+  | { type: 'reply'; convId: string; messages: ConvMessage[]; theirMessage: string; theirAgentName: string; peerId: string; isAgent_message: boolean; turnCount: number }
   | { type: 'opening'; convId: string; peerId: string; peerAgentPersona: string }
+
+// ── Chat protocol (for refactor clarity and future expansion) ───────────────────
+//
+// ROLES:
+//   - Initiator: user who clicked "Pair" and created the conversation (convId = myId-peerId-ts).
+//   - Responder: peer who receives the first agent_message_incoming.
+//
+// MESSAGE TYPES (WebSocket):
+//   - agent_message:        initiator → responder (opening or initiator's follow-up).
+//   - agent_response:       responder → initiator (responder's reply).
+// So: initiator always sends agent_message; responder always sends agent_response.
+//
+// FLOW:
+//   1. Pair: initiator creates conv, enqueues "opening", drain runs → monologue → generate opening → send agent_message.
+//   2. Responder gets agent_message_incoming → create conv if new → enqueue "reply" → drain runs → monologue → generate reply → send agent_response.
+//   3. Initiator gets agent_response_incoming → enqueue "reply" → drain runs → generate → send agent_message.
+//   4. Repeat 2–3 until MAX_TURNS.
+//
+// QUEUE: Single FIFO (replyQueueRef). One worker (drainReplyQueue): monologue → generate → send → clear processing flag → drain again.
+// Future: parallel chats = multiple convs, same queue; human-to-agent = new message type and enqueue "reply" from human text.
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -139,7 +159,8 @@ export default function PocketPage() {
   const replyQueueRef = useRef<PendingReply[]>([])
   const isProcessingRef = useRef<boolean>(false)
   const advanceTurnRef = useRef<(convId: string, theirMessage: string, theirAgentName: string, peerId: string, isAgent_message: boolean, initialConv?: Conversation) => void>(() => {})
-  const processReplyQueueRef = useRef<() => void>(() => {})
+  const drainReplyQueueRef = useRef<() => void>(() => {})
+  const scheduleDrainRef = useRef<(delayMs?: number) => void>(() => {})
 
   // Internal monologue (agent thinks before each reply)
   const [internalMonologue, setInternalMonologue] = useState<MonologueEntry[]>([])
@@ -344,8 +365,8 @@ export default function PocketPage() {
     wsRef.current?.send(JSON.stringify(msg))
   }, [])
 
-  // ── Round-robin reply queue: monologue once, then reply ─────────────────────
-  const processReplyQueue = useCallback(() => {
+  // ── Reply queue drain: process one item (monologue → generate → send), then re-drain ─
+  const drainReplyQueue = useCallback(() => {
     if (isProcessingRef.current || replyQueueRef.current.length === 0) {
       if (replyQueueRef.current.length === 0) {
         setTimeout(() => {
@@ -359,6 +380,11 @@ export default function PocketPage() {
     const item = replyQueueRef.current.shift()!
     isProcessingRef.current = true
 
+    const finishTurn = () => {
+      isProcessingRef.current = false
+      scheduleDrainRef.current(0)
+    }
+
     const runAfterMonologue = () => {
       if (item.type === 'opening') {
         const openingPrompt = `Say hello to ${item.peerAgentPersona} and introduce yourself briefly. Start the conversation.`
@@ -366,43 +392,31 @@ export default function PocketPage() {
           setConversations((prev) => {
             const conv = prev[item.convId]
             if (!conv || conv.status === 'ended') return prev
-            const updated: Conversation = { ...conv, turnCount: 1, isMyTurn: false }
-            return { ...prev, [item.convId]: updated }
+            return { ...prev, [item.convId]: { ...conv, turnCount: 1, isMyTurn: false } }
           })
           sendWS({ type: 'agent_message', targetId: item.peerId, message: response, conversationId: item.convId })
-          isProcessingRef.current = false
-          processReplyQueue()
+          finishTurn()
         })
       } else {
+        const sendType: string = item.isAgent_message ? 'agent_response' : 'agent_message'
+        const turnCountAfterReply = item.turnCount + 1
+        const willEnd = turnCountAfterReply >= MAX_TURNS
         generateAndStream(item.convId, item.messages, item.theirMessage, (response) => {
-          let willEnd = false
-          let sendMsgType: string | null = null
           setConversations((prev) => {
-            const afterGenConv = prev[item.convId]
-            if (!afterGenConv || afterGenConv.status === 'ended') {
-              willEnd = true
-              return prev
+            const conv = prev[item.convId]
+            if (!conv || conv.status === 'ended') return prev
+            if (willEnd) {
+              return { ...prev, [item.convId]: { ...conv, isMyTurn: false, turnCount: turnCountAfterReply, status: 'ended' } }
             }
-            const finalTurnCount = afterGenConv.turnCount + 1
-            if (finalTurnCount >= MAX_TURNS) {
-              willEnd = true
-              const endedConv = { ...afterGenConv, isMyTurn: false, turnCount: finalTurnCount, status: 'ended' as const }
-              return { ...prev, [item.convId]: endedConv }
-            }
-            sendMsgType = item.isAgent_message ? 'agent_response' : 'agent_message'
-            const nextConv: Conversation = { ...afterGenConv, isMyTurn: false, turnCount: finalTurnCount }
-            return { ...prev, [item.convId]: nextConv }
+            return { ...prev, [item.convId]: { ...conv, isMyTurn: false, turnCount: turnCountAfterReply } }
           })
           if (willEnd) {
-            setTimeout(() => {
-              const active = Object.values(conversationsRef.current).filter((c) => c.status === 'active')
-              sendWS({ type: 'busy_status', busyWith: active[0]?.id ?? null })
-            }, 0)
-          } else if (sendMsgType) {
-            sendWS({ type: sendMsgType, targetId: item.peerId, message: response, conversationId: item.convId })
+            const active = Object.values(conversationsRef.current).filter((c) => c.status === 'active')
+            sendWS({ type: 'busy_status', busyWith: active[0]?.id ?? null })
+          } else {
+            sendWS({ type: sendType, targetId: item.peerId, message: response, conversationId: item.convId })
           }
-          isProcessingRef.current = false
-          processReplyQueue()
+          finishTurn()
         })
       }
     }
@@ -410,17 +424,25 @@ export default function PocketPage() {
     const context = item.type === 'opening'
       ? `About to introduce yourself to ${item.peerAgentPersona}.`
       : `About to reply to ${item.theirAgentName} who said: "${item.theirMessage.slice(0, 120)}${item.theirMessage.length > 120 ? '…' : ''}"`
-    generateMonologueEntry(context).then((thought) => {
-      setInternalMonologue((prev) => [
-        ...prev,
-        { content: thought || '…', context, timestamp: Date.now() },
-      ])
-      runAfterMonologue()
-    }).catch(() => {
-      setInternalMonologue((prev) => [...prev, { content: '…', context, timestamp: Date.now() }])
-      runAfterMonologue()
-    })
+    generateMonologueEntry(context)
+      .then((thought) => {
+        setInternalMonologue((prev) => [...prev, { content: thought || '…', context, timestamp: Date.now() }])
+        runAfterMonologue()
+      })
+      .catch(() => {
+        setInternalMonologue((prev) => [...prev, { content: '…', context, timestamp: Date.now() }])
+        runAfterMonologue()
+      })
   }, [generateAndStream, generateMonologueEntry, sendWS])
+
+  // Schedule a drain run. Use short delay when we just created a conv so React has committed state.
+  const scheduleDrain = useCallback((delayMs = 0) => {
+    if (delayMs > 0) {
+      setTimeout(() => drainReplyQueueRef.current(), delayMs)
+    } else {
+      setTimeout(() => drainReplyQueueRef.current(), 0)
+    }
+  }, [])
 
   // ── Advance conversation turn (enqueue reply; round-robin) ──────────────────
   const advanceTurn = useCallback((
@@ -461,14 +483,17 @@ export default function PocketPage() {
         theirAgentName,
         peerId,
         isAgent_message,
+        turnCount: updatedConv.turnCount,
       })
       return { ...prev, [convId]: updatedConv }
     })
-    setTimeout(() => processReplyQueueRef.current(), 0)
-  }, [processReplyQueue])
+    // When we just created the conv (responder path), delay drain so React has committed state.
+    scheduleDrainRef.current(initialConv ? 80 : 0)
+  }, [scheduleDrain])
 
   useEffect(() => { advanceTurnRef.current = advanceTurn }, [advanceTurn])
-  useEffect(() => { processReplyQueueRef.current = processReplyQueue }, [processReplyQueue])
+  useEffect(() => { drainReplyQueueRef.current = drainReplyQueue }, [drainReplyQueue])
+  useEffect(() => { scheduleDrainRef.current = scheduleDrain }, [scheduleDrain])
 
   // ── WebSocket setup ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -538,21 +563,16 @@ export default function PocketPage() {
           sendWS({ type: 'busy_status', busyWith: convId })
           advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, true, newConv)
         } else {
-          // Existing conversation: ensure we're viewing this thread, then advance turn
           setActiveConvId(convId)
-          setTimeout(() => {
-            advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, true)
-          }, 300)
+          advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, true)
         }
       }
 
       // Response to our message: remote is responding, we are the initiator
       if (msg.type === 'agent_response_incoming') {
         const convId: string = msg.conversationId
-        setActiveConvId(convId) // Ensure we're viewing this conversation
-        setTimeout(() => {
-          advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, false)
-        }, 300)
+        setActiveConvId(convId)
+        advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, false)
       }
     }
 
@@ -596,8 +616,8 @@ export default function PocketPage() {
       peerId: peer.id,
       peerAgentPersona: peer.agentPersona,
     })
-    setTimeout(processReplyQueue, 0)
-  }, [modelStatus, processReplyQueue, sendWS])
+    scheduleDrainRef.current(0)
+  }, [modelStatus, sendWS])
 
   // ── Stop conversation ─────────────────────────────────────────────────────
   const stopConversation = useCallback((convId: string) => {
