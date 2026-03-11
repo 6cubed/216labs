@@ -1,0 +1,31 @@
+# Dependencies and build outputs
+node_modules/
+.next/
+dist/
+build/
+out/
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+
+# Databases (local copies)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Misc
+.DS_Store
+*.pem
+client_secret.json
+.deploy-hashes
+coverage/
