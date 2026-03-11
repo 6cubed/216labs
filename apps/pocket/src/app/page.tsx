@@ -219,7 +219,6 @@ export default function PocketPage() {
     try {
       const { CreateMLCEngine } = await import('@mlc-ai/web-llm')
       const engine = await CreateMLCEngine(MODEL_ID, {
-        appConfig: { useIndexedDBCache: true } as import('@mlc-ai/web-llm').AppConfig,
         initProgressCallback: (p: { progress: number }) => {
           setLoadProgress(Math.round(p.progress * 100))
         },
