@@ -7,23 +7,24 @@ import { writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
 // Ordered longest-first so more-specific prefixes (NEXT_PUBLIC_STORYBOOK_) match before shorter ones.
+// Paths are relative to PROJECTS_ROOT; general apps live under apps/.
 const PREFIX_TO_DIR: Array<[string, string]> = [
-  ["NEXT_PUBLIC_STORYBOOK_", "storybook"],
-  ["STORYBOOK_", "storybook"],
-  ["AUDIOAICHECKUP_", "audioaicheckup"],
-  ["NEXT_PUBLIC_ONEFIT_", "onefit"],
-  ["ONEFIT_", "onefit"],
-  ["NEXT_PUBLIC_ONEROOM_", "oneroom"],
-  ["ONEROOM_", "oneroom"],
-  ["AGIMEMES_", "agimemes.com"],
-  ["PRIORS_", "priors"],
-  ["AGITSHIRTS_", "agitshirts"],
-  ["RAMBLINGRADIO_", "RamblingRadio"],
-  ["HIVEFIND_", "hivefind"],
-  ["CALIBRATEDAI_", "calibratedai"],
-  ["BIGLEROYS_", "bigleroys"],
-  ["ONEPAGE_", "1pageresearch"],
-  ["ZDGAME_", "thezurichdatinggame"],
+  ["NEXT_PUBLIC_STORYBOOK_", "apps/storybook"],
+  ["STORYBOOK_", "apps/storybook"],
+  ["AUDIOAICHECKUP_", "apps/audioaicheckup"],
+  ["NEXT_PUBLIC_ONEFIT_", "apps/onefit"],
+  ["ONEFIT_", "apps/onefit"],
+  ["NEXT_PUBLIC_ONEROOM_", "apps/oneroom"],
+  ["ONEROOM_", "apps/oneroom"],
+  ["AGIMEMES_", "apps/agimemes.com"],
+  ["PRIORS_", "apps/priors"],
+  ["AGITSHIRTS_", "apps/agitshirts"],
+  ["RAMBLINGRADIO_", "apps/RamblingRadio"],
+  ["HIVEFIND_", "apps/hivefind"],
+  ["CALIBRATEDAI_", "apps/calibratedai"],
+  ["BIGLEROYS_", "apps/bigleroys"],
+  ["ONEPAGE_", "apps/1pageresearch"],
+  ["ZDGAME_", "apps/thezurichdatinggame"],
 ];
 
 function getAppDirForKey(key: string): string | null {

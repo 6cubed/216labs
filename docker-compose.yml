@@ -19,14 +19,14 @@ services:
   # ── RamblingRadio ─────────────────────────────────────────────
   ramblingradio:
     image: 216labs/ramblingradio:latest
-    build: ./RamblingRadio
+    build: ./apps/RamblingRadio
     restart: unless-stopped
     environment:
       - PORT=5000
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/ramblingradio.db
     volumes:
-      - ./RamblingRadio/data:/app/data
+      - ./apps/RamblingRadio/data:/app/data
     expose:
       - "5000"
     mem_limit: 256m
@@ -46,7 +46,7 @@ services:
   # ── OneRoom ───────────────────────────────────────────────────
   oneroom:
     image: 216labs/oneroom:latest
-    build: ./oneroom
+    build: ./apps/oneroom
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -61,7 +61,7 @@ services:
   # ── OneFit ────────────────────────────────────────────────────
   onefit:
     image: 216labs/onefit:latest
-    build: ./onefit
+    build: ./apps/onefit
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -76,7 +76,7 @@ services:
   # ── HiveFind ─────────────────────────────────────────────────
   hivefind:
     image: 216labs/hivefind:latest
-    build: ./hivefind
+    build: ./apps/hivefind
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -146,7 +146,7 @@ services:
   # ── AGI Memes ────────────────────────────────────────────────
   agimemes:
     image: 216labs/agimemes:latest
-    build: ./agimemes.com
+    build: ./apps/agimemes.com
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -160,7 +160,7 @@ services:
   # ── Priors ───────────────────────────────────────────────────
   priors:
     image: 216labs/priors:latest
-    build: ./priors
+    build: ./apps/priors
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -171,8 +171,8 @@ services:
       - GOOGLE_CLIENT_ID=${PRIORS_GOOGLE_CLIENT_ID:-}
       - GEMINI_API_KEY=${PRIORS_GEMINI_API_KEY:-}
     volumes:
-      - ./priors/data:/app/data
-      - ./priors/client_secret.json:/app/client_secret.json:ro
+      - ./apps/priors/data:/app/data
+      - ./apps/priors/client_secret.json:/app/client_secret.json:ro
     expose:
       - "5000"
     mem_limit: 128m
@@ -180,7 +180,7 @@ services:
   # ── Big Leroy's Premier League Guessing Bonanza ──────────────
   bigleroys:
     image: 216labs/bigleroys:latest
-    build: ./bigleroys
+    build: ./apps/bigleroys
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -190,8 +190,8 @@ services:
       - BIGLEROYS_GOOGLE_CLIENT_ID=${BIGLEROYS_GOOGLE_CLIENT_ID:-}
       - BIGLEROYS_DATABASE_PATH=/app/data/bigleroys.db
     volumes:
-      - ./bigleroys/data:/app/data
-      - ./bigleroys/client_secret.json:/app/client_secret.json:ro
+      - ./apps/bigleroys/data:/app/data
+      - ./apps/bigleroys/client_secret.json:/app/client_secret.json:ro
     expose:
       - "5000"
     mem_limit: 128m
@@ -199,7 +199,7 @@ services:
   # ── AgitShirts ────────────────────────────────────────────────
   agitshirts:
     image: 216labs/agitshirts:latest
-    build: ./agitshirts
+    build: ./apps/agitshirts
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -213,7 +213,7 @@ services:
   # ── Artisanal Europe ─────────────────────────────────────────
   artisinaleurope:
     image: 216labs/artisinaleurope:latest
-    build: ./artisinaleurope
+    build: ./apps/artisinaleurope
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -225,7 +225,7 @@ services:
   # ── CalibratedAI ─────────────────────────────────────────────
   calibratedai:
     image: 216labs/calibratedai:latest
-    build: ./calibratedai
+    build: ./apps/calibratedai
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -233,7 +233,7 @@ services:
       - CALIBRATEDAI_OPENROUTER_API_KEY=${CALIBRATEDAI_OPENROUTER_API_KEY:-}
       - CALIBRATEDAI_DB_PATH=/app/data/calibratedai.db
     volumes:
-      - ./calibratedai/data:/app/data
+      - ./apps/calibratedai/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -257,7 +257,7 @@ services:
   # ── The Zurich Dating Game ───────────────────────────────────
   thezurichdatinggame:
     image: 216labs/thezurichdatinggame:latest
-    build: ./thezurichdatinggame
+    build: ./apps/thezurichdatinggame
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -267,7 +267,7 @@ services:
       - ZDGAME_OPENROUTER_API_KEY=${ZDGAME_OPENROUTER_API_KEY:-}
       - ZDGAME_MODEL=${ZDGAME_MODEL:-google/gemini-2.0-flash-001}
     volumes:
-      - ./thezurichdatinggame/data:/app/data
+      - ./apps/thezurichdatinggame/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -275,7 +275,7 @@ services:
   # ── StoryMagic ───────────────────────────────────────────────
   storybook:
     image: 216labs/storybook:latest
-    build: ./storybook
+    build: ./apps/storybook
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -291,7 +291,7 @@ services:
       - STORYBOOK_FROM_EMAIL=${STORYBOOK_FROM_EMAIL:-}
       - DATA_DIR=/app/data
     volumes:
-      - ./storybook/data:/app/data
+      - ./apps/storybook/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -311,7 +311,7 @@ services:
   # ── Audio AI Checkup ─────────────────────────────────────────
   audioaicheckup:
     image: 216labs/audioaicheckup:latest
-    build: ./audioaicheckup
+    build: ./apps/audioaicheckup
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -320,7 +320,7 @@ services:
       - AUDIOAICHECKUP_GEMINI_API_KEY=${AUDIOAICHECKUP_GEMINI_API_KEY:-}
       - DATA_DIR=/app/data
     volumes:
-      - ./audioaicheckup/data:/app/data
+      - ./apps/audioaicheckup/data:/app/data
     expose:
       - "3000"
     mem_limit: 512m
@@ -329,20 +329,20 @@ services:
   # ── Anchor ───────────────────────────────────────────────────
   anchor-api:
     image: 216labs/anchor-api:latest
-    build: ./anchor/backend
+    build: ./apps/anchor/backend
     restart: unless-stopped
     environment:
       - ANCHOR_DATABASE_URL=sqlite+aiosqlite:///./data/anchor.db
       - ANCHOR_SECRET_KEY=${ANCHOR_SECRET_KEY:-change-me}
     volumes:
-      - ./anchor/data:/app/data
+      - ./apps/anchor/data:/app/data
     expose:
       - "8000"
     mem_limit: 256m
 
   anchor-web:
     image: 216labs/anchor-web:latest
-    build: ./anchor/frontend
+    build: ./apps/anchor/frontend
     restart: unless-stopped
     expose:
       - "80"
@@ -351,13 +351,13 @@ services:
   # ── Múinteoir ─────────────────────────────────────────────────
   muinteoir:
     image: 216labs/muinteoir:latest
-    build: ./muinteoir
+    build: ./apps/muinteoir
     restart: unless-stopped
     environment:
       - PORT=3000
       - NODE_ENV=production
     volumes:
-      - ./muinteoir/data:/app/data
+      - ./apps/muinteoir/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m

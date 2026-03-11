@@ -2,6 +2,11 @@
 
 **Enterprise-grade vibe coding workflow.** A monorepo factory that makes debugging and accountability tractable when building with AI: one source of truth (SQLite), a single pipeline dashboard, and explicit control over what ships. All apps run on a single VPS via Docker Compose behind Caddy with automatic HTTPS.
 
+## Layout
+
+- **`apps/`** — General applications (RamblingRadio, OneFit, StoryMagic, etc.). Add new apps here via `./scripts/new-app.sh <app-id>`.
+- **Top level** — Ecosystem/special apps that work across all apps: **216labs_admin** (workflow dashboard), **happypath** (clickthrough tests), **pipesecure** (security pipeline).
+
 ## Projects
 
 | App | Stack | URL |

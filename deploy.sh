@@ -55,8 +55,8 @@ service_spec() {
   fi
   # Fallback for apps without manifests
   case "$1" in
-    anchor-api) echo "./anchor/backend" ;;
-    anchor-web) echo "./anchor/frontend" ;;
+    anchor-api) echo "./apps/anchor/backend" ;;
+    anchor-web) echo "./apps/anchor/frontend" ;;
     *) echo "" ;;
   esac
 }

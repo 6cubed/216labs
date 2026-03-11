@@ -27,8 +27,26 @@ field = sys.argv[2]
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.dirname(script_dir)
 
-for entry in os.listdir(repo_root):
-    manifest_path = os.path.join(repo_root, entry, "manifest.json")
+def iter_manifest_dirs():
+    # Top-level app dirs (admin, happypath, pipesecure)
+    for entry in os.listdir(repo_root):
+        if entry.startswith(".") or entry == "scripts" or entry == "apps":
+            continue
+        path = os.path.join(repo_root, entry)
+        if os.path.isdir(path):
+            yield entry, path
+    # General apps under apps/
+    apps_dir = os.path.join(repo_root, "apps")
+    if os.path.isdir(apps_dir):
+        for entry in os.listdir(apps_dir):
+            if entry.startswith("."):
+                continue
+            path = os.path.join(apps_dir, entry)
+            if os.path.isdir(path):
+                yield f"apps/{entry}", path
+
+for rel_dir, abs_path in iter_manifest_dirs():
+    manifest_path = os.path.join(abs_path, "manifest.json")
     if not os.path.isfile(manifest_path):
         continue
     try:
@@ -37,7 +55,7 @@ for entry in os.listdir(repo_root):
         if m.get("id") != app_id:
             continue
         if field == "build_spec":
-            ctx = m.get("build_context", f"./{entry}")
+            ctx = m.get("build_context", f"./{rel_dir}")
             dfile = m.get("build_dockerfile")
             if dfile:
                 print(f"{ctx}:{dfile}")

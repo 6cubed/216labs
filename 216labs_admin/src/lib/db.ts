@@ -77,6 +77,7 @@ const NON_PROJECT_DIRS = new Set([
   "__pycache__",
   "venv",
   "scripts",
+  "apps", // container for general apps; we scan apps/* separately
 ]);
 
 const AUTO_DISCOVERED_TAGLINE = "Vibe coding workflow project";
@@ -215,10 +216,10 @@ function upsertEnvVarsFromManifest(
   insertMany(manifest.env_vars);
 }
 
-function discoverTopLevelProjects() {
+function discoverTopLevelProjects(): string[] {
   if (!existsSync(PROJECTS_ROOT)) return [];
 
-  return readdirSync(PROJECTS_ROOT, { withFileTypes: true })
+  const rootDirs = readdirSync(PROJECTS_ROOT, { withFileTypes: true })
     .filter(
       (entry) =>
         entry.isDirectory() &&
@@ -228,6 +229,20 @@ function discoverTopLevelProjects() {
           existsSync(join(PROJECTS_ROOT, entry.name, "manifest.json")))
     )
     .map((entry) => entry.name);
+
+  const appsDir = join(PROJECTS_ROOT, "apps");
+  if (!existsSync(appsDir)) return rootDirs;
+
+  const appSubdirs = readdirSync(appsDir, { withFileTypes: true })
+    .filter(
+      (entry: import("fs").Dirent) =>
+        entry.isDirectory() &&
+        !entry.name.startsWith(".") &&
+        (existsSync(join(appsDir, entry.name, "Dockerfile")) ||
+          existsSync(join(appsDir, entry.name, "manifest.json"))))
+    .map((entry: import("fs").Dirent) => `apps/${entry.name}`);
+
+  return [...rootDirs, ...appSubdirs];
 }
 
 function normalizeAppId(directory: string): string {
