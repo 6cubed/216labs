@@ -515,8 +515,8 @@ export default function PocketPage() {
       })
       return { ...prev, [convId]: updatedConv }
     })
-    // When we just created the conv (responder path), delay drain so React has committed state.
-    scheduleDrainRef.current(initialConv ? 80 : 0)
+    // Short delay before drain so React commits the state that added their message (avoids stale prev in generateAndStream).
+    scheduleDrainRef.current(initialConv ? 80 : 50)
   }, [scheduleDrain])
 
   useEffect(() => { advanceTurnRef.current = advanceTurn }, [advanceTurn])
