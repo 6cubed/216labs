@@ -337,6 +337,11 @@ else
 fi
 
 docker compose ps
+
+# Post-deploy: prune unused images to avoid filling disk (keeps images used by running containers).
+echo "==> Pruning unused Docker images..."
+docker image prune -a -f
+
 echo "==> Done."
 REMOTE_SCRIPT
 
