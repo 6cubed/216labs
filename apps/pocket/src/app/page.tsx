@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Loader2, Zap, ZapOff, Users, MessageSquare, Radio, X, ChevronRight, Cpu, Wifi, Brain, ChevronDown, ChevronUp } from 'lucide-react'
+import { Loader2, Zap, ZapOff, Users, MessageSquare, Radio, X, ChevronRight, Cpu, Wifi } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -33,12 +33,6 @@ interface Conversation {
   turnCount: number
 }
 
-interface MonologueEntry {
-  content: string
-  context: string
-  timestamp: number
-}
-
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MAX_TURNS = 6
@@ -68,12 +62,12 @@ type PendingReply =
 // So: initiator always sends agent_message; responder always sends agent_response.
 //
 // FLOW:
-//   1. Pair: initiator creates conv, enqueues "opening", drain runs → monologue → generate opening → send agent_message.
-//   2. Responder gets agent_message_incoming → create conv if new → enqueue "reply" → drain runs → monologue → generate reply → send agent_response.
+//   1. Pair: initiator creates conv, enqueues "opening", drain runs → generate opening → send agent_message.
+//   2. Responder gets agent_message_incoming → create conv if new → enqueue "reply" → drain runs → generate reply → send agent_response.
 //   3. Initiator gets agent_response_incoming → enqueue "reply" → drain runs → generate → send agent_message.
 //   4. Repeat 2–3 until MAX_TURNS.
 //
-// QUEUE: Single FIFO (replyQueueRef). One worker (drainReplyQueue): monologue → generate → send → clear processing flag → drain again.
+// QUEUE: Single FIFO (replyQueueRef). One worker (drainReplyQueue): generate → send → clear processing flag → drain again. Fast, snappy runaway agent chat.
 // Future: parallel chats = multiple convs, same queue; human-to-agent = new message type and enqueue "reply" from human text.
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -169,10 +163,6 @@ export default function PocketPage() {
   const drainReplyQueueRef = useRef<() => void>(() => {})
   const scheduleDrainRef = useRef<(delayMs?: number) => void>(() => {})
 
-  // Internal monologue (agent thinks before each reply)
-  const [internalMonologue, setInternalMonologue] = useState<MonologueEntry[]>([])
-  const [monologueOpen, setMonologueOpen] = useState(false)
-
   // Keep refs in sync
   useEffect(() => { myIdRef.current = myId }, [myId])
   useEffect(() => { myAgentPersonaRef.current = myAgentPersona }, [myAgentPersona])
@@ -266,7 +256,7 @@ export default function PocketPage() {
       personality,
       mission,
       twist,
-      "You are having a fun, brief conversation with another user's AI agent. Be friendly, curious, and concise — 2 sentences max per reply."
+      "You are having a fast, snappy conversation with another user's AI agent. Be friendly and punchy — 1–2 short sentences per reply. No preamble."
     )
     const msgs = [
       { role: 'system', content: systemContent },
@@ -350,50 +340,12 @@ export default function PocketPage() {
     }
   }, [])
 
-  // ── Internal monologue (one short thought before replying) ─────────────────
-  const generateMonologueEntry = useCallback(async (context: string): Promise<string> => {
-    const engine = engineRef.current as {
-      chat: { completions: { create: (opts: unknown) => Promise<AsyncIterable<{ choices: { delta: { content?: string } }[] }>> } }
-    } | null
-    if (!engine) return ''
-    const persona = myAgentPersonaRef.current
-    const personality = myPersonalityRef.current
-    const mission = myMissionRef.current
-    const twist = myTwistRef.current
-    const monologueSystem = buildSystemPrompt(
-      persona,
-      personality,
-      mission,
-      twist,
-      'Think to yourself in one short sentence before replying. Internal thought only — do not address anyone.'
-    )
-    try {
-      const stream = await engine.chat.completions.create({
-        messages: [
-          { role: 'system', content: monologueSystem },
-          { role: 'user', content: context },
-        ],
-        max_tokens: 60,
-        temperature: 0.7,
-        stream: true,
-      })
-      let full = ''
-      for await (const chunk of stream) {
-        const token = chunk.choices[0]?.delta?.content || ''
-        full += token
-      }
-      return full.trim() || ''
-    } catch {
-      return ''
-    }
-  }, [])
-
   // ── WebSocket send helper ─────────────────────────────────────────────────
   const sendWS = useCallback((msg: object) => {
     wsRef.current?.send(JSON.stringify(msg))
   }, [])
 
-  // ── Reply queue drain: process one item (monologue → generate → send), then re-drain ─
+  // ── Reply queue drain: process one item (generate → send), then re-drain. No inner monologue — fast snappy replies. ─
   const drainReplyQueue = useCallback(() => {
     if (isProcessingRef.current || replyQueueRef.current.length === 0) {
       if (replyQueueRef.current.length === 0) {
@@ -413,55 +365,40 @@ export default function PocketPage() {
       scheduleDrainRef.current(0)
     }
 
-    const runAfterMonologue = () => {
-      if (item.type === 'opening') {
-        const openingPrompt = `Say hello to ${item.peerAgentPersona} and introduce yourself briefly. Start the conversation.`
-        generateAndStream(item.convId, [], openingPrompt, (response) => {
-          setConversations((prev) => {
-            const conv = prev[item.convId]
-            if (!conv || conv.status === 'ended') return prev
-            return { ...prev, [item.convId]: { ...conv, turnCount: 1, isMyTurn: false } }
-          })
-          sendWS({ type: 'agent_message', targetId: item.peerId, message: response, conversationId: item.convId })
-          finishTurn()
+    if (item.type === 'opening') {
+      const openingPrompt = `Say hello to ${item.peerAgentPersona} and introduce yourself briefly. Start the conversation.`
+      generateAndStream(item.convId, [], openingPrompt, (response) => {
+        setConversations((prev) => {
+          const conv = prev[item.convId]
+          if (!conv || conv.status === 'ended') return prev
+          return { ...prev, [item.convId]: { ...conv, turnCount: 1, isMyTurn: false } }
         })
-      } else {
-        const sendType: string = item.isAgent_message ? 'agent_response' : 'agent_message'
-        const turnCountAfterReply = item.turnCount + 1
-        const willEnd = turnCountAfterReply >= MAX_TURNS
-        generateAndStream(item.convId, item.messages, item.theirMessage, (response) => {
-          setConversations((prev) => {
-            const conv = prev[item.convId]
-            if (!conv || conv.status === 'ended') return prev
-            if (willEnd) {
-              return { ...prev, [item.convId]: { ...conv, isMyTurn: false, turnCount: turnCountAfterReply, status: 'ended' } }
-            }
-            return { ...prev, [item.convId]: { ...conv, isMyTurn: false, turnCount: turnCountAfterReply } }
-          })
+        sendWS({ type: 'agent_message', targetId: item.peerId, message: response, conversationId: item.convId })
+        finishTurn()
+      })
+    } else {
+      const sendType: string = item.isAgent_message ? 'agent_response' : 'agent_message'
+      const turnCountAfterReply = item.turnCount + 1
+      const willEnd = turnCountAfterReply >= MAX_TURNS
+      generateAndStream(item.convId, item.messages, item.theirMessage, (response) => {
+        setConversations((prev) => {
+          const conv = prev[item.convId]
+          if (!conv || conv.status === 'ended') return prev
           if (willEnd) {
-            const active = Object.values(conversationsRef.current).filter((c) => c.status === 'active')
-            sendWS({ type: 'busy_status', busyWith: active[0]?.id ?? null })
-          } else {
-            sendWS({ type: sendType, targetId: item.peerId, message: response, conversationId: item.convId })
+            return { ...prev, [item.convId]: { ...conv, isMyTurn: false, turnCount: turnCountAfterReply, status: 'ended' } }
           }
-          finishTurn()
+          return { ...prev, [item.convId]: { ...conv, isMyTurn: false, turnCount: turnCountAfterReply } }
         })
-      }
+        if (willEnd) {
+          const active = Object.values(conversationsRef.current).filter((c) => c.status === 'active')
+          sendWS({ type: 'busy_status', busyWith: active[0]?.id ?? null })
+        } else {
+          sendWS({ type: sendType, targetId: item.peerId, message: response, conversationId: item.convId })
+        }
+        finishTurn()
+      })
     }
-
-    const context = item.type === 'opening'
-      ? `About to introduce yourself to ${item.peerAgentPersona}.`
-      : `About to reply to ${item.theirAgentName} who said: "${item.theirMessage.slice(0, 120)}${item.theirMessage.length > 120 ? '…' : ''}"`
-    generateMonologueEntry(context)
-      .then((thought) => {
-        setInternalMonologue((prev) => [...prev, { content: thought || '…', context, timestamp: Date.now() }])
-        runAfterMonologue()
-      })
-      .catch(() => {
-        setInternalMonologue((prev) => [...prev, { content: '…', context, timestamp: Date.now() }])
-        runAfterMonologue()
-      })
-  }, [generateAndStream, generateMonologueEntry, sendWS])
+  }, [generateAndStream, sendWS])
 
   // Schedule a drain run. Use short delay when we just created a conv so React has committed state.
   const scheduleDrain = useCallback((delayMs = 0) => {
@@ -801,38 +738,6 @@ export default function PocketPage() {
 
         {/* Conversation panel */}
         <main className="flex-1 flex flex-col min-w-0">
-          {/* Internal monologue (collapsible) */}
-          <div className="shrink-0 border-b border-[#1e1e32]">
-            <button
-              type="button"
-              onClick={() => setMonologueOpen((o) => !o)}
-              className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-[#111120] transition-colors"
-            >
-              <span className="flex items-center gap-2 text-xs font-semibold text-zinc-500 uppercase tracking-widest">
-                <Brain className="w-3.5 h-3.5 text-amber-500/80" />
-                Internal monologue
-                {internalMonologue.length > 0 && (
-                  <span className="text-zinc-600 normal-case font-normal">({internalMonologue.length})</span>
-                )}
-              </span>
-              {monologueOpen ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
-            </button>
-            {monologueOpen && (
-              <div className="max-h-40 overflow-y-auto px-4 pb-3 space-y-2 border-t border-[#1e1e32] pt-2">
-                {internalMonologue.length === 0 ? (
-                  <p className="text-xs text-zinc-600">One thought will appear here before each reply.</p>
-                ) : (
-                  internalMonologue.map((entry, i) => (
-                    <div key={`${entry.timestamp}-${i}`} className="text-xs rounded-lg bg-amber-950/30 border border-amber-800/30 px-3 py-2 text-amber-200/90">
-                      <p className="leading-relaxed">{entry.content}</p>
-                      <p className="mt-1 text-amber-600/80 truncate">{entry.context}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
           {activeConv ? (
             <>
               {/* Conv header */}
