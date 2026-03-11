@@ -1,8 +1,8 @@
 {
   "id": "admin",
   "name": "216labs Admin",
-  "tagline": "Central management dashboard",
-  "description": "Admin dashboard for managing all 216labs projects — toggle deployments, manage environment variables, view metrics.",
+  "tagline": "Vibe coding workflow & pipeline",
+  "description": "Enterprise-grade control plane for vibe coding: toggle deployments, manage env vars, and keep accountability across the monorepo.",
   "category": "admin",
   "internal_port": 3000,
   "memory_limit": "256m",

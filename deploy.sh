@@ -3,7 +3,10 @@ set -euo pipefail
 
 # Usage: ./deploy.sh user@host
 #
+# 216labs vibe-coding workflow: single source of truth (216labs.db) for what ships.
 # Reads 216labs.db (SQLite) to decide which apps to build/transfer.
+# 216labs.db holds app state and env_vars (secrets); it is never overwritten by
+# this script. A timestamped backup is made on the server before each deploy.
 # Toggle apps on/off via the admin dashboard at https://admin.agimemes.com
 # After deploy, records image sizes and startup times back to the DB.
 
@@ -265,6 +268,15 @@ if [ ! -d "$APP_DIR" ]; then
 fi
 
 cd "$APP_DIR"
+
+# Backup admin DB before any deploy steps. Never overwrite or delete 216labs.db;
+# env_vars and app state live here and must persist across deploys.
+if [ -f 216labs.db ]; then
+  cp -a 216labs.db "216labs.db.bak.$(date +%Y%m%d%H%M)"
+  # Keep only the 5 most recent backups
+  ls -t 216labs.db.bak.* 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
+fi
+
 git pull --ff-only 2>/dev/null || true
 
 if [ ! -f .env ]; then

@@ -1,6 +1,6 @@
 # 216labs
 
-Monorepo for 216labs web projects. All apps run on a single VPS via Docker Compose behind a Caddy reverse proxy with automatic HTTPS.
+**Enterprise-grade vibe coding workflow.** A monorepo factory that makes debugging and accountability tractable when building with AI: one source of truth (SQLite), a single pipeline dashboard, and explicit control over what ships. All apps run on a single VPS via Docker Compose behind Caddy with automatic HTTPS.
 
 ## Projects
 
@@ -26,7 +26,7 @@ Monorepo for 216labs web projects. All apps run on a single VPS via Docker Compo
 | **Múinteoir** | Next.js, SQLite, OpenAI | [muinteoir.agimemes.com](https://muinteoir.agimemes.com) |
 | **Pocket** | Next.js, WebGPU, WebSocket relay | [pocket.agimemes.com](https://pocket.agimemes.com) |
 | **StoryMagic** | Next.js, SQLite, OpenAI, Stripe | [storybook.agimemes.com](https://storybook.agimemes.com) |
-| **216labs Admin** | Next.js (pipeline dashboard) | [admin.agimemes.com](https://admin.agimemes.com) |
+| **216labs Admin** | Next.js (workflow & pipeline dashboard) | [admin.agimemes.com](https://admin.agimemes.com) |
 | **Paperframe ML** | FastAPI, SAM + BLIP (opt-in, needs 2GB+ RAM) | via `--profile ml` |
 
 ## Deploy

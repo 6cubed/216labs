@@ -40,11 +40,11 @@ export default async function DashboardPage() {
               <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 216labs
                 <span className="text-accent ml-2 font-normal text-lg">
-                  Pipeline Dashboard
+                  Vibe Coding Workflow
                 </span>
               </h1>
               <p className="text-sm text-muted mt-1">
-                Monorepo overview &mdash; {apps.length} applications,{" "}
+                Pipeline & accountability &mdash; {apps.length} apps,{" "}
                 {enabledCount} deployed
               </p>
             </div>
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
               Applications
             </h2>
             <p className="text-xs text-muted">
-              Toggle deploy to control which apps are transferred (admin is always on)
+              Toggle deploy to control what ships (admin always on)
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in">
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
         {/* Footer */}
         <footer className="text-center py-6 border-t border-border">
           <p className="text-xs text-muted">
-            216labs Pipeline Dashboard &mdash; Powered by SQLite &mdash;{" "}
+            216labs Vibe Coding Workflow &mdash; SQLite · one source of truth &mdash;{" "}
             <span className="font-mono">
               {new Date().toISOString().split("T")[0]}
             </span>

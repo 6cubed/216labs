@@ -79,8 +79,8 @@ const NON_PROJECT_DIRS = new Set([
   "scripts",
 ]);
 
-const AUTO_DISCOVERED_TAGLINE = "Auto-discovered monorepo project";
-const AUTO_DISCOVERED_NOTE = "Auto-discovered. Update metadata in admin DB.";
+const AUTO_DISCOVERED_TAGLINE = "Vibe coding workflow project";
+const AUTO_DISCOVERED_NOTE = "Auto-discovered. Refine name and metadata in the workflow dashboard.";
 
 // Ports assigned before the manifest system. Kept so that existing DB rows
 // with port=0 (from pre-manifest auto-discovery) get corrected on startup.
@@ -150,6 +150,8 @@ function initSchema(db: Database.Database) {
       marketing_notes TEXT
     );
   `);
+  // env_vars: secrets (e.g. PIPESECURE_GITHUB_TOKEN) live here. Never bulk-delete or
+  // truncate this table; only INSERT OR IGNORE new keys from manifests and UPDATE value on user save.
   db.exec(`
     CREATE TABLE IF NOT EXISTS env_vars (
       key TEXT PRIMARY KEY,
@@ -189,11 +191,13 @@ function getNextPort(db: Database.Database): number {
   return Math.max((result.max_port ?? 8019) + 1, 8020);
 }
 
+/** Add env var keys from manifest only; never overwrite or delete existing values. */
 function upsertEnvVarsFromManifest(
   db: Database.Database,
   manifest: AppManifest
 ) {
   if (!manifest.env_vars?.length) return;
+  // INSERT OR IGNORE: add new keys with empty value; existing rows (and their values) are untouched.
   const insert = db.prepare(`
     INSERT OR IGNORE INTO env_vars (key, value, description, is_secret, updated_at)
     VALUES (@key, '', @description, @is_secret, NULL)
@@ -377,7 +381,7 @@ function syncTopLevelProjects(db: Database.Database) {
           name: toDisplayName(dir),
           tagline: AUTO_DISCOVERED_TAGLINE,
           description:
-            "Automatically discovered from top-level directories in the 216labs repo.",
+            "Discovered from top-level directories in the 216labs workflow monorepo.",
           category: isAdmin ? "admin" : "tool",
           port,
           docker_service: id,
