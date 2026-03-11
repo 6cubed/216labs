@@ -45,6 +45,12 @@ const MAX_TURNS = 6
 const MAX_CONCURRENT_CONVERSATIONS = 5
 const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC'
 
+/** When true (URL ?happypath=1), skip real LLM load and use stub replies for automated tests. */
+function getIsHappypathTest(): boolean {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('happypath') === '1'
+}
+
 // Pending reply item for the reply queue (opening line vs replying to a message).
 type PendingReply =
   | { type: 'reply'; convId: string; messages: ConvMessage[]; theirMessage: string; theirAgentName: string; peerId: string; isAgent_message: boolean; turnCount: number }
@@ -150,6 +156,7 @@ export default function PocketPage() {
   const [loadProgress, setLoadProgress] = useState(0)
   const [webGPUSupported, setWebGPUSupported] = useState<boolean | null>(null)
   const engineRef = useRef<unknown>(null)
+  const [isHappypathTest] = useState(() => getIsHappypathTest())
 
   // ── Conversation state ────────────────────────────────────────────────────
   const [conversations, setConversations] = useState<Record<string, Conversation>>({})
@@ -198,6 +205,27 @@ export default function PocketPage() {
   const loadModel = useCallback(async () => {
     setModelStatus('loading')
     setLoadProgress(0)
+    if (isHappypathTest) {
+      // Stub for happypath automated tests: no real LLM download, "ready" after short delay.
+      const steps = [20, 50, 80, 100]
+      for (let i = 0; i < steps.length; i++) {
+        await new Promise((r) => setTimeout(r, 400))
+        setLoadProgress(steps[i]!)
+      }
+      await new Promise((r) => setTimeout(r, 300))
+      engineRef.current = {
+        chat: {
+          completions: {
+            create: async () =>
+              (async function* () {
+                yield { choices: [{ delta: { content: 'Hello! [happypath test reply].' } }] }
+              })(),
+          },
+        },
+      }
+      setModelStatus('ready')
+      return
+    }
     try {
       const { CreateMLCEngine } = await import('@mlc-ai/web-llm')
       const engine = await CreateMLCEngine(MODEL_ID, {
@@ -211,7 +239,7 @@ export default function PocketPage() {
       console.error('Model load failed:', err)
       setModelStatus('error')
     }
-  }, [])
+  }, [isHappypathTest])
 
   // ── Generate text (streaming) ─────────────────────────────────────────────
   const generateAndStream = useCallback(async (
@@ -743,6 +771,7 @@ export default function PocketPage() {
                       </span>
                     ) : (
                       <button
+                        data-testid={`pocket-pair-${user.name.replace(/\s+/g, '-')}`}
                         disabled={!canPair}
                         onClick={(e) => { e.stopPropagation(); pairAgents(user) }}
                         className="mt-1 text-xs text-violet-400 hover:text-violet-300 disabled:text-zinc-600 disabled:cursor-not-allowed flex items-center gap-0.5 transition-colors"
@@ -836,7 +865,7 @@ export default function PocketPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" data-testid="pocket-messages">
                 {activeConv.messages.length === 0 && (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -911,7 +940,7 @@ function ModelStatusBadge({ status, progress }: { status: ModelStatus; progress:
   )
 
   if (status === 'ready') return (
-    <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+    <div className="flex items-center gap-1.5 text-xs text-emerald-400" data-testid="pocket-agent-ready">
       <Zap className="w-3.5 h-3.5" />
       <span>agent ready</span>
     </div>
