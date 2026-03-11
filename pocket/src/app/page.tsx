@@ -138,7 +138,7 @@ export default function PocketPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const replyQueueRef = useRef<PendingReply[]>([])
   const isProcessingRef = useRef<boolean>(false)
-  const advanceTurnRef = useRef<(convId: string, theirMessage: string, theirAgentName: string, peerId: string, isAgent_message: boolean) => void>(() => {})
+  const advanceTurnRef = useRef<(convId: string, theirMessage: string, theirAgentName: string, peerId: string, isAgent_message: boolean, initialConv?: Conversation) => void>(() => {})
   const processReplyQueueRef = useRef<() => void>(() => {})
 
   // Internal monologue (agent thinks before each reply)
@@ -429,6 +429,7 @@ export default function PocketPage() {
     theirAgentName: string,
     peerId: string,
     isAgent_message: boolean,
+    initialConv?: Conversation,
   ) => {
     const theirEntry: ConvMessage = {
       speaker: 'theirs',
@@ -438,7 +439,7 @@ export default function PocketPage() {
     }
 
     setConversations((prev) => {
-      const conv = prev[convId]
+      const conv = initialConv ?? prev[convId]
       if (!conv || conv.status === 'ended') return prev
 
       const newTurnCount = conv.turnCount + 1
@@ -520,7 +521,8 @@ export default function PocketPage() {
         const existing = conversationsRef.current[convId]
 
         if (!existing) {
-          // New conversation from peer — only update state; ref is synced by useEffect
+          // New conversation from peer — pass conversation into advanceTurn so it runs
+          // before state has committed (avoids race where prev[convId] is still undefined)
           const newConv: Conversation = {
             id: convId,
             peerId: msg.fromId,
@@ -534,15 +536,14 @@ export default function PocketPage() {
           setConversations((prev) => ({ ...prev, [convId]: newConv }))
           setActiveConvId(convId)
           sendWS({ type: 'busy_status', busyWith: convId })
+          advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, true, newConv)
         } else {
-          // Existing conversation: ensure friend is looking at this thread
+          // Existing conversation: ensure we're viewing this thread, then advance turn
           setActiveConvId(convId)
+          setTimeout(() => {
+            advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, true)
+          }, 300)
         }
-
-        // Use ref so we always call latest advanceTurn (effect has [] deps)
-        setTimeout(() => {
-          advanceTurnRef.current(convId, msg.message, msg.fromAgentPersona, msg.fromId, true)
-        }, 300)
       }
 
       // Response to our message: remote is responding, we are the initiator
