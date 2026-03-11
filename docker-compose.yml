@@ -34,7 +34,7 @@ services:
   # ── Stroll.live ───────────────────────────────────────────────
   stroll:
     image: 216labs/stroll:latest
-    build: ./Stroll.live
+    build: ./apps/Stroll.live
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -241,7 +241,7 @@ services:
   # ── 1PageResearch ────────────────────────────────────────────
   1pageresearch:
     image: 216labs/1pageresearch:latest
-    build: ./1pageresearch
+    build: ./apps/1pageresearch
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -249,7 +249,7 @@ services:
       - ONEPAGE_MODEL=${ONEPAGE_MODEL:-google/gemini-2.0-flash-001}
       - ONEPAGE_DB_PATH=/app/data/1pageresearch.db
     volumes:
-      - ./1pageresearch/data:/app/data
+      - ./apps/1pageresearch/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -299,7 +299,7 @@ services:
   # ── Pocket ───────────────────────────────────────────────────────
   pocket:
     image: 216labs/pocket:latest
-    build: ./pocket
+    build: ./apps/pocket
     restart: unless-stopped
     environment:
       - PORT=3000
