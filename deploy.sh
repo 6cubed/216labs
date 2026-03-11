@@ -154,6 +154,8 @@ for svc in "${SERVICES[@]}"; do
 done
 
 # ── Build locally (only changed) ──────────────────────────────
+# BuildKit speeds up rebuilds via better layer caching (helps lightweight UI-only changes).
+export DOCKER_BUILDKIT=1
 BUILT_IMAGES=()
 if [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
   echo "==> Building ${#SERVICES_TO_BUILD[@]}/${#ALL_IMAGES[@]} images locally..."
@@ -185,11 +187,23 @@ if [ -f "$DB_FILE" ] && [ ${#BUILT_IMAGES[@]} -gt 0 ]; then
 fi
 
 # ── Transfer newly built images ───────────────────────────────
+# Use zstd when available (faster than gzip). On server: apt install zstd.
 if [ ${#BUILT_IMAGES[@]} -eq 0 ]; then
   echo "==> All images up to date, skipping transfer"
 else
-  echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE..."
-  docker save "${BUILT_IMAGES[@]}" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
+  USE_ZSTD=false
+  if command -v zstd &>/dev/null; then
+    if ssh "${SSH_OPTS[@]}" "$REMOTE" 'command -v zstd &>/dev/null' 2>/dev/null; then
+      USE_ZSTD=true
+    fi
+  fi
+  if [ "$USE_ZSTD" = true ]; then
+    echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd)..."
+    docker save "${BUILT_IMAGES[@]}" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'
+  else
+    echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE..."
+    docker save "${BUILT_IMAGES[@]}" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
+  fi
   # Persist source hashes so next deploy can skip unchanged apps
   for svc in "${SERVICES_TO_BUILD[@]}"; do
     IFS=: read -r NAME CTX DFILE <<< "$svc"
