@@ -38,6 +38,7 @@ interface Conversation {
 const MAX_TURNS = 6
 const MAX_CONCURRENT_CONVERSATIONS = 5
 const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC'
+const POCKET_PREFS_KEY = 'pocket_agent_prefs'
 
 /** When true (URL ?happypath=1), skip real LLM load and use stub replies for automated tests. */
 function getIsHappypathTest(): boolean {
@@ -144,6 +145,21 @@ export default function PocketPage() {
   const [personalityInput, setPersonalityInput] = useState('')
   const [missionInput, setMissionInput] = useState('')
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
+
+  // Restore name/persona/personality/mission from last join
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(POCKET_PREFS_KEY)
+      if (!raw) return
+      const p = JSON.parse(raw) as { name?: string; persona?: string; personality?: string; mission?: string }
+      if (p.name) setNameInput(p.name)
+      if (p.persona) setPersonaInput(p.persona)
+      if (p.personality) setPersonalityInput(p.personality)
+      if (p.mission) setMissionInput(p.mission)
+    } catch {
+      // ignore
+    }
+  }, [])
 
   // ── Model state ───────────────────────────────────────────────────────────
   const [modelStatus, setModelStatus] = useState<ModelStatus>('idle')
@@ -617,6 +633,11 @@ export default function PocketPage() {
     myMissionRef.current = mission
     myTwistRef.current = twist
     setHasJoined(true)
+    try {
+      localStorage.setItem(POCKET_PREFS_KEY, JSON.stringify({ name, persona, personality, mission }))
+    } catch {
+      // ignore quota / private mode
+    }
     sendWS({ type: 'join', name, agentPersona: persona })
     loadModel()
   }, [nameInput, personaInput, personalityInput, missionInput, sendWS, loadModel])
