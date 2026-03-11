@@ -73,19 +73,6 @@ services:
       - "3000"
     mem_limit: 256m
 
-  # ── Paperframe (frontend only on small VPS) ──────────────────
-  paperframe-frontend:
-    image: 216labs/paperframe-frontend:latest
-    build: ./paperframe/frontend
-    restart: unless-stopped
-    environment:
-      - PORT=3000
-      - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=${PAPERFRAME_API_URL:-}
-    expose:
-      - "3000"
-    mem_limit: 256m
-
   # ── HiveFind ─────────────────────────────────────────────────
   hivefind:
     image: 216labs/hivefind:latest
@@ -339,24 +326,6 @@ services:
     mem_limit: 512m
 
 
-  # ── Paperframe ML backend ────────────────────────────────────
-  # Requires ~2GB RAM. Enable with: docker compose --profile ml up -d
-  paperframe-backend:
-    image: 216labs/paperframe-backend:latest
-    build: ./paperframe/backend
-    restart: unless-stopped
-    profiles:
-      - ml
-    environment:
-      - SAM_CHECKPOINT=/models/sam_vit_b_01ec64.pth
-      - SAM_MODEL_TYPE=vit_b
-      - OMP_NUM_THREADS=1
-    expose:
-      - "8000"
-    volumes:
-      - sam_models:/models
-    mem_limit: 512m
-
   # ── Anchor ───────────────────────────────────────────────────
   anchor-api:
     image: 216labs/anchor-api:latest
@@ -396,4 +365,3 @@ services:
 volumes:
   caddy_data:
   caddy_config:
-  sam_models:

@@ -97,7 +97,7 @@ elif [ -f "$DB_FILE" ]; then
   echo "==> Deploy config (from local DB): $ENABLED_APPS"
 else
   echo "==> No DB found, deploying all apps"
-  ENABLED_APPS="ramblingradio stroll onefit paperframe hivefind admin agimemes agitshirts priors calibratedai bigleroys 1pageresearch artisinaleurope thezurichdatinggame oneroom"
+  ENABLED_APPS="ramblingradio stroll onefit hivefind admin agimemes agitshirts priors calibratedai bigleroys 1pageresearch artisinaleurope thezurichdatinggame oneroom"
 fi
 
 if [[ " $ENABLED_APPS " != *" admin "* ]]; then

@@ -88,7 +88,6 @@ const KNOWN_PORTS: Record<string, number> = {
   ramblingradio: 8001,
   stroll: 8002,
   onefit: 8003,
-  paperframe: 8004,
   hivefind: 8005,
   pipesecure: 8006,
   admin: 8007,
@@ -275,9 +274,32 @@ function pruneInvalidAutoDiscoveredApps(
   removeMany(removableIds);
 }
 
+/** Remove app rows whose directory no longer exists on disk (e.g. app was deleted). */
+function pruneRemovedDirectories(
+  db: Database.Database,
+  validDirs: Set<string>
+) {
+  const rows = db
+    .prepare("SELECT id, repo_path FROM apps")
+    .all() as Array<{ id: string; repo_path: string }>;
+  const removableIds = rows
+    .filter(
+      (row) => row.id !== "admin" && !validDirs.has(row.repo_path)
+    )
+    .map((row) => row.id);
+  if (removableIds.length === 0) return;
+  const removeOne = db.prepare("DELETE FROM apps WHERE id = ?");
+  const removeMany = db.transaction((ids: string[]) => {
+    for (const id of ids) removeOne.run(id);
+  });
+  removeMany(removableIds);
+}
+
 function syncTopLevelProjects(db: Database.Database) {
   const discoveredDirs = discoverTopLevelProjects();
-  pruneInvalidAutoDiscoveredApps(db, new Set(discoveredDirs));
+  const validDirs = new Set(discoveredDirs);
+  pruneInvalidAutoDiscoveredApps(db, validDirs);
+  pruneRemovedDirectories(db, validDirs);
   if (discoveredDirs.length === 0) return;
 
   const existingRows = db

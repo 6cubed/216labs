@@ -29,7 +29,6 @@ const APP_PREFIXES = [
   "NEXT_PUBLIC_STORYBOOK_",
   "AUDIOAICHECKUP_",
   "RAMBLINGRADIO_",
-  "PAPERFRAME_",
   "CALIBRATEDAI_",
   "BIGLEROYS_",
   "ONEPAGE_",
@@ -54,7 +53,6 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
       priors: vars.filter((v) => v.key.startsWith("PRIORS_")),
       agitshirts: vars.filter((v) => v.key.startsWith("AGITSHIRTS_")),
       ramblingradio: vars.filter((v) => v.key.startsWith("RAMBLINGRADIO_")),
-      paperframe: vars.filter((v) => v.key.startsWith("PAPERFRAME_")),
       calibratedai: vars.filter((v) => v.key.startsWith("CALIBRATEDAI_")),
       bigleroys: vars.filter((v) => v.key.startsWith("BIGLEROYS_")),
       onepage: vars.filter((v) => v.key.startsWith("ONEPAGE_")),
@@ -148,7 +146,6 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
         {renderGroup("Priors", grouped.priors)}
         {renderGroup("AgitShirts", grouped.agitshirts)}
         {renderGroup("RamblingRadio", grouped.ramblingradio)}
-        {renderGroup("Paperframe", grouped.paperframe)}
         {renderGroup("CalibratedAI", grouped.calibratedai)}
         {renderGroup("BigLeRoys", grouped.bigleroys)}
         {renderGroup("1PageResearch", grouped.onepage)}

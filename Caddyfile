@@ -68,10 +68,6 @@ oneroom.agimemes.com {
 	reverse_proxy oneroom:3000
 }
 
-paperframe.agimemes.com {
-	reverse_proxy paperframe-frontend:3000
-}
-
 pipesecure.agimemes.com {
 	reverse_proxy pipesecure:3000
 }

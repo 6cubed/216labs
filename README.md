@@ -9,7 +9,6 @@
 | **RamblingRadio** | Express + React + Vite, PostgreSQL | [ramblingradio.agimemes.com](https://ramblingradio.agimemes.com) |
 | **Stroll.live** | Express + React + Vite, SQLite | [stroll.agimemes.com](https://stroll.agimemes.com) |
 | **OneFit** | Next.js, SQLite | [onefit.agimemes.com](https://onefit.agimemes.com) |
-| **Paperframe** | Next.js frontend | [paperframe.agimemes.com](https://paperframe.agimemes.com) |
 | **HiveFind** | Next.js | [hivefind.agimemes.com](https://hivefind.agimemes.com) |
 | **PipeSecure** | Next.js, PostgreSQL, Redis, BullMQ | [pipesecure.agimemes.com](https://pipesecure.agimemes.com) |
 | **AGI Memes** | Flask | [agimemes.agimemes.com](https://agimemes.agimemes.com) |
@@ -27,7 +26,6 @@
 | **Pocket** | Next.js, WebGPU, WebSocket relay | [pocket.agimemes.com](https://pocket.agimemes.com) |
 | **StoryMagic** | Next.js, SQLite, OpenAI, Stripe | [storybook.agimemes.com](https://storybook.agimemes.com) |
 | **216labs Admin** | Next.js (workflow & pipeline dashboard) | [admin.agimemes.com](https://admin.agimemes.com) |
-| **Paperframe ML** | FastAPI, SAM + BLIP (opt-in, needs 2GB+ RAM) | via `--profile ml` |
 
 ## Deploy
 
@@ -61,15 +59,6 @@ The script:
 - Builds only enabled app images locally
 - Skips transfer for images that haven't changed
 - SSHs to the droplet, `git pull`s the latest config, and restarts the stack
-
-### Enable the Paperframe ML backend
-
-Excluded by default (needs ~2GB RAM). On a larger droplet, set `PAPERFRAME_API_URL=http://paperframe-backend:8000` in the admin env vars, then:
-
-```bash
-# On the droplet:
-docker compose --profile ml up -d
-```
 
 ## Local development
 

@@ -19,7 +19,6 @@ const PREFIX_TO_DIR: Array<[string, string]> = [
   ["PRIORS_", "priors"],
   ["AGITSHIRTS_", "agitshirts"],
   ["RAMBLINGRADIO_", "RamblingRadio"],
-  ["PAPERFRAME_", "paperframe"],
   ["HIVEFIND_", "hivefind"],
   ["CALIBRATEDAI_", "calibratedai"],
   ["BIGLEROYS_", "bigleroys"],
