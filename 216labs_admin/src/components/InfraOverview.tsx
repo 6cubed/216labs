@@ -54,7 +54,7 @@ export function InfraOverview() {
         />
         <InfraRow label="Domain" value={infrastructure.domain} />
         <InfraRow
-          label="Admin"
+          label="Workflow dashboard"
           value={infrastructure.adminUrl}
           href={infrastructure.adminUrl}
         />

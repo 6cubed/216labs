@@ -1,6 +1,7 @@
 {
   "name": "216labs-admin",
   "version": "0.1.0",
+  "description": "Enterprise vibe coding workflow — pipeline dashboard, env vars, accountability.",
   "private": true,
   "scripts": {
     "dev": "next dev",
