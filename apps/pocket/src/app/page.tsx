@@ -219,6 +219,7 @@ export default function PocketPage() {
     try {
       const { CreateMLCEngine } = await import('@mlc-ai/web-llm')
       const engine = await CreateMLCEngine(MODEL_ID, {
+        appConfig: { useIndexedDBCache: true } as import('@mlc-ai/web-llm').AppConfig,
         initProgressCallback: (p: { progress: number }) => {
           setLoadProgress(Math.round(p.progress * 100))
         },
@@ -964,7 +965,7 @@ function JoinScreen({
         </form>
 
         <p className="text-center text-xs text-zinc-700 mt-6">
-          The LLM ({MODEL_ID.split('-').slice(0, 3).join(' ')}) downloads to your browser on first use (~800 MB).
+          The LLM ({MODEL_ID.split('-').slice(0, 3).join(' ')}) downloads on first use (~800 MB) and is cached in your browser for future visits.
         </p>
       </div>
     </div>
