@@ -127,17 +127,33 @@ export function getEnabledAppIds(): string[] {
       "pocket",
     ];
   }
-  const labsDb = new Database(LABS_DB_PATH, { readonly: true });
   try {
-    const rows = labsDb
-      .prepare(
-        "SELECT id FROM apps WHERE deploy_enabled = 1 AND id != 'admin' ORDER BY port"
-      )
-      .all() as Array<{ id: string }>;
-    return rows.map((r) => r.id);
-  } finally {
-    labsDb.close();
+    const labsDb = new Database(LABS_DB_PATH, { readonly: true });
+    try {
+      const rows = labsDb
+        .prepare(
+          "SELECT id FROM apps WHERE deploy_enabled = 1 AND id != 'admin' ORDER BY port"
+        )
+        .all() as Array<{ id: string }>;
+      const ids = rows.map((r) => r.id);
+      if (ids.length > 0) return ids;
+    } finally {
+      labsDb.close();
+    }
+  } catch (e) {
+    console.warn("[happypath] Could not read 216labs.db:", (e as Error).message);
   }
+  return [
+    "ramblingradio",
+    "stroll",
+    "onefit",
+    "oneroom",
+    "paperframe",
+    "hivefind",
+    "agimemes",
+    "pocket",
+    "happypath",
+  ];
 }
 
 export function getStatusData(): {
