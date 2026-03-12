@@ -124,6 +124,7 @@ export function getEnabledAppIds(): string[] {
       "hivefind",
       "agimemes",
       "pocket",
+      "offlinellm",
     ];
   }
   try {
@@ -150,6 +151,7 @@ export function getEnabledAppIds(): string[] {
     "hivefind",
     "agimemes",
     "pocket",
+    "offlinellm",
     "happypath",
   ];
 }

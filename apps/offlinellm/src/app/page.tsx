@@ -16,7 +16,13 @@ const MODELS: { id: string; label: string; sizeMb: number }[] = [
 
 type Message = { role: "user" | "assistant"; content: string; streaming?: boolean };
 
+function getIsHappypathTest(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("happypath") === "1";
+}
+
 export default function OfflineLLMPage() {
+  const [isHappypathTest] = useState(() => getIsHappypathTest());
   const [selectedModelId, setSelectedModelId] = useState<string>(MODELS[0]!.id);
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [loadProgress, setLoadProgress] = useState(0);
@@ -67,11 +73,34 @@ export default function OfflineLLMPage() {
   const loadModel = useCallback(async () => {
     setStatus("loading");
     setLoadProgress(0);
+
+    if (isHappypathTest) {
+      const steps = [20, 50, 80, 100];
+      for (let i = 0; i < steps.length; i++) {
+        await new Promise((r) => setTimeout(r, 300));
+        setLoadProgress(steps[i]!);
+      }
+      await new Promise((r) => setTimeout(r, 200));
+      engineRef.current = {
+        chat: {
+          completions: {
+            create: async () =>
+              (async function* () {
+                yield { choices: [{ delta: { content: "Hello! [happypath test reply]." } }] };
+              })(),
+          },
+        },
+      };
+      setStatus("ready");
+      return;
+    }
+
     try {
       const { CreateMLCEngine } = await import("@mlc-ai/web-llm");
       const engine = await CreateMLCEngine(selectedModelId, {
-        initProgressCallback: (p: { progress: number }) => {
-          setLoadProgress(Math.round(p.progress * 100));
+        initProgressCallback: (p: { progress?: number } | number) => {
+          const progress = typeof p === "number" ? p : p?.progress ?? 0;
+          setLoadProgress(Math.round(progress * 100));
         },
       });
       engineRef.current = engine;
@@ -80,7 +109,7 @@ export default function OfflineLLMPage() {
       console.error("Model load failed:", err);
       setStatus("error");
     }
-  }, [selectedModelId]);
+  }, [selectedModelId, isHappypathTest]);
 
   const send = useCallback(async () => {
     const text = input.trim();
@@ -168,7 +197,10 @@ export default function OfflineLLMPage() {
           </span>
         </div>
         {status === "ready" && (
-          <div className="flex items-center gap-1.5 text-xs text-emerald-400 shrink-0">
+          <div
+            className="flex items-center gap-1.5 text-xs text-emerald-400 shrink-0"
+            data-testid="offlinellm-ready"
+          >
             <Zap className="w-3.5 h-3.5" />
             <span>Ready · offline</span>
           </div>
@@ -258,7 +290,7 @@ export default function OfflineLLMPage() {
               <button
                 type="button"
                 onClick={loadModel}
-                disabled={status === "loading" || webGPUSupported === false}
+                disabled={status === "loading" || (webGPUSupported === false && !isHappypathTest)}
                 className="w-full min-h-[48px] py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2 touch-manipulation"
               >
                 {status === "loading" ? (

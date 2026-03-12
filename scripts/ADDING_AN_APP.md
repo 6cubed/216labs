@@ -25,7 +25,18 @@ The scaffold script prints the snippet to paste. Copy it in. If your app needs v
 python3 scripts/generate-caddyfile.py
 ```
 
-## 4. Build your app, commit, and deploy
+## 4. Add a Happy Path test (for apps with critical flows)
+
+If the app has a critical user flow (e.g. model load, chat, form submit), add a test so the regular Happy Path run catches regressions:
+
+1. **Stub mode in the app** — When `?happypath=1` is in the URL, skip real external/expensive work (e.g. real LLM load, real API calls) and fake success so the test can run without WebGPU/network. See `apps/pocket` and `apps/offlinellm` for examples.
+2. **Dedicated test in `happypath/src/runner.ts`** — Add `run<AppId>Test(browser, baseUrl)` that opens `baseUrl?happypath=1`, drives the flow (click load, fill form, etc.), and asserts the expected outcome. Return a `RunResult`.
+3. **Wire the test** — In `runAllTests()`, when `appId === "<app-id>"`, call your test instead of `runTestForApp()`.
+4. **Default app list** — In `happypath/src/db.ts`, add `<app-id>` to the fallback array in `getEnabledAppIds()` so the test runs when the admin DB isn’t available.
+
+Without this, basic failures (e.g. model load error, broken button) can ship until someone manually tests.
+
+## 5. Build your app, commit, and deploy
 
 ```bash
 git add .

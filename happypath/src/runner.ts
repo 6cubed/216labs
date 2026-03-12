@@ -8,6 +8,10 @@ const NAV_TIMEOUT_MS = 15_000;
 const POCKET_JOIN_WAIT_MS = 25_000;  // join + stub "model load"
 const POCKET_CHAT_WAIT_MS = 35_000;  // pairing + back-and-forth
 
+/** OfflineLLM test: load app with ?happypath=1, trigger stub model load, assert ready then send one message and get stub reply. */
+const OFFLINELLM_LOAD_WAIT_MS = 15_000;  // stub "download & load"
+const OFFLINELLM_CHAT_WAIT_MS = 10_000;   // one send + streamed reply
+
 export async function runPocketChatTest(
   browser: Browser,
   baseUrl: string
@@ -96,6 +100,62 @@ export async function runPocketChatTest(
   } finally {
     await pageA.close().catch(() => {});
     await pageB.close().catch(() => {});
+  }
+}
+
+/** OfflineLLM: stub model load (?happypath=1) then one round-trip chat. */
+export async function runOfflinellmTest(
+  browser: Browser,
+  baseUrl: string
+): Promise<RunResult> {
+  const start = Date.now();
+  const testUrl = `${baseUrl.replace(/\/$/, "")}?happypath=1`;
+  const page = await browser.newPage({
+    ignoreHTTPSErrors: true,
+    javaScriptEnabled: true,
+  });
+  page.setDefaultTimeout(PAGE_TIMEOUT_MS);
+  page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
+
+  try {
+    const res = await page.goto(testUrl, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
+    if (res && res.status() >= 400) {
+      return {
+        appId: "offlinellm",
+        baseUrl,
+        passed: false,
+        message: `HTTP ${res.status()}`,
+        durationMs: Date.now() - start,
+      };
+    }
+
+    // Click "Download & load model" (stub runs, no real WebGPU needed)
+    await page.getByRole("button", { name: /download & load model/i }).click();
+    await page.getByTestId("offlinellm-ready").waitFor({ state: "visible", timeout: OFFLINELLM_LOAD_WAIT_MS });
+
+    // One message and assert we get the stub reply
+    await page.getByPlaceholder(/message/i).fill("Hi");
+    await page.getByRole("button", { name: /send/i }).click();
+    await page.locator("[data-testid=offlinellm-messages]").getByText("happypath test reply").waitFor({ state: "visible", timeout: OFFLINELLM_CHAT_WAIT_MS });
+
+    return {
+      appId: "offlinellm",
+      baseUrl,
+      passed: true,
+      message: "OK (stub load + chat)",
+      durationMs: Date.now() - start,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      appId: "offlinellm",
+      baseUrl,
+      passed: false,
+      message: message.slice(0, 200),
+      durationMs: Date.now() - start,
+    };
+  } finally {
+    await page.close().catch(() => {});
   }
 }
 
@@ -238,7 +298,9 @@ export async function runAllTests(
       const result =
         appId === "pocket"
           ? await runPocketChatTest(browser, baseUrl)
-          : await runTestForApp(browser, appId, baseUrl);
+          : appId === "offlinellm"
+            ? await runOfflinellmTest(browser, baseUrl)
+            : await runTestForApp(browser, appId, baseUrl);
       results.push(result);
       console.log(result.passed ? "pass" : `fail: ${result.message}`);
     }
