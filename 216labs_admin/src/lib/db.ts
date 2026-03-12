@@ -108,6 +108,7 @@ const KNOWN_PORTS: Record<string, number> = {
   happypath: 8022,
   blog: 8023,
   worldphoto: 8024,
+  offlinellm: 8025,
 };
 
 let _db: Database.Database | null = null;
@@ -171,6 +172,7 @@ function initSchema(db: Database.Database) {
   ensureHappyPathEnabled(db);
   ensureBlogEnabled(db);
   ensureWorldphotoEnabled(db);
+  ensureOfflinellmEnabled(db);
 }
 
 function readManifest(manifestPath: string): AppManifest | null {
@@ -482,6 +484,10 @@ function ensureBlogEnabled(db: Database.Database) {
 
 function ensureWorldphotoEnabled(db: Database.Database) {
   db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'worldphoto'").run();
+}
+
+function ensureOfflinellmEnabled(db: Database.Database) {
+  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'offlinellm'").run();
 }
 
 export function getAllApps(): DbApp[] {

@@ -64,6 +64,10 @@ muinteoir.agimemes.com {
 	reverse_proxy muinteoir:3000
 }
 
+offlinellm.agimemes.com {
+	reverse_proxy offlinellm:3000
+}
+
 onefit.agimemes.com {
 	reverse_proxy onefit:3000
 }

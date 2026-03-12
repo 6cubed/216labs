@@ -296,6 +296,18 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── OfflineLLM ───────────────────────────────────────────────────
+  offlinellm:
+    image: 216labs/offlinellm:latest
+    build: ./apps/offlinellm
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── Pocket ───────────────────────────────────────────────────────
   pocket:
     image: 216labs/pocket:latest
