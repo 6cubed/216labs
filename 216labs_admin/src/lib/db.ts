@@ -106,6 +106,7 @@ const KNOWN_PORTS: Record<string, number> = {
   muinteoir: 8020,
   pocket: 8021,
   happypath: 8022,
+  blog: 8023,
 };
 
 let _db: Database.Database | null = null;

@@ -44,6 +44,10 @@ bigleroys.agimemes.com {
 	reverse_proxy bigleroys:5000
 }
 
+blog.agimemes.com {
+	reverse_proxy blog:3000
+}
+
 calibratedai.agimemes.com {
 	reverse_proxy calibratedai:3000
 }

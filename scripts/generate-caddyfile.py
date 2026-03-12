@@ -48,8 +48,22 @@ lines = [
 skip_ids = {"admin", "anchor"}
 entries = []
 
-for entry in os.listdir(repo_root):
-    manifest_path = os.path.join(repo_root, entry, "manifest.json")
+def manifest_dirs():
+    # Top-level (admin, happypath, pipesecure, etc.)
+    for entry in os.listdir(repo_root):
+        path = os.path.join(repo_root, entry)
+        if os.path.isdir(path) and not entry.startswith("."):
+            yield path
+    # Apps under apps/
+    apps_dir = os.path.join(repo_root, "apps")
+    if os.path.isdir(apps_dir):
+        for entry in os.listdir(apps_dir):
+            path = os.path.join(apps_dir, entry)
+            if os.path.isdir(path) and not entry.startswith("."):
+                yield path
+
+for dir_path in manifest_dirs():
+    manifest_path = os.path.join(dir_path, "manifest.json")
     if not os.path.isfile(manifest_path):
         continue
     try:
