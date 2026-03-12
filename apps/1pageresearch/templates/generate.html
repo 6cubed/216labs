@@ -45,10 +45,46 @@
   .input-row input:focus { border-color: var(--accent); }
   .input-row input::placeholder { color: var(--muted); }
 
+  .api-key-section {
+    margin-top: 1.25rem;
+  }
+
+  .api-key-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .api-key-section input {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.9rem;
+    padding: 0.55rem 1rem;
+    outline: none;
+    font-family: var(--mono);
+    transition: border-color 0.15s;
+  }
+
+  .api-key-section input:focus { border-color: var(--accent); }
+  .api-key-section input::placeholder { color: var(--muted); }
+
+  .api-key-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.45rem;
+    max-width: 420px;
+  }
+
   .model-note {
     font-size: 0.75rem;
     color: var(--muted);
-    margin-top: 0.6rem;
+    margin-top: 0.5rem;
   }
 
   .progress-card {
@@ -162,7 +198,13 @@
     <input id="topicInput" type="text" placeholder="e.g. berberine and blood glucose, r/ADHD and caffeine…" autofocus />
     <button class="btn" id="genBtn" onclick="generate()">Generate</button>
   </div>
-  <div class="model-note">Powered by <strong>OpenRouter</strong> · Results saved automatically</div>
+
+  <div class="api-key-section">
+    <label for="apiKeyInput" class="api-key-label">OpenAI API key (optional)</label>
+    <input id="apiKeyInput" type="password" placeholder="sk-… — use your own key for this request only; not stored" autocomplete="off" />
+    <p class="api-key-note">Paste your key to commission a report with your own OpenAI account. Sent only for this request and never stored.</p>
+  </div>
+  <div class="model-note">Without your key, generation uses the platform provider when configured. Results saved to the library.</div>
 
   <div class="examples">
     <p>Topic ideas:</p>
@@ -192,6 +234,7 @@
 
 <script>
   const input = document.getElementById('topicInput');
+  const apiKeyInput = document.getElementById('apiKeyInput');
   const btn = document.getElementById('genBtn');
   const card = document.getElementById('progressCard');
   const stream = document.getElementById('rawStream');
@@ -208,6 +251,8 @@
     const topic = input.value.trim();
     if (!topic) return;
 
+    const openaiApiKey = apiKeyInput.value.trim();
+
     btn.disabled = true;
     btn.textContent = 'Generating…';
     card.classList.add('visible');
@@ -217,10 +262,13 @@
     spinner.style.display = 'block';
 
     try {
+      const payload = { topic };
+      if (openaiApiKey) payload.openai_api_key = openaiApiKey;
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {

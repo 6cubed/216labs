@@ -11,6 +11,7 @@ app = Flask(__name__)
 
 OPENROUTER_API_KEY = os.environ.get("ONEPAGE_OPENROUTER_API_KEY", "")
 MODEL = os.environ.get("ONEPAGE_MODEL", "google/gemini-2.0-flash-001")
+OPENAI_MODEL_USER = os.environ.get("ONEPAGE_OPENAI_MODEL", "gpt-4o-mini")  # when user brings own key
 DB_INITIALIZED = False
 
 AGENT_SYSTEM_PROMPT = """You are a research analyst that mines internet community data for statistically significant effects and writes concise, rigorous 1-page research reports.
@@ -72,24 +73,42 @@ def generate_page():
 
 @app.route("/api/generate", methods=["POST"])
 def api_generate():
-    topic = (request.json or {}).get("topic", "").strip()
+    body = request.json or {}
+    topic = body.get("topic", "").strip()
+    user_openai_key = (body.get("openai_api_key") or "").strip()
+
     if not topic:
         return {"error": "No topic provided"}, 400
-    if not OPENROUTER_API_KEY:
-        return {"error": "ONEPAGE_OPENROUTER_API_KEY is not configured"}, 500
+
+    # Use user's key if provided; otherwise fall back to platform OpenRouter key
+    if user_openai_key:
+        api_url = "https://api.openai.com/v1/chat/completions"
+        api_headers = {
+            "Authorization": f"Bearer {user_openai_key}",
+            "Content-Type": "application/json",
+        }
+        api_model = OPENAI_MODEL_USER
+    elif OPENROUTER_API_KEY:
+        api_url = "https://openrouter.ai/api/v1/chat/completions"
+        api_headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://216labs.com",
+            "X-Title": "1PageResearch",
+        }
+        api_model = MODEL
+    else:
+        return {
+            "error": "No API key. Paste your OpenAI API key in the field below, or ask the site owner to set ONEPAGE_OPENROUTER_API_KEY.",
+        }, 400
 
     def stream():
         try:
             resp = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://216labs.com",
-                    "X-Title": "1PageResearch",
-                },
+                api_url,
+                headers=api_headers,
                 json={
-                    "model": MODEL,
+                    "model": api_model,
                     "messages": [
                         {"role": "system", "content": AGENT_SYSTEM_PROMPT},
                         {"role": "user", "content": f"Write a 1-page research report on: {topic}"},
