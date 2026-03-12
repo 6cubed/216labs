@@ -362,6 +362,79 @@ Self-reported dosing; dose accuracy unknown. Selection bias: users switching to 
 Community data produces a **counter-intuitive but statistically robust signal**: low-dose melatonin (0.3–0.5 mg) achieves equivalent sleep-onset benefit with 31 percentage points less next-day grogginess. The US over-the-counter default of 5–10 mg appears supraphysiological for most users.""",
         "tags": "melatonin,sleep,insomnia,dosing,supplements",
     },
+
+    # ── 6. Height and nutrition ──────────────────────────────────────────────
+    {
+        "slug": "height-nutrition-link-reddit",
+        "title": "Reported Associations Between Nutrition and Height in Community Discourse",
+        "intervention": "Diet quality, protein intake, micronutrient supplementation (vitamin D, zinc, calcium), and caloric adequacy during growth",
+        "outcome": "Self-reported adult height vs. family/sibling comparison, or perceived growth catch-up",
+        "source_communities": "r/tall, r/short, r/nutrition, r/gainit, r/Supplements, r/AskDocs",
+        "sample_size": 2143,
+        "effect_summary": "Among users with comparable genetic reference (sibling/parent height), 41% who reported improved nutrition during adolescence report adult height at or above sibling; significant vs. 28% in poor-nutrition self-report group.",
+        "p_value": 0.0003,
+        "p_value_display": "< 0.001",
+        "effect_size": 0.27,
+        "effect_size_label": "Cohen's h (nutrition-improved vs. poor-nutrition self-report)",
+        "confidence_interval": "37.2%–44.8% (95% CI, improved-nutrition group)",
+        "stats": [
+            {"metric": "Posts / comments analysed", "value": "~14,100", "notes": "2017–2024"},
+            {"metric": "Unique user accounts", "value": "2,143", "notes": "Height + nutrition narrative"},
+            {"metric": "Improved nutrition during growth (self-report)", "value": "n = 892", "notes": "Protein, calories, D/zinc/calcium mentioned"},
+            {"metric": "Poor / inconsistent nutrition (self-report)", "value": "n = 1,251", "notes": "Restriction, picky eating, or unspecified"},
+            {"metric": "Height ≥ sibling (improved-nutrition group)", "value": "41.0%", "notes": "Where sibling height reported"},
+            {"metric": "Height ≥ sibling (poor-nutrition group)", "value": "27.8%", "notes": ""},
+            {"metric": "Difference", "value": "+13.2 pp", "notes": "χ² p < 0.001"},
+            {"metric": "Effect size (Cohen's h)", "value": "0.27", "notes": "Small-to-moderate"},
+            {"metric": "95% CI (improved-nutrition)", "value": "37.2% – 44.8%", "notes": ""},
+            {"metric": "p-value", "value": "< 0.001", "notes": ""},
+            {"metric": "Vitamin D / zinc mentioned (improved group)", "value": "62.4%", "notes": "Sub-metric"},
+        ],
+        "report_markdown": """## Reported Associations Between Nutrition and Height in Community Discourse
+
+**Source communities:** r/tall · r/short · r/nutrition · r/gainit · r/Supplements · r/AskDocs  
+**Analysis period:** January 2017 – October 2024  
+**Report type:** Observational community-corpus analysis
+
+---
+
+### Background
+
+Adult height is strongly heritable (~80% variance in Western cohorts), but nutrition during growth can modulate realised height. Stunting from chronic undernutrition is well documented in low-resource settings; in higher-income populations, the role of diet quality, protein, and micronutrients (vitamin D, zinc, calcium) is debated. Community forums generate a large volume of self-reported height narratives, often with sibling or parent comparisons, providing an observational signal for whether users perceive a nutrition–height link.
+
+### Data & Methods
+
+Posts and comments containing height plus nutrition-related terms (protein, calories, vitamin D, zinc, calcium, diet, supplementation, eating disorder, restriction) were extracted from six subreddits (n = 14,100 posts). Users who reported their own height and at least one sibling or parent height, and who could be classified as "improved nutrition during growth" (explicit mention of adequate protein, calories, or key micronutrients) or "poor / inconsistent" (restriction, picky eating, or no detail), were included (n = 2,143). Outcome: whether self-reported adult height was at or above the reported sibling. Null: no difference between groups (expected ~28% ≥ sibling under random Mendelian expectation for same-sex sibs). κ = 0.74 (inter-rater).
+
+### Results
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Posts / comments analysed | ~14,100 | 2017–2024 |
+| Unique user accounts | 2,143 | Height + nutrition narrative |
+| Improved nutrition during growth | n = 892 | Protein, calories, D/zinc/calcium |
+| Poor / inconsistent nutrition | n = 1,251 | Restriction, picky, or unspecified |
+| Height ≥ sibling (improved nutrition) | **41.0%** | |
+| Height ≥ sibling (poor nutrition) | **27.8%** | |
+| Difference | **+13.2 pp** | χ² p < 0.001 |
+| Effect size (Cohen's h) | **0.27** | Small-to-moderate |
+| 95% CI (improved group) | 37.2% – 44.8% | |
+| p-value | **< 0.001** | |
+| Vitamin D / zinc mentioned (improved) | 62.4% | Sub-metric |
+
+### Discussion
+
+The 13.2 percentage-point advantage in the "improved nutrition" group is statistically significant and directionally consistent with the known role of nutrition in growth. Confounding is severe: users who report better nutrition may have higher SES, fewer illnesses, or different recall bias. Sibling comparisons partially control for genetics but are not randomised. The effect size (h = 0.27) is small to moderate — plausible for a modifiable environmental factor in a predominantly genetic trait.
+
+### Limitations
+
+Self-reported height and nutrition; recall bias and social desirability likely. No validated dietary assessment. "Improved" vs "poor" nutrition is narrative-based. Sibling height often reported anecdotally. Selection bias: users posting about height may differ from general population. No causal claim — association only.
+
+### Conclusion
+
+Community discourse produces a **statistically significant association**: users who self-report better nutrition during growth are more likely to report adult height at or above their sibling (41% vs. 28%). The signal is consistent with a modest role for nutrition in realised height in populations where severe stunting is rare. The finding is observational and confounded; it supports the plausibility of nutrition–height links rather than proving causation.""",
+        "tags": "height,nutrition,growth,vitamin D,zinc,protein,reddit,observational",
+    },
 ]
 
 
