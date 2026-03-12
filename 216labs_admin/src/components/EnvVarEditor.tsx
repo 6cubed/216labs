@@ -17,23 +17,17 @@ function maskValue(value: string) {
   return `${value.slice(0, 3)}...${value.slice(-3)}`;
 }
 
-const APP_PREFIXES = [
-  "ONEROOM_",
-  "ONEFIT_",
-  "AGIMEMES_",
-  "PIPESECURE_",
-  "HAPPYPATH_",
-  "PRIORS_",
-  "AGITSHIRTS_",
-  "STORYBOOK_",
-  "NEXT_PUBLIC_STORYBOOK_",
-  "AUDIOAICHECKUP_",
-  "RAMBLINGRADIO_",
-  "CALIBRATEDAI_",
-  "BIGLEROYS_",
-  "ONEPAGE_",
-  "ZDGAME_",
-] as const;
+/** Extract env key prefixes for grouping (scale: no hardcoded app list). */
+function getPrefixes(keys: string[]): string[] {
+  const prefixes = new Set<string>();
+  for (const key of keys) {
+    const segs = key.split("_").filter(Boolean);
+    if (segs.length >= 1) prefixes.add(segs[0] + "_");
+    if (key.startsWith("NEXT_PUBLIC_") && segs.length >= 2)
+      prefixes.add("NEXT_PUBLIC_" + segs[1] + "_");
+  }
+  return Array.from(prefixes).sort((a, b) => b.length - a.length);
+}
 
 export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -41,24 +35,20 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
   const [savedKey, setSavedKey] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
-    const isKnown = (key: string) => APP_PREFIXES.some((p) => key.startsWith(p));
-    return {
-      storybook: vars.filter((v) => v.key.startsWith("STORYBOOK_") || v.key.startsWith("NEXT_PUBLIC_STORYBOOK_")),
-      audioaicheckup: vars.filter((v) => v.key.startsWith("AUDIOAICHECKUP_")),
-      oneroom: vars.filter((v) => v.key.startsWith("ONEROOM_")),
-      onefit: vars.filter((v) => v.key.startsWith("ONEFIT_")),
-      agimemes: vars.filter((v) => v.key.startsWith("AGIMEMES_")),
-      pipesecure: vars.filter((v) => v.key.startsWith("PIPESECURE_")),
-      happypath: vars.filter((v) => v.key.startsWith("HAPPYPATH_")),
-      priors: vars.filter((v) => v.key.startsWith("PRIORS_")),
-      agitshirts: vars.filter((v) => v.key.startsWith("AGITSHIRTS_")),
-      ramblingradio: vars.filter((v) => v.key.startsWith("RAMBLINGRADIO_")),
-      calibratedai: vars.filter((v) => v.key.startsWith("CALIBRATEDAI_")),
-      bigleroys: vars.filter((v) => v.key.startsWith("BIGLEROYS_")),
-      onepage: vars.filter((v) => v.key.startsWith("ONEPAGE_")),
-      zdgame: vars.filter((v) => v.key.startsWith("ZDGAME_")),
-      shared: vars.filter((v) => !isKnown(v.key)),
-    };
+    const prefixes = getPrefixes(vars.map((v) => v.key));
+    const result: Record<string, EnvVarRow[]> = { _other: [] };
+    for (const p of prefixes) result[p] = [];
+    for (const v of vars) {
+      const prefix = prefixes.find((p) => v.key.startsWith(p));
+      if (prefix) result[prefix].push(v);
+      else result._other.push(v);
+    }
+    return result;
+  }, [vars]);
+
+  const groupOrder = useMemo(() => {
+    const prefixes = getPrefixes(vars.map((v) => v.key));
+    return [...prefixes, "_other"];
   }, [vars]);
 
   const renderGroup = (title: string, rows: EnvVarRow[]) => {
@@ -136,21 +126,14 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {renderGroup("StoryMagic", grouped.storybook)}
-        {renderGroup("Audio AI Checkup", grouped.audioaicheckup)}
-        {renderGroup("OneRoom", grouped.oneroom)}
-        {renderGroup("OneFit", grouped.onefit)}
-        {renderGroup("AGI Memes", grouped.agimemes)}
-        {renderGroup("PipeSecure", grouped.pipesecure)}
-        {renderGroup("Happy Path", grouped.happypath)}
-        {renderGroup("Priors", grouped.priors)}
-        {renderGroup("AgitShirts", grouped.agitshirts)}
-        {renderGroup("RamblingRadio", grouped.ramblingradio)}
-        {renderGroup("CalibratedAI", grouped.calibratedai)}
-        {renderGroup("BigLeRoys", grouped.bigleroys)}
-        {renderGroup("1PageResearch", grouped.onepage)}
-        {renderGroup("The Zurich Dating Game", grouped.zdgame)}
-        {renderGroup("Shared / Other", grouped.shared)}
+        {groupOrder.map((key) => {
+          const rows = grouped[key] ?? [];
+          const title =
+            key === "_other"
+              ? "Shared / Other"
+              : key.replace(/_$/, "").replace(/_/g, " ");
+          return renderGroup(title, rows);
+        })}
       </div>
     </section>
   );

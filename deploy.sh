@@ -103,13 +103,52 @@ fi
 if [[ " $ENABLED_APPS " != *" admin "* ]]; then
   ENABLED_APPS="$ENABLED_APPS admin"
 fi
-# Force-include apps that must exist on server before they can be toggled in admin
-for force in happypath blog worldphoto offlinellm 1pageresearch facerate landing; do
-  if [[ " $ENABLED_APPS " != *" $force "* ]]; then
-    ENABLED_APPS="$ENABLED_APPS $force"
-    echo "==> Force-including $force (not yet in server DB)"
+# Force-include apps from config (scale: edit config file, not this script)
+BOOTSTRAP_FILE="config/deploy-bootstrap.txt"
+if [ -f "$BOOTSTRAP_FILE" ]; then
+  while IFS= read -r force || [ -n "$force" ]; do
+    force=$(echo "$force" | sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//')
+    [ -z "$force" ] && continue
+    if [[ " $ENABLED_APPS " != *" $force "* ]]; then
+      ENABLED_APPS="$ENABLED_APPS $force"
+      echo "==> Force-including $force (from $BOOTSTRAP_FILE)"
+    fi
+  done < "$BOOTSTRAP_FILE"
+else
+  for force in happypath blog worldphoto offlinellm 1pageresearch facerate landing; do
+    if [[ " $ENABLED_APPS " != *" $force "* ]]; then
+      ENABLED_APPS="$ENABLED_APPS $force"
+      echo "==> Force-including $force (not yet in server DB)"
+    fi
+  done
+fi
+
+# Cap total apps to avoid filling droplet disk (default 10). Set DEPLOY_MAX_APPS to override.
+MAX_APPS="${DEPLOY_MAX_APPS:-10}"
+# Priority order from config (scale: edit config/deploy-priority.txt, not this script)
+PRIORITY_FILE="config/deploy-priority.txt"
+if [ -f "$PRIORITY_FILE" ]; then
+  DEPLOY_PRIORITY=""
+  while IFS= read -r app || [ -n "$app" ]; do
+    app=$(echo "$app" | sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//')
+    [ -z "$app" ] && continue
+    DEPLOY_PRIORITY="$DEPLOY_PRIORITY $app"
+  done < "$PRIORITY_FILE"
+else
+  DEPLOY_PRIORITY="admin landing blog pocket 1pageresearch facerate priors muinteoir happypath worldphoto offlinellm pipesecure ramblingradio stroll onefit hivefind agimemes agitshirts calibratedai bigleroys artisinaleurope thezurichdatinggame oneroom audioaicheckup storybook"
+fi
+CAPPED=""
+for app in $DEPLOY_PRIORITY; do
+  if [[ " $ENABLED_APPS " == *" $app "* ]]; then
+    CAPPED="$CAPPED $app"
+    count=$(echo "$CAPPED" | wc -w | tr -d ' ')
+    [ "$count" -ge "$MAX_APPS" ] && break
   fi
 done
+if [ -n "$CAPPED" ]; then
+  ENABLED_APPS=$(echo "$CAPPED" | tr -s ' ')
+  echo "==> Capped to $MAX_APPS apps: $ENABLED_APPS"
+fi
 
 # ── Filter to enabled services ────────────────────────────────
 SERVICES=()
@@ -194,6 +233,10 @@ fi
 if [ ${#BUILT_IMAGES[@]} -eq 0 ]; then
   echo "==> All images up to date, skipping transfer"
 else
+  # Free disk on server before transfer (prune unused containers and images)
+  echo "==> Pruning unused Docker resources on server to free space..."
+  ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -af 2>/dev/null; echo "Prune done"' 2>/dev/null || true
+
   USE_ZSTD=false
   if command -v zstd &>/dev/null; then
     if ssh "${SSH_OPTS[@]}" "$REMOTE" 'command -v zstd &>/dev/null' 2>/dev/null; then
@@ -278,6 +321,14 @@ if [ -f 216labs.db ]; then
 fi
 
 git pull --ff-only 2>/dev/null || true
+
+# Stop compose services we are not deploying (saves memory and allows image prune to free disk)
+for svc in $(docker compose config --services 2>/dev/null || true); do
+  if [[ " $COMPOSE_SERVICES " != *" $svc "* ]]; then
+    echo "==> Stopping unused service: $svc"
+    docker compose --env-file .env --env-file .env.admin stop "$svc" 2>/dev/null || true
+  fi
+done
 
 if [ ! -f .env ]; then
   cp .env.example .env

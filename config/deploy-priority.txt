@@ -1,0 +1,28 @@
+# Deploy priority order (one app ID per line). We take up to DEPLOY_MAX_APPS
+# from this list, intersected with ENABLED_APPS from DB. Edit this file to
+# change order; no code changes in deploy.sh needed.
+admin
+landing
+blog
+pocket
+1pageresearch
+facerate
+priors
+muinteoir
+happypath
+worldphoto
+offlinellm
+pipesecure
+ramblingradio
+stroll
+onefit
+hivefind
+agimemes
+agitshirts
+calibratedai
+bigleroys
+artisinaleurope
+thezurichdatinggame
+oneroom
+audioaicheckup
+storybook

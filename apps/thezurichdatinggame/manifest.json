@@ -1,5 +1,6 @@
 {
   "id": "thezurichdatinggame",
+  "env_prefix": "ZDGAME",
   "name": "The Zurich Dating Game",
   "tagline": "AI-powered dating event matchmaker",
   "description": "Speed-dating meets AI — participants register and get AI-generated match scores and conversation starters before the event. Built for live dating events in Zurich.",

@@ -2,6 +2,8 @@ import Database from "better-sqlite3";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
+const BOOTSTRAP_FILE = "config/deploy-bootstrap.txt";
+
 export interface DbApp {
   id: string;
   name: string;
@@ -170,11 +172,7 @@ function initSchema(db: Database.Database) {
   syncTopLevelProjects(db);
   backfillKnownPorts(db);
   ensureAdminAlwaysEnabled(db);
-  ensurePocketEnabled(db);
-  ensureHappyPathEnabled(db);
-  ensureBlogEnabled(db);
-  ensureWorldphotoEnabled(db);
-  ensureOfflinellmEnabled(db);
+  ensureBootstrapFromFile(db);
 }
 
 function readManifest(manifestPath: string): AppManifest | null {
@@ -472,40 +470,28 @@ function ensureAdminAlwaysEnabled(db: Database.Database) {
   db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'admin'").run();
 }
 
-function ensurePocketEnabled(db: Database.Database) {
-  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'pocket'").run();
-}
-
-function ensureHappyPathEnabled(db: Database.Database) {
-  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'happypath'").run();
-}
-
-function ensureBlogEnabled(db: Database.Database) {
-  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'blog'").run();
-}
-
-function ensureWorldphotoEnabled(db: Database.Database) {
-  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'worldphoto'").run();
-}
-
-function ensureOfflinellmEnabled(db: Database.Database) {
-  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'offlinellm'").run();
-}
-
-function ensureFacerateEnabled(db: Database.Database) {
-  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'facerate'").run();
-}
-
-function ensureLandingEnabled(db: Database.Database) {
-  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'landing'").run();
+/** Set deploy_enabled=1 for app IDs listed in config/deploy-bootstrap.txt (one per line). Scale: edit file, not code. */
+function ensureBootstrapFromFile(db: Database.Database) {
+  const path = join(PROJECTS_ROOT, BOOTSTRAP_FILE);
+  if (!existsSync(path)) return;
+  const content = readFileSync(path, "utf-8");
+  const update = db.prepare(
+    "UPDATE apps SET deploy_enabled = 1 WHERE id = ?"
+  );
+  const run = db.transaction(() => {
+    for (const line of content.split(/\r?\n/)) {
+      const id = line.replace(/#.*/, "").trim();
+      if (id) update.run(id);
+    }
+  });
+  run();
 }
 
 export function getAllApps(): DbApp[] {
   const db = getDb();
   syncTopLevelProjects(db);
   ensureAdminAlwaysEnabled(db);
-  ensureFacerateEnabled(db);
-  ensureLandingEnabled(db);
+  ensureBootstrapFromFile(db);
   return db.prepare("SELECT * FROM apps ORDER BY port").all() as DbApp[];
 }
 

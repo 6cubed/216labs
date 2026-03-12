@@ -3,12 +3,14 @@
 import { setDeployEnabled, setEnvVarValue, getDb } from "@/lib/db";
 import { startContainer, stopContainer } from "@/lib/docker";
 import { revalidatePath } from "next/cache";
-import { writeFileSync, existsSync } from "fs";
+import { writeFileSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 
-// Ordered longest-first so more-specific prefixes (NEXT_PUBLIC_STORYBOOK_) match before shorter ones.
-// Paths are relative to PROJECTS_ROOT; general apps live under apps/.
-const PREFIX_TO_DIR: Array<[string, string]> = [
+const PROJECTS_ROOT =
+  process.env.PROJECTS_ROOT || join(process.cwd(), "..");
+
+// Fallback when manifests aren't available (e.g. admin in isolation). Ordered longest-first.
+const PREFIX_TO_DIR_FALLBACK: Array<[string, string]> = [
   ["NEXT_PUBLIC_STORYBOOK_", "apps/storybook"],
   ["STORYBOOK_", "apps/storybook"],
   ["AUDIOAICHECKUP_", "apps/audioaicheckup"],
@@ -27,20 +29,64 @@ const PREFIX_TO_DIR: Array<[string, string]> = [
   ["ZDGAME_", "apps/thezurichdatinggame"],
 ];
 
+/** Build (prefix, repo_path) from DB apps + manifest env_vars. Scale: no code change for new apps. */
+function getPrefixToDir(): Array<[string, string]> {
+  const entries: Array<[string, string]> = [];
+  const db = getDb();
+  const apps = db.prepare("SELECT id, repo_path FROM apps").all() as Array<{
+    id: string;
+    repo_path: string;
+  }>;
+  for (const app of apps) {
+    const manifestPath = join(PROJECTS_ROOT, app.repo_path, "manifest.json");
+    if (!existsSync(manifestPath)) {
+      const defaultPrefix =
+        app.id.toUpperCase().replace(/-/g, "_").replace(/\./g, "_") + "_";
+      entries.push([defaultPrefix, app.repo_path]);
+      continue;
+    }
+    try {
+      const manifest = JSON.parse(
+        readFileSync(manifestPath, "utf-8")
+      ) as { env_prefix?: string; env_vars?: Array<{ key: string }> };
+      const prefixFromManifest = manifest.env_prefix
+        ? manifest.env_prefix + "_"
+        : null;
+      const keys = manifest.env_vars?.map((v) => v.key) ?? [];
+      const prefixes = new Set<string>();
+      if (prefixFromManifest) prefixes.add(prefixFromManifest);
+      for (const key of keys) {
+        const segs = key.split("_");
+        if (segs.length >= 1 && segs[0]) prefixes.add(segs[0] + "_");
+        if (key.startsWith("NEXT_PUBLIC_") && segs.length >= 2)
+          prefixes.add("NEXT_PUBLIC_" + segs[1] + "_");
+      }
+      for (const p of prefixes) entries.push([p, app.repo_path]);
+    } catch {
+      const defaultPrefix =
+        app.id.toUpperCase().replace(/-/g, "_").replace(/\./g, "_") + "_";
+      entries.push([defaultPrefix, app.repo_path]);
+    }
+  }
+  if (entries.length === 0) return PREFIX_TO_DIR_FALLBACK;
+  entries.sort((a, b) => b[0].length - a[0].length);
+  return entries;
+}
+
 function getAppDirForKey(key: string): string | null {
-  for (const [prefix, dir] of PREFIX_TO_DIR) {
+  const prefixToDir = getPrefixToDir();
+  for (const [prefix, dir] of prefixToDir) {
     if (key.startsWith(prefix)) return dir;
   }
   return null;
 }
 
 function writeEnvLocal(appDir: string): void {
-  const projectsRoot =
-    process.env.PROJECTS_ROOT || join(process.cwd(), "..");
-  const appPath = join(projectsRoot, appDir);
+  const appPath = join(PROJECTS_ROOT, appDir);
   if (!existsSync(appPath)) return;
 
-  const appPrefixes = PREFIX_TO_DIR
+  const prefixToDir = getPrefixToDir();
+  const appPrefixes = prefixToDir
     .filter(([, dir]) => dir === appDir)
     .map(([prefix]) => prefix);
 

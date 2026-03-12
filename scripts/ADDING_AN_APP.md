@@ -54,11 +54,15 @@ Env vars defined in `manifest.json` are seeded into the admin DB (empty values, 
 
 | File | Purpose |
 |---|---|
-| `<app>/manifest.json` | Source of truth: metadata, ports, env vars |
-| `docker-compose.yml` | Service definitions (still manual — too many unique configs) |
+| `<app>/manifest.json` | Source of truth: metadata, ports, env vars. Optional `env_prefix` for admin env grouping. |
+| `config/deploy-bootstrap.txt` | App IDs always force-included and enabled (one per line). Edit this instead of code. |
+| `config/deploy-priority.txt` | Deploy order; we cap to `DEPLOY_MAX_APPS` from this list. Edit this instead of code. |
+| `docker-compose.yml` | Service definitions (manual today; at scale use `scripts/generate-compose.py` for app blocks) |
 | `Caddyfile` | Auto-generated from manifests via `scripts/generate-caddyfile.py` |
-| `deploy.sh` | Reads `manifest.json` via `scripts/app-lookup.py` for build contexts |
-| `216labs_admin` | Reads all `manifest.json` files on startup to upsert app metadata & seed env vars |
+| `deploy.sh` | Reads config files + manifests via `scripts/app-lookup.py` for build contexts |
+| `216labs_admin` | Discovers apps from filesystem, syncs from manifests; env prefix derived from manifest |
+
+See **docs/SCALING.md** for scaling to 100s–1000s of apps and agent concurrency.
 
 ## Special cases (no manifest needed)
 

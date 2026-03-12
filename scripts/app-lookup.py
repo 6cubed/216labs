@@ -10,6 +10,7 @@ Fields:
   build_spec      Returns "context" or "context:dockerfile" (for deploy.sh service_spec)
   docker_service  Returns the docker-compose service name (may differ from app ID)
   internal_port   Returns the port the container listens on
+  env_prefix      Optional; for admin env grouping (e.g. ONEPAGE). Default: id uppercased.
 
 Exits 0 on success, 1 if app not found.
 """
@@ -67,6 +68,13 @@ for rel_dir, abs_path in iter_manifest_dirs():
             print(m.get("internal_port", 3000))
         elif field == "memory_limit":
             print(m.get("memory_limit", "256m"))
+        elif field == "env_prefix":
+            prefix = m.get("env_prefix")
+            if prefix:
+                print(prefix)
+            else:
+                # Default: id uppercased, non-alnum -> underscore
+                print(app_id.upper().replace("-", "_").replace(".", "_"))
         else:
             print(m.get(field, ""), end="")
         sys.exit(0)
