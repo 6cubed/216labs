@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard — FaceRate{% endblock %}
+
+{% block head %}
+<style>
+  .leader-wrap { padding: 2rem 0; }
+  .leader-wrap h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .leader-wrap .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .item img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+  }
+
+  .item .rank { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
+  .item .elo { font-weight: 700; color: var(--accent); font-size: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="leader-wrap container">
+  <h1>Top faces by Elo</h1>
+  <p class="sub">Highest-rated from community votes.</p>
+
+  {% if faces %}
+  <div class="grid">
+    {% for f in faces %}
+    <div class="item">
+      <img src="/static/faces/{{ f.filename }}" alt="Face #{{ f.id }}" loading="lazy" />
+      <div class="rank">#{{ loop.index }}</div>
+      <div class="elo">{{ "%.0f"|format(f.elo) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="sub">No faces yet. <a href="/">Vote</a> to build the leaderboard.</p>
+  {% endif %}
+</div>
+{% endblock %}

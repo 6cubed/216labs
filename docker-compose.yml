@@ -347,6 +347,22 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── FaceRate ──────────────────────────────────────────────────
+  facerate:
+    image: 216labs/facerate:latest
+    build: ./apps/facerate
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - FACERATE_DB_PATH=/app/data/facerate.db
+      - FACERATE_FACES_DIR=/app/static/faces
+    volumes:
+      - ./apps/facerate/data:/app/data
+      - ./apps/facerate/static/faces:/app/static/faces
+    expose:
+      - "5000"
+    mem_limit: 256m
+
   # ── Audio AI Checkup ─────────────────────────────────────────
   audioaicheckup:
     image: 216labs/audioaicheckup:latest

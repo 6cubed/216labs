@@ -52,6 +52,10 @@ calibratedai.agimemes.com {
 	reverse_proxy calibratedai:3000
 }
 
+facerate.agimemes.com {
+	reverse_proxy facerate:5000
+}
+
 happypath.agimemes.com {
 	reverse_proxy happypath:3000
 }

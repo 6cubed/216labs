@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}FaceRate{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f12;
+      --surface: #18181c;
+      --border: #2a2a32;
+      --accent: #e879f9;
+      --accent2: #c084fc;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --radius: 12px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+    }
+
+    .nav-brand { font-weight: 700; color: #fff; }
+    .nav-brand span { color: var(--accent); }
+
+    .nav-links { display: flex; gap: 1.25rem; }
+    .nav-links a { color: var(--muted); font-size: 0.9rem; }
+    .nav-links a:hover { color: var(--text); }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">Face<span>Rate</span></a>
+    <div class="nav-links">
+      <a href="/">Vote</a>
+      <a href="/leaderboard">Leaderboard</a>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+</body>
+</html>

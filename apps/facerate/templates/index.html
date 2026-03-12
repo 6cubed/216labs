@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Vote — FaceRate{% endblock %}
+
+{% block head %}
+<style>
+  .vote-wrap {
+    text-align: center;
+    padding: 2rem 0 4rem;
+  }
+
+  .vote-wrap h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .vote-wrap p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .pair {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    align-items: stretch;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .face-card {
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+
+  .face-card:hover {
+    border-color: var(--accent);
+    transform: scale(1.02);
+  }
+
+  .face-card:active { transform: scale(0.98); }
+
+  .face-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
+  .face-card .elo {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .loading, .error {
+    padding: 3rem;
+    color: var(--muted);
+  }
+
+  .error { color: #f87171; }
+
+  .vs {
+    display: flex;
+    align-items: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vote-wrap container">
+  <h1>Who’s more attractive?</h1>
+  <p>Click the face you find more attractive. Elo ratings update as people vote.</p>
+
+  <div id="pairContainer">
+    <div id="loading" class="loading">Loading pair…</div>
+    <div id="error" class="error" style="display: none;"></div>
+    <div id="pair" class="pair" style="display: none;">
+      <div class="face-card" id="cardA" data-id="">
+        <img id="imgA" src="" alt="Face A" />
+        <div class="elo">Elo <span id="eloA">—</span></div>
+      </div>
+      <div class="vs">vs</div>
+      <div class="face-card" id="cardB" data-id="">
+        <img id="imgB" src="" alt="Face B" />
+        <div class="elo">Elo <span id="eloB">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const loading = document.getElementById('loading');
+  const errEl = document.getElementById('error');
+  const pairEl = document.getElementById('pair');
+  const cardA = document.getElementById('cardA');
+  const cardB = document.getElementById('cardB');
+  const imgA = document.getElementById('imgA');
+  const imgB = document.getElementById('imgB');
+  const eloA = document.getElementById('eloA');
+  const eloB = document.getElementById('eloB');
+
+  let current = { face_a: null, face_b: null };
+
+  function showError(msg) {
+    loading.style.display = 'none';
+    pairEl.style.display = 'none';
+    errEl.textContent = msg;
+    errEl.style.display = 'block';
+  }
+
+  function showPair(data) {
+    loading.style.display = 'none';
+    errEl.style.display = 'none';
+    current = { face_a: data.face_a, face_b: data.face_b };
+    cardA.dataset.id = data.face_a.id;
+    cardB.dataset.id = data.face_b.id;
+    imgA.src = data.face_a.url;
+    imgB.src = data.face_b.url;
+    eloA.textContent = data.face_a.elo;
+    eloB.textContent = data.face_b.elo;
+    pairEl.style.display = 'flex';
+  }
+
+  function setLoading() {
+    errEl.style.display = 'none';
+    pairEl.style.display = 'none';
+    loading.style.display = 'block';
+  }
+
+  async function fetchPair() {
+    setLoading();
+    try {
+      const res = await fetch('/api/pair');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load pair');
+      showPair(data);
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function vote(winnerId) {
+    if (!current.face_a || !current.face_b) return;
+    const faceA = current.face_a.id;
+    const faceB = current.face_b.id;
+    try {
+      await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ face_a_id: faceA, face_b_id: faceB, winner_id: winnerId }),
+      });
+      fetchPair();
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  cardA.addEventListener('click', () => vote(parseInt(cardA.dataset.id, 10)));
+  cardB.addEventListener('click', () => vote(parseInt(cardB.dataset.id, 10)));
+
+  fetchPair();
+</script>
+{% endblock %}

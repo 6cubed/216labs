@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS faces (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename TEXT UNIQUE NOT NULL,
+    elo REAL NOT NULL DEFAULT 1500,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    face_a_id INTEGER NOT NULL,
+    face_b_id INTEGER NOT NULL,
+    winner_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (face_a_id) REFERENCES faces(id),
+    FOREIGN KEY (face_b_id) REFERENCES faces(id),
+    FOREIGN KEY (winner_id) REFERENCES faces(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_faces_elo ON faces(elo DESC);
+CREATE INDEX IF NOT EXISTS idx_votes_created ON votes(created_at);
