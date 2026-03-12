@@ -8,6 +8,45 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'roadmap-to-1000-projects-continued-iteration-and-growth',
+    title: 'Roadmap to 1000 projects: continued iteration and growth',
+    excerpt: 'We’re scaling from ~20 co-existing projects today to 1000 by the end of 2027. Here’s how: centralize enterprise components, lean on a single database, lightweight app toggling, and a clear set of milestones.',
+    date: '2026-03-12',
+    body: `
+The 216labs factory has been iterating successfully: one monorepo, one deploy path, one admin dashboard, and a growing set of apps that share the same rules. We’re now mapping the path from where we are — roughly 20 co-existing projects — to 1000 by the end of 2027. That scale only works if we double down on what already makes the factory work: centralize as much of the common enterprise machinery as we can, keep apps lightweight, and make turning projects on or off as simple as a toggle.
+
+**Where we are today**
+
+We already have a single source of truth (SQLite for admin and pipeline state), manifests per app, Caddy and env vars generated from one place, and deploy driven by “enabled” flags in the admin. PipeSecure, Happy Path, and the admin dashboard all read from the same DB. So the foundation for scale is there. The next phase is making that foundation carry more apps without each one reinventing auth, config, or persistence.
+
+**Centralizing enterprise components**
+
+The roadmap leans on centralizing common pieces so new apps stay thin. Key directions:
+
+- **Single database across the factory.** Today many apps bring their own SQLite or Postgres. We’re moving toward a shared data layer where it makes sense: one primary database (or a small set of logical DBs) that apps can use for auth, feature flags, and shared config, with app-specific tables or schemas where needed. New projects get a slice of the same store instead of standing up a new DB per app. That reduces operational surface and keeps backups, migrations, and tooling in one place.
+
+- **Lightweight toggling from the admin.** Apps are already toggled on or off in the admin dashboard; that drives which services get built and deployed. We’ll harden this: one click to enable or disable an app, with clear feedback (e.g. “next deploy will include/exclude this app”), and optional “pause” states (e.g. deployed but not receiving traffic) so we can scale the number of projects without scaling cost or noise until we need them live.
+
+- **Shared auth and identity.** As we add more apps, we don’t want each to implement login from scratch. A central identity layer — even if it starts as “same session cookie and a small auth service” — lets new projects assume “user is already identified” and focus on their own UX. Same idea for API keys and service-to-service calls: one place to issue and revoke, apps just consume.
+
+- **Unified observability and runbooks.** One place to see “what’s deployed, what’s failing, what’s enabled.” The admin already does some of this; we’ll extend it so that at 100, 500, or 1000 apps we still have a single pane for health, logs, and “what do I turn off if the server is struggling?”
+
+**Milestones on the way to 1000**
+
+We’re treating the journey as a series of milestones rather than a single big bang:
+
+- **100 apps.** Shared DB and app toggling in place; every new app uses the central data layer and appears in the admin as a toggle. Happy Path and PipeSecure scale to the full list; deploy and Caddy generation stay automatic.
+
+- **300 apps.** Central auth/identity in use by most apps; lightweight “template” for new apps (manifest + a few files) so spinning up a new project is a prompt and a toggle. Cost and resource visibility in the admin (e.g. which apps use the most memory or traffic).
+
+- **1000 projects by end of 2027.** Factory runs at 1000 co-existing projects with the same mental model: one repo, one deploy, one admin, one place to look. Most apps are toggled off or paused until needed; the ones that are on share the same enterprise substrate. We’ll have had to solve batching (deploy in chunks), faster discovery (admin and Caddyfile generation at scale), and possibly multi-region or multi-cell patterns — but the principles (centralize, toggle, one DB where it fits) stay the same.
+
+**Why this roadmap fits the vibe**
+
+We’re not rebuilding the factory; we’re extending what already works. Centralizing components and leaning on a single database and admin-driven toggles means each new project is less “new infrastructure” and more “new slice of the same grid.” That’s how we keep the vibe code factory fast and tractable all the way to 1000.
+    `.trim(),
+  },
+  {
     slug: 'how-vibe-coding-transformed-how-we-think-about-tests',
     title: 'How vibe coding transformed how we think about tests',
     excerpt: 'When the cost of deleting and rewriting a module goes to zero, high-level happy-path tests become the post–vibe coding test par excellence. Our Happy Path module is PM and QA in one.',
