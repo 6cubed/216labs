@@ -110,6 +110,7 @@ const KNOWN_PORTS: Record<string, number> = {
   worldphoto: 8024,
   offlinellm: 8025,
   facerate: 8026,
+  landing: 8027,
 };
 
 let _db: Database.Database | null = null;
@@ -495,11 +496,16 @@ function ensureFacerateEnabled(db: Database.Database) {
   db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'facerate'").run();
 }
 
+function ensureLandingEnabled(db: Database.Database) {
+  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'landing'").run();
+}
+
 export function getAllApps(): DbApp[] {
   const db = getDb();
   syncTopLevelProjects(db);
   ensureAdminAlwaysEnabled(db);
   ensureFacerateEnabled(db);
+  ensureLandingEnabled(db);
   return db.prepare("SELECT * FROM apps ORDER BY port").all() as DbApp[];
 }
 

@@ -1,0 +1,18 @@
+{
+  "id": "landing",
+  "name": "216labs Landing",
+  "tagline": "Public homepage for 216labs",
+  "description": "Root domain landing page for 216labs with links to popular projects.",
+  "category": "tool",
+  "internal_port": 5000,
+  "memory_limit": "64m",
+  "docker_service": "landing",
+  "build_context": "./apps/landing",
+  "root_domain": true,
+  "stack": {
+    "frontend": "Flask + Jinja2",
+    "backend": "Flask + Gunicorn",
+    "database": null,
+    "other": null
+  }
+}

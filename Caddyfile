@@ -20,6 +20,14 @@ anchor.agimemes.com {
 	}
 }
 
+agimemes.com {
+	reverse_proxy landing:5000
+}
+
+www.agimemes.com {
+	reverse_proxy landing:5000
+}
+
 1pageresearch.agimemes.com {
 	reverse_proxy 1pageresearch:5000
 }
@@ -62,6 +70,10 @@ happypath.agimemes.com {
 
 hivefind.agimemes.com {
 	reverse_proxy hivefind:3000
+}
+
+landing.agimemes.com {
+	reverse_proxy landing:5000
 }
 
 muinteoir.agimemes.com {

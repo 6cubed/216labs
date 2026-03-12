@@ -47,6 +47,7 @@ lines = [
 
 skip_ids = {"admin", "anchor"}
 entries = []
+root_domain_app = None  # (docker_svc, port) for agimemes.com + www.agimemes.com
 
 def manifest_dirs():
     # Top-level (admin, happypath, pipesecure, etc.)
@@ -74,11 +75,27 @@ for dir_path in manifest_dirs():
             continue
         docker_svc = m.get("docker_service", app_id)
         internal_port = m.get("internal_port", 3000)
+        if m.get("root_domain"):
+            root_domain_app = (docker_svc, internal_port)
         entries.append((app_id, docker_svc, internal_port))
     except Exception as e:
         print(f"Warning: could not read {manifest_path}: {e}", file=sys.stderr)
 
 entries.sort(key=lambda x: x[0])
+
+# Root domain (agimemes.com + www.agimemes.com) → landing app
+if root_domain_app:
+    svc, port = root_domain_app
+    lines += [
+        f"{domain} {{",
+        f"\treverse_proxy {svc}:{port}",
+        "}",
+        "",
+        f"www.{domain} {{",
+        f"\treverse_proxy {svc}:{port}",
+        "}",
+        "",
+    ]
 
 for app_id, docker_svc, port in entries:
     lines += [
