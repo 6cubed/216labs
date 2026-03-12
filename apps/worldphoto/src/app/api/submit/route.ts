@@ -1,28 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { writeFile } from 'fs/promises'
 import { join } from 'path'
+import exifr from 'exifr'
 import { getUploadsDir, addSubmission, ensureUploadsDir } from '@/lib/store'
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
     const image = formData.get('image') as File | null
-    const lat = formData.get('lat')
-    const lng = formData.get('lng')
+    const latRaw = formData.get('lat')
+    const lngRaw = formData.get('lng')
     const caption = (formData.get('caption') as string) || ''
 
-    if (!image || typeof lat !== 'string' || typeof lng !== 'string') {
+    if (!image) {
       return NextResponse.json(
-        { error: 'Missing image, lat, or lng' },
-        { status: 400 }
-      )
-    }
-
-    const latNum = parseFloat(lat)
-    const lngNum = parseFloat(lng)
-    if (Number.isNaN(latNum) || Number.isNaN(lngNum)) {
-      return NextResponse.json(
-        { error: 'Invalid lat or lng' },
+        { error: 'Missing image' },
         { status: 400 }
       )
     }
@@ -34,9 +26,37 @@ export async function POST(req: NextRequest) {
 
     await ensureUploadsDir()
     const uploadsDir = getUploadsDir()
-    const path = join(uploadsDir, filename)
+    const filePath = join(uploadsDir, filename)
     const bytes = await image.arrayBuffer()
-    await writeFile(path, Buffer.from(bytes))
+    await writeFile(filePath, Buffer.from(bytes))
+
+    let latNum: number
+    let lngNum: number
+
+    const formLat = typeof latRaw === 'string' ? parseFloat(latRaw) : NaN
+    const formLng = typeof lngRaw === 'string' ? parseFloat(lngRaw) : NaN
+    if (!Number.isNaN(formLat) && !Number.isNaN(formLng)) {
+      latNum = formLat
+      lngNum = formLng
+    } else {
+      try {
+        const exif = await exifr.parse(filePath)
+        if (exif?.latitude != null && exif?.longitude != null) {
+          latNum = exif.latitude
+          lngNum = exif.longitude
+        } else {
+          return NextResponse.json(
+            { error: 'No location. Use "Use my location" or add coordinates. Photos from many cameras include GPS in the image.' },
+            { status: 400 }
+          )
+        }
+      } catch {
+        return NextResponse.json(
+          { error: 'No location found in photo. Use "Use my location" or enter coordinates.' },
+          { status: 400 }
+        )
+      }
+    }
 
     await addSubmission({
       id,

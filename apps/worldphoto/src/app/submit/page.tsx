@@ -9,24 +9,49 @@ export default function SubmitPage() {
   const [lng, setLng] = useState('')
   const [caption, setCaption] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [locationLoading, setLocationLoading] = useState(false)
+
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      setErrorMessage('Geolocation not supported by this browser.')
+      return
+    }
+    setLocationLoading(true)
+    setErrorMessage('')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(String(pos.coords.latitude))
+        setLng(String(pos.coords.longitude))
+        setLocationLoading(false)
+      },
+      () => {
+        setErrorMessage('Could not get location. Enable location access or enter coordinates.')
+        setLocationLoading(false)
+      }
+    )
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!image) {
       setStatus('error')
+      setErrorMessage('Please select a photo.')
       return
     }
     setStatus('sending')
+    setErrorMessage('')
     const formData = new FormData()
     formData.set('image', image)
-    formData.set('lat', lat)
-    formData.set('lng', lng)
     formData.set('caption', caption)
+    if (lat.trim()) formData.set('lat', lat.trim())
+    if (lng.trim()) formData.set('lng', lng.trim())
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
         body: formData,
       })
+      const data = await res.json().catch(() => ({}))
       if (res.ok) {
         setStatus('ok')
         setImage(null)
@@ -35,9 +60,11 @@ export default function SubmitPage() {
         setCaption('')
       } else {
         setStatus('error')
+        setErrorMessage(data.error || 'Something went wrong.')
       }
     } catch {
       setStatus('error')
+      setErrorMessage('Something went wrong.')
     }
   }
 
@@ -50,13 +77,13 @@ export default function SubmitPage() {
       </div>
       <h1 className="text-2xl font-bold text-zinc-100 mb-2">Submit a photo</h1>
       <p className="text-zinc-500 text-sm mb-6">
-        Anonymous. No account. Image + location only.
+        Anonymous. Location comes from the photo’s GPS (if present) or from your device.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-zinc-400 mb-1.5">
-            Image *
+            Photo *
           </label>
           <input
             type="file"
@@ -65,31 +92,38 @@ export default function SubmitPage() {
             onChange={(e) => setImage(e.target.files?.[0] ?? null)}
             className="w-full text-sm text-zinc-400 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-amber-600 file:text-white file:font-medium"
           />
+          <p className="text-xs text-zinc-600 mt-1">
+            Many phone photos include GPS. We’ll use it if present.
+          </p>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-1.5">
-              Latitude *
-            </label>
+        <div>
+          <label className="block text-sm font-medium text-zinc-400 mb-1.5">
+            Location
+          </label>
+          <p className="text-xs text-zinc-500 mb-2">
+            Optional if the photo has GPS. Or share your current location:
+          </p>
+          <button
+            type="button"
+            onClick={useMyLocation}
+            disabled={locationLoading}
+            className="mb-3 w-full py-2.5 rounded-lg border border-amber-600 text-amber-500 hover:bg-amber-600/10 disabled:opacity-50 text-sm font-medium transition-colors"
+          >
+            {locationLoading ? 'Getting location…' : 'Use my location'}
+          </button>
+          <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
-              required
               value={lat}
               onChange={(e) => setLat(e.target.value)}
-              placeholder="e.g. 50.4501"
+              placeholder="Latitude (optional)"
               className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-amber-500"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-1.5">
-              Longitude *
-            </label>
             <input
               type="text"
-              required
               value={lng}
               onChange={(e) => setLng(e.target.value)}
-              placeholder="e.g. 30.5234"
+              placeholder="Longitude (optional)"
               className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -118,8 +152,8 @@ export default function SubmitPage() {
       {status === 'ok' && (
         <p className="mt-4 text-sm text-emerald-400">Submitted. Thank you.</p>
       )}
-      {status === 'error' && (
-        <p className="mt-4 text-sm text-rose-400">Something went wrong. Try again.</p>
+      {(status === 'error' || errorMessage) && (
+        <p className="mt-4 text-sm text-rose-400">{errorMessage || 'Something went wrong. Try again.'}</p>
       )}
     </div>
   )
