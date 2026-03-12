@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Loader2, Zap, ZapOff, Users, MessageSquare, Radio, X, ChevronRight, Cpu, Wifi } from 'lucide-react'
+import { Loader2, Zap, ZapOff, Users, MessageSquare, Radio, X, ChevronRight, Cpu, Wifi, Trophy } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -37,8 +37,16 @@ interface Conversation {
 
 const MAX_TURNS = 6
 const MAX_CONCURRENT_CONVERSATIONS = 5
-const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC'
 const POCKET_PREFS_KEY = 'pocket_agent_prefs'
+
+// Leaderboard of best LLMs for in-browser agent chat (ranked by quality/speed tradeoff)
+const LLM_LEADERBOARD: { rank: number; id: string; label: string; description: string; sizeMb: number }[] = [
+  { rank: 1, id: 'Llama-3.2-3B-Instruct-q4f16_1-MLC', label: 'Llama 3.2 3B', description: 'Best balance — great replies, still fast', sizeMb: 1900 },
+  { rank: 2, id: 'Llama-3.2-1B-Instruct-q4f16_1-MLC', label: 'Llama 3.2 1B', description: 'Fastest — snappy on any device', sizeMb: 800 },
+  { rank: 3, id: 'Phi-3.5-mini-instruct-q4f16_1-MLC', label: 'Phi 3.5 Mini', description: 'Microsoft — concise and clever', sizeMb: 2400 },
+  { rank: 4, id: 'Qwen2-0.5B-Instruct-q4f16_1-MLC', label: 'Qwen2 0.5B', description: 'Tiny — works on low-memory devices', sizeMb: 400 },
+]
+const DEFAULT_MODEL_ID = LLM_LEADERBOARD[0]!.id
 
 /** When true (URL ?happypath=1), skip real LLM load and use stub replies for automated tests. */
 function getIsHappypathTest(): boolean {
@@ -145,17 +153,19 @@ export default function PocketPage() {
   const [personalityInput, setPersonalityInput] = useState('')
   const [missionInput, setMissionInput] = useState('')
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
+  const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID)
 
-  // Restore name/persona/personality/mission from last join
+  // Restore name/persona/personality/mission/model from last join
   useEffect(() => {
     try {
       const raw = localStorage.getItem(POCKET_PREFS_KEY)
       if (!raw) return
-      const p = JSON.parse(raw) as { name?: string; persona?: string; personality?: string; mission?: string }
+      const p = JSON.parse(raw) as { name?: string; persona?: string; personality?: string; mission?: string; modelId?: string }
       if (p.name) setNameInput(p.name)
       if (p.persona) setPersonaInput(p.persona)
       if (p.personality) setPersonalityInput(p.personality)
       if (p.mission) setMissionInput(p.mission)
+      if (p.modelId && LLM_LEADERBOARD.some((m) => m.id === p.modelId)) setSelectedModelId(p.modelId)
     } catch {
       // ignore
     }
@@ -172,6 +182,7 @@ export default function PocketPage() {
   const [conversations, setConversations] = useState<Record<string, Conversation>>({})
   const conversationsRef = useRef<Record<string, Conversation>>({})
   const [activeConvId, setActiveConvId] = useState<string | null>(null)
+  const [humanInput, setHumanInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const replyQueueRef = useRef<PendingReply[]>([])
   const isProcessingRef = useRef<boolean>(false)
@@ -208,7 +219,8 @@ export default function PocketPage() {
   }, [])
 
   // ── Load model ────────────────────────────────────────────────────────────
-  const loadModel = useCallback(async () => {
+  const loadModel = useCallback(async (modelId?: string) => {
+    const id = modelId ?? selectedModelId
     setModelStatus('loading')
     setLoadProgress(0)
     if (isHappypathTest) {
@@ -234,7 +246,7 @@ export default function PocketPage() {
     }
     try {
       const { CreateMLCEngine } = await import('@mlc-ai/web-llm')
-      const engine = await CreateMLCEngine(MODEL_ID, {
+      const engine = await CreateMLCEngine(id, {
         initProgressCallback: (p: { progress: number }) => {
           setLoadProgress(Math.round(p.progress * 100))
         },
@@ -245,7 +257,7 @@ export default function PocketPage() {
       console.error('Model load failed:', err)
       setModelStatus('error')
     }
-  }, [isHappypathTest])
+  }, [isHappypathTest, selectedModelId])
 
   // ── Generate text (streaming) ─────────────────────────────────────────────
   const generateAndStream = useCallback(async (
@@ -612,6 +624,48 @@ export default function PocketPage() {
     }, 0)
   }, [sendWS])
 
+  // ── Human intercept: send a message as your agent (you type, it goes as your agent) ─
+  const sendHumanMessage = useCallback((conv: Conversation, text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed || !myIdRef.current) return
+
+    // Cancel any pending AI reply for this conv so we don't double-send
+    replyQueueRef.current = replyQueueRef.current.filter((item) => item.convId !== conv.id)
+
+    const myEntry: ConvMessage = {
+      speaker: 'mine',
+      agentName: myAgentPersonaRef.current,
+      content: trimmed,
+      timestamp: Date.now(),
+    }
+    const turnCountAfter = conv.turnCount + 1
+    const willEnd = turnCountAfter >= MAX_TURNS
+    const isInitiator = conv.id.startsWith(myIdRef.current + '-')
+    const sendType = isInitiator ? 'agent_message' : 'agent_response'
+
+    setConversations((prev) => {
+      const c = prev[conv.id]
+      if (!c || c.status === 'ended') return prev
+      const updated = {
+        ...c,
+        messages: [...c.messages, myEntry],
+        isMyTurn: false,
+        turnCount: turnCountAfter,
+        ...(willEnd ? { status: 'ended' as const } : {}),
+      }
+      return { ...prev, [conv.id]: updated }
+    })
+
+    sendWS({ type: sendType, targetId: conv.peerId, message: trimmed, conversationId: conv.id })
+
+    if (willEnd) {
+      setTimeout(() => {
+        const active = Object.values(conversationsRef.current).filter((c) => c.status === 'active')
+        sendWS({ type: 'busy_status', busyWith: active[0]?.id ?? null })
+      }, 0)
+    }
+  }, [sendWS])
+
   // ── Join ──────────────────────────────────────────────────────────────────
   const handleJoin = useCallback((e: React.FormEvent) => {
     e.preventDefault()
@@ -634,13 +688,13 @@ export default function PocketPage() {
     myTwistRef.current = twist
     setHasJoined(true)
     try {
-      localStorage.setItem(POCKET_PREFS_KEY, JSON.stringify({ name, persona, personality, mission }))
+      localStorage.setItem(POCKET_PREFS_KEY, JSON.stringify({ name, persona, personality, mission, modelId: selectedModelId }))
     } catch {
       // ignore quota / private mode
     }
     sendWS({ type: 'join', name, agentPersona: persona })
-    loadModel()
-  }, [nameInput, personaInput, personalityInput, missionInput, sendWS, loadModel])
+    loadModel(selectedModelId)
+  }, [nameInput, personaInput, personalityInput, missionInput, selectedModelId, sendWS, loadModel])
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -654,6 +708,9 @@ export default function PocketPage() {
       setPersonalityInput={setPersonalityInput}
       missionInput={missionInput}
       setMissionInput={setMissionInput}
+      leaderboard={LLM_LEADERBOARD}
+      selectedModelId={selectedModelId}
+      onSelectModel={setSelectedModelId}
       webGPUSupported={webGPUSupported}
       onJoin={handleJoin}
     />
@@ -673,7 +730,11 @@ export default function PocketPage() {
           <span className="font-semibold text-base tracking-tight">pocket</span>
         </div>
 
-        <ModelStatusBadge status={modelStatus} progress={loadProgress} />
+        <ModelStatusBadge
+          status={modelStatus}
+          progress={loadProgress}
+          modelLabel={modelStatus === 'ready' ? (LLM_LEADERBOARD.find((m) => m.id === selectedModelId)?.label ?? null) : null}
+        />
 
         <div className="flex items-center gap-2 text-sm text-zinc-400">
           <div className={`w-2 h-2 rounded-full ${myId ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
@@ -790,8 +851,9 @@ export default function PocketPage() {
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" data-testid="pocket-messages">
+              {/* Messages + human input */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" data-testid="pocket-messages">
                 {activeConv.messages.length === 0 && (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -826,13 +888,48 @@ export default function PocketPage() {
                     </span>
                   </div>
                 )}
-                <div ref={messagesEndRef} />
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Human intercept: type to send as your agent */}
+                {activeConv.status === 'active' && (
+                  <div className="shrink-0 px-6 py-3 border-t border-[#1e1e32] bg-[#0a0a12]">
+                    <form
+                      className="flex gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        sendHumanMessage(activeConv, humanInput)
+                        setHumanInput('')
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={humanInput}
+                        onChange={(e) => setHumanInput(e.target.value)}
+                        placeholder="You (as your agent)..."
+                        maxLength={500}
+                        className="flex-1 bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-violet-500"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!humanInput.trim()}
+                        className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium text-white transition-colors"
+                      >
+                        Send
+                      </button>
+                    </form>
+                    <p className="text-xs text-zinc-600 mt-1.5">
+                      Your message is sent as {myAgentPersona}. The other agent will see it and may reply.
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           ) : (
             <EmptyState
               modelStatus={modelStatus}
               loadProgress={loadProgress}
+              modelLabel={LLM_LEADERBOARD.find((m) => m.id === selectedModelId)?.label ?? selectedModelId.split('-').slice(0, 3).join(' ')}
               webGPUSupported={webGPUSupported}
               hasPeers={otherUsers.length > 0}
             />
@@ -845,7 +942,7 @@ export default function PocketPage() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function ModelStatusBadge({ status, progress }: { status: ModelStatus; progress: number }) {
+function ModelStatusBadge({ status, progress, modelLabel }: { status: ModelStatus; progress: number; modelLabel?: string | null }) {
   if (status === 'idle') return (
     <div className="flex items-center gap-2 text-xs text-zinc-600">
       <Cpu className="w-3.5 h-3.5" />
@@ -869,6 +966,7 @@ function ModelStatusBadge({ status, progress }: { status: ModelStatus; progress:
     <div className="flex items-center gap-1.5 text-xs text-emerald-400" data-testid="pocket-agent-ready">
       <Zap className="w-3.5 h-3.5" />
       <span>agent ready</span>
+      {modelLabel && <span className="text-zinc-500 font-normal">· {modelLabel}</span>}
     </div>
   )
 
@@ -881,7 +979,8 @@ function ModelStatusBadge({ status, progress }: { status: ModelStatus; progress:
 }
 
 function JoinScreen({
-  nameInput, setNameInput, personaInput, setPersonaInput, personalityInput, setPersonalityInput, missionInput, setMissionInput, webGPUSupported, onJoin,
+  nameInput, setNameInput, personaInput, setPersonaInput, personalityInput, setPersonalityInput, missionInput, setMissionInput,
+  leaderboard, selectedModelId, onSelectModel, webGPUSupported, onJoin,
 }: {
   nameInput: string
   setNameInput: (v: string) => void
@@ -891,14 +990,17 @@ function JoinScreen({
   setPersonalityInput: (v: string) => void
   missionInput: string
   setMissionInput: (v: string) => void
+  leaderboard: typeof LLM_LEADERBOARD
+  selectedModelId: string
+  onSelectModel: (id: string) => void
   webGPUSupported: boolean | null
   onJoin: (e: React.FormEvent) => void
 }) {
   return (
     <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
+        <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-violet-600 flex items-center justify-center mb-4 shadow-lg shadow-violet-900/50">
             <Cpu className="w-8 h-8 text-white" />
           </div>
@@ -922,6 +1024,40 @@ function JoinScreen({
             WebGPU detected — your agent will run fully on-device.
           </div>
         )}
+
+        {/* Leaderboard: best LLMs */}
+        <div className="mb-5">
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">
+            <Trophy className="w-3.5 h-3.5" />
+            Best LLMs
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {leaderboard.map((m) => {
+              const selected = m.id === selectedModelId
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => onSelectModel(m.id)}
+                  className={`text-left p-3 rounded-xl border transition-colors ${
+                    selected
+                      ? 'bg-violet-900/40 border-violet-500/50 text-zinc-100'
+                      : 'bg-[#111120] border-[#1e1e32] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="flex items-center justify-center w-5 h-5 rounded bg-zinc-700/80 text-[10px] font-bold text-zinc-300">
+                      {m.rank}
+                    </span>
+                    <span className="text-xs font-medium truncate">{m.label}</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 leading-snug">{m.description}</p>
+                  <p className="text-[10px] text-zinc-600 mt-1">~{m.sizeMb} MB</p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
         {/* Form */}
         <form onSubmit={onJoin} className="space-y-3">
@@ -985,7 +1121,7 @@ function JoinScreen({
         </form>
 
         <p className="text-center text-xs text-zinc-700 mt-6">
-          The LLM ({MODEL_ID.split('-').slice(0, 3).join(' ')}) downloads on first use (~800 MB) and is cached in your browser for future visits.
+          The selected LLM downloads on first use and is cached in your browser for future visits.
         </p>
       </div>
     </div>
@@ -993,10 +1129,11 @@ function JoinScreen({
 }
 
 function EmptyState({
-  modelStatus, loadProgress, webGPUSupported, hasPeers,
+  modelStatus, loadProgress, modelLabel, webGPUSupported, hasPeers,
 }: {
   modelStatus: ModelStatus
   loadProgress: number
+  modelLabel: string
   webGPUSupported: boolean | null
   hasPeers: boolean
 }) {
@@ -1009,7 +1146,7 @@ function EmptyState({
               <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
             </div>
             <p className="text-sm font-medium text-zinc-300 mb-1">Loading your agent</p>
-            <p className="text-xs text-zinc-600 mb-4">Downloading Llama 3.2 1B to your browser…</p>
+            <p className="text-xs text-zinc-600 mb-4">Downloading {modelLabel} to your browser…</p>
             <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
               <div
                 className="h-full progress-shimmer rounded-full transition-all duration-300"
