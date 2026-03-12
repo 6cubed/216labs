@@ -304,6 +304,10 @@ else
   echo "==> No admin container running yet, using .env defaults only"
 fi
 
+# Force Caddy to reload so it picks up Caddyfile changes (e.g. new app vhosts like blog).
+echo "==> Reloading Caddy (pick up Caddyfile changes)..."
+docker compose --env-file .env --env-file .env.admin up -d --no-build --force-recreate caddy 2>/dev/null || true
+
 # Count currently running containers to decide startup strategy.
 RUNNING=$(docker ps --filter 'label=com.docker.compose.project=216labs' --format '{{.Names}}' 2>/dev/null | wc -l | tr -d ' ')
 
