@@ -72,3 +72,85 @@ def insert_report(data: dict):
     )
     conn.commit()
     conn.close()
+
+
+# ── Free requests (admin approves/denies) ───────────────────────────────────
+
+def insert_free_request(topic: str):
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO free_requests (topic, status) VALUES (?, 'pending')",
+        (topic,),
+    )
+    conn.commit()
+    rid = cur.lastrowid
+    conn.close()
+    return rid
+
+
+def get_pending_free_requests():
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM free_requests WHERE status = 'pending' ORDER BY created_at ASC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_free_request(request_id: int):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM free_requests WHERE id = ?", (request_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def update_free_request_approved(request_id: int, report_slug: str):
+    conn = get_db()
+    conn.execute(
+        "UPDATE free_requests SET status = 'approved', report_slug = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (report_slug, request_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def update_free_request_denied(request_id: int):
+    conn = get_db()
+    conn.execute(
+        "UPDATE free_requests SET status = 'denied', reviewed_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (request_id,),
+    )
+    conn.commit()
+    conn.close()
+
+
+# ── Paid requests (Stripe) ──────────────────────────────────────────────────
+
+def insert_paid_request(session_id: str, topic: str):
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO paid_requests (session_id, topic, status) VALUES (?, ?, 'pending')",
+        (session_id, topic),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_paid_request_by_session(session_id: str):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM paid_requests WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def update_paid_request_done(session_id: str, report_slug: str):
+    conn = get_db()
+    conn.execute(
+        "UPDATE paid_requests SET status = 'done', report_slug = ? WHERE session_id = ?",
+        (report_slug, session_id),
+    )
+    conn.commit()
+    conn.close()

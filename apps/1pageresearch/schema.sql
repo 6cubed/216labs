@@ -17,3 +17,21 @@ CREATE TABLE IF NOT EXISTS reports (
     tags TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS free_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    topic TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    report_slug TEXT,
+    reviewed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS paid_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT UNIQUE NOT NULL,
+    topic TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    report_slug TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
