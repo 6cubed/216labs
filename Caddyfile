@@ -100,3 +100,7 @@ thezurichdatinggame.agimemes.com {
 	reverse_proxy thezurichdatinggame:3000
 }
 
+worldphoto.agimemes.com {
+	reverse_proxy worldphoto:3000
+}
+

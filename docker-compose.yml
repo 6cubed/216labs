@@ -320,6 +320,21 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── World Photo ─────────────────────────────────────────────
+  worldphoto:
+    image: 216labs/worldphoto:latest
+    build: ./apps/worldphoto
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+    volumes:
+      - ./apps/worldphoto/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── Audio AI Checkup ─────────────────────────────────────────
   audioaicheckup:
     image: 216labs/audioaicheckup:latest

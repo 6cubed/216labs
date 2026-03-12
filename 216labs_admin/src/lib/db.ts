@@ -107,6 +107,7 @@ const KNOWN_PORTS: Record<string, number> = {
   pocket: 8021,
   happypath: 8022,
   blog: 8023,
+  worldphoto: 8024,
 };
 
 let _db: Database.Database | null = null;
@@ -169,6 +170,7 @@ function initSchema(db: Database.Database) {
   ensurePocketEnabled(db);
   ensureHappyPathEnabled(db);
   ensureBlogEnabled(db);
+  ensureWorldphotoEnabled(db);
 }
 
 function readManifest(manifestPath: string): AppManifest | null {
@@ -476,6 +478,10 @@ function ensureHappyPathEnabled(db: Database.Database) {
 
 function ensureBlogEnabled(db: Database.Database) {
   db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'blog'").run();
+}
+
+function ensureWorldphotoEnabled(db: Database.Database) {
+  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'worldphoto'").run();
 }
 
 export function getAllApps(): DbApp[] {

@@ -1,0 +1,20 @@
+{
+  "id": "worldphoto",
+  "name": "World Photo",
+  "tagline": "Crowdsourced anonymous images tied to locations — ground truth at scale",
+  "description": "A crowdsourced initiative for anonymous submission of images tied to locations, to unlock ground truth at scale, particularly during war times. Submit a photo and place; browse what others have shared.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "worldphoto",
+  "build_context": "./apps/worldphoto",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": null,
+    "database": "SQLite (submissions)",
+    "other": null
+  },
+  "env_vars": [
+    { "key": "WORLDPHOTO_DATA_DIR", "description": "Directory for uploads and DB (default: /app/data)", "is_secret": false }
+  ]
+}
