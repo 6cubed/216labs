@@ -168,6 +168,7 @@ function initSchema(db: Database.Database) {
   ensureAdminAlwaysEnabled(db);
   ensurePocketEnabled(db);
   ensureHappyPathEnabled(db);
+  ensureBlogEnabled(db);
 }
 
 function readManifest(manifestPath: string): AppManifest | null {
@@ -471,6 +472,10 @@ function ensurePocketEnabled(db: Database.Database) {
 
 function ensureHappyPathEnabled(db: Database.Database) {
   db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'happypath'").run();
+}
+
+function ensureBlogEnabled(db: Database.Database) {
+  db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'blog'").run();
 }
 
 export function getAllApps(): DbApp[] {
