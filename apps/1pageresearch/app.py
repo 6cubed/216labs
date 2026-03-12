@@ -280,7 +280,10 @@ def api_request_free():
     if not topic:
         return {"error": "Topic required"}, 400
     rid = insert_free_request(topic)
-    return {"id": rid, "message": "Request submitted. An admin will review it; you can check back later."}
+    return {
+        "id": rid,
+        "message": "Request received. We consider free reports for research with clear societal benefit. You’ll hear back after review—this may take some time.",
+    }
 
 
 @app.route("/admin/requests")

@@ -1,103 +1,95 @@
 {% extends "base.html" %}
 
-{% block title %}Generate Report — 1PageResearch{% endblock %}
+{% block title %}Commission a Report — 1PageResearch{% endblock %}
 
 {% block head %}
 <style>
   .generate-wrap {
-    max-width: 680px;
+    max-width: 560px;
     margin: 0 auto;
-    padding: 3rem 2rem 5rem;
+    padding: 2.5rem 1.5rem 5rem;
   }
 
   .generate-wrap h1 {
-    font-size: 1.6rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
   }
 
-  .generate-wrap > p {
+  .generate-wrap .lead {
     color: var(--muted);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
     margin-bottom: 2rem;
-    max-width: 500px;
   }
 
-  .input-row {
-    display: flex;
-    gap: 0.5rem;
+  .topic-section {
+    margin-bottom: 1.75rem;
   }
 
-  .input-row input {
-    flex: 1;
+  .topic-section label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .topic-section input {
+    width: 100%;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: var(--text);
-    font-size: 0.95rem;
-    padding: 0.7rem 1rem;
+    font-size: 1rem;
+    padding: 0.85rem 1rem;
     outline: none;
     font-family: var(--font);
     transition: border-color 0.15s;
   }
 
-  .input-row input:focus { border-color: var(--accent); }
-  .input-row input::placeholder { color: var(--muted); }
+  .topic-section input:focus { border-color: var(--accent); }
+  .topic-section input::placeholder { color: var(--muted); }
 
-  .api-key-section {
-    margin-top: 1.25rem;
+  .primary-cta {
+    margin-bottom: 2rem;
   }
 
-  .api-key-label {
-    display: block;
+  .primary-cta .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.9rem 1.25rem;
+    font-size: 1rem;
+  }
+
+  .secondary-section {
+    border-top: 1px solid var(--border);
+    padding-top: 1.75rem;
+  }
+
+  .secondary-section h3 {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--muted);
-    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.6rem;
   }
 
-  .api-key-section input {
-    width: 100%;
-    max-width: 420px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    font-size: 0.9rem;
-    padding: 0.55rem 1rem;
-    outline: none;
-    font-family: var(--mono);
-    transition: border-color 0.15s;
-  }
-
-  .api-key-section input:focus { border-color: var(--accent); }
-  .api-key-section input::placeholder { color: var(--muted); }
-
-  .api-key-note {
-    font-size: 0.75rem;
+  .secondary-section p {
+    font-size: 0.8rem;
     color: var(--muted);
-    margin-top: 0.45rem;
-    max-width: 420px;
+    line-height: 1.5;
+    margin-bottom: 1rem;
   }
 
-  .pay-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-
-  .pay-note {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 0.4rem;
-  }
-
-  .model-note {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 0.5rem;
+  .secondary-section .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
   }
 
   .progress-card {
@@ -201,33 +193,34 @@
 
 {% block content %}
 <div class="generate-wrap">
-  <h1>Generate a Report</h1>
-  <p>
-    Enter a topic and the agent will write a 1-page research brief, extracting a statistically
-    significant signal from community discourse. The report will be saved to the library.
+  <h1>Commission a Report</h1>
+  <p class="lead">
+    Get a 1-page research brief on any topic: we extract a statistically significant signal from
+    community discourse and deliver a report you can use or share. Pay once, receive it instantly.
   </p>
 
-  <div class="input-row">
+  <div class="topic-section">
+    <label for="topicInput">Your topic</label>
     <input id="topicInput" type="text" placeholder="e.g. berberine and blood glucose, r/ADHD and caffeine…" autofocus />
-    <button class="btn" id="genBtn" onclick="generate()">Generate</button>
   </div>
 
-  <div class="pay-options" id="payOptions">
-    {% if stripe_configured %}
-    <button type="button" class="btn btn-ghost" id="payBtn" onclick="payAndGenerate()" title="Pay €1 via Stripe; report generated with platform key">Pay €1 and generate</button>
-    {% endif %}
-    <button type="button" class="btn btn-ghost" id="freeReqBtn" onclick="requestFree()">Request free report</button>
+  {% if stripe_configured %}
+  <div class="primary-cta">
+    <button type="button" class="btn" id="payBtn" onclick="payAndGenerate()">Pay €1 and generate now</button>
+    <p style="font-size: 0.8rem; color: var(--muted); margin-top: 0.6rem; text-align: center;">Secure payment via Stripe · Report generated immediately after payment</p>
   </div>
-  <p class="pay-note" id="payNote">Free requests are reviewed by an admin; if approved, the report is generated and added to the library.</p>
+  {% endif %}
 
-  <div class="api-key-section">
-    <label for="apiKeyInput" class="api-key-label">OpenAI API key (optional)</label>
-    <input id="apiKeyInput" type="password" placeholder="sk-… — use your own key for this request only; not stored" autocomplete="off" />
-    <p class="api-key-note">Paste your key to commission a report with your own OpenAI account. Sent only for this request and never stored.</p>
+  <div class="secondary-section">
+    <h3>Can’t pay right now?</h3>
+    <p>
+      We consider free reports for research we believe has an important benefit for society.
+      Requests are reviewed by a human; approval is not guaranteed and there will be a delay before you hear back.
+    </p>
+    <button type="button" class="btn btn-ghost" id="freeReqBtn" onclick="requestFree()">Request a free report</button>
   </div>
-  <div class="model-note">Without your key, generation uses the platform provider when configured. Results saved to the library.</div>
 
-  <div class="examples">
+  <div class="examples" style="margin-top: 2.5rem;">
     <p>Topic ideas:</p>
     <div class="chips">
       <span class="chip" onclick="setTopic('Berberine and blood glucose control according to r/diabetes and r/Supplements')">Berberine + blood glucose</span>
@@ -255,8 +248,6 @@
 
 <script>
   const input = document.getElementById('topicInput');
-  const apiKeyInput = document.getElementById('apiKeyInput');
-  const btn = document.getElementById('genBtn');
   const payBtn = document.getElementById('payBtn');
   const freeReqBtn = document.getElementById('freeReqBtn');
   const card = document.getElementById('progressCard');
@@ -265,8 +256,6 @@
   const errorBanner = document.getElementById('errorBanner');
   const spinner = document.getElementById('spinner');
   const reportLink = document.getElementById('reportLink');
-
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
 
   function setTopic(t) { input.value = t; }
 
@@ -325,7 +314,7 @@
     errorBanner.classList.remove('visible');
     errorBanner.style.color = '';
     spinner.style.display = 'block';
-    btn.disabled = true;
+    if (payBtn) payBtn.disabled = true;
     try {
       const res = await fetch('/api/generate-paid', {
         method: 'POST',
@@ -374,7 +363,7 @@
       errorBanner.classList.add('visible');
       spinner.style.display = 'none';
     } finally {
-      btn.disabled = false;
+      if (payBtn) payBtn.disabled = false;
     }
   }
 
@@ -403,79 +392,5 @@
       history.replaceState({}, '', window.location.pathname);
     }
   })();
-
-  async function generate() {
-    const topic = input.value.trim();
-    if (!topic) return;
-
-    const openaiApiKey = apiKeyInput.value.trim();
-
-    btn.disabled = true;
-    btn.textContent = 'Generating…';
-    card.classList.add('visible');
-    stream.textContent = '';
-    doneBanner.classList.remove('visible');
-    errorBanner.classList.remove('visible');
-    spinner.style.display = 'block';
-
-    try {
-      const payload = { topic };
-      if (openaiApiKey) payload.openai_api_key = openaiApiKey;
-
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Request failed');
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.error) { throw new Error(data.error); }
-            if (data.chunk) {
-              stream.textContent += data.chunk;
-              stream.scrollTop = stream.scrollHeight;
-            }
-            if (data.done) {
-              spinner.style.display = 'none';
-              if (data.slug) {
-                reportLink.href = `/report/${data.slug}`;
-                doneBanner.classList.add('visible');
-              } else if (data.error) {
-                errorBanner.textContent = data.error;
-                errorBanner.classList.add('visible');
-              }
-            }
-          } catch (e) {
-            if (e.message !== 'Unexpected end of JSON input') throw e;
-          }
-        }
-      }
-    } catch (e) {
-      errorBanner.textContent = e.message;
-      errorBanner.classList.add('visible');
-      spinner.style.display = 'none';
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Generate';
-    }
-  }
 </script>
 {% endblock %}
