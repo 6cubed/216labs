@@ -66,6 +66,55 @@
     font-size: 1rem;
   }
 
+  .own-key-section {
+    margin-bottom: 2rem;
+  }
+
+  .own-key-section h3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.4rem;
+  }
+
+  .own-key-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+  }
+
+  .own-key-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  @media (max-width: 420px) {
+    .own-key-row { flex-direction: column; align-items: stretch; }
+    .own-key-row .btn { min-width: 0; }
+  }
+
+  .own-key-row input {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.9rem;
+    padding: 0.65rem 1rem;
+    outline: none;
+    font-family: var(--mono);
+  }
+
+  .own-key-row input:focus { border-color: var(--accent); }
+  .own-key-row input::placeholder { color: var(--muted); }
+  .own-key-row .btn { flex-shrink: 0; min-width: 10rem; }
+
   .secondary-section {
     border-top: 1px solid var(--border);
     padding-top: 1.75rem;
@@ -211,6 +260,15 @@
   </div>
   {% endif %}
 
+  <div class="own-key-section">
+    <h3>Or use your own API key</h3>
+    <p class="own-key-desc">Paste your OpenAI API key to cover the cost and generate immediately.</p>
+    <div class="own-key-row">
+      <input id="apiKeyInput" type="password" placeholder="sk-…" autocomplete="off" />
+      <button type="button" class="btn" id="genWithKeyBtn" onclick="generateWithKey()">Generate with my key</button>
+    </div>
+  </div>
+
   <div class="secondary-section">
     <h3>Can’t pay right now?</h3>
     <p>
@@ -248,7 +306,9 @@
 
 <script>
   const input = document.getElementById('topicInput');
+  const apiKeyInput = document.getElementById('apiKeyInput');
   const payBtn = document.getElementById('payBtn');
+  const genWithKeyBtn = document.getElementById('genWithKeyBtn');
   const freeReqBtn = document.getElementById('freeReqBtn');
   const card = document.getElementById('progressCard');
   const stream = document.getElementById('rawStream');
@@ -258,6 +318,72 @@
   const reportLink = document.getElementById('reportLink');
 
   function setTopic(t) { input.value = t; }
+
+  async function generateWithKey() {
+    const topic = input.value.trim();
+    const key = (apiKeyInput && apiKeyInput.value) ? apiKeyInput.value.trim() : '';
+    if (!topic) { alert('Enter a topic first.'); return; }
+    if (!key) { alert('Enter your OpenAI API key to generate with your own key.'); return; }
+    card.classList.add('visible');
+    stream.textContent = '';
+    doneBanner.classList.remove('visible');
+    errorBanner.classList.remove('visible');
+    errorBanner.style.color = '';
+    spinner.style.display = 'block';
+    if (genWithKeyBtn) genWithKeyBtn.disabled = true;
+    if (payBtn) payBtn.disabled = true;
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, openai_api_key: key }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Request failed');
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.error) throw new Error(data.error);
+            if (data.chunk) {
+              stream.textContent += data.chunk;
+              stream.scrollTop = stream.scrollHeight;
+            }
+            if (data.done) {
+              spinner.style.display = 'none';
+              if (data.slug) {
+                reportLink.href = '/report/' + data.slug;
+                doneBanner.classList.add('visible');
+              } else if (data.error) {
+                errorBanner.textContent = data.error;
+                errorBanner.classList.add('visible');
+              }
+            }
+          } catch (e) {
+            if (e.message !== 'Unexpected end of JSON input') throw e;
+          }
+        }
+      }
+    } catch (e) {
+      errorBanner.textContent = e.message;
+      errorBanner.classList.add('visible');
+      spinner.style.display = 'none';
+    } finally {
+      if (genWithKeyBtn) genWithKeyBtn.disabled = false;
+      if (payBtn) payBtn.disabled = false;
+    }
+  }
 
   async function payAndGenerate() {
     const topic = input.value.trim();
