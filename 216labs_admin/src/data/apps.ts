@@ -75,13 +75,13 @@ export function dbRowToAppInfo(row: DbApp): AppInfo {
 export const infrastructure = {
   provider: "DigitalOcean",
   dropletIp: "46.101.88.197",
-  adminUrl: "https://admin.agimemes.com",
+  adminUrl: "https://admin.6cubed.app",
   monthlyCost: "$6-12",
   reverseProxy: "Caddy 2 (auto HTTPS)",
   databases: ["PostgreSQL 16", "Redis 7", "SQLite (embedded)"],
   totalApps: 20,
   totalMemoryAllocated: "~2.1 GB (without ML profile)",
-  domain: "*.agimemes.com",
+  domain: "*.6cubed.app",
   deployMethod: "Docker images built locally, transferred via SSH",
 };
 

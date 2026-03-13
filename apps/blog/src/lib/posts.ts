@@ -8,6 +8,31 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'mcp-as-enterprise-governance-layer-on-vibe-coded-scale',
+    title: 'MCP as an enterprise governance layer on top of a company that’s been vibe coded to the size of Google',
+    excerpt: 'You’ve vibe coded your way to thousands of services and one massive repo. MCP is the control plane that lets you govern, audit, and secure all of it without slowing the loop.',
+    date: '2026-03-12',
+    body: `
+Imagine a company that’s been built the way we build: rapid iteration, AI in the loop, one monorepo, hundreds or thousands of services and apps. No big upfront design — just ship, refine, add another slice. Over time that company reaches Google scale: countless microservices, internal tools, data pipelines, and agent-driven workflows, all grown organically. The vibe got you there. The question is what happens next. How do you govern, audit, and secure that surface without turning it back into the kind of bureaucracy that vibe coding was meant to escape? The answer isn’t to stop vibe coding. It’s to add a thin, consistent layer on top: a protocol that every AI and every tool speaks, so that governance lives in one place. That layer is MCP — the Model Context Protocol — as an enterprise governance plane.
+
+**What MCP is and why it matters at scale**
+
+MCP is an open protocol that defines how AI assistants and applications get context (files, databases, APIs) and perform actions (run tools, call services). Clients (Cursor, Claude, custom agents) connect to MCP servers that expose resources and tools in a standard way. At small scale that’s “nice”: one format for tools, less lock-in. At Google scale it’s structural: every vibe-coded surface that an AI or an agent touches can sit behind an MCP server. That server becomes the single place where you enforce policy, log access, and decide what “the model” is allowed to see and do. You don’t govern a thousand ad-hoc integrations; you govern the MCP layer.
+
+**Governance without killing the vibe**
+
+The classic response to “we’ve grown too fast” is to centralize, lock down, and slow the loop: approval gates, change boards, and “no new services without architecture review.” Vibe coding dies there. MCP offers a different trade. You keep shipping the same way — new app, new tool, new agent — but each of those surfaces is *wired through* MCP. The MCP server for “customer data” doesn’t expose raw DB credentials; it exposes a small, audited set of tools (e.g. “search by segment,” “export with PII stripped”) and logs every call. The MCP server for “deploy” doesn’t hand over prod SSH; it exposes “trigger deploy for app X” with checks and an audit trail. So the *protocol* is the choke point. You don’t slow the developer or the AI; you standardize and govern the *interface* they use. That’s enterprise governance that doesn’t require saying no to the next idea — it requires saying “yes, and it goes through MCP.”
+
+**Audit, compliance, and observability**
+
+Once every AI and every agent talks to the world via MCP, you get a single place to answer: who (or what model) asked for what, when, and with what outcome. That’s audit for free. Compliance (SOC2, HIPAA, internal policy) becomes “we enforce it at the MCP layer”: PII never leaves this server, that tool is only callable in these contexts, and every call is logged. Observability is the same: you don’t instrument a thousand custom integrations; you instrument the MCP servers. So the company that vibe coded to Google scale doesn’t have to retrofit governance into every corner. It retrofits *one* layer — MCP — and pushes all AI and agent traffic through it.
+
+**How it fits the vibe code factory**
+
+We already believe in one repo, one deploy path, one admin. MCP is the same idea applied to “how the AI and the organization interact.” New tools and new agents don’t get special snowflake integrations; they get MCP endpoints that follow the same rules. So when someone prompts “add a new service that reads from the analytics DB,” the answer isn’t “fill out a form and wait for DBA approval.” The answer is “here’s the MCP server for analytics; it exposes these tools, with these guards; plug your agent in and go.” The vibe stays. The governance is in the protocol. That’s how you keep a company that’s been vibe coded to the size of Google from turning into a place where nothing moves without a ticket — and that’s why MCP is the enterprise governance layer that actually fits.
+    `.trim(),
+  },
+  {
     slug: 'roadmap-to-1000-projects-continued-iteration-and-growth',
     title: 'Roadmap to 1000 projects: continued iteration and growth',
     excerpt: 'We’re scaling from ~20 co-existing projects today to 1000 by the end of 2027. Here’s how: centralize enterprise components, lean on a single database, lightweight app toggling, and a clear set of milestones.',
@@ -85,7 +110,7 @@ We run PipeSecure on an interval (by default every 24 hours). So every day the f
 
 **One dashboard, one source of truth**
 
-PipeSecure exposes a small status dashboard (pipesecure.agimemes.com) that shows the last scan time, how many findings it had, and all open security issues with links to the GitHub issue. So at a glance we see whether the repo is clean or has outstanding items. The issues live in the repo’s issue tracker, so they’re part of the same workflow as every other task. For a factory that already believes in one monorepo, one deploy path, and one admin, PipeSecure is the same idea for security: one scanner, one place for findings, and a daily cadence that keeps the loop tight without blocking the vibe.
+PipeSecure exposes a small status dashboard (pipesecure.6cubed.app) that shows the last scan time, how many findings it had, and all open security issues with links to the GitHub issue. So at a glance we see whether the repo is clean or has outstanding items. The issues live in the repo’s issue tracker, so they’re part of the same workflow as every other task. For a factory that already believes in one monorepo, one deploy path, and one admin, PipeSecure is the same idea for security: one scanner, one place for findings, and a daily cadence that keeps the loop tight without blocking the vibe.
     `.trim(),
   },
   {
@@ -130,6 +155,43 @@ When the AI suggests a new dependency or a new route, you need to know that it w
 216labs is that ecosystem for our own vibe coding workflow: one monorepo, one deploy path, one admin surface for all apps. Manifests define each app; the same script builds and deploys everything; Caddy and env vars are generated from a single source of truth. When we spin up a new app from a prompt, it doesn’t land in a random folder with a random port — it lands in the same grid, with the same rules. That’s how vibe coding scales from “fun experiment” to “thing that actually runs.”
 
 So: vibe coding gives you speed. The ecosystem gives you a place for that speed to land. Both are necessary.
+    `.trim(),
+  },
+  {
+    slug: 'gemini-and-llm-vulnerabilities-what-you-need-to-know',
+    title: 'Gemini and LLM vulnerabilities: what you need to know',
+    excerpt: 'From GeminiJack’s zero-click data exfiltration to prompt injection and jailbreaks, LLMs open a new attack surface. Here’s the landscape and why it matters.',
+    date: '2026-03-12',
+    body: `
+Google’s Gemini and other large language models are shipping into products at pace — search, cloud assist, enterprise agents. With that comes a new class of vulnerabilities: models that can’t reliably tell “user instruction” from “malicious text in a document,” and that can be nudged into bypassing safety with the right prompts. This post sketches the landscape, with Gemini as a concrete example, and why it should matter to anyone building or relying on LLM-powered tools.
+
+**Gemini in the crosshairs**
+
+Two high-profile research efforts put Gemini’s security in the spotlight.
+
+- **GeminiJack (late 2025).** Researchers showed that Gemini Enterprise and Vertex AI Search could be abused via *indirect* prompt injection. An attacker embeds hidden instructions inside a Google Doc, calendar invite, or email. When a user (or an automated flow) lets Gemini read that content, the model treats the embedded text as legitimate commands. In the demonstrated attack, that led to automatic search across Gmail, Calendar, and Docs and exfiltration of sensitive data — without the user clicking a link or running a script. “Zero-click” in the sense that the victim only had to have Gemini process a document the attacker could influence. Google’s response included decoupling Vertex AI Search from Gemini Enterprise and hardening the underlying pipeline.
+
+- **The “Gemini Trifecta” (Tenable, 2025).** Three separate issues across Gemini’s surface: (1) the **Gemini Browsing Tool** could be abused to exfiltrate saved data and location; (2) the **Search Personalization** model was vulnerable to search-injection via manipulated browser history, leaking user data; (3) **Cloud Assist** accepted crafted content in log entries (e.g. HTTP User-Agent) that could be used for prompt injection, opening the door to phishing or further cloud compromise. All three have been addressed by Google, but they illustrate how many moving parts — browsing, search, logs — become new attack vectors when an LLM is in the loop.
+
+**The underlying pattern: indirect prompt injection**
+
+The thread running through these is *indirect prompt injection*. The model isn’t given a blatant “ignore your instructions” in the user’s message. Instead, the malicious instruction is *inside data the model retrieves*: a web page, an email, a doc, a log line. The model doesn’t have a reliable way to say “this part is from the user, that part is from untrusted content,” so it may follow the hidden instruction as if it were legitimate. That’s a fundamental tension: we want the model to act on “user intent,” but intent can be spoofed by content we feed into the same context. Gemini isn’t uniquely bad here — it’s a structural issue for any LLM that reasons over mixed trusted and untrusted text.
+
+**LLM vulnerabilities in general**
+
+Beyond Gemini, the broader LLM security space has crystallized into a few categories.
+
+- **Prompt injection (direct and indirect).** Direct: the user (or attacker) types instructions that override or bypass the system prompt. Indirect: as above — the malicious prompt is embedded in a document, webpage, or API response the model sees. Defenses (prompt design, filtering, “canonical” instruction channels) are improving but not solved.
+
+- **Jailbreaks.** Multi-turn or single-query techniques that get the model to ignore safety policies: harmful content, forbidden topics, or role-play that bypasses guardrails. Research has shown high success rates against leading models (e.g. adaptive attacks using logprobs, “Crescendo” multi-turn escalation, or embedding jailbreak prompts in long chains). Different models fail in different ways — so there’s no single fix.
+
+- **Tool use and autonomy.** When the model can call APIs, search the web, or read emails, any confusion between “user said” and “data said” can lead to wrong or malicious actions. Gemini’s browsing and cloud-assist issues are examples: the more the model does on the user’s behalf, the more an attacker can try to steer that behavior via poisoned content.
+
+- **Data exfiltration and privacy.** As with GeminiJack, the combination of broad access (Gmail, Calendar, Docs) and weak separation between instructions and data can turn a “helpful” agent into a data-leak channel. Enterprise deployments need to assume that any content the model sees might contain attempted instructions.
+
+**Why this matters for builders**
+
+If you’re integrating an LLM — Gemini or otherwise — into a product that touches sensitive data or performs actions (sending email, editing docs, calling APIs), you’re taking on this attack surface. Mitigations today are mostly layered: restrict what the model can see and do, sandbox tool use, treat all retrieved content as potentially adversarial, and keep auditing and red-teaming. Google’s own response (hardening Gemini 2.5, separating components, defense in depth) is the right direction, but the problem isn’t “solved.” Expect more Gemini and general-LLM vulnerabilities to show up as usage grows. The takeaway: treat LLM-powered features as a new kind of dependency — one that needs threat modeling and continuous attention, not a one-time security review.
     `.trim(),
   },
 ]

@@ -14,7 +14,7 @@
     "other": ["Playwright", "Chromium"]
   },
   "env_vars": [
-    { "key": "HAPPYPATH_APP_HOST", "description": "Base domain for apps (e.g. agimemes.com → https://ramblingradio.agimemes.com)", "is_secret": false },
+    { "key": "HAPPYPATH_APP_HOST", "description": "Base domain for apps (e.g. 6cubed.app → https://ramblingradio.6cubed.app)", "is_secret": false },
     { "key": "HAPPYPATH_TEST_INTERVAL_HOURS", "description": "How often to run tests in hours (default: 6)", "is_secret": false },
     { "key": "HAPPYPATH_DATABASE_PATH", "description": "Path to 216labs.db to read enabled apps (optional, for local dev)", "is_secret": false }
   ]

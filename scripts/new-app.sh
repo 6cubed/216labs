@@ -164,7 +164,7 @@ esac
 echo "Created $APP_DIR/Dockerfile"
 
 # ── Print next steps ───────────────────────────────────────────
-DOMAIN="${APP_HOST:-agimemes.com}"
+DOMAIN="${APP_HOST:-6cubed.app}"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

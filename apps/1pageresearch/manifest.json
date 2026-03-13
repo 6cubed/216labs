@@ -21,6 +21,6 @@
     { "key": "ONEPAGE_STRIPE_SECRET_KEY", "description": "Stripe secret key for €1 report payments", "is_secret": true },
     { "key": "ONEPAGE_STRIPE_WEBHOOK_SECRET", "description": "Stripe webhook signing secret for /api/webhook/stripe", "is_secret": true },
     { "key": "ONEPAGE_ADMIN_SECRET", "description": "Secret for /admin/requests (approve/deny free reports)", "is_secret": true },
-    { "key": "ONEPAGE_BASE_URL", "description": "Base URL for Stripe success/cancel (default: https://1pageresearch.agimemes.com)", "is_secret": false }
+    { "key": "ONEPAGE_BASE_URL", "description": "Base URL for Stripe success/cancel (default: https://1pageresearch.6cubed.app)", "is_secret": false }
   ]
 }

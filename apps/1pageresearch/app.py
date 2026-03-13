@@ -29,7 +29,7 @@ OPENAI_MODEL_USER = os.environ.get("ONEPAGE_OPENAI_MODEL", "gpt-4o-mini")
 STRIPE_SECRET_KEY = os.environ.get("ONEPAGE_STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("ONEPAGE_STRIPE_WEBHOOK_SECRET", "")
 ONEPAGE_ADMIN_SECRET = os.environ.get("ONEPAGE_ADMIN_SECRET", "")
-BASE_URL = os.environ.get("ONEPAGE_BASE_URL", "https://1pageresearch.agimemes.com")
+BASE_URL = os.environ.get("ONEPAGE_BASE_URL", "https://1pageresearch.6cubed.app")
 DB_INITIALIZED = False
 
 if STRIPE_SECRET_KEY:

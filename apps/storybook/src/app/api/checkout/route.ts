@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const stripe = getStripe();
     const origin =
       req.headers.get("origin") ??
-      `https://${req.headers.get("host") ?? "storybook.agimemes.com"}`;
+      `https://${req.headers.get("host") ?? "storybook.6cubed.app"}`;
 
     const priceCents =
       parseInt(process.env.STORYBOOK_BOOK_PRICE_CENTS ?? "2499", 10) || 2499;

@@ -8,7 +8,7 @@ Reads all manifest.json files in the repo root and generates a Caddyfile.
 Special cases (admin with basic auth, anchor with path routing) are hardcoded.
 All other apps get a standard subdomain reverse_proxy block.
 
-Set APP_HOST env var to change the domain (default: agimemes.com).
+Set APP_HOST env var to change the domain (default: 6cubed.app).
 """
 import sys
 import json
@@ -17,7 +17,7 @@ import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.dirname(script_dir)
 
-domain = os.environ.get("APP_HOST", "agimemes.com")
+domain = os.environ.get("APP_HOST", "6cubed.app")
 output = sys.argv[1] if len(sys.argv) > 1 else os.path.join(repo_root, "Caddyfile")
 
 lines = [
@@ -47,7 +47,7 @@ lines = [
 
 skip_ids = {"admin", "anchor"}
 entries = []
-root_domain_app = None  # (docker_svc, port) for agimemes.com + www.agimemes.com
+root_domain_app = None  # (docker_svc, port) for 6cubed.app + www.6cubed.app
 
 def manifest_dirs():
     # Top-level (admin, happypath, pipesecure, etc.)
@@ -83,7 +83,7 @@ for dir_path in manifest_dirs():
 
 entries.sort(key=lambda x: x[0])
 
-# Root domain (agimemes.com + www.agimemes.com) → landing app
+# Root domain (6cubed.app + www.6cubed.app) → landing app
 if root_domain_app:
     svc, port = root_domain_app
     lines += [

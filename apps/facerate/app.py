@@ -1,3 +1,4 @@
+# FaceRate — vote on AI faces, Elo leaderboard
 import os
 
 from flask import Flask, jsonify, render_template, request, send_from_directory

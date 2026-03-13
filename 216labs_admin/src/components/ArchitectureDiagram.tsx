@@ -16,7 +16,7 @@ export function ArchitectureDiagram() {
       <div className="flex flex-col items-center gap-3 font-mono text-xs">
         {/* DNS */}
         <div className="bg-accent/10 border border-accent/25 text-accent rounded-lg px-6 py-2.5 font-medium">
-          DNS: *.agimemes.com
+          DNS: *.6cubed.app
         </div>
 
         <div className="w-px h-4 bg-border" />
@@ -38,7 +38,7 @@ export function ArchitectureDiagram() {
               <p className="text-foreground font-medium text-[11px]">
                 {app.name}
               </p>
-              <p className="text-muted text-[10px]">{app.id}.agimemes.com</p>
+              <p className="text-muted text-[10px]">{app.id}.6cubed.app</p>
             </div>
           ))}
         </div>

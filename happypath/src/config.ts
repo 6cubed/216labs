@@ -1,4 +1,4 @@
-const APP_HOST = process.env.APP_HOST || process.env.HAPPYPATH_APP_HOST || "agimemes.com";
+const APP_HOST = process.env.APP_HOST || process.env.HAPPYPATH_APP_HOST || "6cubed.app";
 const TEST_INTERVAL_HOURS = parseFloat(
   process.env.TEST_INTERVAL_HOURS || process.env.HAPPYPATH_TEST_INTERVAL_HOURS || "6"
 );

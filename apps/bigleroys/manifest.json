@@ -17,6 +17,6 @@
   "env_vars": [
     { "key": "BIGLEROYS_SECRET_KEY", "description": "BigLeRoys Flask secret key", "is_secret": true },
     { "key": "BIGLEROYS_GOOGLE_CLIENT_ID", "description": "BigLeRoys Google OAuth client ID", "is_secret": true },
-    { "key": "BIGLEROYS_OAUTH_REDIRECT_URI", "description": "BigLeRoys OAuth redirect URI (default: https://bigleroys.agimemes.com/callback)", "is_secret": false }
+    { "key": "BIGLEROYS_OAUTH_REDIRECT_URI", "description": "BigLeRoys OAuth redirect URI (default: https://bigleroys.6cubed.app/callback)", "is_secret": false }
   ]
 }

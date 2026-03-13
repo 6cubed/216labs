@@ -112,7 +112,7 @@ services:
       - NODE_ENV=production
       - DATA_DIR=/app/data
       - DATABASE_PATH=/app/216labs.db
-      - APP_HOST=${APP_HOST:-agimemes.com}
+      - APP_HOST=${APP_HOST:-6cubed.app}
       - TEST_INTERVAL_HOURS=${HAPPYPATH_TEST_INTERVAL_HOURS:-6}
       - PORT=3000
     volumes:
@@ -132,7 +132,7 @@ services:
       - NODE_ENV=production
       - DATABASE_PATH=/app/216labs.db
       - PROJECTS_ROOT=/workspace
-      - NEXT_PUBLIC_APP_HOST=${APP_HOST:-agimemes.com}
+      - NEXT_PUBLIC_APP_HOST=${APP_HOST:-6cubed.app}
       - STORYBOOK_INTERNAL_URL=${STORYBOOK_INTERNAL_URL:-http://storybook:3000}
       - STORYBOOK_ADMIN_TOKEN=${STORYBOOK_ADMIN_TOKEN:-}
     volumes:
@@ -167,7 +167,7 @@ services:
       - PRIORS_DATABASE_PATH=/app/data/database.db
       - PRIORS_SECRET_KEY=${PRIORS_SECRET_KEY:-change-me}
       - PRIORS_GOOGLE_CLIENT_SECRETS_FILE=/app/client_secret.json
-      - PRIORS_OAUTH_REDIRECT_URI=${PRIORS_OAUTH_REDIRECT_URI:-https://priors.agimemes.com/callback}
+      - PRIORS_OAUTH_REDIRECT_URI=${PRIORS_OAUTH_REDIRECT_URI:-https://priors.6cubed.app/callback}
       - GOOGLE_CLIENT_ID=${PRIORS_GOOGLE_CLIENT_ID:-}
       - GEMINI_API_KEY=${PRIORS_GEMINI_API_KEY:-}
     volumes:
@@ -186,7 +186,7 @@ services:
       - PORT=5000
       - BIGLEROYS_SECRET_KEY=${BIGLEROYS_SECRET_KEY:-change-me}
       - BIGLEROYS_GOOGLE_CLIENT_SECRETS_FILE=/app/client_secret.json
-      - BIGLEROYS_OAUTH_REDIRECT_URI=${BIGLEROYS_OAUTH_REDIRECT_URI:-https://bigleroys.agimemes.com/callback}
+      - BIGLEROYS_OAUTH_REDIRECT_URI=${BIGLEROYS_OAUTH_REDIRECT_URI:-https://bigleroys.6cubed.app/callback}
       - BIGLEROYS_GOOGLE_CLIENT_ID=${BIGLEROYS_GOOGLE_CLIENT_ID:-}
       - BIGLEROYS_DATABASE_PATH=/app/data/bigleroys.db
     volumes:
@@ -347,7 +347,7 @@ services:
       - "3000"
     mem_limit: 256m
 
-  # ── 216labs Landing (agimemes.com + www) ───────────────────────
+  # ── 216labs Landing (6cubed.app + www) ──────────────────────────
   landing:
     image: 216labs/landing:latest
     build: ./apps/landing

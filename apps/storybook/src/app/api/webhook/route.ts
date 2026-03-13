@@ -30,7 +30,7 @@ async function sendOrderEmail(session: Stripe.Checkout.Session, bookTitle: strin
           <tr><td style="padding:8px 0;color:#666">Session</td><td style="font-family:monospace;font-size:12px">${session.id}</td></tr>
         </table>
         <p style="margin-top:24px">
-          <a href="https://admin.agimemes.com" style="background:#7C3AED;color:white;padding:10px 20px;border-radius:8px;text-decoration:none">
+          <a href="https://admin.6cubed.app" style="background:#7C3AED;color:white;padding:10px 20px;border-radius:8px;text-decoration:none">
             View in admin dashboard →
           </a>
         </p>

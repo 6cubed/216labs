@@ -7,7 +7,7 @@ set -euo pipefail
 # Reads 216labs.db (SQLite) to decide which apps to build/transfer.
 # 216labs.db holds app state and env_vars (secrets); it is never overwritten by
 # this script. A timestamped backup is made on the server before each deploy.
-# Toggle apps on/off via the admin dashboard at https://admin.agimemes.com
+# Toggle apps on/off via the admin dashboard at https://admin.6cubed.app
 # After deploy, records image sizes and startup times back to the DB.
 
 REMOTE="${1:-${DEPLOY_HOST:-}}"
