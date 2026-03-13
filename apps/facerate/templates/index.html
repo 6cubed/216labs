@@ -4,108 +4,90 @@
 
 {% block head %}
 <style>
-  .vote-wrap {
-    text-align: center;
-    padding: 2rem 0 4rem;
+  .vote-wrap { text-align: center; padding: 2rem 0 4rem; }
+  .vote-wrap h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .vote-wrap p { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+
+  .onboard {
+    max-width: 360px;
+    margin: 0 auto 2rem;
+    text-align: left;
   }
-
-  .vote-wrap h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-
-  .vote-wrap p {
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
-  }
-
-  .pair {
-    display: flex;
-    gap: 1.5rem;
-    justify-content: center;
-    align-items: stretch;
-    flex-wrap: wrap;
-    margin-bottom: 2rem;
-  }
-
-  .face-card {
-    flex: 1;
-    min-width: 200px;
-    max-width: 320px;
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    cursor: pointer;
-    transition: border-color 0.2s, transform 0.15s;
-  }
-
-  .face-card:hover {
-    border-color: var(--accent);
-    transform: scale(1.02);
-  }
-
-  .face-card:active { transform: scale(0.98); }
-
-  .face-card img {
+  .onboard label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 0.35rem; }
+  .onboard select {
     width: 100%;
-    height: auto;
-    display: block;
-    aspect-ratio: 1;
-    object-fit: cover;
+    padding: 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 1rem;
+    margin-bottom: 1rem;
   }
+  .onboard .btn { width: 100%; justify-content: center; margin-top: 0.5rem; }
 
-  .face-card .elo {
-    padding: 0.5rem;
-    font-size: 0.8rem;
-    color: var(--muted);
+  .pair { display: flex; gap: 1.5rem; justify-content: center; align-items: stretch; flex-wrap: wrap; margin-bottom: 2rem; }
+  .face-card {
+    flex: 1; min-width: 200px; max-width: 320px;
+    background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; cursor: pointer; transition: border-color 0.2s, transform 0.15s;
   }
-
-  .loading, .error {
-    padding: 3rem;
-    color: var(--muted);
-  }
-
+  .face-card:hover { border-color: var(--accent); transform: scale(1.02); }
+  .face-card:active { transform: scale(0.98); }
+  .face-card img { width: 100%; height: auto; display: block; aspect-ratio: 1; object-fit: cover; }
+  .face-card .elo { padding: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  .vs { display: flex; align-items: center; font-size: 1.25rem; font-weight: 700; color: var(--muted); }
+  .loading, .error { padding: 3rem; color: var(--muted); }
   .error { color: #f87171; }
-
-  .vs {
-    display: flex;
-    align-items: center;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--muted);
-  }
+  .prefs-bar { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
+  .prefs-bar a { color: var(--accent); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="vote-wrap container">
   <h1>Who’s more attractive?</h1>
-  <p>Click the face you find more attractive. Elo ratings update as people vote.</p>
+  <p>Votes only affect your country’s leaderboard. Same-gender pairs only.</p>
+
+  <div id="onboard" class="onboard" style="display: none;">
+    <label>I’m attracted to</label>
+    <select id="attraction">
+      <option value="all">All</option>
+      <option value="m">Men</option>
+      <option value="f">Women</option>
+    </select>
+    <label>My country</label>
+    <select id="country">
+      {% for code, name in countries %}
+      <option value="{{ code }}" {% if code == 'US' %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" class="btn" onclick="savePrefsAndStart()">Start voting</button>
+  </div>
+
+  <div id="prefsBar" class="prefs-bar" style="display: none;">
+    <span id="prefsText"></span> · <a href="#" onclick="showOnboard(); return false;">Change</a>
+  </div>
 
   <div id="pairContainer">
     <div id="loading" class="loading">Loading pair…</div>
     <div id="error" class="error" style="display: none;"></div>
     <div id="pair" class="pair" style="display: none;">
-      <div class="face-card" id="cardA" data-id="">
-        <img id="imgA" src="" alt="Face A" />
-        <div class="elo">Elo <span id="eloA">—</span></div>
-      </div>
+      <div class="face-card" id="cardA" data-id=""><img id="imgA" src="" alt="Face A" /><div class="elo">Elo <span id="eloA">—</span></div></div>
       <div class="vs">vs</div>
-      <div class="face-card" id="cardB" data-id="">
-        <img id="imgB" src="" alt="Face B" />
-        <div class="elo">Elo <span id="eloB">—</span></div>
-      </div>
+      <div class="face-card" id="cardB" data-id=""><img id="imgB" src="" alt="Face B" /><div class="elo">Elo <span id="eloB">—</span></div></div>
     </div>
   </div>
 </div>
 
 <script>
+  const STORAGE_KEY = 'facerate_prefs';
   const loading = document.getElementById('loading');
   const errEl = document.getElementById('error');
   const pairEl = document.getElementById('pair');
+  const onboardEl = document.getElementById('onboard');
+  const prefsBarEl = document.getElementById('prefsBar');
+  const prefsTextEl = document.getElementById('prefsText');
   const cardA = document.getElementById('cardA');
   const cardB = document.getElementById('cardB');
   const imgA = document.getElementById('imgA');
@@ -113,7 +95,37 @@
   const eloA = document.getElementById('eloA');
   const eloB = document.getElementById('eloB');
 
+  let prefs = { attraction: 'all', country: 'US' };
   let current = { face_a: null, face_b: null };
+
+  function loadPrefs() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (s) prefs = { ...prefs, ...JSON.parse(s) };
+    } catch (e) {}
+  }
+  function savePrefs() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+  }
+
+  function showOnboard() {
+    prefs.attraction = document.getElementById('attraction').value;
+    prefs.country = document.getElementById('country').value;
+    onboardEl.style.display = 'block';
+    prefsBarEl.style.display = 'none';
+    pairEl.style.display = 'none';
+    loading.style.display = 'none';
+  }
+  function savePrefsAndStart() {
+    prefs.attraction = document.getElementById('attraction').value;
+    prefs.country = document.getElementById('country').value;
+    savePrefs();
+    onboardEl.style.display = 'none';
+    prefsBarEl.style.display = 'block';
+    const names = { m: 'Men', f: 'Women', all: 'All' };
+    prefsTextEl.textContent = 'Attracted to: ' + (names[prefs.attraction] || prefs.attraction) + ' · Country: ' + prefs.country;
+    fetchPair();
+  }
 
   function showError(msg) {
     loading.style.display = 'none';
@@ -121,7 +133,6 @@
     errEl.textContent = msg;
     errEl.style.display = 'block';
   }
-
   function showPair(data) {
     loading.style.display = 'none';
     errEl.style.display = 'none';
@@ -134,7 +145,6 @@
     eloB.textContent = data.face_b.elo;
     pairEl.style.display = 'flex';
   }
-
   function setLoading() {
     errEl.style.display = 'none';
     pairEl.style.display = 'none';
@@ -144,7 +154,7 @@
   async function fetchPair() {
     setLoading();
     try {
-      const res = await fetch('/api/pair');
+      const res = await fetch('/api/pair?attraction=' + encodeURIComponent(prefs.attraction) + '&country=' + encodeURIComponent(prefs.country));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load pair');
       showPair(data);
@@ -155,13 +165,16 @@
 
   async function vote(winnerId) {
     if (!current.face_a || !current.face_b) return;
-    const faceA = current.face_a.id;
-    const faceB = current.face_b.id;
     try {
       await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ face_a_id: faceA, face_b_id: faceB, winner_id: winnerId }),
+        body: JSON.stringify({
+          face_a_id: current.face_a.id,
+          face_b_id: current.face_b.id,
+          winner_id: winnerId,
+          country_code: prefs.country,
+        }),
       });
       fetchPair();
     } catch (e) {
@@ -172,6 +185,16 @@
   cardA.addEventListener('click', () => vote(parseInt(cardA.dataset.id, 10)));
   cardB.addEventListener('click', () => vote(parseInt(cardB.dataset.id, 10)));
 
-  fetchPair();
+  loadPrefs();
+  if (localStorage.getItem(STORAGE_KEY)) {
+    document.getElementById('attraction').value = prefs.attraction;
+    document.getElementById('country').value = prefs.country;
+    prefsBarEl.style.display = 'block';
+    prefsTextEl.textContent = 'Attracted to: ' + (prefs.attraction === 'm' ? 'Men' : prefs.attraction === 'f' ? 'Women' : 'All') + ' · Country: ' + prefs.country;
+    fetchPair();
+  } else {
+    onboardEl.style.display = 'block';
+    loading.style.display = 'none';
+  }
 </script>
 {% endblock %}

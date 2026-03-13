@@ -49,7 +49,7 @@ def main():
     fast_until = min(start + 2, NUM_FACES)
     for i in range(start + 1, NUM_FACES + 1):
         if download_one(i):
-            insert_face(f"{i:04d}.jpg")
+            insert_face(f"{i:04d}.jpg", gender="u", excluded=0)
             if i % 50 == 0:
                 print(f"  {i}/{NUM_FACES}")
         delay = 0.3 if i < fast_until else DELAY_SEC

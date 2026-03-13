@@ -6,42 +6,47 @@
 <style>
   .leader-wrap { padding: 2rem 0; }
   .leader-wrap h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-  .leader-wrap .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1rem;
-  }
-
-  .item {
+  .leader-wrap .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem; }
+  .country-select { margin-bottom: 1.5rem; }
+  .country-select label { font-size: 0.8rem; color: var(--muted); margin-right: 0.5rem; }
+  .country-select select {
+    padding: 0.4rem 0.75rem;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    overflow: hidden;
-    text-align: center;
+    color: var(--text);
+    font-size: 0.95rem;
   }
-
-  .item img {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-    display: block;
-  }
-
+  .section-title { font-size: 0.85rem; font-weight: 600; color: var(--muted); margin: 1.5rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+  .item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; text-align: center; }
+  .item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
   .item .rank { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
   .item .elo { font-weight: 700; color: var(--accent); font-size: 1rem; }
+  .bottom .item .elo { color: var(--muted); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="leader-wrap container">
-  <h1>Top faces by Elo</h1>
-  <p class="sub">Highest-rated from community votes.</p>
+  <h1>Leaderboard by country</h1>
+  <p class="sub">Top and bottom faces per country. Votes only affect your country’s ranking.</p>
 
-  {% if faces %}
+  <div class="country-select">
+    <form method="get" action="/leaderboard">
+      <label for="country">Country</label>
+      <select name="country" id="country" onchange="this.form.submit()">
+        {% for code, name in countries %}
+        <option value="{{ code }}" {% if code == selected_country %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <div class="section-title">Top 10 — {{ selected_country }}</div>
+  {% if top_faces %}
   <div class="grid">
-    {% for f in faces %}
+    {% for f in top_faces[:10] %}
     <div class="item">
       <img src="/static/faces/{{ f.filename }}" alt="Face #{{ f.id }}" loading="lazy" />
       <div class="rank">#{{ loop.index }}</div>
@@ -50,7 +55,22 @@
     {% endfor %}
   </div>
   {% else %}
-  <p class="sub">No faces yet. <a href="/">Vote</a> to build the leaderboard.</p>
+  <p class="sub">No votes for this country yet. <a href="/">Vote</a> to build the leaderboard.</p>
+  {% endif %}
+
+  <div class="section-title">Bottom 10 — {{ selected_country }}</div>
+  {% if bottom_faces %}
+  <div class="grid bottom">
+    {% for f in bottom_faces %}
+    <div class="item">
+      <img src="/static/faces/{{ f.filename }}" alt="Face #{{ f.id }}" loading="lazy" />
+      <div class="rank">Bottom #{{ loop.index }}</div>
+      <div class="elo">{{ "%.0f"|format(f.elo) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="sub">Not enough votes yet for a bottom 10.</p>
   {% endif %}
 </div>
 {% endblock %}
