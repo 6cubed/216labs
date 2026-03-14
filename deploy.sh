@@ -207,6 +207,8 @@ if [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
     BUILD_ARGS=(-q -t "$TAG")
     if [ "$NAME" = "cron-runner" ]; then
       BUILD_ARGS+=(--platform linux/amd64)
+      # One-time: ensure no cached layer from better-sqlite3 build
+      [ -f "cron-runner/.deploy-no-cache" ] && BUILD_ARGS+=(--no-cache) && rm -f cron-runner/.deploy-no-cache
     fi
     if [ -n "${DFILE:-}" ]; then
       BUILD_ARGS+=(-f "$CTX/$DFILE")
@@ -411,6 +413,28 @@ docker compose ps
 # Post-deploy: prune unused images to avoid filling disk (keeps images used by running containers).
 echo "==> Pruning unused Docker images..."
 docker image prune -a -f
+
+# Update server DB with current image sizes, startup times, and commit counts so admin dashboard shows correct numbers.
+if [ -f 216labs.db ]; then
+  echo "==> Updating admin DB metadata (sizes, startup times, commits)..."
+  NOW=$(date -u +"%Y-%m-%d %H:%M:%S")
+  for img in $(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep '^216labs/' || true); do
+    SIZE_BYTES=$(docker image inspect --format '{{.Size}}' "$img" 2>/dev/null || echo 0)
+    SIZE_MB=$((SIZE_BYTES / 1048576))
+    sqlite3 216labs.db "UPDATE apps SET image_size_mb = $SIZE_MB WHERE docker_image = '$img';" 2>/dev/null || true
+  done
+  for svc in $COMPOSE_SERVICES; do
+    MS=$(docker compose logs --no-follow --tail 30 "$svc" 2>/dev/null | grep -oE "Ready in [0-9]+" | grep -oE "[0-9]+" | tail -1)
+    if [ -n "$MS" ]; then
+      sqlite3 216labs.db "UPDATE apps SET startup_time_ms = $MS, last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
+    fi
+  done
+  sqlite3 216labs.db "SELECT id, repo_path FROM apps" 2>/dev/null | while IFS='|' read -r id repo_path; do
+    [ -z "$id" ] && continue
+    COMMITS=$(git log --oneline -- "$repo_path" 2>/dev/null | wc -l | tr -d ' ')
+    [ -n "$COMMITS" ] && sqlite3 216labs.db "UPDATE apps SET total_commits = $COMMITS WHERE id = '$id';" 2>/dev/null || true
+  done
+fi
 
 echo "==> Done."
 REMOTE_SCRIPT

@@ -1,18 +1,30 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { setCronJobEnabledAction } from "@/app/actions";
+import { setCronJobEnabledAction, runCronJobNow } from "@/app/actions";
 import type { DbCronJob } from "@/lib/db";
 
 function CronJobRow({ job }: { job: DbCronJob }) {
   const [isPending, startTransition] = useTransition();
+  const [runPending, setRunPending] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(job.enabled === 1);
 
   const handleToggle = () => {
     const next = !enabled;
     setEnabled(next);
+    setRunError(null);
     startTransition(async () => {
       await setCronJobEnabledAction(job.id, next);
+    });
+  };
+
+  const handleRunNow = () => {
+    setRunError(null);
+    setRunPending(true);
+    runCronJobNow(job.id).then((result) => {
+      setRunPending(false);
+      if (result && "error" in result) setRunError(result.error);
     });
   };
 
@@ -31,24 +43,37 @@ function CronJobRow({ job }: { job: DbCronJob }) {
           : "—"}
       </td>
       <td className="px-4 py-3">
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleToggle}
-          aria-label={enabled ? "Disable job" : "Enable job"}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-            enabled
-              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
-              : "bg-white/5 text-muted border-border hover:bg-white/10"
-          } disabled:opacity-50`}
-        >
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              enabled ? "bg-emerald-400" : "bg-muted"
-            }`}
-          />
-          {enabled ? "On" : "Off"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleToggle}
+            aria-label={enabled ? "Disable job" : "Enable job"}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+              enabled
+                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                : "bg-white/5 text-muted border-border hover:bg-white/10"
+            } disabled:opacity-50`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                enabled ? "bg-emerald-400" : "bg-muted"
+              }`}
+            />
+            {enabled ? "On" : "Off"}
+          </button>
+          <button
+            type="button"
+            disabled={runPending}
+            onClick={handleRunNow}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-2 border-accent bg-accent/30 text-accent hover:bg-accent/50 disabled:opacity-50"
+          >
+            {runPending ? "Running…" : "Run now"}
+          </button>
+        </div>
+        {runError && (
+          <p className="text-xs text-red-400 mt-1.5 max-w-[280px]">{runError}</p>
+        )}
       </td>
     </tr>
   );
@@ -69,14 +94,14 @@ export function CronJobsSection({ jobs }: { jobs: DbCronJob[] }) {
         </p>
       </div>
 
-      <div className="bg-surface border border-border rounded-xl overflow-hidden">
-        <table className="w-full">
+      <div className="bg-surface border border-border rounded-xl overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead>
             <tr className="text-xs text-muted uppercase tracking-wide">
               <th className="px-4 py-3 text-left font-medium">Job</th>
               <th className="px-4 py-3 text-left font-medium">Schedule</th>
               <th className="px-4 py-3 text-left font-medium">Last run</th>
-              <th className="px-4 py-3 text-left font-medium">Status</th>
+              <th className="px-4 py-3 text-left font-medium">Status &amp; Run now</th>
             </tr>
           </thead>
           <tbody>

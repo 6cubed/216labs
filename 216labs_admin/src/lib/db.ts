@@ -183,10 +183,34 @@ function initSchema(db: Database.Database) {
   `);
   seedDefaultCronJobs(db);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS app_analytics (
+      app_id TEXT PRIMARY KEY REFERENCES apps(id) ON DELETE CASCADE,
+      visits_30d INTEGER NOT NULL DEFAULT 0,
+      conversions_30d INTEGER NOT NULL DEFAULT 0,
+      revenue_proxy_30d REAL NOT NULL DEFAULT 0,
+      notes TEXT,
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
   syncTopLevelProjects(db);
+  backfillAppAnalytics(db);
   backfillKnownPorts(db);
   ensureAdminAlwaysEnabled(db);
   ensureBootstrapFromFile(db);
+  seedInfraEnvDefaults(db);
+}
+
+/** Default admin logging channel and cron-runner URL. Only sets when value is empty. */
+function seedInfraEnvDefaults(db: Database.Database) {
+  const ADMIN_LOGGING_CHAT_ID = "-1002253649080";
+  db.prepare(
+    `UPDATE env_vars SET value = ? WHERE key = 'TELEGRAM_CHAT_ID' AND (value = '' OR value IS NULL)`
+  ).run(ADMIN_LOGGING_CHAT_ID);
+  db.prepare(
+    `UPDATE env_vars SET value = 'http://cron-runner:3029' WHERE key = 'CRON_RUNNER_INTERNAL_URL' AND (value = '' OR value IS NULL)`
+  ).run();
 }
 
 function readManifest(manifestPath: string): AppManifest | null {
@@ -582,6 +606,23 @@ function seedDefaultCronJobs(db: Database.Database): void {
   `);
 }
 
+export interface DbAppAnalytics {
+  app_id: string;
+  visits_30d: number;
+  conversions_30d: number;
+  revenue_proxy_30d: number;
+  notes: string | null;
+  updated_at: string | null;
+}
+
+function backfillAppAnalytics(db: Database.Database): void {
+  const insert = db.prepare(`
+    INSERT OR IGNORE INTO app_analytics (app_id, visits_30d, conversions_30d, revenue_proxy_30d)
+    SELECT id, 0, 0, 0 FROM apps
+  `);
+  insert.run();
+}
+
 export function getCronJobs(): DbCronJob[] {
   return getDb()
     .prepare("SELECT * FROM cron_jobs ORDER BY name")
@@ -592,4 +633,56 @@ export function setCronJobEnabled(id: string, enabled: boolean): void {
   getDb()
     .prepare("UPDATE cron_jobs SET enabled = ? WHERE id = ?")
     .run(enabled ? 1 : 0, id);
+}
+
+export function getAppAnalyticsMap(): Record<string, DbAppAnalytics> {
+  const rows = getDb()
+    .prepare("SELECT * FROM app_analytics")
+    .all() as DbAppAnalytics[];
+  const map: Record<string, DbAppAnalytics> = {};
+  for (const r of rows) map[r.app_id] = r;
+  return map;
+}
+
+export function upsertAppAnalytics(
+  appId: string,
+  data: {
+    visits_30d?: number;
+    conversions_30d?: number;
+    revenue_proxy_30d?: number;
+    notes?: string | null;
+  }
+): void {
+  const db = getDb();
+  const existing = db
+    .prepare("SELECT 1 FROM app_analytics WHERE app_id = ?")
+    .get(appId);
+  if (!existing) {
+    db.prepare(
+      "INSERT INTO app_analytics (app_id, visits_30d, conversions_30d, revenue_proxy_30d, notes, updated_at) VALUES (?, 0, 0, 0, ?, datetime('now'))"
+    ).run(appId, data.notes ?? null);
+  }
+  const sets: string[] = ["updated_at = datetime('now')"];
+  const values: (number | string | null)[] = [];
+  if (data.visits_30d !== undefined) {
+    sets.push("visits_30d = ?");
+    values.push(data.visits_30d);
+  }
+  if (data.conversions_30d !== undefined) {
+    sets.push("conversions_30d = ?");
+    values.push(data.conversions_30d);
+  }
+  if (data.revenue_proxy_30d !== undefined) {
+    sets.push("revenue_proxy_30d = ?");
+    values.push(data.revenue_proxy_30d);
+  }
+  if (data.notes !== undefined) {
+    sets.push("notes = ?");
+    values.push(data.notes);
+  }
+  if (values.length === 0) return;
+  values.push(appId);
+  db.prepare(
+    `UPDATE app_analytics SET ${sets.join(", ")} WHERE app_id = ?`
+  ).run(...values);
 }

@@ -135,6 +135,8 @@ services:
       - NEXT_PUBLIC_APP_HOST=${APP_HOST:-6cubed.app}
       - STORYBOOK_INTERNAL_URL=${STORYBOOK_INTERNAL_URL:-http://storybook:3000}
       - STORYBOOK_ADMIN_TOKEN=${STORYBOOK_ADMIN_TOKEN:-}
+      - CRON_RUNNER_SECRET=${CRON_RUNNER_SECRET:-}
+      - CRON_RUNNER_INTERNAL_URL=${CRON_RUNNER_INTERNAL_URL:-http://cron-runner:3029}
     volumes:
       - ./216labs.db:/app/216labs.db
       - ./:/workspace:ro
@@ -153,6 +155,10 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
       - HAPPYPATH_INTERNAL_URL=http://happypath:3000
+      - CRON_RUNNER_SECRET=${CRON_RUNNER_SECRET:-}
+      - RUN_SERVER_PORT=3029
+    expose:
+      - "3029"
     volumes:
       - ./216labs.db:/app/216labs.db
     mem_limit: 128m

@@ -1,9 +1,11 @@
 /**
  * Cron runner: every 5 minutes, read enabled jobs from 216labs.db,
  * run due handlers, send to Telegram, update last_run_at.
+ * Exposes POST /run/:id for immediate run (admin panel); auth via CRON_RUNNER_SECRET.
  * Uses sql.js (WASM) so there are no native deps — runs on any platform.
  */
 import { createRequire } from "module";
+import { createServer } from "http";
 import { Cron } from "croner";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -24,6 +26,8 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
 const HAPPYPATH_INTERNAL_URL =
   process.env.HAPPYPATH_INTERNAL_URL || "https://happypath.6cubed.app";
+const CRON_RUNNER_SECRET = process.env.CRON_RUNNER_SECRET || "";
+const RUN_SERVER_PORT = parseInt(process.env.RUN_SERVER_PORT || "3029", 10);
 
 let SQL = null;
 
@@ -196,6 +200,57 @@ async function tick() {
 new Cron("*/5 * * * *", { timezone: "UTC" }, async () => {
   await tick();
 });
+
+// HTTP server for "Run now" from admin (POST /run/:id, Authorization: Bearer CRON_RUNNER_SECRET)
+if (CRON_RUNNER_SECRET) {
+  createServer(async (req, res) => {
+    const url = new URL(req.url || "/", `http://localhost:${RUN_SERVER_PORT}`);
+    const match = url.pathname.match(/^\/run\/([a-z0-9-]+)$/);
+    const method = (req.method || "").toUpperCase();
+
+    if (method === "POST" && match) {
+      const jobId = match[1];
+      const auth = req.headers.authorization;
+      const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : "";
+      if (token !== CRON_RUNNER_SECRET) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: "Unauthorized" }));
+        return;
+      }
+      const db = await getDb();
+      try {
+        const job = db
+          .prepare("SELECT id, name, schedule FROM cron_jobs WHERE id = ?")
+          .get(jobId);
+        if (!job) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: "Job not found" }));
+          return;
+        }
+        await runJob(db, job);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true, job: jobId }));
+      } catch (err) {
+        console.error("[cron-runner] Run now error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            ok: false,
+            error: err && err.message ? err.message : "Run failed",
+          })
+        );
+      } finally {
+        db.close();
+      }
+      return;
+    }
+
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: false, error: "Not found" }));
+  }).listen(RUN_SERVER_PORT, "0.0.0.0", () => {
+    console.log("[cron-runner] Run-now server on port", RUN_SERVER_PORT);
+  });
+}
 
 console.log("[cron-runner] Started; checking every 5 minutes (UTC). DB:", DATABASE_PATH);
 await tick();

@@ -1,6 +1,6 @@
 "use server";
 
-import { setDeployEnabled, setEnvVarValue, setCronJobEnabled, getDb } from "@/lib/db";
+import { setDeployEnabled, setEnvVarValue, setCronJobEnabled, getDb, upsertAppAnalytics } from "@/lib/db";
 import { startContainer, stopContainer } from "@/lib/docker";
 import { revalidatePath } from "next/cache";
 import { writeFileSync, existsSync, readFileSync } from "fs";
@@ -182,4 +182,57 @@ export async function setCronJobEnabledAction(
   setCronJobEnabled(id, enabled);
   revalidatePath("/");
   return { success: true };
+}
+
+export async function saveAppAnalytics(
+  appId: string,
+  data: {
+    visits_30d?: number;
+    conversions_30d?: number;
+    revenue_proxy_30d?: number;
+    notes?: string | null;
+  }
+): Promise<ActionResult> {
+  upsertAppAnalytics(appId, data);
+  revalidatePath("/analytics");
+  return { success: true };
+}
+
+export async function runCronJobNow(jobId: string): Promise<ActionResult> {
+  const secret = process.env.CRON_RUNNER_SECRET;
+  const baseUrl =
+    (process.env.CRON_RUNNER_INTERNAL_URL || "http://cron-runner:3029").replace(
+      /\/$/,
+      ""
+    );
+  if (!secret) {
+    return {
+      error:
+        "CRON_RUNNER_SECRET not set. Add it in Admin → Env and redeploy.",
+    };
+  }
+  try {
+    const res = await fetch(`${baseUrl}/run/${encodeURIComponent(jobId)}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secret}`,
+      },
+      signal: AbortSignal.timeout(60000),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        error: (body && body.error) || `Run failed (${res.status})`,
+      };
+    }
+    revalidatePath("/cron");
+    return { success: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      error: msg.includes("fetch")
+        ? "Could not reach cron-runner. Is it running and CRON_RUNNER_INTERNAL_URL correct?"
+        : msg,
+    };
+  }
 }
