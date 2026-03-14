@@ -43,7 +43,7 @@ def classify_one(path: str) -> tuple:
 
 def main():
     conn = get_db()
-    rows = conn.execute("SELECT id, filename FROM faces WHERE gender = 'u' OR excluded = 0").fetchall()
+    rows = conn.execute("SELECT id, filename FROM faces WHERE gender = 'u'").fetchall()
     conn.close()
     total = len(rows)
     for i, (face_id, filename) in enumerate(rows):

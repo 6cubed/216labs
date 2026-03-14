@@ -51,10 +51,11 @@
 
   <div id="onboard" class="onboard" style="display: none;">
     <label>I’m attracted to</label>
-    <select id="attraction">
-      <option value="all">All</option>
+    <select id="attraction" required>
+      <option value="" disabled>Choose…</option>
       <option value="m">Men</option>
       <option value="f">Women</option>
+      <option value="all">All (alternating)</option>
     </select>
     <label>My country</label>
     <select id="country">
@@ -81,7 +82,7 @@
 </div>
 
 <script>
-  const STORAGE_KEY = 'facerate_prefs';
+  const STORAGE_KEY = 'facerate_prefs_v2';
   const loading = document.getElementById('loading');
   const errEl = document.getElementById('error');
   const pairEl = document.getElementById('pair');
@@ -117,8 +118,11 @@
     loading.style.display = 'none';
   }
   function savePrefsAndStart() {
-    prefs.attraction = document.getElementById('attraction').value;
-    prefs.country = document.getElementById('country').value;
+    const attraction = document.getElementById('attraction').value;
+    const country = document.getElementById('country').value;
+    if (!attraction) { alert('Please choose who you\'re attracted to.'); return; }
+    prefs.attraction = attraction;
+    prefs.country = country;
     savePrefs();
     onboardEl.style.display = 'none';
     prefsBarEl.style.display = 'block';
@@ -186,7 +190,8 @@
   cardB.addEventListener('click', () => vote(parseInt(cardB.dataset.id, 10)));
 
   loadPrefs();
-  if (localStorage.getItem(STORAGE_KEY)) {
+  const hasValidPrefs = localStorage.getItem(STORAGE_KEY) && ['m','f','all'].includes(prefs.attraction);
+  if (hasValidPrefs) {
     document.getElementById('attraction').value = prefs.attraction;
     document.getElementById('country').value = prefs.country;
     prefsBarEl.style.display = 'block';
