@@ -169,6 +169,18 @@ function initSchema(db: Database.Database) {
       updated_at TEXT
     );
   `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cron_jobs (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      schedule TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 0,
+      last_run_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+  seedDefaultCronJobs(db);
 
   syncTopLevelProjects(db);
   backfillKnownPorts(db);
@@ -545,4 +557,38 @@ export function updateAppMetadata(
   getDb()
     .prepare(`UPDATE apps SET ${sets.join(", ")} WHERE id = ?`)
     .run(...values);
+}
+
+export interface DbCronJob {
+  id: string;
+  name: string;
+  description: string;
+  schedule: string;
+  enabled: number;
+  last_run_at: string | null;
+  created_at: string | null;
+}
+
+function seedDefaultCronJobs(db: Database.Database): void {
+  const existing = db.prepare("SELECT 1 FROM cron_jobs LIMIT 1").get();
+  if (existing) return;
+  db.exec(`
+    INSERT INTO cron_jobs (id, name, description, schedule, enabled) VALUES
+    ('telegram-daily-digest', 'Daily codebase digest', 'Summarise repo activity and open PRs/issues; post to Telegram.', '0 9 * * *', 0),
+    ('telegram-weekly-lint', 'Weekly lint & quality report', 'Run lint/formatter checks and report findings to Telegram.', '0 9 * * 1', 0),
+    ('telegram-security-summary', 'Security scan summary', 'PipeSecure/Semgrep findings summary posted to Telegram.', '0 10 * * *', 0),
+    ('telegram-happypath-summary', 'Happy Path run summary', 'Last Happy Path results per app posted to Telegram.', '0 8 * * *', 0);
+  `);
+}
+
+export function getCronJobs(): DbCronJob[] {
+  return getDb()
+    .prepare("SELECT * FROM cron_jobs ORDER BY name")
+    .all() as DbCronJob[];
+}
+
+export function setCronJobEnabled(id: string, enabled: boolean): void {
+  getDb()
+    .prepare("UPDATE cron_jobs SET enabled = ? WHERE id = ?")
+    .run(enabled ? 1 : 0, id);
 }

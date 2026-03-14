@@ -7,6 +7,8 @@ import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
 import { SizeOverview } from "@/components/SizeOverview";
 import { EnvVarEditor } from "@/components/EnvVarEditor";
 import { OrdersSection } from "@/components/OrdersSection";
+import { CronJobsSection } from "@/components/CronJobsSection";
+import { getCronJobs } from "@/lib/db";
 import { getRunningServices } from "@/lib/docker";
 import { fetchStorybookOrders } from "@/lib/storybook";
 
@@ -16,9 +18,10 @@ export default async function DashboardPage() {
   const rows = getAllApps();
   const apps = rows.map(dbRowToAppInfo);
   const envVars = getAllEnvVars();
-  const [runningServices, storybookOrders] = await Promise.all([
+  const [runningServices, storybookOrders, cronJobs] = await Promise.all([
     getRunningServices(),
     fetchStorybookOrders(),
+    getCronJobs(),
   ]);
 
   const enabledApps = new Set(
@@ -115,6 +118,8 @@ export default async function DashboardPage() {
         </section>
 
         <OrdersSection orders={storybookOrders} />
+
+        <CronJobsSection jobs={cronJobs} />
 
         <EnvVarEditor vars={envVars} />
 

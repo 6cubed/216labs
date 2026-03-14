@@ -1,6 +1,6 @@
 "use server";
 
-import { setDeployEnabled, setEnvVarValue, getDb } from "@/lib/db";
+import { setDeployEnabled, setEnvVarValue, setCronJobEnabled, getDb } from "@/lib/db";
 import { startContainer, stopContainer } from "@/lib/docker";
 import { revalidatePath } from "next/cache";
 import { writeFileSync, existsSync, readFileSync } from "fs";
@@ -173,4 +173,13 @@ export async function fetchAppLogs(appId: string): Promise<string[]> {
   if (!row) return [];
   const { getContainerLogs } = await import("@/lib/docker");
   return getContainerLogs(row.docker_service);
+}
+
+export async function setCronJobEnabledAction(
+  id: string,
+  enabled: boolean
+): Promise<ActionResult> {
+  setCronJobEnabled(id, enabled);
+  revalidatePath("/");
+  return { success: true };
 }
