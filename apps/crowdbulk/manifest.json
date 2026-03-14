@@ -1,0 +1,21 @@
+{
+  "id": "crowdbulk",
+  "name": "CrowdBulk",
+  "tagline": "Bulk inference powered by the crowd's in-browser LLMs",
+  "description": "Upload an Excel sheet with a prompt column; get an email when it's done. Rows are processed in batches of ~50 by active users' browsers (WebGPU LLMs), no server-side GPU.",
+  "category": "ai",
+  "internal_port": 3000,
+  "memory_limit": "512m",
+  "docker_service": "crowdbulk",
+  "build_context": "./apps/crowdbulk",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": "Node.js + Express + WebSocket",
+    "database": "SQLite",
+    "other": ["@mlc-ai/web-llm", "WebGPU", "xlsx", "crowd inference"]
+  },
+  "env_vars": [
+    { "key": "CROWDBULK_SMTP_URL", "description": "SMTP URL for sending completion emails (e.g. smtp://user:pass@smtp.example.com:587)", "is_secret": true },
+    { "key": "CROWDBULK_FROM_EMAIL", "description": "From address for completion emails", "is_secret": false }
+  ]
+}

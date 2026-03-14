@@ -113,6 +113,7 @@ const KNOWN_PORTS: Record<string, number> = {
   offlinellm: 8025,
   facerate: 8026,
   landing: 8027,
+  crowdbulk: 8028,
 };
 
 let _db: Database.Database | null = null;

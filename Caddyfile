@@ -60,6 +60,10 @@ calibratedai.6cubed.app {
 	reverse_proxy calibratedai:3000
 }
 
+crowdbulk.6cubed.app {
+	reverse_proxy crowdbulk:3000
+}
+
 facerate.6cubed.app {
 	reverse_proxy facerate:5000
 }

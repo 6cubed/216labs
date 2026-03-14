@@ -374,6 +374,22 @@ services:
       - "5000"
     mem_limit: 256m
 
+  # ── CrowdBulk ─────────────────────────────────────────────────
+  crowdbulk:
+    image: 216labs/crowdbulk:latest
+    build: ./apps/crowdbulk
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - CROWDBULK_DB_PATH=/app/data/crowdbulk.db
+      - CROWDBULK_BASE_URL=https://crowdbulk.6cubed.app
+    volumes:
+      - ./apps/crowdbulk/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 512m
+
   # ── Audio AI Checkup ─────────────────────────────────────────
   audioaicheckup:
     image: 216labs/audioaicheckup:latest
