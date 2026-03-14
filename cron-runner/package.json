@@ -1,0 +1,14 @@
+{
+  "name": "cron-runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.6.0",
+    "croner": "9.1.0"
+  }
+}

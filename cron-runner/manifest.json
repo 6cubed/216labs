@@ -1,0 +1,21 @@
+{
+  "id": "cron-runner",
+  "name": "Cron Runner",
+  "tagline": "Runs Telegram cron jobs from admin DB",
+  "description": "Every 5 minutes reads enabled cron_jobs from 216labs.db, runs due handlers (daily digest, Happy Path summary, stubs), sends to Telegram, updates last_run_at.",
+  "category": "admin",
+  "internal_port": 0,
+  "memory_limit": "128m",
+  "docker_service": "cron-runner",
+  "build_context": "./cron-runner",
+  "stack": {
+    "frontend": null,
+    "backend": "Node.js",
+    "database": "SQLite (216labs.db)",
+    "other": ["croner", "Telegram API"]
+  },
+  "env_vars": [
+    { "key": "TELEGRAM_BOT_TOKEN", "description": "Telegram bot token for cron job messages", "is_secret": true },
+    { "key": "TELEGRAM_CHAT_ID", "description": "Telegram chat ID to send cron messages to", "is_secret": false }
+  ]
+}

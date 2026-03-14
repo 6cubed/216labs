@@ -114,6 +114,7 @@ const KNOWN_PORTS: Record<string, number> = {
   facerate: 8026,
   landing: 8027,
   crowdbulk: 8028,
+  "cron-runner": 8029,
 };
 
 let _db: Database.Database | null = null;

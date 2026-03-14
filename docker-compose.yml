@@ -143,6 +143,20 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── Cron runner (Telegram cron jobs from admin DB) ───────────
+  cron-runner:
+    image: 216labs/cron-runner:latest
+    build: ./cron-runner
+    restart: unless-stopped
+    environment:
+      - DATABASE_PATH=/app/216labs.db
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - HAPPYPATH_INTERNAL_URL=http://happypath:3000
+    volumes:
+      - ./216labs.db:/app/216labs.db
+    mem_limit: 128m
+
   # ── AGI Memes ────────────────────────────────────────────────
   agimemes:
     image: 216labs/agimemes:latest

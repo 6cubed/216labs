@@ -124,8 +124,20 @@ function renderPage(): string {
 }
 
 export function startStatusServer(port: number): void {
-  const server = createServer((_req, res) => {
+  const server = createServer((req, res) => {
     try {
+      const pathname = (req.url || "").split("?")[0];
+      if (pathname === "/api/status") {
+        const { lastRun, resultsByApp, enabledApps } = getStatusData();
+        const payload = {
+          lastRun,
+          resultsByApp: Object.fromEntries(resultsByApp),
+          enabledApps,
+        };
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify(payload));
+        return;
+      }
       const html = renderPage();
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(html);

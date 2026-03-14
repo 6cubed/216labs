@@ -65,6 +65,10 @@ The script:
 - Skips transfer for images that haven't changed
 - SSHs to the droplet, `git pull`s the latest config, and restarts the stack
 
+### Telegram cron jobs
+
+The **cron-runner** service runs scheduled jobs (daily digest, Happy Path summary, etc.) and posts to a Telegram chat. Enable jobs in the admin under **Cron**. Set **TELEGRAM_BOT_TOKEN** and **TELEGRAM_CHAT_ID** in the admin **Env** so the runner can send messages (deploy loads these into the cron-runner container).
+
 ## Local development
 
 ```bash
