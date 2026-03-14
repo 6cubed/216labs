@@ -8,7 +8,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.6.0",
-    "croner": "9.1.0"
+    "croner": "9.1.0",
+    "sql.js": "^1.11.0"
   }
 }
