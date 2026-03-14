@@ -205,6 +205,9 @@ if [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
     IFS=: read -r NAME CTX DFILE <<< "$svc"
     TAG="216labs/$NAME:latest"
     BUILD_ARGS=(-q -t "$TAG")
+    if [ "$NAME" = "cron-runner" ]; then
+      BUILD_ARGS+=(--platform linux/amd64)
+    fi
     if [ -n "${DFILE:-}" ]; then
       BUILD_ARGS+=(-f "$CTX/$DFILE")
     fi
