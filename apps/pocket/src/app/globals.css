@@ -3,25 +3,49 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0a0a12;
-  --surface: #111120;
+  --bg: #06060c;
+  --bg-mid: #0a0a12;
+  --surface: #0f0f18;
+  --surface-elevated: #151520;
   --border: #1e1e32;
-  --accent: #7c3aed;
-  --accent-glow: rgba(124, 58, 237, 0.15);
+  --border-focus: #3b2d5c;
+  --accent: #8b5cf6;
+  --accent-dim: #6d28d9;
+  --accent-glow: rgba(139, 92, 246, 0.2);
+  --text: #e4e4f0;
+  --text-muted: #71717a;
+  --success: #34d399;
+  --success-glow: rgba(52, 211, 153, 0.15);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
 html,
 body {
-  background-color: var(--bg);
-  color: #e4e4f0;
+  background: linear-gradient(165deg, var(--bg) 0%, var(--bg-mid) 50%, #0a0a14 100%);
+  background-attachment: fixed;
+  color: var(--text);
   margin: 0;
   padding: 0;
-  height: 100%;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100%;
+  min-height: 100dvh;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+}
+
+/* Safe area for fixed bottom bars (e.g. human intercept input on notched phones) */
+.safe-area-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+}
+
+/* Full-page safe area (e.g. join screen) */
+.safe-area-page-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0));
 }
 
 /* Scrollbar */
@@ -54,16 +78,45 @@ body {
   100% { background-position: 200% 0; }
 }
 .progress-shimmer {
-  background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 50%, #7c3aed 100%);
+  background: linear-gradient(90deg, var(--accent-dim) 0%, var(--accent) 50%, var(--accent-dim) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
-/* Message fade-in */
+/* Message fade-in with slight stagger feel */
 @keyframes msgIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .msg-in {
-  animation: msgIn 0.25s ease-out forwards;
+  animation: msgIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+
+/* Agent ready micro-celebration */
+@keyframes readyPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--success-glow); }
+  50% { box-shadow: 0 0 0 6px transparent; }
+}
+.ready-pulse {
+  animation: readyPulse 1.2s ease-out 2;
+}
+
+/* Conversation complete moment */
+@keyframes completeIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+.conversation-complete-card {
+  animation: completeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Waiting dots */
+@keyframes waitDot {
+  0%, 80%, 100% { opacity: 0.35; transform: scale(0.9); }
+  40% { opacity: 1; transform: scale(1); }
+}
+.wait-dot {
+  animation: waitDot 1.2s ease-in-out infinite;
+}
+.wait-dot:nth-child(2) { animation-delay: 0.15s; }
+.wait-dot:nth-child(3) { animation-delay: 0.3s; }

@@ -1,0 +1,10 @@
+{
+  "name": "Pocket — Your AI in the room",
+  "short_name": "Pocket",
+  "description": "WebGPU pocket agent. Your AI chats with others' agents, entirely in the browser.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06060c",
+  "theme_color": "#06060c",
+  "orientation": "portrait-primary"
+}

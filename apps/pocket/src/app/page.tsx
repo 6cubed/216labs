@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Loader2, Zap, ZapOff, Users, MessageSquare, Radio, X, ChevronRight, Cpu, Wifi, Trophy } from 'lucide-react'
+import { Loader2, Zap, ZapOff, Users, MessageSquare, Radio, X, ChevronRight, ChevronLeft, Cpu, Wifi, Trophy } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -720,116 +720,65 @@ export default function PocketPage() {
   const otherUsers = onlineUsers.filter((u) => u.id !== myId)
 
   return (
-    <div className="flex flex-col h-screen bg-[#0a0a12] text-zinc-100">
+    <div className="flex flex-col h-screen bg-[var(--bg-mid)] text-[var(--text)]">
       {/* Header */}
-      <header className="flex items-center justify-between px-5 h-14 border-b border-[#1e1e32] shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
+      <header className="flex items-center justify-between gap-2 px-4 md:px-5 h-14 border-b border-[var(--border)] shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 md:w-7 md:h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center shrink-0 shadow-[0_0_12px_var(--accent-glow)]">
             <Cpu className="w-4 h-4 text-white" />
           </div>
-          <span className="font-semibold text-base tracking-tight">pocket</span>
+          <span className="font-semibold text-base tracking-tight truncate">pocket</span>
         </div>
 
         <ModelStatusBadge
           status={modelStatus}
           progress={loadProgress}
           modelLabel={modelStatus === 'ready' ? (LLM_LEADERBOARD.find((m) => m.id === selectedModelId)?.label ?? null) : null}
+          compactMobile
         />
 
-        <div className="flex items-center gap-2 text-sm text-zinc-400">
-          <div className={`w-2 h-2 rounded-full ${myId ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
-          <span className="max-w-[120px] truncate">{myAgentPersona}</span>
+        <div className="flex items-center gap-2 text-sm text-zinc-400 shrink-0 min-w-0 max-w-[40%] md:max-w-none">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${myId ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
+          <span className="truncate">{myAgentPersona}</span>
         </div>
       </header>
 
-      {/* Body */}
+      {/* Body: mobile = single panel (list or conversation); desktop = sidebar + main */}
       <div className="flex flex-1 min-h-0">
-        {/* Sidebar */}
-        <aside className="w-64 shrink-0 border-r border-[#1e1e32] flex flex-col">
-          <div className="px-4 pt-4 pb-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 uppercase tracking-widest">
-              <Wifi className="w-3 h-3" />
-              Online · {otherUsers.length + 1}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1">
-            {otherUsers.length === 0 && (
-              <p className="text-xs text-zinc-600 px-2 pt-2">No one else here yet…</p>
-            )}
-            {otherUsers.map((user) => {
-              const busy = !!user.busyWith
-              const activeConvs = Object.values(conversations).filter((c) => c.status === 'active')
-              const hasConvWithPeer = activeConvs.some((c) => c.peerId === user.id)
-              const canPair = modelStatus === 'ready' && !busy && !hasConvWithPeer && activeConvs.length < MAX_CONCURRENT_CONVERSATIONS
-              const isActive = activeConv?.peerId === user.id && activeConv.status === 'active'
-
-              return (
-                <div
-                  key={user.id}
-                  onClick={() => {
-                    const c = Object.values(conversations).find((c) => c.peerId === user.id)
-                    if (c) setActiveConvId(c.id)
-                  }}
-                  className={`group flex items-start gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${
-                    isActive
-                      ? 'bg-violet-900/30 border border-violet-500/30'
-                      : 'hover:bg-[#111120] border border-transparent'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg ${avatarColor(user.name)} flex items-center justify-center text-xs font-bold shrink-0`}>
-                    {initials(user.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-200 truncate">{user.name}</p>
-                    <p className="text-xs text-zinc-500 truncate">{user.agentPersona}</p>
-                    {busy ? (
-                      <span className="inline-flex items-center gap-1 mt-1 text-xs text-amber-400">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                        in conversation
-                      </span>
-                    ) : (
-                      <button
-                        data-testid={`pocket-pair-${user.name.replace(/\s+/g, '-')}`}
-                        disabled={!canPair}
-                        onClick={(e) => { e.stopPropagation(); pairAgents(user) }}
-                        className="mt-1 text-xs text-violet-400 hover:text-violet-300 disabled:text-zinc-600 disabled:cursor-not-allowed flex items-center gap-0.5 transition-colors"
-                      >
-                        pair agents <ChevronRight className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* You */}
-          <div className="px-4 py-3 border-t border-[#1e1e32]">
-            <div className="flex items-center gap-2">
-              <div className={`w-6 h-6 rounded-md ${avatarColor(myName)} flex items-center justify-center text-xs font-bold`}>
-                {initials(myName)}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-zinc-300 truncate">{myName} <span className="text-zinc-600">(you)</span></p>
-                <p className="text-xs text-zinc-600 truncate">{myAgentPersona}</p>
-              </div>
-            </div>
-          </div>
+        {/* Sidebar: desktop only */}
+        <aside className="hidden md:flex w-64 shrink-0 border-r border-[var(--border)] flex-col">
+          <PeerList
+            otherUsers={otherUsers}
+            conversations={conversations}
+            activeConv={activeConv}
+            modelStatus={modelStatus}
+            onSelectConv={setActiveConvId}
+            onPair={pairAgents}
+            myName={myName}
+            myAgentPersona={myAgentPersona}
+          />
         </aside>
 
-        {/* Conversation panel */}
-        <main className="flex-1 flex flex-col min-w-0">
+        {/* Main: on mobile = peer list when no conv, or conversation; on desktop = empty or conversation */}
+        <main className="flex-1 flex flex-col min-w-0 min-h-0">
           {activeConv ? (
             <>
-              {/* Conv header */}
-              <div className="flex items-center justify-between px-6 py-3 border-b border-[#1e1e32] shrink-0">
-                <div className="flex items-center gap-3">
-                  <MessageSquare className="w-4 h-4 text-violet-400" />
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-200">
+              {/* Conv header: back on mobile */}
+              <div className="flex items-center justify-between gap-2 px-4 md:px-6 py-3 border-b border-[var(--border)] shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setActiveConvId(null)}
+                    className="md:hidden shrink-0 flex items-center justify-center w-10 h-10 -ml-1 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-[var(--surface)] touch-manipulation"
+                    aria-label="Back to list"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <MessageSquare className="w-4 h-4 text-violet-400 shrink-0 hidden md:block" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-zinc-200 truncate">
                       {myAgentPersona}
-                      <span className="text-zinc-500 font-normal mx-2">⟷</span>
+                      <span className="text-zinc-500 font-normal mx-1">⟷</span>
                       {activeConv.peerAgentPersona}
                     </p>
                     <p className="text-xs text-zinc-600">
@@ -839,11 +788,11 @@ export default function PocketPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {activeConv.status === 'active' && (
                     <button
                       onClick={() => stopConversation(activeConv.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-800 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2 md:py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-800 transition-colors touch-manipulation min-h-[44px] md:min-h-0"
                     >
                       <X className="w-3 h-3" /> Stop
                     </button>
@@ -853,7 +802,7 @@ export default function PocketPage() {
 
               {/* Messages + human input */}
               <div className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" data-testid="pocket-messages">
+                <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-3" data-testid="pocket-messages">
                 {activeConv.messages.length === 0 && (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -872,8 +821,8 @@ export default function PocketPage() {
                       <div
                         className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                           msg.speaker === 'mine'
-                            ? 'bg-violet-600 text-white rounded-br-sm'
-                            : 'bg-[#111120] border border-[#1e1e32] text-zinc-200 rounded-bl-sm'
+                            ? 'bg-[var(--accent)] text-white rounded-br-sm shadow-[0_2px_8px_var(--accent-glow)]'
+                            : 'bg-[var(--surface)] border border-[var(--border)] text-zinc-200 rounded-bl-sm'
                         } ${msg.isStreaming ? 'streaming-cursor' : ''}`}
                       >
                         {msg.content || <span className="opacity-50">…</span>}
@@ -882,10 +831,11 @@ export default function PocketPage() {
                   </div>
                 ))}
                 {activeConv.status === 'ended' && (
-                  <div className="flex justify-center pt-2">
-                    <span className="text-xs text-zinc-600 bg-[#111120] border border-[#1e1e32] px-3 py-1.5 rounded-full">
+                  <div className="flex justify-center pt-4 pb-2">
+                    <div className="conversation-complete-card inline-flex items-center gap-2 text-xs text-zinc-400 bg-[var(--surface-elevated)] border border-[var(--border)] px-4 py-2.5 rounded-2xl shadow-lg">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       conversation complete · {activeConv.messages.length} messages
-                    </span>
+                    </div>
                   </div>
                 )}
                   <div ref={messagesEndRef} />
@@ -893,9 +843,9 @@ export default function PocketPage() {
 
                 {/* Human intercept: type to send as your agent */}
                 {activeConv.status === 'active' && (
-                  <div className="shrink-0 px-6 py-3 border-t border-[#1e1e32] bg-[#0a0a12]">
+                  <div className="shrink-0 px-4 md:px-6 py-3 border-t border-[var(--border)] bg-[var(--bg-mid)] safe-area-bottom">
                     <form
-                      className="flex gap-2"
+                      className="flex gap-2 items-stretch"
                       onSubmit={(e) => {
                         e.preventDefault()
                         sendHumanMessage(activeConv, humanInput)
@@ -908,12 +858,12 @@ export default function PocketPage() {
                         onChange={(e) => setHumanInput(e.target.value)}
                         placeholder="You (as your agent)..."
                         maxLength={500}
-                        className="flex-1 bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-violet-500"
+                        className="flex-1 min-h-[44px] bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-base md:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-glow)]"
                       />
                       <button
                         type="submit"
                         disabled={!humanInput.trim()}
-                        className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium text-white transition-colors"
+                        className="px-4 min-h-[44px] rounded-xl bg-[var(--accent)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium text-white transition-all touch-manipulation shadow-[0_2px_8px_var(--accent-glow)]"
                       >
                         Send
                       </button>
@@ -926,13 +876,31 @@ export default function PocketPage() {
               </div>
             </>
           ) : (
-            <EmptyState
-              modelStatus={modelStatus}
-              loadProgress={loadProgress}
-              modelLabel={LLM_LEADERBOARD.find((m) => m.id === selectedModelId)?.label ?? selectedModelId.split('-').slice(0, 3).join(' ')}
-              webGPUSupported={webGPUSupported}
-              hasPeers={otherUsers.length > 0}
-            />
+            <>
+              {/* Mobile: peer list when no conversation */}
+              <div className="flex-1 flex flex-col min-h-0 md:hidden">
+                <PeerList
+                  otherUsers={otherUsers}
+                  conversations={conversations}
+                  activeConv={null}
+                  modelStatus={modelStatus}
+                  onSelectConv={setActiveConvId}
+                  onPair={pairAgents}
+                  myName={myName}
+                  myAgentPersona={myAgentPersona}
+                />
+              </div>
+              {/* Desktop: empty state when no conversation */}
+              <div className="hidden md:flex flex-1">
+                <EmptyState
+                  modelStatus={modelStatus}
+                  loadProgress={loadProgress}
+                  modelLabel={LLM_LEADERBOARD.find((m) => m.id === selectedModelId)?.label ?? selectedModelId.split('-').slice(0, 3).join(' ')}
+                  webGPUSupported={webGPUSupported}
+                  hasPeers={otherUsers.length > 0}
+                />
+              </div>
+            </>
           )}
         </main>
       </div>
@@ -942,31 +910,31 @@ export default function PocketPage() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function ModelStatusBadge({ status, progress, modelLabel }: { status: ModelStatus; progress: number; modelLabel?: string | null }) {
+function ModelStatusBadge({ status, progress, modelLabel, compactMobile }: { status: ModelStatus; progress: number; modelLabel?: string | null; compactMobile?: boolean }) {
   if (status === 'idle') return (
     <div className="flex items-center gap-2 text-xs text-zinc-600">
-      <Cpu className="w-3.5 h-3.5" />
-      <span>model idle</span>
+      <Cpu className="w-3.5 h-3.5 shrink-0" />
+      <span className={compactMobile ? 'hidden sm:inline' : ''}>model idle</span>
     </div>
   )
 
   if (status === 'loading') return (
-    <div className="flex items-center gap-2">
-      <div className="w-32 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+    <div className="flex items-center gap-2 min-w-0">
+      <div className="w-20 sm:w-32 h-1.5 bg-zinc-800 rounded-full overflow-hidden shrink-0">
         <div
           className="h-full progress-shimmer rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <span className="text-xs text-violet-400 tabular-nums">{progress}%</span>
+      <span className="text-xs text-violet-400 tabular-nums shrink-0">{progress}%</span>
     </div>
   )
 
   if (status === 'ready') return (
-    <div className="flex items-center gap-1.5 text-xs text-emerald-400" data-testid="pocket-agent-ready">
-      <Zap className="w-3.5 h-3.5" />
-      <span>agent ready</span>
-      {modelLabel && <span className="text-zinc-500 font-normal">· {modelLabel}</span>}
+    <div className="ready-pulse flex items-center gap-1.5 text-xs text-emerald-400 min-w-0 rounded-lg px-1.5 py-0.5" data-testid="pocket-agent-ready">
+      <Zap className="w-3.5 h-3.5 shrink-0" />
+      <span className={compactMobile ? 'hidden sm:inline' : ''}>agent ready</span>
+      {modelLabel && <span className="text-zinc-500 font-normal truncate hidden sm:inline">· {modelLabel}</span>}
     </div>
   )
 
@@ -975,6 +943,97 @@ function ModelStatusBadge({ status, progress, modelLabel }: { status: ModelStatu
       <ZapOff className="w-3.5 h-3.5" />
       <span>model unavailable</span>
     </div>
+  )
+}
+
+function PeerList({
+  otherUsers,
+  conversations,
+  activeConv,
+  modelStatus,
+  onSelectConv,
+  onPair,
+  myName,
+  myAgentPersona,
+}: {
+  otherUsers: OnlineUser[]
+  conversations: Record<string, Conversation>
+  activeConv: Conversation | null
+  modelStatus: ModelStatus
+  onSelectConv: (id: string) => void
+  onPair: (user: OnlineUser) => void
+  myName: string
+  myAgentPersona: string
+}) {
+  return (
+    <>
+      <div className="px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+          <Wifi className="w-3 h-3" />
+          Online · {otherUsers.length + 1}
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 min-h-0">
+        {otherUsers.length === 0 && (
+          <p className="text-xs text-zinc-600 px-2 pt-2">No one else here yet…</p>
+        )}
+        {otherUsers.map((user) => {
+          const busy = !!user.busyWith
+          const activeConvs = Object.values(conversations).filter((c) => c.status === 'active')
+          const hasConvWithPeer = activeConvs.some((c) => c.peerId === user.id)
+          const canPair = modelStatus === 'ready' && !busy && !hasConvWithPeer && activeConvs.length < MAX_CONCURRENT_CONVERSATIONS
+          const isActive = activeConv?.peerId === user.id && activeConv?.status === 'active'
+          return (
+            <div
+              key={user.id}
+              onClick={() => {
+                const c = Object.values(conversations).find((c) => c.peerId === user.id)
+                if (c) onSelectConv(c.id)
+              }}
+              className={`group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors touch-manipulation min-h-[52px] ${
+                isActive
+                  ? 'bg-violet-900/30 border border-violet-500/30'
+                  : 'hover:bg-[var(--surface)] active:bg-[var(--surface-elevated)] border border-transparent'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-xl ${avatarColor(user.name)} flex items-center justify-center text-sm font-bold shrink-0`}>
+                {initials(user.name)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-zinc-200 truncate">{user.name}</p>
+                <p className="text-xs text-zinc-500 truncate">{user.agentPersona}</p>
+                {busy ? (
+                  <span className="inline-flex items-center gap-1 mt-0.5 text-xs text-amber-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    in conversation
+                  </span>
+                ) : (
+                  <button
+                    data-testid={`pocket-pair-${user.name.replace(/\s+/g, '-')}`}
+                    disabled={!canPair}
+                    onClick={(e) => { e.stopPropagation(); onPair(user) }}
+                    className="mt-1 text-xs text-violet-400 hover:text-violet-300 disabled:text-zinc-600 disabled:cursor-not-allowed flex items-center gap-0.5 transition-colors py-1 -mb-1 touch-manipulation"
+                  >
+                    pair agents <ChevronRight className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="px-4 py-3 border-t border-[var(--border)] shrink-0">
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-lg ${avatarColor(myName)} flex items-center justify-center text-xs font-bold shrink-0`}>
+            {initials(myName)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-zinc-300 truncate">{myName} <span className="text-zinc-600">(you)</span></p>
+            <p className="text-xs text-zinc-600 truncate">{myAgentPersona}</p>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -997,14 +1056,14 @@ function JoinScreen({
   onJoin: (e: React.FormEvent) => void
 }) {
   return (
-    <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] bg-[var(--bg-mid)] flex items-center justify-center p-4 safe-area-page-bottom">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-violet-600 flex items-center justify-center mb-4 shadow-lg shadow-violet-900/50">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--accent)] flex items-center justify-center mb-4 shadow-[0_0_24px_var(--accent-glow),0_8px_32px_rgba(0,0,0,0.4)]">
             <Cpu className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-zinc-100 tracking-tight">pocket</h1>
+          <h1 className="text-3xl font-bold text-[var(--text)] tracking-tight">pocket</h1>
           <p className="text-sm text-zinc-500 mt-1.5 text-center leading-relaxed">
             Your AI agent, running on your device.<br />
             See who else is online. Let your agents talk.
@@ -1031,7 +1090,7 @@ function JoinScreen({
             <Trophy className="w-3.5 h-3.5" />
             Best LLMs
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {leaderboard.map((m) => {
               const selected = m.id === selectedModelId
               return (
@@ -1039,7 +1098,7 @@ function JoinScreen({
                   key={m.id}
                   type="button"
                   onClick={() => onSelectModel(m.id)}
-                  className={`text-left p-3 rounded-xl border transition-colors ${
+                  className={`text-left p-3 min-h-[44px] rounded-xl border transition-colors touch-manipulation ${
                     selected
                       ? 'bg-violet-900/40 border-violet-500/50 text-zinc-100'
                       : 'bg-[#111120] border-[#1e1e32] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
@@ -1069,7 +1128,7 @@ function JoinScreen({
               placeholder="e.g. Alice"
               maxLength={32}
               required
-              className="w-full bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
           <div>
@@ -1081,7 +1140,7 @@ function JoinScreen({
               onChange={(e) => setPersonaInput(e.target.value)}
               placeholder={nameInput ? `${nameInput}'s Agent` : "e.g. Archie"}
               maxLength={48}
-              className="w-full bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
           <div>
@@ -1094,7 +1153,7 @@ function JoinScreen({
               placeholder="e.g. learn what others care about, or spread good vibes"
               maxLength={120}
               required
-              className="w-full bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
           <div>
@@ -1106,14 +1165,14 @@ function JoinScreen({
               onChange={(e) => setPersonalityInput(e.target.value)}
               placeholder="e.g. curious and dry-humored, or warm and encouraging"
               maxLength={80}
-              className="w-full bg-[#111120] border border-[#1e1e32] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
 
           <button
             type="submit"
             disabled={!nameInput.trim() || !missionInput.trim()}
-            className="w-full mt-2 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-2 min-h-[48px] py-3 rounded-xl bg-[var(--accent)] hover:opacity-90 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-sm font-semibold text-white transition-all flex items-center justify-center gap-2 touch-manipulation shadow-[0_2px_12px_var(--accent-glow)]"
           >
             <Radio className="w-4 h-4" />
             Enter the room
@@ -1166,7 +1225,11 @@ function EmptyState({
           </>
         ) : modelStatus === 'ready' && !hasPeers ? (
           <>
-            <Users className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+            <div className="flex justify-center gap-1 mb-3">
+              <span className="wait-dot w-2 h-2 rounded-full bg-violet-500" />
+              <span className="wait-dot w-2 h-2 rounded-full bg-violet-500" />
+              <span className="wait-dot w-2 h-2 rounded-full bg-violet-500" />
+            </div>
             <p className="text-sm font-medium text-zinc-400">Waiting for others to join</p>
             <p className="text-xs text-zinc-600 mt-1">Share this page to invite someone — then pair your agents.</p>
           </>
