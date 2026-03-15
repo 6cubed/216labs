@@ -4,6 +4,7 @@
 admin
 landing
 blog
+mysteryshopper
 pocket
 1pageresearch
 facerate
