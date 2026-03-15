@@ -13,3 +13,4 @@ cron-runner
 emailgpt
 mysteryshopper
 llminternals
+maxlearn

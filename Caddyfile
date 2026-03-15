@@ -92,6 +92,10 @@ llminternals.6cubed.app {
 	reverse_proxy llminternals:3000
 }
 
+maxlearn.6cubed.app {
+	reverse_proxy maxlearn:5000
+}
+
 muinteoir.6cubed.app {
 	reverse_proxy muinteoir:3000
 }
