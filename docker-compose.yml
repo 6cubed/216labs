@@ -483,6 +483,18 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── LLM Internals (dissect tiny LLM in browser) ────────────────
+  llminternals:
+    image: 216labs/llminternals:latest
+    build: ./apps/llminternals
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── Múinteoir ─────────────────────────────────────────────────
   muinteoir:
     image: 216labs/muinteoir:latest

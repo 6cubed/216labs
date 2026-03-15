@@ -88,6 +88,10 @@ landing.6cubed.app {
 	reverse_proxy landing:5000
 }
 
+llminternals.6cubed.app {
+	reverse_proxy llminternals:3000
+}
+
 muinteoir.6cubed.app {
 	reverse_proxy muinteoir:3000
 }

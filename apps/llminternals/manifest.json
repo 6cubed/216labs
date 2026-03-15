@@ -1,0 +1,17 @@
+{
+  "id": "llminternals",
+  "name": "LLM Internals",
+  "tagline": "Dissect a tiny LLM in the browser — watch weights activate, swap the head for classification",
+  "description": "Run a minimal transformer in your browser. Inspect layer-by-layer activations for any input, then replace the LM head with a classifier head to get softmax class probabilities. Educational and experimental.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "llminternals",
+  "build_context": "./apps/llminternals",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": null,
+    "database": null,
+    "other": ["in-browser transformer", "activation visualization", "classifier head"]
+  }
+}

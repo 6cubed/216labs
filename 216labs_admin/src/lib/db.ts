@@ -117,6 +117,7 @@ const KNOWN_PORTS: Record<string, number> = {
   "cron-runner": 8029,
   emailgpt: 8030,
   mysteryshopper: 8031,
+  llminternals: 8032,
 };
 
 let _db: Database.Database | null = null;
