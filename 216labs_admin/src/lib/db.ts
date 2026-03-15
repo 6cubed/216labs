@@ -115,6 +115,8 @@ const KNOWN_PORTS: Record<string, number> = {
   landing: 8027,
   crowdbulk: 8028,
   "cron-runner": 8029,
+  emailgpt: 8030,
+  mysteryshopper: 8031,
 };
 
 let _db: Database.Database | null = null;
