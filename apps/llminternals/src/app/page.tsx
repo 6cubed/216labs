@@ -10,18 +10,19 @@ import {
 } from "@/lib/transformer";
 
 type Mode = "lm" | "classifier";
+type ClassDef = { name: string; tokenChars: string };
 
 export default function LLMInternalsPage() {
   const [input, setInput] = useState("hello");
   const [mode, setMode] = useState<Mode>("lm");
-  const [numClasses, setNumClasses] = useState(3);
+  const [classDefs, setClassDefs] = useState<ClassDef[]>([
+    { name: "Positive", tokenChars: "Pp+" },
+    { name: "Negative", tokenChars: "Nn-" },
+  ]);
   const [result, setResult] = useState<ForwardResult | null>(null);
   const [selectedLayer, setSelectedLayer] = useState(0);
 
-  const weights = useMemo(
-    () => createWeights(DEFAULT_CONFIG, mode === "classifier" ? numClasses : 0),
-    [mode, numClasses]
-  );
+  const weights = useMemo(() => createWeights(DEFAULT_CONFIG, 0), []);
 
   const runForward = useCallback(() => {
     const ids = tokenize(input);
@@ -81,20 +82,60 @@ export default function LLMInternalsPage() {
               >
                 Classifier
               </button>
-              {mode === "classifier" && (
-                <label className="flex items-center gap-2 text-xs">
-                  <span className="text-zinc-500">Classes</span>
-                  <input
-                    type="number"
-                    min={2}
-                    max={20}
-                    value={numClasses}
-                    onChange={(e) => setNumClasses(Math.max(2, Math.min(20, +e.target.value)))}
-                    className="w-14 rounded bg-[#0c0c0f] border border-[#252532] px-2 py-1 text-center"
-                  />
-                </label>
-              )}
             </div>
+            {mode === "classifier" && (
+              <div className="space-y-2 rounded-lg border border-[#252532] bg-[#0f0f14] p-3">
+                <p className="text-xs text-zinc-500">
+                  Define classes by token chars. We compute relative probabilities from next-token logits.
+                  Example: class A = <code>Pp+</code>, class B = <code>Nn-</code>.
+                </p>
+                {classDefs.map((c, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_1.4fr_auto] gap-2 items-center">
+                    <input
+                      type="text"
+                      value={c.name}
+                      onChange={(e) =>
+                        setClassDefs((prev) =>
+                          prev.map((it, idx) => (idx === i ? { ...it, name: e.target.value } : it))
+                        )
+                      }
+                      placeholder={`Class ${i + 1}`}
+                      className="rounded bg-[#0c0c0f] border border-[#252532] px-2 py-1.5 text-xs"
+                    />
+                    <input
+                      type="text"
+                      value={c.tokenChars}
+                      onChange={(e) =>
+                        setClassDefs((prev) =>
+                          prev.map((it, idx) => (idx === i ? { ...it, tokenChars: e.target.value } : it))
+                        )
+                      }
+                      placeholder="e.g. Pp+"
+                      className="rounded bg-[#0c0c0f] border border-[#252532] px-2 py-1.5 text-xs"
+                    />
+                    <button
+                      type="button"
+                      disabled={classDefs.length <= 2}
+                      onClick={() =>
+                        setClassDefs((prev) => prev.filter((_it, idx) => idx !== i))
+                      }
+                      className="rounded border border-[#3a3a49] px-2 py-1 text-xs text-zinc-300 disabled:opacity-40"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setClassDefs((prev) => [...prev, { name: `Class ${prev.length + 1}`, tokenChars: "" }])
+                  }
+                  className="rounded border border-[#3a3a49] px-2.5 py-1.5 text-xs text-zinc-200 hover:bg-[#252532]"
+                >
+                  Add class
+                </button>
+              </div>
+            )}
             <button
               type="button"
               onClick={runForward}
@@ -128,15 +169,17 @@ export default function LLMInternalsPage() {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <p className="text-xs text-zinc-500">Softmax class probabilities:</p>
+                  <p className="text-xs text-zinc-500">Relative class probabilities (from next-token logits):</p>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from(result.classProbs).map((p, i) => (
+                    {computeClassProbabilities(result.logits, classDefs).map((c) => (
                       <span
-                        key={i}
+                        key={c.name}
                         className="inline-flex items-center gap-1 rounded bg-[#252532] px-2 py-0.5 text-xs"
                       >
-                        <span className="text-zinc-500">P(class {i}):</span>
-                        <span className="text-emerald-400">{(p * 100).toFixed(1)}%</span>
+                        <span className="text-zinc-500">
+                          {c.name} ({c.tokenPreview}):
+                        </span>
+                        <span className="text-emerald-400">{(c.prob * 100).toFixed(1)}%</span>
                       </span>
                     ))}
                   </div>
@@ -194,6 +237,60 @@ function topKIndices(arr: Float32Array, k: number): [number, number][] {
     .map((v, i) => [i, Number.isFinite(v) ? v : Number.NEGATIVE_INFINITY] as [number, number]);
   indexed.sort((a, b) => b[1] - a[1]);
   return indexed.slice(0, k);
+}
+
+function parseClassTokenIds(tokenChars: string): number[] {
+  const ids = new Set<number>();
+  for (const ch of tokenChars) {
+    if (ch === "," || ch === " " || ch === "\t" || ch === "\n") continue;
+    const id = ch.charCodeAt(0);
+    ids.add(id >= 256 ? 32 : id);
+  }
+  return Array.from(ids);
+}
+
+function logSumExp(values: number[]): number {
+  if (values.length === 0) return Number.NEGATIVE_INFINITY;
+  let max = values[0]!;
+  for (let i = 1; i < values.length; i++) {
+    if (values[i]! > max) max = values[i]!;
+  }
+  if (!Number.isFinite(max)) return Number.NEGATIVE_INFINITY;
+  let sum = 0;
+  for (const v of values) sum += Math.exp(v - max);
+  return max + Math.log(sum);
+}
+
+function computeClassProbabilities(
+  logits: Float32Array,
+  defs: ClassDef[]
+): Array<{ name: string; prob: number; tokenPreview: string }> {
+  const prepared = defs.map((d, i) => {
+    const ids = parseClassTokenIds(d.tokenChars);
+    const tokenPreview = d.tokenChars.trim() || "no tokens";
+    const name = d.name.trim() || `Class ${i + 1}`;
+    const classScore = logSumExp(ids.map((id) => logits[id] ?? Number.NEGATIVE_INFINITY));
+    return { name, tokenPreview, score: classScore };
+  });
+
+  const finiteScores = prepared.map((x) => x.score).filter(Number.isFinite);
+  if (finiteScores.length === 0) {
+    return prepared.map((p) => ({ name: p.name, tokenPreview: p.tokenPreview, prob: 0 }));
+  }
+
+  const max = Math.max(...finiteScores);
+  let denom = 0;
+  const exps = prepared.map((p) => {
+    const e = Number.isFinite(p.score) ? Math.exp(p.score - max) : 0;
+    denom += e;
+    return e;
+  });
+
+  return prepared.map((p, i) => ({
+    name: p.name,
+    tokenPreview: p.tokenPreview,
+    prob: denom > 0 ? exps[i]! / denom : 0,
+  }));
 }
 
 function ActivationHeatmap({ activation }: { activation: Float32Array }) {
