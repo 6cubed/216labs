@@ -3,6 +3,7 @@ import { dbRowToAppInfo, infrastructure } from "@/data/apps";
 import { MetricCard } from "@/components/MetricCard";
 import { InfraOverview } from "@/components/InfraOverview";
 import { SizeOverview } from "@/components/SizeOverview";
+import { RecentActivity } from "@/components/RecentActivity";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,10 @@ export default async function DashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in mt-8">
         <SizeOverview apps={apps} enabledApps={enabledApps} />
         <InfraOverview />
+      </section>
+
+      <section className="animate-fade-in mt-8">
+        <RecentActivity apps={apps} />
       </section>
     </>
   );
