@@ -190,7 +190,8 @@ export default function LLMInternalsPage() {
 }
 
 function topKIndices(arr: Float32Array, k: number): [number, number][] {
-  const indexed = Array.from(arr).map((v, i) => [i, v] as [number, number]);
+  const indexed = Array.from(arr)
+    .map((v, i) => [i, Number.isFinite(v) ? v : Number.NEGATIVE_INFINITY] as [number, number]);
   indexed.sort((a, b) => b[1] - a[1]);
   return indexed.slice(0, k);
 }

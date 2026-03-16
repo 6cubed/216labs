@@ -241,7 +241,7 @@ export function forward(
   const attnOut = alloc(seqLen * hiddenSize);
   const residual = alloc(seqLen * hiddenSize);
   const ffnHidden = alloc(seqLen * ffnSize);
-  const ffnOut = alloc(seqLen * hiddenSize);
+  const ffnOut = alloc(seqLen * ffnSize);
   const lnBuf = alloc(hiddenSize);
 
   for (let L = 0; L < layers.length; L++) {
