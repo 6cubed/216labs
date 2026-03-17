@@ -1,6 +1,6 @@
 ---
 description: Scaling and agent concurrency when adding or changing apps
-globs: "**/manifest.json","config/**","deploy.sh","216labs_admin/**"
+globs: "**/manifest.json","config/**","deploy.sh","216labs_admin/**","Caddyfile","scripts/generate-caddyfile.py"
 alwaysApply: false
 ---
 
@@ -10,3 +10,4 @@ alwaysApply: false
 - **Env vars / admin:** New apps are grouped by manifest `env_prefix` or by the first segment of env key. No edits to `PREFIX_TO_DIR` or `EnvVarEditor` group names needed.
 - **Deploy:** One deploy at a time; coordinate if many agents are merging. See **docs/SCALING.md** for full scaling and agent-concurrency guidance.
 - **Compose at scale:** Use `scripts/generate-compose.py` for app service blocks instead of editing `docker-compose.yml` by hand when the repo grows large.
+- **Caddyfile in parallel:** Treat `Caddyfile` as generated output. For app routing changes, edit manifests first, then run `python3 scripts/generate-caddyfile.py` once on the integration branch. Avoid manual per-app block edits in `Caddyfile` from multiple agents.
