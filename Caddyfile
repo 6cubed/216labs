@@ -104,6 +104,10 @@ mysteryshopper.6cubed.app {
 	reverse_proxy mysteryshopper:3000
 }
 
+npcworld.6cubed.app {
+	reverse_proxy npcworld:3000
+}
+
 offlinellm.6cubed.app {
 	reverse_proxy offlinellm:3000
 }

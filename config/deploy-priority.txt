@@ -4,6 +4,7 @@
 admin
 landing
 blog
+npcworld
 mysteryshopper
 llminternals
 pocket

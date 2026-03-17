@@ -1,0 +1,42 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #090b12;
+  color: #edf0fa;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  background: #1f2937;
+  border: 1px solid #324056;
+  color: #edf0fa;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input {
+  background: #0f1522;
+  border: 1px solid #324056;
+  border-radius: 8px;
+  color: #edf0fa;
+  padding: 0.5rem 0.75rem;
+}
