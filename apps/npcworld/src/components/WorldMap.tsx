@@ -42,6 +42,7 @@ export default function WorldMap({ players, selfId }: Props) {
       const layer = L.layerGroup().addTo(map)
       mapRef.current = map
       layerRef.current = layer
+      window.setTimeout(() => map.invalidateSize(), 120)
     }
 
     initMap()
@@ -53,6 +54,13 @@ export default function WorldMap({ players, selfId }: Props) {
         layerRef.current = null
       }
     }
+  }, [])
+
+  useEffect(() => {
+    if (!mapRef.current) return
+    const onResize = () => mapRef.current?.invalidateSize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [])
 
   useEffect(() => {
@@ -82,5 +90,5 @@ export default function WorldMap({ players, selfId }: Props) {
     redraw()
   }, [players, selfId])
 
-  return <div ref={containerRef} style={{ width: '100%', height: 520, borderRadius: 12, overflow: 'hidden' }} />
+  return <div ref={containerRef} className="npc-map" />
 }

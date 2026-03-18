@@ -185,73 +185,75 @@ export default function NpcWorldPage() {
   }, [sendScores])
 
   return (
-    <main style={{ maxWidth: 1160, margin: '0 auto', padding: '1rem' }}>
-      <h1 style={{ marginBottom: 6 }}>NPCWorld</h1>
-      <p style={{ marginTop: 0, color: '#9aa3b2' }}>
+    <main className="npc-page">
+      <h1 className="npc-title">NPCWorld</h1>
+      <p className="npc-subtitle">
         A shared real-world map where each user pilots a browser LLM character scoring actions every second.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16 }}>
-        <section style={{ background: '#101725', border: '1px solid #2a3345', borderRadius: 12, padding: 10 }}>
+      <div className="npc-layout">
+        <section className="npc-card npc-map-card">
           <WorldMap players={players} selfId={selfId} />
         </section>
 
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <section style={{ background: '#101725', border: '1px solid #2a3345', borderRadius: 12, padding: 12 }}>
-            <h3 style={{ marginTop: 0 }}>Connection</h3>
-            <p style={{ margin: '6px 0', color: wsConnected ? '#86efac' : '#fca5a5' }}>
+        <aside className="npc-sidebar">
+          <section className="npc-card">
+            <h3 className="npc-card-title">Connection</h3>
+            <p className={`npc-connection ${wsConnected ? 'ok' : 'bad'}`}>
               {wsConnected ? 'connected' : 'disconnected'}
             </p>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="NPC name" />
-            <button style={{ marginLeft: 8 }} onClick={() => wsRef.current?.send(JSON.stringify({ type: 'join', name }))}>
-              Rename
-            </button>
+            <div className="npc-name-row">
+              <input className="npc-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="NPC name" />
+              <button className="npc-button" onClick={() => wsRef.current?.send(JSON.stringify({ type: 'join', name }))}>
+                Rename
+              </button>
+            </div>
             {selfPlayer && (
-              <p style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 0 }}>
+              <p className="npc-meta">
                 HP {selfPlayer.hp} | Stamina {selfPlayer.stamina} | Last action {selfPlayer.lastAction}
               </p>
             )}
           </section>
 
-          <section style={{ background: '#101725', border: '1px solid #2a3345', borderRadius: 12, padding: 12 }}>
-            <h3 style={{ marginTop: 0 }}>Browser LLM</h3>
-            {modelStatus === 'idle' && <button onClick={loadModel}>Load model</button>}
-            {modelStatus === 'loading' && <p>Loading model... {loadProgress}%</p>}
-            {modelStatus === 'error' && <p style={{ color: '#fca5a5' }}>Model failed. Running heuristics fallback.</p>}
-            {modelStatus === 'ready' && <p style={{ color: '#86efac' }}>Model loaded (local browser inference).</p>}
-            <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+          <section className="npc-card">
+            <h3 className="npc-card-title">Browser LLM</h3>
+            {modelStatus === 'idle' && <button className="npc-button" onClick={loadModel}>Load model</button>}
+            {modelStatus === 'loading' && <p className="npc-meta">Loading model... {loadProgress}%</p>}
+            {modelStatus === 'error' && <p className="npc-connection bad">Model failed. Running heuristics fallback.</p>}
+            {modelStatus === 'ready' && <p className="npc-connection ok">Model loaded (local browser inference).</p>}
+            <label className="npc-checkbox-row">
               <input type="checkbox" checked={autopilot} onChange={(e) => setAutopilot(e.target.checked)} />
               autopilot (1-second scoring loop)
             </label>
-            <p style={{ color: '#9aa3b2', marginBottom: 0 }}>{lastInference}</p>
+            <p className="npc-meta">{lastInference}</p>
           </section>
 
-          <section style={{ background: '#101725', border: '1px solid #2a3345', borderRadius: 12, padding: 12 }}>
-            <h3 style={{ marginTop: 0 }}>Manual override</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-              <button onClick={() => sendManualAction('up')}>up</button>
-              <button onClick={() => sendManualAction('down')}>down</button>
-              <button onClick={() => sendManualAction('left')}>left</button>
-              <button onClick={() => sendManualAction('right')}>right</button>
-              <button onClick={() => sendManualAction('speak')}>speak</button>
-              <button onClick={() => sendManualAction('rest')}>rest</button>
-              <button onClick={() => sendManualAction('attack')}>attack</button>
+          <section className="npc-card">
+            <h3 className="npc-card-title">Manual override</h3>
+            <div className="npc-actions-grid">
+              <button className="npc-button" onClick={() => sendManualAction('up')}>up</button>
+              <button className="npc-button" onClick={() => sendManualAction('down')}>down</button>
+              <button className="npc-button" onClick={() => sendManualAction('left')}>left</button>
+              <button className="npc-button" onClick={() => sendManualAction('right')}>right</button>
+              <button className="npc-button" onClick={() => sendManualAction('speak')}>speak</button>
+              <button className="npc-button" onClick={() => sendManualAction('rest')}>rest</button>
+              <button className="npc-button npc-danger" onClick={() => sendManualAction('attack')}>attack</button>
             </div>
           </section>
 
-          <section style={{ background: '#101725', border: '1px solid #2a3345', borderRadius: 12, padding: 12 }}>
-            <h3 style={{ marginTop: 0 }}>Nearby players</h3>
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8, maxHeight: 200, overflow: 'auto' }}>
+          <section className="npc-card">
+            <h3 className="npc-card-title">Nearby players</h3>
+            <ul className="npc-player-list">
               {players.slice(0, 20).map((p) => (
-                <li key={p.id} style={{ background: '#0a111d', border: '1px solid #2a3345', borderRadius: 8, padding: 8 }}>
+                <li key={p.id} className="npc-player-row">
                   <strong>{p.name}</strong> ({p.id === selfId ? 'you' : 'other'})<br />
-                  <span style={{ color: '#9aa3b2', fontSize: 13 }}>
+                  <span className="npc-meta">
                     HP {p.hp} | ST {p.stamina} | {p.lastAction}
                     {p.speech ? ` | "${p.speech}"` : ''}
                   </span>
                 </li>
               ))}
-              {players.length === 0 && <li style={{ color: '#9aa3b2' }}>No active players yet.</li>}
+              {players.length === 0 && <li className="npc-meta">No active players yet.</li>}
             </ul>
           </section>
         </aside>
