@@ -19,13 +19,27 @@ const WORLD_BOUNDS = {
 }
 const MOVE_STEP = 0.0012
 const ATTACK_RANGE = 0.001
-const SPEAK_TTL_MS = 6000
+const SPEAK_TTL_MS = 7000
 
 /** @type {Map<string, { ws: import('ws'), player: any }>} */
 const clients = new Map()
 let worldTick = 0
 
 const ACTIONS = ['up', 'down', 'left', 'right', 'speak', 'rest', 'attack']
+const MOODS = ['calm', 'curious', 'playful', 'aggressive']
+
+const AMBIENT_LINES = [
+  'Anyone around this corner?',
+  'Keeping watch.',
+  'Street feels alive tonight.',
+  'Patrolling this block.',
+  'Who wants to team up?',
+  'Scanning the area...',
+]
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
 
 function randomSpawn() {
   const latJitter = (Math.random() - 0.5) * 0.03
@@ -56,6 +70,10 @@ function summarizePlayer(player) {
     hp: player.hp,
     stamina: player.stamina,
     lastAction: player.lastAction,
+    actionText: player.actionText,
+    mood: player.mood,
+    emote: player.emote,
+    heading: player.heading,
     speech: player.speechUntil > now ? player.speech : '',
   }
 }
@@ -81,6 +99,13 @@ function validScores(payload) {
   }
   const utterance = typeof payload.utterance === 'string' ? payload.utterance.slice(0, 120).trim() : ''
   return { scores: result, utterance }
+}
+
+function autoSpeech(player, target) {
+  if (target) return `Hey ${target.name}, you are in my lane.`
+  if (player.hp < 40) return 'Need a breather... this is getting intense.'
+  if (player.stamina < 25) return 'Catching my breath before moving.'
+  return pick(AMBIENT_LINES)
 }
 
 function pickAction(player) {
@@ -128,31 +153,51 @@ function applyAction(player, decision) {
   const now = Date.now()
   const action = decision.action
   player.lastAction = action
+  player.actionText = action
+  player.emote = ''
+
+  const moodRoll = Math.random()
+  if (moodRoll < 0.12) player.mood = pick(MOODS)
 
   if (action === 'up') {
     player.lat = clamp(player.lat + MOVE_STEP, WORLD_BOUNDS.minLat, WORLD_BOUNDS.maxLat)
     player.stamina = clamp(player.stamina - 4, 0, 100)
+    player.heading = 0
+    player.actionText = 'walking north'
+    player.emote = '🚶'
     return
   }
   if (action === 'down') {
     player.lat = clamp(player.lat - MOVE_STEP, WORLD_BOUNDS.minLat, WORLD_BOUNDS.maxLat)
     player.stamina = clamp(player.stamina - 4, 0, 100)
+    player.heading = 180
+    player.actionText = 'walking south'
+    player.emote = '🚶'
     return
   }
   if (action === 'left') {
     player.lng = clamp(player.lng - MOVE_STEP, WORLD_BOUNDS.minLng, WORLD_BOUNDS.maxLng)
     player.stamina = clamp(player.stamina - 4, 0, 100)
+    player.heading = 270
+    player.actionText = 'walking west'
+    player.emote = '🚶'
     return
   }
   if (action === 'right') {
     player.lng = clamp(player.lng + MOVE_STEP, WORLD_BOUNDS.minLng, WORLD_BOUNDS.maxLng)
     player.stamina = clamp(player.stamina - 4, 0, 100)
+    player.heading = 90
+    player.actionText = 'walking east'
+    player.emote = '🚶'
     return
   }
   if (action === 'speak') {
     player.stamina = clamp(player.stamina - 5, 0, 100)
-    player.speech = decision.utterance || '...'
+    const target = findAttackTarget(player)
+    player.speech = decision.utterance || autoSpeech(player, target)
     player.speechUntil = now + SPEAK_TTL_MS
+    player.actionText = 'chatting'
+    player.emote = '💬'
     return
   }
   if (action === 'attack') {
@@ -160,23 +205,37 @@ function applyAction(player, decision) {
     if (!target || player.stamina < 20) {
       player.lastAction = 'rest'
       player.stamina = clamp(player.stamina + 8, 0, 100)
+      player.actionText = 'regrouping'
+      player.emote = '😮‍💨'
       return
     }
     player.stamina = clamp(player.stamina - 20, 0, 100)
     target.hp = clamp(target.hp - 20, 0, 100)
+    player.actionText = `attacking ${target.name}`
+    player.emote = '⚔️'
+    target.speech = `${target.name} takes a hit!`
+    target.speechUntil = now + 2000
     if (target.hp <= 0) {
       const spawn = randomSpawn()
       target.hp = 100
       target.stamina = 100
       target.lat = clamp(spawn.lat, WORLD_BOUNDS.minLat, WORLD_BOUNDS.maxLat)
       target.lng = clamp(spawn.lng, WORLD_BOUNDS.minLng, WORLD_BOUNDS.maxLng)
-      target.speech = 'respawned'
-      target.speechUntil = now + 2000
+      target.speech = 'Respawned and back in the streets.'
+      target.speechUntil = now + 2500
+      target.actionText = 'respawned'
+      target.emote = '✨'
     }
     return
   }
 
   player.stamina = clamp(player.stamina + 10, 0, 100)
+  player.actionText = 'resting'
+  player.emote = '🧘'
+  if (player.stamina > 80 && Math.random() < 0.2) {
+    player.speech = pick(['Ready to move again.', 'Energy restored.', 'Back on patrol.'])
+    player.speechUntil = now + 2500
+  }
 }
 
 function runTick() {
@@ -222,6 +281,10 @@ app.prepare().then(() => {
       hp: 100,
       stamina: 100,
       lastAction: 'rest',
+      actionText: 'spawning in',
+      mood: pick(MOODS),
+      emote: '👀',
+      heading: Math.floor(Math.random() * 360),
       speech: '',
       speechUntil: 0,
       latestScoring: null,

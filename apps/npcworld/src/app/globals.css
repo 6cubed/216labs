@@ -173,6 +173,82 @@ input {
   font-size: 10px;
 }
 
+.npc-marker {
+  position: relative;
+  width: 40px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-2px);
+}
+
+.npc-marker-pulse {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--npc-color) 40%, transparent);
+  animation: npcPulse 1.8s ease-out infinite;
+}
+
+.npc-marker-body {
+  position: relative;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #08101d;
+  border: 2px solid var(--npc-color);
+  box-shadow: 0 0 0 1px rgba(5, 10, 18, 0.55), 0 2px 7px rgba(0, 0, 0, 0.3);
+  font-size: 15px;
+}
+
+.npc-marker.self .npc-marker-body {
+  width: 30px;
+  height: 30px;
+  font-size: 17px;
+  border-width: 2px;
+}
+
+.npc-marker-arrow {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%) rotate(var(--npc-heading));
+  transform-origin: 50% 17px;
+  color: #dbe8ff;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.npc-marker-emote {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  z-index: 3;
+  font-size: 12px;
+  background: rgba(8, 14, 24, 0.8);
+  border: 1px solid #324056;
+  border-radius: 999px;
+  padding: 1px 4px;
+  backdrop-filter: blur(2px);
+}
+
+@keyframes npcPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
 @media (min-width: 640px) {
   .npc-page {
     padding: 1rem;
@@ -188,6 +264,15 @@ input {
 
   .npc-actions-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .leaflet-control-zoom a {
+    width: 34px;
+    height: 34px;
+    line-height: 34px;
+    font-size: 20px;
   }
 }
 

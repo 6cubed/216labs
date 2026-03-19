@@ -22,19 +22,19 @@ function heuristicScores(perception: Perception): { scores: Scores; utterance: s
     return { scores, utterance: '' }
   }
   if (nearby.length > 0) {
-    scores.speak = 0.6
-    scores.attack = perception.self.stamina > 40 ? 0.45 : 0.05
+    scores.speak = 0.72
+    scores.attack = perception.self.stamina > 45 ? 0.5 : 0.06
     const target = nearby[0]
     if (target.lat > perception.self.lat) scores.up = 0.7
     if (target.lat < perception.self.lat) scores.down = 0.7
     if (target.lng > perception.self.lng) scores.right = 0.7
     if (target.lng < perception.self.lng) scores.left = 0.7
-    return { scores, utterance: `Watching ${target.name}.` }
+    return { scores, utterance: `Hey ${target.name}, what are you planning?` }
   }
   const dirs: (keyof Scores)[] = ['up', 'down', 'left', 'right']
   scores[dirs[Math.floor(Math.random() * dirs.length)]] = 0.8
   scores.rest = 0.15
-  return { scores, utterance: '' }
+  return { scores, utterance: 'Patrolling this street.' }
 }
 
 function parseScoringResponse(raw: string): { scores: Scores; utterance: string } | null {
@@ -111,6 +111,8 @@ export default function NpcWorldPage() {
       'You control an NPC in a shared map game.',
       'Score each action from 0.0 to 1.0 based on the current situation.',
       'Actions: up, down, left, right, speak, rest, attack.',
+      'Style: lively and social. Prefer dynamic movement and occasional short dialogue.',
+      'If speaking, write one short in-world line (5-14 words).',
       'Return JSON only with keys: scores, utterance.',
       `self=${JSON.stringify({
         name: state.self.name,
@@ -181,7 +183,7 @@ export default function NpcWorldPage() {
     const scores = defaultScores()
     scores[action] = 1
     if (action !== 'rest') scores.rest = 0.1
-    sendScores(scores, action === 'speak' ? 'Hello nearby NPCs.' : '')
+    sendScores(scores, action === 'speak' ? 'Anyone nearby? Let us run this block.' : '')
   }, [sendScores])
 
   return (
@@ -210,7 +212,7 @@ export default function NpcWorldPage() {
             </div>
             {selfPlayer && (
               <p className="npc-meta">
-                HP {selfPlayer.hp} | Stamina {selfPlayer.stamina} | Last action {selfPlayer.lastAction}
+                HP {selfPlayer.hp} | Stamina {selfPlayer.stamina} | Last action {selfPlayer.actionText || selfPlayer.lastAction}
               </p>
             )}
           </section>
@@ -248,7 +250,7 @@ export default function NpcWorldPage() {
                 <li key={p.id} className="npc-player-row">
                   <strong>{p.name}</strong> ({p.id === selfId ? 'you' : 'other'})<br />
                   <span className="npc-meta">
-                    HP {p.hp} | ST {p.stamina} | {p.lastAction}
+                    HP {p.hp} | ST {p.stamina} | {p.actionText || p.lastAction}
                     {p.speech ? ` | "${p.speech}"` : ''}
                   </span>
                 </li>
