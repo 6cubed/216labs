@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   createWeights,
   forward,
@@ -25,6 +25,25 @@ type CompareResult = {
   lmTop?: { idx: number; char: string; logit: number };
   classes?: Array<{ name: string; prob: number }>;
 };
+type BrowserModelPreset = { id: string; name: string; note: string };
+
+const BROWSER_MODELS: BrowserModelPreset[] = [
+  {
+    id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+    name: "Llama 3.2 1B Instruct",
+    note: "Best default for phone/laptop WebGPU",
+  },
+  {
+    id: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+    name: "Qwen 2.5 0.5B Instruct",
+    note: "Smaller, usually faster",
+  },
+  {
+    id: "Phi-3.5-mini-instruct-q4f16_1-MLC",
+    name: "Phi 3.5 Mini Instruct",
+    note: "Alternative reasoning style",
+  },
+];
 
 const MODEL_PRESETS: ModelPreset[] = [
   {
@@ -86,6 +105,19 @@ export default function LLMInternalsPage() {
   const [result, setResult] = useState<ForwardResult | null>(null);
   const [comparison, setComparison] = useState<CompareResult[] | null>(null);
   const [selectedLayer, setSelectedLayer] = useState(0);
+  const [browserModelId, setBrowserModelId] = useState(BROWSER_MODELS[0]!.id);
+  const [browserStatus, setBrowserStatus] =
+    useState<"idle" | "loading" | "ready" | "running" | "error">("idle");
+  const [browserLoadProgress, setBrowserLoadProgress] = useState(0);
+  const [browserResult, setBrowserResult] = useState<{
+    yProb: number;
+    nProb: number;
+    answer: "Y" | "N";
+    reason: string;
+    raw: string;
+  } | null>(null);
+  const [browserError, setBrowserError] = useState<string | null>(null);
+  const browserEngineRef = useRef<any>(null);
 
   const activePreset = useMemo(
     () => MODEL_PRESETS.find((p) => p.id === selectedModelId) ?? MODEL_PRESETS[0]!,
@@ -136,6 +168,75 @@ export default function LLMInternalsPage() {
 
   const activations = result?.activations ?? [];
   const selectedActivation = activations[selectedLayer];
+  const ynFromToyLogits = result ? computeYNFromLogits(result.logits) : null;
+
+  const loadBrowserModel = useCallback(async () => {
+    setBrowserStatus("loading");
+    setBrowserLoadProgress(0);
+    setBrowserError(null);
+    setBrowserResult(null);
+    try {
+      const { CreateMLCEngine } = await import("@mlc-ai/web-llm");
+      const engine = await CreateMLCEngine(browserModelId, {
+        initProgressCallback: (p: { progress: number }) =>
+          setBrowserLoadProgress(Math.round((p.progress ?? 0) * 100)),
+      });
+      browserEngineRef.current = engine;
+      setBrowserStatus("ready");
+    } catch (err) {
+      console.error(err);
+      setBrowserStatus("error");
+      setBrowserError(err instanceof Error ? err.message : "Failed to load browser model");
+    }
+  }, [browserModelId]);
+
+  const runBrowserYN = useCallback(async () => {
+    if (!browserEngineRef.current) return;
+    setBrowserStatus("running");
+    setBrowserError(null);
+    setBrowserResult(null);
+    try {
+      const prompt = [
+        "You are a strict binary classifier.",
+        "Classify the user text as Y or N based on the statement being true.",
+        "Return STRICT JSON only, no prose.",
+        'Schema: {"Y": number, "N": number, "answer":"Y"|"N", "reason":"short phrase"}',
+        "Y and N must be probabilities between 0 and 1 that sum to 1.",
+        `Text: """${input}"""`,
+      ].join("\n");
+
+      const stream = await browserEngineRef.current.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 140,
+        temperature: 0,
+      });
+
+      let raw = "";
+      for await (const chunk of stream) {
+        raw +=
+          chunk.choices?.[0]?.delta?.content ??
+          chunk.choices?.[0]?.message?.content ??
+          "";
+      }
+
+      const parsed = parseBrowserJson(raw);
+      if (!parsed) {
+        throw new Error("Model did not return valid JSON. Try run again.");
+      }
+      setBrowserResult({
+        yProb: parsed.Y,
+        nProb: parsed.N,
+        answer: parsed.answer,
+        reason: parsed.reason || "No reason provided",
+        raw,
+      });
+      setBrowserStatus("ready");
+    } catch (err) {
+      console.error(err);
+      setBrowserStatus("error");
+      setBrowserError(err instanceof Error ? err.message : "Browser inference failed");
+    }
+  }, [input]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0c0c0f] text-zinc-200">
@@ -208,6 +309,60 @@ export default function LLMInternalsPage() {
               <p className="text-xs text-zinc-500">
                 Active: <span className="text-zinc-300">{activePreset.name}</span> ({activePreset.description})
               </p>
+            </div>
+            <div className="space-y-2 rounded-lg border border-[#252532] bg-[#0f0f14] p-3">
+              <p className="text-xs text-zinc-400">
+                Real in-browser LLM (WebGPU) for stronger priors
+              </p>
+              <select
+                value={browserModelId}
+                onChange={(e) => {
+                  setBrowserModelId(e.target.value);
+                  setBrowserStatus("idle");
+                  setBrowserResult(null);
+                  setBrowserError(null);
+                  browserEngineRef.current = null;
+                }}
+                className="w-full rounded bg-[#0c0c0f] border border-[#252532] px-2 py-1.5 text-xs"
+              >
+                {BROWSER_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-zinc-500">
+                {BROWSER_MODELS.find((m) => m.id === browserModelId)?.note ?? ""}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={loadBrowserModel}
+                  className="flex-1 rounded border border-[#3a3a49] px-2.5 py-1.5 text-xs text-zinc-200 hover:bg-[#252532]"
+                >
+                  {browserStatus === "loading" ? `Loading… ${browserLoadProgress}%` : "Load browser model"}
+                </button>
+                <button
+                  type="button"
+                  disabled={browserStatus !== "ready" || !input.trim()}
+                  onClick={runBrowserYN}
+                  className="flex-1 rounded bg-emerald-700 px-2.5 py-1.5 text-xs text-white disabled:opacity-40"
+                >
+                  {browserStatus === "running" ? "Classifying…" : "Run Y/N classifier"}
+                </button>
+              </div>
+              {browserError && <p className="text-xs text-rose-400">{browserError}</p>}
+              {browserResult && (
+                <div className="space-y-1 rounded border border-[#2a3345] bg-[#10131a] p-2">
+                  <p className="text-xs text-zinc-300">
+                    Answer: <span className="text-emerald-400 font-medium">{browserResult.answer}</span>
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    Y {(browserResult.yProb * 100).toFixed(1)}% · N {(browserResult.nProb * 100).toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-zinc-500">{browserResult.reason}</p>
+                </div>
+              )}
             </div>
             {mode === "classifier" && (
               <div className="space-y-2 rounded-lg border border-[#252532] bg-[#0f0f14] p-3">
@@ -315,6 +470,21 @@ export default function LLMInternalsPage() {
                         <span className="text-emerald-400">{(c.prob * 100).toFixed(1)}%</span>
                       </span>
                     ))}
+                  </div>
+                </div>
+              )}
+              {ynFromToyLogits && (
+                <div className="space-y-1 pt-2 border-t border-[#252532]">
+                  <p className="text-xs text-zinc-500">
+                    Tiny-model Y/N probability slice (explicitly tracked):
+                  </p>
+                  <div className="flex gap-2 text-xs">
+                    <span className="rounded bg-[#252532] px-2 py-1 text-zinc-300">
+                      Y: <span className="text-emerald-400">{(ynFromToyLogits.y * 100).toFixed(1)}%</span>
+                    </span>
+                    <span className="rounded bg-[#252532] px-2 py-1 text-zinc-300">
+                      N: <span className="text-emerald-400">{(ynFromToyLogits.n * 100).toFixed(1)}%</span>
+                    </span>
                   </div>
                 </div>
               )}
@@ -469,6 +639,50 @@ function computeClassProbabilities(
   }));
 }
 
+function computeYNFromLogits(logits: Float32Array): { y: number; n: number } {
+  const idsY = ["Y", "y"].map((c) => c.charCodeAt(0));
+  const idsN = ["N", "n"].map((c) => c.charCodeAt(0));
+  const yScore = logSumExp(idsY.map((id) => logits[id] ?? Number.NEGATIVE_INFINITY));
+  const nScore = logSumExp(idsN.map((id) => logits[id] ?? Number.NEGATIVE_INFINITY));
+  const max = Math.max(yScore, nScore);
+  const yExp = Math.exp(yScore - max);
+  const nExp = Math.exp(nScore - max);
+  const denom = yExp + nExp;
+  return {
+    y: denom > 0 ? yExp / denom : 0.5,
+    n: denom > 0 ? nExp / denom : 0.5,
+  };
+}
+
+function parseBrowserJson(
+  raw: string
+): { Y: number; N: number; answer: "Y" | "N"; reason: string } | null {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try {
+    const parsed = JSON.parse(raw.slice(start, end + 1));
+    const y = Number(parsed?.Y);
+    const n = Number(parsed?.N);
+    const answer = parsed?.answer === "N" ? "N" : "Y";
+    const reason =
+      typeof parsed?.reason === "string" ? parsed.reason.slice(0, 120) : "";
+    if (!Number.isFinite(y) || !Number.isFinite(n)) return null;
+    const yClamped = Math.max(0, Math.min(1, y));
+    const nClamped = Math.max(0, Math.min(1, n));
+    const sum = yClamped + nClamped;
+    if (sum <= 0) return null;
+    return {
+      Y: yClamped / sum,
+      N: nClamped / sum,
+      answer,
+      reason,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function ActivationHeatmap({ activation }: { activation: Float32Array }) {
   const size = activation.length;
   const gridCols = Math.ceil(Math.sqrt(size));
@@ -480,6 +694,10 @@ function ActivationHeatmap({ activation }: { activation: Float32Array }) {
     if (v > max) max = v;
   }
   const range = max - min || 1;
+  const indexed = Array.from(activation).map((v, i) => ({ i, v }));
+  indexed.sort((a, b) => a.v - b.v);
+  const topNeg = indexed.slice(0, 5);
+  const topPos = indexed.slice(-5).reverse();
 
   return (
     <div className="space-y-2">
@@ -506,6 +724,28 @@ function ActivationHeatmap({ activation }: { activation: Float32Array }) {
             />
           );
         })}
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2 pt-2">
+        <div className="rounded border border-[#252532] bg-[#0f0f14] p-2">
+          <p className="text-[11px] uppercase tracking-wider text-zinc-500 mb-1">Top positive neurons</p>
+          <div className="flex flex-wrap gap-1">
+            {topPos.map((x) => (
+              <span key={`pos-${x.i}`} className="rounded bg-emerald-900/40 border border-emerald-800/60 px-1.5 py-0.5 text-[11px] text-emerald-300">
+                {x.i}: {x.v.toFixed(3)}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="rounded border border-[#252532] bg-[#0f0f14] p-2">
+          <p className="text-[11px] uppercase tracking-wider text-zinc-500 mb-1">Top negative neurons</p>
+          <div className="flex flex-wrap gap-1">
+            {topNeg.map((x) => (
+              <span key={`neg-${x.i}`} className="rounded bg-rose-900/35 border border-rose-800/60 px-1.5 py-0.5 text-[11px] text-rose-300">
+                {x.i}: {x.v.toFixed(3)}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
