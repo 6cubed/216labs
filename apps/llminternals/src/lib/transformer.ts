@@ -92,6 +92,7 @@ function layerNorm(
 export interface TinyTransformerWeights {
   config: TransformerConfig;
   embedding: Float32Array; // vocabSize * hiddenSize
+  posEmbedding: Float32Array; // maxLen * hiddenSize
   lnEmbed: { gamma: Float32Array; beta: Float32Array };
   layers: Array<{
     attnQ: Float32Array; // hiddenSize * hiddenSize
@@ -128,6 +129,8 @@ export function createWeights(
 
   const embedding = alloc(vocabSize * hiddenSize);
   for (let i = 0; i < embedding.length; i++) embedding[i] = (rng() - 0.5) * 2 * scale;
+  const posEmbedding = alloc(config.maxLen * hiddenSize);
+  for (let i = 0; i < posEmbedding.length; i++) posEmbedding[i] = (rng() - 0.5) * 2 * scale;
 
   const lnEmbed = {
     gamma: Float32Array.from({ length: hiddenSize }, () => 1),
@@ -175,6 +178,7 @@ export function createWeights(
   return {
     config,
     embedding,
+    posEmbedding,
     lnEmbed,
     layers,
     lnFinal,
@@ -203,7 +207,7 @@ export function forward(
   tokenIds: number[],
   captureActivations: boolean = true
 ): ForwardResult {
-  const { config, embedding, lnEmbed, layers, lnFinal, lmHead, classifierHead, numClasses } = weights;
+  const { config, embedding, posEmbedding, lnEmbed, layers, lnFinal, lmHead, classifierHead, numClasses } = weights;
   const { hiddenSize, vocabSize, ffnSize } = config;
   const seqLen = Math.min(tokenIds.length, config.maxLen);
   const headDim = hiddenSize / config.numHeads;
@@ -215,7 +219,10 @@ export function forward(
   for (let i = 0; i < seqLen; i++) {
     const tid = tokenIds[i]!;
     const off = tid * hiddenSize;
-    for (let j = 0; j < hiddenSize; j++) H[i * hiddenSize + j] = embedding[off + j];
+    const posOff = i * hiddenSize;
+    for (let j = 0; j < hiddenSize; j++) {
+      H[i * hiddenSize + j] = embedding[off + j] + posEmbedding[posOff + j];
+    }
   }
 
   const Hln = alloc(seqLen * hiddenSize);
