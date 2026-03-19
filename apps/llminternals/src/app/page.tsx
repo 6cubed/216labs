@@ -6,31 +6,133 @@ import {
   forward,
   tokenize,
   type ForwardResult,
+  type TransformerConfig,
   DEFAULT_CONFIG,
 } from "@/lib/transformer";
 
 type Mode = "lm" | "classifier";
 type ClassDef = { name: string; tokenChars: string };
+type ModelPreset = {
+  id: string;
+  name: string;
+  description: string;
+  config: TransformerConfig;
+  seed: number;
+};
+type CompareResult = {
+  modelId: string;
+  modelName: string;
+  lmTop?: { idx: number; char: string; logit: number };
+  classes?: Array<{ name: string; prob: number }>;
+};
+
+const MODEL_PRESETS: ModelPreset[] = [
+  {
+    id: "tiny-base",
+    name: "Tiny Base",
+    description: "64 hidden · 2 layers",
+    config: DEFAULT_CONFIG,
+    seed: 42,
+  },
+  {
+    id: "tiny-deep",
+    name: "Tiny Deep",
+    description: "64 hidden · 4 layers",
+    config: {
+      ...DEFAULT_CONFIG,
+      numLayers: 4,
+      maxLen: 192,
+    },
+    seed: 7,
+  },
+  {
+    id: "tiny-wide",
+    name: "Tiny Wide",
+    description: "96 hidden · 3 layers",
+    config: {
+      ...DEFAULT_CONFIG,
+      hiddenSize: 96,
+      numHeads: 6,
+      numLayers: 3,
+      ffnSize: 384,
+      maxLen: 192,
+    },
+    seed: 21,
+  },
+  {
+    id: "tiny-compact",
+    name: "Tiny Compact",
+    description: "48 hidden · 2 layers",
+    config: {
+      ...DEFAULT_CONFIG,
+      hiddenSize: 48,
+      numHeads: 3,
+      ffnSize: 192,
+      numLayers: 2,
+      maxLen: 128,
+    },
+    seed: 84,
+  },
+];
 
 export default function LLMInternalsPage() {
   const [input, setInput] = useState("hello");
   const [mode, setMode] = useState<Mode>("lm");
+  const [selectedModelId, setSelectedModelId] = useState(MODEL_PRESETS[0]!.id);
   const [classDefs, setClassDefs] = useState<ClassDef[]>([
     { name: "Positive", tokenChars: "Pp+" },
     { name: "Negative", tokenChars: "Nn-" },
   ]);
   const [result, setResult] = useState<ForwardResult | null>(null);
+  const [comparison, setComparison] = useState<CompareResult[] | null>(null);
   const [selectedLayer, setSelectedLayer] = useState(0);
 
-  const weights = useMemo(() => createWeights(DEFAULT_CONFIG, 0), []);
+  const activePreset = useMemo(
+    () => MODEL_PRESETS.find((p) => p.id === selectedModelId) ?? MODEL_PRESETS[0]!,
+    [selectedModelId]
+  );
+  const weights = useMemo(
+    () => createWeights(activePreset.config, 0, activePreset.seed),
+    [activePreset]
+  );
 
   const runForward = useCallback(() => {
     const ids = tokenize(input);
     if (ids.length === 0) return;
     const out = forward(weights, ids, true);
     setResult(out);
+    setComparison(null);
     setSelectedLayer(0);
   }, [input, weights]);
+
+  const runCompareModels = useCallback(() => {
+    const ids = tokenize(input);
+    if (ids.length === 0) return;
+    const rows: CompareResult[] = MODEL_PRESETS.map((preset) => {
+      const w = createWeights(preset.config, 0, preset.seed);
+      const out = forward(w, ids, false);
+      if (mode === "lm") {
+        const [top] = topKIndices(out.logits, 1);
+        return {
+          modelId: preset.id,
+          modelName: preset.name,
+          lmTop: top
+            ? { idx: top[0], char: String.fromCharCode(top[0]), logit: top[1] }
+            : undefined,
+        };
+      }
+      const classes = computeClassProbabilities(out.logits, classDefs).map((c) => ({
+        name: c.name,
+        prob: c.prob,
+      }));
+      return {
+        modelId: preset.id,
+        modelName: preset.name,
+        classes,
+      };
+    });
+    setComparison(rows);
+  }, [classDefs, input, mode]);
 
   const activations = result?.activations ?? [];
   const selectedActivation = activations[selectedLayer];
@@ -82,6 +184,30 @@ export default function LLMInternalsPage() {
               >
                 Classifier
               </button>
+            </div>
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                In-browser model preset
+              </label>
+              <select
+                value={selectedModelId}
+                onChange={(e) => {
+                  setSelectedModelId(e.target.value);
+                  setResult(null);
+                  setComparison(null);
+                  setSelectedLayer(0);
+                }}
+                className="w-full rounded-lg bg-[#0c0c0f] border border-[#252532] px-3 py-2 text-sm focus:outline-none focus:border-violet-500"
+              >
+                {MODEL_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.name} · {preset.description}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-zinc-500">
+                Active: <span className="text-zinc-300">{activePreset.name}</span> ({activePreset.description})
+              </p>
             </div>
             {mode === "classifier" && (
               <div className="space-y-2 rounded-lg border border-[#252532] bg-[#0f0f14] p-3">
@@ -143,6 +269,13 @@ export default function LLMInternalsPage() {
             >
               Run forward pass
             </button>
+            <button
+              type="button"
+              onClick={runCompareModels}
+              className="w-full py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-sm font-medium text-white transition-colors"
+            >
+              Compare all model presets
+            </button>
           </div>
 
           {result && (
@@ -183,6 +316,49 @@ export default function LLMInternalsPage() {
                       </span>
                     ))}
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {comparison && (
+            <div className="rounded-xl bg-[#14141a] border border-[#252532] p-4 space-y-3">
+              <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                Cross-model prior comparison
+              </h2>
+              {mode === "lm" ? (
+                <div className="space-y-2">
+                  {comparison.map((row) => (
+                    <div
+                      key={row.modelId}
+                      className="rounded-md border border-[#252532] bg-[#0f0f14] px-3 py-2 text-xs"
+                    >
+                      <span className="text-zinc-300 font-medium">{row.modelName}</span>{" "}
+                      <span className="text-zinc-500">top token:</span>{" "}
+                      <span className="text-violet-400">
+                        {row.lmTop ? `${row.lmTop.idx} (${row.lmTop.char}) @ ${row.lmTop.logit.toFixed(3)}` : "n/a"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {comparison.map((row) => (
+                    <div
+                      key={row.modelId}
+                      className="rounded-md border border-[#252532] bg-[#0f0f14] px-3 py-2 text-xs"
+                    >
+                      <p className="text-zinc-300 font-medium mb-1">{row.modelName}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(row.classes ?? []).map((c) => (
+                          <span key={`${row.modelId}-${c.name}`} className="rounded bg-[#252532] px-2 py-0.5">
+                            <span className="text-zinc-500">{c.name}:</span>{" "}
+                            <span className="text-emerald-400">{(c.prob * 100).toFixed(1)}%</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
