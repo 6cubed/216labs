@@ -9,7 +9,7 @@ const port = parseInt(process.env.PORT || '3000', 10)
 const app = next({ dev })
 const handle = app.getRequestHandler()
 
-const TICK_MS = 1000
+const TICK_MS = 5000
 const CENTER = { lat: 47.3769, lng: 8.5417 } // Zurich
 const WORLD_BOUNDS = {
   minLat: 47.33,
@@ -19,7 +19,7 @@ const WORLD_BOUNDS = {
 }
 const MOVE_STEP = 0.0012
 const ATTACK_RANGE = 0.001
-const SPEAK_TTL_MS = 7000
+const SPEAK_TTL_MS = 15000
 
 /** @type {Map<string, { ws: import('ws'), player: any }>} */
 const clients = new Map()

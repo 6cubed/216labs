@@ -20,13 +20,16 @@ export type MapPlayer = {
 type Props = {
   players: MapPlayer[]
   selfId: string | null
+  /** When `street`, use tighter zoom and keep following the local player (Leaflet fallback for Street View). */
+  mode?: 'default' | 'street'
 }
 
-export default function WorldMap({ players, selfId }: Props) {
+export default function WorldMap({ players, selfId, mode = 'default' }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<any>(null)
   const layerRef = useRef<any>(null)
   const hasFocusedSelfRef = useRef(false)
+  const street = mode === 'street'
 
   useEffect(() => {
     let disposed = false
@@ -35,9 +38,10 @@ export default function WorldMap({ players, selfId }: Props) {
       const L = await import('leaflet')
       if (disposed || !containerRef.current) return
 
+      const zoom = street ? 18 : 17
       const map = L.map(containerRef.current, {
         zoomControl: true,
-      }).setView([47.3769, 8.5417], 17)
+      }).setView([47.3769, 8.5417], zoom)
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
@@ -59,7 +63,7 @@ export default function WorldMap({ players, selfId }: Props) {
         layerRef.current = null
       }
     }
-  }, [])
+  }, [street])
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -101,16 +105,20 @@ export default function WorldMap({ players, selfId }: Props) {
         marker.addTo(layer)
       }
 
-      if (!hasFocusedSelfRef.current && mapRef.current && selfId) {
-        const me = players.find((p) => p.id === selfId)
-        if (me) {
-          mapRef.current.setView([me.lat, me.lng], 17, { animate: false })
-          hasFocusedSelfRef.current = true
-        }
+      if (!mapRef.current || !selfId) return
+      const me = players.find((p) => p.id === selfId)
+      if (!me) return
+
+      if (street) {
+        mapRef.current.setView([me.lat, me.lng], 18, { animate: true })
+        mapRef.current.invalidateSize()
+      } else if (!hasFocusedSelfRef.current) {
+        mapRef.current.setView([me.lat, me.lng], 17, { animate: false })
+        hasFocusedSelfRef.current = true
       }
     }
     redraw()
-  }, [players, selfId])
+  }, [players, selfId, street])
 
-  return <div ref={containerRef} className="npc-map" />
+  return <div ref={containerRef} className={street ? 'npc-map-host' : 'npc-map'} />
 }

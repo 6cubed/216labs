@@ -413,7 +413,10 @@ services:
   # ── NPCWorld ──────────────────────────────────────────────────
   npcworld:
     image: 216labs/npcworld:latest
-    build: ./apps/npcworld
+    build:
+      context: ./apps/npcworld
+      args:
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     restart: unless-stopped
     environment:
       - PORT=3000

@@ -89,6 +89,72 @@ input {
   overflow: hidden;
 }
 
+.npc-map-host {
+  width: 100%;
+  height: min(58vh, 520px);
+  min-height: 340px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.npc-street-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.npc-street-iframe {
+  width: 100%;
+  height: min(58vh, 520px);
+  min-height: 340px;
+  border: 0;
+  border-radius: 12px;
+  background: #0a0f18;
+}
+
+.npc-street-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #8b95a8;
+  line-height: 1.4;
+}
+
+.npc-street-hint code {
+  font-size: 11px;
+  color: #a5b4fc;
+}
+
+.npc-thought-panel {
+  background: linear-gradient(135deg, #141b2e 0%, #0f1524 100%);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 0.75rem;
+  min-height: 4.5rem;
+}
+
+.npc-thought-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.npc-thought-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #e2e8f0;
+  font-style: italic;
+}
+
+.npc-thought-wait {
+  color: #64748b;
+  font-style: normal;
+}
+
 .npc-card-title {
   margin: 0 0 0.45rem;
   font-size: 1.02rem;
@@ -283,6 +349,12 @@ input {
   }
 
   .npc-map {
+    height: min(72vh, 680px);
+    min-height: 520px;
+  }
+
+  .npc-map-host,
+  .npc-street-iframe {
     height: min(72vh, 680px);
     min-height: 520px;
   }

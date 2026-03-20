@@ -4,22 +4,43 @@ import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MapPlayer } from '@/components/WorldMap'
 
-const WorldMap = dynamic(() => import('@/components/WorldMap'), { ssr: false })
+const StreetViewPane = dynamic(() => import('@/components/StreetViewPane'), { ssr: false })
 
 type Scores = Record<'up' | 'down' | 'left' | 'right' | 'speak' | 'rest' | 'attack', number>
 type Perception = { self: MapPlayer; nearby: MapPlayer[]; tick: number }
+
+const THOUGHT_DISPLAY_MS = 500
 
 function defaultScores(): Scores {
   return { up: 0, down: 0, left: 0, right: 0, speak: 0, rest: 1, attack: 0 }
 }
 
-function heuristicScores(perception: Perception): { scores: Scores; utterance: string } {
+function headingFromAction(action: string): number {
+  switch (action) {
+    case 'up':
+      return 0
+    case 'right':
+      return 90
+    case 'down':
+      return 180
+    case 'left':
+      return 270
+    default:
+      return 0
+  }
+}
+
+function heuristicScores(perception: Perception): { scores: Scores; utterance: string; thought: string } {
   const scores = defaultScores()
   const nearby = perception.nearby
   const lowStamina = perception.self.stamina < 25
   if (lowStamina) {
     scores.rest = 1
-    return { scores, utterance: '' }
+    return {
+      scores,
+      utterance: '',
+      thought: 'Winded… I need a moment before I cross this street.',
+    }
   }
   if (nearby.length > 0) {
     scores.speak = 0.72
@@ -29,15 +50,23 @@ function heuristicScores(perception: Perception): { scores: Scores; utterance: s
     if (target.lat < perception.self.lat) scores.down = 0.7
     if (target.lng > perception.self.lng) scores.right = 0.7
     if (target.lng < perception.self.lng) scores.left = 0.7
-    return { scores, utterance: `Hey ${target.name}, what are you planning?` }
+    return {
+      scores,
+      utterance: `Hey ${target.name}, what are you planning?`,
+      thought: `Someone ahead—${target.name}. Chat, flank, or keep walking?`,
+    }
   }
   const dirs: (keyof Scores)[] = ['up', 'down', 'left', 'right']
   scores[dirs[Math.floor(Math.random() * dirs.length)]] = 0.8
   scores.rest = 0.15
-  return { scores, utterance: 'Patrolling this street.' }
+  return {
+    scores,
+    utterance: 'Patrolling this street.',
+    thought: 'Quiet block… I pick a direction and keep moving.',
+  }
 }
 
-function parseScoringResponse(raw: string): { scores: Scores; utterance: string } | null {
+function parseScoringResponse(raw: string): { scores: Scores; utterance: string; thought: string } | null {
   const firstBrace = raw.indexOf('{')
   const lastBrace = raw.lastIndexOf('}')
   if (firstBrace < 0 || lastBrace <= firstBrace) return null
@@ -50,7 +79,9 @@ function parseScoringResponse(raw: string): { scores: Scores; utterance: string 
       scores[k] = Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0
     })
     const utterance = typeof parsed?.utterance === 'string' ? parsed.utterance.slice(0, 120).trim() : ''
-    return { scores, utterance }
+    const thought =
+      typeof parsed?.thought === 'string' ? parsed.thought.slice(0, 280).trim() : ''
+    return { scores, utterance, thought }
   } catch {
     return null
   }
@@ -62,14 +93,29 @@ export default function NpcWorldPage() {
   const [players, setPlayers] = useState<MapPlayer[]>([])
   const [wsConnected, setWsConnected] = useState(false)
   const [perception, setPerception] = useState<Perception | null>(null)
+  const [tickMs, setTickMs] = useState(5000)
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [loadProgress, setLoadProgress] = useState(0)
   const [autopilot, setAutopilot] = useState(true)
   const [lastInference, setLastInference] = useState('waiting for world state...')
+  const [thought, setThought] = useState<string>('')
+  const [thoughtPending, setThoughtPending] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const engineRef = useRef<any>(null)
 
   const selfPlayer = useMemo(() => players.find((p) => p.id === selfId) || null, [players, selfId])
+
+  const streetHeading = useMemo(() => {
+    const h = selfPlayer?.heading
+    if (typeof h === 'number' && Number.isFinite(h)) return h
+    return headingFromAction(selfPlayer?.lastAction ?? 'rest')
+  }, [selfPlayer?.heading, selfPlayer?.lastAction])
+
+  const viewLat = selfPlayer?.lat ?? 47.3769
+  const viewLng = selfPlayer?.lng ?? 8.5417
+
+  const perceptionRef = useRef<Perception | null>(null)
+  perceptionRef.current = perception
 
   useEffect(() => {
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -83,6 +129,9 @@ export default function NpcWorldPage() {
         const msg = JSON.parse(ev.data)
         if (msg.type === 'init') {
           setSelfId(msg.selfId)
+          if (typeof msg.tickMs === 'number' && Number.isFinite(msg.tickMs)) {
+            setTickMs(msg.tickMs)
+          }
           if (Array.isArray(msg.players)) setPlayers(msg.players)
           ws.send(JSON.stringify({ type: 'join', name }))
         } else if (msg.type === 'snapshot') {
@@ -105,15 +154,17 @@ export default function NpcWorldPage() {
     ws.send(JSON.stringify({ type: 'action_scores', scores, utterance }))
   }, [])
 
-  const runLLMScoring = useCallback(async (state: Perception): Promise<{ scores: Scores; utterance: string }> => {
+  const runLLMScoring = useCallback(async (state: Perception): Promise<{ scores: Scores; utterance: string; thought: string }> => {
     if (!engineRef.current) return heuristicScores(state)
     const prompt = [
-      'You control an NPC in a shared map game.',
+      'You control an NPC in a shared street-level map game.',
+      'First think, then choose action scores.',
       'Score each action from 0.0 to 1.0 based on the current situation.',
       'Actions: up, down, left, right, speak, rest, attack.',
       'Style: lively and social. Prefer dynamic movement and occasional short dialogue.',
       'If speaking, write one short in-world line (5-14 words).',
-      'Return JSON only with keys: scores, utterance.',
+      'Return JSON only with keys: thought, scores, utterance.',
+      'thought: 1–2 short sentences of internal monologue BEFORE deciding (what you notice, feel, plan).',
       `self=${JSON.stringify({
         name: state.self.name,
         hp: state.self.hp,
@@ -126,8 +177,8 @@ export default function NpcWorldPage() {
 
     const stream = await engineRef.current.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 180,
-      temperature: 0.4,
+      max_tokens: 220,
+      temperature: 0.42,
     })
 
     let raw = ''
@@ -136,32 +187,53 @@ export default function NpcWorldPage() {
     }
 
     const parsed = parseScoringResponse(raw)
-    if (parsed) return parsed
+    if (parsed) {
+      const t = parsed.thought || heuristicScores(state).thought
+      return { scores: parsed.scores, utterance: parsed.utterance, thought: t }
+    }
     return heuristicScores(state)
   }, [])
 
-  const tick = useCallback(async () => {
-    if (!autopilot || !perception) return
-    try {
-      const start = performance.now()
-      const result = await runLLMScoring(perception)
-      sendScores(result.scores, result.utterance)
-      const ms = Math.round(performance.now() - start)
-      const bestAction = Object.entries(result.scores).sort((a, b) => b[1] - a[1])[0]?.[0] || 'rest'
-      setLastInference(`tick ${perception.tick}: ${bestAction} (${ms}ms)`)
-    } catch {
-      const fallback = heuristicScores(perception)
-      sendScores(fallback.scores, fallback.utterance)
-      setLastInference(`tick ${perception.tick}: fallback heuristic`)
-    }
-  }, [autopilot, perception, runLLMScoring, sendScores])
-
   useEffect(() => {
-    const id = window.setInterval(() => {
-      void tick()
-    }, 1000)
-    return () => window.clearInterval(id)
-  }, [tick])
+    if (!autopilot) return
+    const tick = perception?.tick
+    if (tick == null) return
+    const p = perceptionRef.current
+    if (!p) return
+
+    let cancelled = false
+    ;(async () => {
+      setThoughtPending(true)
+      setThought('…')
+      try {
+        const start = performance.now()
+        const result = await runLLMScoring(p)
+        if (cancelled) return
+        const thoughtText = result.thought || heuristicScores(p).thought
+        setThought(thoughtText)
+        setThoughtPending(false)
+        await new Promise((r) => setTimeout(r, THOUGHT_DISPLAY_MS))
+        if (cancelled) return
+        sendScores(result.scores, result.utterance)
+        const ms = Math.round(performance.now() - start)
+        const bestAction = Object.entries(result.scores).sort((a, b) => b[1] - a[1])[0]?.[0] || 'rest'
+        setLastInference(`tick ${p.tick}: ${bestAction} (${ms}ms) · next world step ~${tickMs / 1000}s`)
+      } catch {
+        if (cancelled) return
+        const fallback = heuristicScores(p)
+        setThought(fallback.thought)
+        setThoughtPending(false)
+        await new Promise((r) => setTimeout(r, THOUGHT_DISPLAY_MS))
+        if (cancelled) return
+        sendScores(fallback.scores, fallback.utterance)
+        setLastInference(`tick ${p.tick}: fallback heuristic`)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [perception?.tick, autopilot, runLLMScoring, sendScores, tickMs])
 
   const loadModel = useCallback(async () => {
     setModelStatus('loading')
@@ -190,12 +262,21 @@ export default function NpcWorldPage() {
     <main className="npc-page">
       <h1 className="npc-title">NPCWorld</h1>
       <p className="npc-subtitle">
-        A shared real-world map where each user pilots a browser LLM character scoring actions every second.
+        Street view + a shared world. Every {tickMs / 1000}s the server advances; your NPC shows a thought, then
+        submits scores for the next step.
       </p>
+
+      <div className="npc-thought-panel">
+        <span className="npc-thought-label">Thought (before acting)</span>
+        <p className={`npc-thought-text ${thoughtPending ? 'npc-thought-wait' : ''}`}>
+          {!thought && !thoughtPending && 'Connect and wait for the next perception tick.'}
+          {(thoughtPending || thought) && (thought || '…')}
+        </p>
+      </div>
 
       <div className="npc-layout">
         <section className="npc-card npc-map-card">
-          <WorldMap players={players} selfId={selfId} />
+          <StreetViewPane players={players} selfId={selfId} lat={viewLat} lng={viewLng} heading={streetHeading} />
         </section>
 
         <aside className="npc-sidebar">
@@ -225,7 +306,7 @@ export default function NpcWorldPage() {
             {modelStatus === 'ready' && <p className="npc-connection ok">Model loaded (local browser inference).</p>}
             <label className="npc-checkbox-row">
               <input type="checkbox" checked={autopilot} onChange={(e) => setAutopilot(e.target.checked)} />
-              autopilot (1-second scoring loop)
+              autopilot (one scoring per {tickMs / 1000}s tick)
             </label>
             <p className="npc-meta">{lastInference}</p>
           </section>
