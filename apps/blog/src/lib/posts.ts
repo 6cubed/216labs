@@ -8,6 +8,73 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'investing-for-the-agi-slope',
+    title: 'Investing for the AGI slope',
+    excerpt: 'The AGI slope is not one event but a compounding curve. Here is a practical portfolio framework for uncertainty: bars-and-bell bets, compute leverage, and optionality without delusion.',
+    date: '2026-03-20',
+    body: `
+People keep asking the wrong AGI investing question: “When does AGI arrive?” A better one is: “How do I position for a steepening intelligence curve without pretending I can time it perfectly?” The AGI slope is less a single cliff and more a gradient that gets steeper over time — model capability gains, falling inference cost, faster software iteration, and organizational rewiring. The implication for investors is simple: build exposure to compounding capability and protect against narrative whiplash.
+
+**Think in slopes, not dates**
+
+Most portfolios break because they are built around timestamps. AGI doesn’t need to “arrive” in one headline to reprice entire sectors. If capability doubles while cost drops and deployment friction falls, value shifts happen before philosophical AGI debates are settled. So avoid binary framing (AGI or no AGI) and use a slope framing: if intelligence per dollar keeps rising, which assets gain pricing power, which get commoditized, and which become picks-and-shovels?
+
+**A practical AGI portfolio barbell**
+
+One useful structure is a barbell:
+
+- **Core resilience bucket** (the sleep-at-night side): broad indexes, cash equivalents, and durable cash-flow businesses that survive many macro regimes.
+- **AGI upside bucket** (the convex side): assets with direct leverage to model capability growth and deployment volume.
+
+This avoids the classic failure mode of going all-in on a single AGI narrative. If the slope steepens slower than expected, you still compound. If it steepens faster, the convex bucket matters.
+
+**Where the convexity tends to be**
+
+Not investment advice, but conceptually the strongest AGI-linked exposures often cluster around:
+
+- **Compute and infrastructure**: chips, networking, power, datacenter buildout, and thermal/cooling supply chains.
+- **Model distribution rails**: platforms where inference is consumed at scale (API ecosystems, enterprise copilots, workflow layers).
+- **Workflow displacement software**: tools that convert model progress into measurable labor compression or output expansion.
+- **Embodied intelligence adjacencies**: robotics and industrial automation where software gains can unlock physical-world productivity.
+
+The key is not “find the smartest model company.” It is “find bottlenecks that get paid as usage scales.”
+
+**What to avoid on the AGI theme**
+
+AGI hype creates crowded trades fast. Three recurring mistakes:
+
+1. **Narrative over unit economics**: beautiful demos with no durable margin structure.
+2. **Single-point dependency bets**: companies that only work if one model vendor keeps an edge forever.
+3. **Ignoring capex cycles**: infra booms can overbuild before demand catches up.
+
+If a thesis only works under one perfect timeline, it is fragile by definition.
+
+**How to manage uncertainty**
+
+Investing for the AGI slope is mostly risk management under deep uncertainty:
+
+- Use position sizing that assumes you are directionally right but timing-noisy.
+- Rebalance on rules, not mood.
+- Track real adoption metrics (paid seats, inference volume, gross margin durability), not just benchmark scores.
+- Keep optionality capital ready for dislocations; AGI narratives will periodically overshoot and mean-revert.
+
+In other words: be early enough to matter, but diversified enough to survive being early for longer than your ego wants.
+
+**A simple operating checklist**
+
+Before adding an AGI-linked position, ask:
+
+- Does this business benefit from *more* model capability regardless of which lab wins?
+- Is there pricing power when inference gets cheaper?
+- Are cash flows robust if the slope pauses for 12-24 months?
+- Is this exposure replacing or complementing your core resilience bucket?
+
+If you cannot answer these clearly, you are probably buying a story, not a slope.
+
+The AGI era will likely reward investors who combine imagination with discipline. The edge is not perfect prediction. The edge is building a portfolio that compounds across multiple AGI futures while staying alive through the volatility between them.
+    `.trim(),
+  },
+  {
     slug: 'mcp-as-enterprise-governance-layer-on-vibe-coded-scale',
     title: 'MCP as an enterprise governance layer on top of a company that’s been vibe coded to the size of Google',
     excerpt: 'You’ve vibe coded your way to thousands of services and one massive repo. MCP is the control plane that lets you govern, audit, and secure all of it without slowing the loop.',
