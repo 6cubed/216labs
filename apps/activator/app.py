@@ -89,9 +89,13 @@ def set_runtime_state(
     if touch_accessed:
         fields.append("last_accessed_at = datetime('now')")
     values.append(app_id)
-    with db_connection() as conn:
-        conn.execute(f"UPDATE apps SET {', '.join(fields)} WHERE id = ?", values)
-        conn.commit()
+    try:
+        with db_connection() as conn:
+            conn.execute(f"UPDATE apps SET {', '.join(fields)} WHERE id = ?", values)
+            conn.commit()
+    except sqlite3.OperationalError:
+        # Older 216labs.db without activator columns — continue; in-memory status still works.
+        pass
 
 
 def run_compose(*args: str) -> subprocess.CompletedProcess:
@@ -209,6 +213,9 @@ def start_app(app_id: str) -> Dict[str, object]:
         set_runtime_state(app_id, "failed", msg, touch_accessed=True)
         status = set_status(app_id, "failed", msg, docker_service=docker_service)
         return {"ok": False, "status": status}
+    except Exception as e:
+        st = set_status(app_id, "failed", str(e))
+        return {"ok": False, "status": st}
     finally:
         app_lock.release()
 
@@ -310,4 +317,4 @@ def warmup():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "3040")))
-# bump: rebuild — deploy prune must not drop tagged 216labs images when container stopped
+# bump: error handling for start + sqlite runtime columns
