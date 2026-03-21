@@ -310,4 +310,4 @@ def warmup():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "3040")))
-# bump: rebuild image when deploy pipeline changes (two-phase compose)
+# bump: rebuild — deploy prune must not drop tagged 216labs images when container stopped

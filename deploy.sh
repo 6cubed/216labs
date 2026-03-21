@@ -238,9 +238,11 @@ fi
 if [ ${#BUILT_IMAGES[@]} -eq 0 ]; then
   echo "==> All images up to date, skipping transfer"
 else
-  # Free disk on server before transfer (prune unused containers and images)
-  echo "==> Pruning unused Docker resources on server to free space..."
-  ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -af 2>/dev/null; echo "Prune done"' 2>/dev/null || true
+  # Free disk on server before transfer. Use dangling-only image prune — NOT `prune -a`:
+  # tagged 216labs/* images must stay on disk when a container is stopped, or the next
+  # deploy has nothing to run (e.g. activator cold-start) until a full rebuild+transfer.
+  echo "==> Pruning dangling images on server (keeps tagged 216labs images)..."
+  ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -f 2>/dev/null; echo "Prune done"' 2>/dev/null || true
 
   USE_ZSTD=false
   if command -v zstd &>/dev/null; then
@@ -426,9 +428,9 @@ docker compose --env-file .env --env-file .env.admin up -d --pull never --no-bui
 
 docker compose ps
 
-# Post-deploy: prune unused images to avoid filling disk (keeps images used by running containers).
-echo "==> Pruning unused Docker images..."
-docker image prune -a -f
+# Post-deploy: dangling layers only — do not `prune -a` or tagged-but-stopped app images vanish.
+echo "==> Pruning dangling Docker images (not all unused tagged images)..."
+docker image prune -f
 
 # Update server DB with current image sizes, startup times, and commit counts so admin dashboard shows correct numbers.
 if [ -f 216labs.db ]; then
