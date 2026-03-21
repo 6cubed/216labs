@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Impulse — local offers near you</title>
+  <meta name="description" content="Browse impulse buys near your location — flash deals, food, retail, experiences." />
+  <meta property="og:title" content="Impulse" />
+  <meta property="og:description" content="Nearby local offers in a browseable format. The impulse buy platform." />
+  <meta property="og:url" content="{{ base_url }}/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root {
+      --bg: #0f0e12;
+      --surface: #1a1820;
+      --border: #2a2635;
+      --text: #f4f0fa;
+      --muted: #9b8fb8;
+      --accent: #ff6b4a;
+      --accent-dim: #c44d33;
+      --chip: #2d2840;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: radial-gradient(ellipse 120% 80% at 50% -20%, #2a1f33 0%, var(--bg) 55%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .brand h1 {
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin: 0 0 0.35rem;
+    }
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 36ch;
+      line-height: 1.45;
+    }
+    .loc-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+    }
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.65rem 1.2rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    button.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(255, 107, 74, 0.35);
+    }
+    button.primary:hover { transform: translateY(-1px); }
+    button.ghost {
+      background: var(--chip);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .status {
+      font-size: 0.8rem;
+      color: var(--muted);
+      min-height: 1.2em;
+    }
+    .status.err { color: #ff8a80; }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1.25rem 0 1rem;
+    }
+    .filters button {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      background: var(--chip);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .filters button.active {
+      background: rgba(255, 107, 74, 0.15);
+      color: var(--text);
+      border-color: var(--accent);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.1rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 140px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; right: 0;
+      width: 80px; height: 80px;
+      background: radial-gradient(circle at top right, rgba(255,107,74,0.12), transparent 70%);
+      pointer-events: none;
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .dist {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      background: rgba(255,255,255,0.05);
+      padding: 0.2rem 0.45rem;
+      border-radius: 6px;
+    }
+    .card h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .merchant {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .price-row {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .price {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .cat {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: capitalize;
+    }
+    #map {
+      height: 220px;
+      border-radius: 16px;
+      margin-top: 1.5rem;
+      border: 1px solid var(--border);
+      z-index: 0;
+    }
+    .empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .leaflet-container { background: #15131a; font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1>Impulse</h1>
+        <p>The closest impulse buys near you — flash food, drinks, retail, and experiences. Share location to sort by distance.</p>
+      </div>
+      <div class="loc-row">
+        <button type="button" class="primary" id="btn-locate">Use my location</button>
+        <button type="button" class="ghost" id="btn-demo">Demo: Zürich</button>
+      </div>
+    </header>
+    <p class="status" id="status"></p>
+    <div class="filters" id="filters">
+      <button type="button" data-cat="" class="active">All</button>
+      <button type="button" data-cat="food">Food</button>
+      <button type="button" data-cat="drink">Drink</button>
+      <button type="button" data-cat="retail">Retail</button>
+      <button type="button" data-cat="experience">Experience</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div id="map"></div>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+  (function () {
+    const statusEl = document.getElementById("status");
+    const gridEl = document.getElementById("grid");
+    const filterBtns = document.querySelectorAll("#filters button");
+    let map = null;
+    let markersLayer = null;
+    let userLat = null;
+    let userLng = null;
+    let category = "";
+
+    function setStatus(msg, isErr) {
+      statusEl.textContent = msg || "";
+      statusEl.className = "status" + (isErr ? " err" : "");
+    }
+
+    function fmtPrice(o) {
+      const cur = o.currency || "";
+      const p = o.price;
+      if (cur === "JPY" || cur === "KRW") return cur + " " + Math.round(p);
+      return (cur ? cur + " " : "") + (typeof p === "number" ? p.toFixed(2) : p);
+    }
+
+    function renderCards(offers) {
+      gridEl.innerHTML = "";
+      if (!offers.length) {
+        gridEl.innerHTML = '<div class="empty">No offers in range. Try a larger radius or another category — or use Demo to see Zurich picks.</div>';
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      for (const o of offers) {
+        const el = document.createElement("article");
+        el.className = "card";
+        el.innerHTML =
+          '<div class="card-top">' +
+            '<span class="badge">' + (o.badge || "Offer") + "</span>" +
+            '<span class="dist">' + o.distance_km + " km</span>" +
+          "</div>" +
+          "<h2>" + escapeHtml(o.title) + "</h2>" +
+          '<div class="merchant">' + escapeHtml(o.merchant) + "</div>" +
+          '<div class="price-row">' +
+            '<span class="price">' + escapeHtml(fmtPrice(o)) + "</span>" +
+            '<span class="cat">' + escapeHtml(o.category || "") + "</span>" +
+          "</div>";
+        frag.appendChild(el);
+      }
+      gridEl.appendChild(frag);
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function initMap() {
+      if (map) return;
+      map = L.map("map", { scrollWheelZoom: false });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap",
+      }).addTo(map);
+      markersLayer = L.layerGroup().addTo(map);
+    }
+
+    function updateMap(offers) {
+      initMap();
+      markersLayer.clearLayers();
+      if (userLat == null || userLng == null) return;
+      const userIcon = L.divIcon({
+        className: "user-pin",
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:#ff6b4a;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      L.marker([userLat, userLng], { icon: userIcon }).addTo(markersLayer).bindPopup("You");
+      const top = offers.slice(0, 8);
+      for (const o of top) {
+        L.circleMarker([o.lat, o.lng], {
+          radius: 6,
+          fillColor: "#ff6b4a",
+          color: "#fff",
+          weight: 1,
+          fillOpacity: 0.85,
+        }).addTo(markersLayer).bindPopup(escapeHtml(o.title));
+      }
+      const bounds = L.latLngBounds([[userLat, userLng]]);
+      top.forEach((o) => bounds.extend([o.lat, o.lng]));
+      map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13 });
+    }
+
+    async function fetchOffers() {
+      if (userLat == null || userLng == null) {
+        setStatus("Set a location first.", true);
+        return;
+      }
+      setStatus("Finding offers near you…");
+      const params = new URLSearchParams({ lat: userLat, lng: userLng, radius_km: "80" });
+      if (category) params.set("category", category);
+      const q = await fetch("/api/offers?" + params.toString());
+      if (!q.ok) {
+        const j = await q.json().catch(() => ({}));
+        setStatus(j.error || "Request failed", true);
+        return;
+      }
+      const data = await q.json();
+      setStatus(data.count + " impulse buys within " + data.radius_km + " km — sorted closest first.");
+      renderCards(data.offers);
+      updateMap(data.offers);
+    }
+
+    document.getElementById("btn-locate").addEventListener("click", function () {
+      if (!navigator.geolocation) {
+        setStatus("Geolocation not supported in this browser.", true);
+        return;
+      }
+      setStatus("Requesting location…");
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+          fetchOffers();
+        },
+        function () {
+          setStatus("Location denied or unavailable. Try “Demo: Zürich”.", true);
+        },
+        { enableHighAccuracy: true, timeout: 12000 }
+      );
+    });
+
+    document.getElementById("btn-demo").addEventListener("click", function () {
+      userLat = 47.3769;
+      userLng = 8.5417;
+      fetchOffers();
+    });
+
+    filterBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        filterBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        category = btn.getAttribute("data-cat") || "";
+        if (userLat != null) fetchOffers();
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

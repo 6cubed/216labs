@@ -119,6 +119,7 @@ const KNOWN_PORTS: Record<string, number> = {
   mysteryshopper: 8031,
   llminternals: 8032,
   maxlearn: 8033,
+  impulse: 8034,
 };
 
 let _db: Database.Database | null = null;
