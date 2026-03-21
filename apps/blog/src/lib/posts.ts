@@ -8,6 +8,64 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'vibe-coding-in-the-limit-putting-production-order-on-demo-chaos',
+    title: 'Vibe-coding in the limit: Putting production order on demo chaos',
+    excerpt:
+      'When demos multiply faster than ops can breathe, you need a factory: one repo, one deploy path, honest tradeoffs, and a roadmap that turns chaos into a flywheel.',
+    date: '2026-03-21',
+    body: `
+Vibe coding is a superpower: you can ship a credible UI, a working API, and a story in an afternoon. The trouble starts when “afternoon” becomes “forty apps,” each with its own port, env vars, reverse proxy, and half-finished deploy story. Production is not the opposite of vibe — it is what happens when the *same* creative loop runs inside constraints that don’t lie: disk, RAM, DNS, TLS, and the fact that users hit URLs, not your intentions.
+
+This is the limit: **demo chaos at scale**. The challenges are predictable. So is the fix: **centralize what repeats, automate what bores you, and admit what still has to be manual** until the factory catches up.
+
+**What actually breaks first**
+
+When you run many vibe-coded apps on one modest host, you don’t fail because the code is “too AI.” You fail because **surface area outgrew attention**:
+
+- **Deploy is a graph problem.** Building and transferring dozens of images on every change stops being “run a script” and starts being “who gets CPU, disk, and SSH time today?” Caps and priority lists become policy, not pettiness.
+- **The edge is shared.** One Caddyfile, one certificate story, one place where a missing upstream becomes a **502** — and if the thing that’s supposed to *wake* cold containers is itself cold, you’ve built a redirect loop into disappointment.
+- **Truth scatters.** Env vars in three places, “enabled” in a dashboard, reality in \`docker ps\`. The factory only works when **one SQLite brain** (or equivalent) can say: this app exists, this is its port, this is whether it ships, these are its secrets — without a human diffing YAML at midnight.
+- **Demos are not observability.** Happy path tests and security scans don’t replace product judgment, but without them you’re flying blind: you find out a subdomain is dead when a human tries it.
+
+None of this is an argument against vibe coding. It is an argument for **putting production order around the demos** so the creativity compounds instead of corroding.
+
+**What we leaned on: centralization and synergies**
+
+The useful kind of centralization is boring on purpose:
+
+- **One monorepo** so “where does this live?” is never a meeting.
+- **Manifests per app** so metadata, ports, and env *keys* are data, not archaeology.
+- **One deploy path** so “ship it” means the same script, the same build policy (always local images, never build on the droplet), the same transfer story.
+- **Generated edge config** so hostnames track manifests instead of hand-edited routes.
+- **Admin + SQLite as source of truth** for what is enabled and what secrets exist — with migrations when new columns appear, because the system grows.
+- **Cross-cutting modules** where they earn their keep: scheduled browser checks for “does the obvious thing still work?”, scheduled static analysis for “did we paint a new hole?”, and a **cold-start path** so stopped containers aren’t permanent 502s if the machinery can safely bring them up.
+
+Synergy is the payoff: **PipeSecure, Happy Path, and deploy all read the same world.** Change the app list once; the factory doesn’t need a separate spreadsheet to know what exists.
+
+**Honest tradeoffs**
+
+Centralization does not erase complexity — it **concentrates** it. Someone has to own the deploy script when it needs two phases: edge and bootstrap first, long tail second, so one missing image doesn’t starve the whole fleet. Someone has to decide **how many apps** get a full image transfer this week when disk is tight. That’s not bureaucracy; it’s **scheduling under constraints**, which every real factory has always done.
+
+**Roadmap: boosting the flywheel**
+
+Here is the direction we’re pushing — not a promise that every box is checked, but a clear sequence for compounding:
+
+1. **Harden the spine.** Treat Caddy + bootstrap services + deploy phases as **first-class**: they must come up even when the tail of the compose file is noisy. Make “activator up” and “edge up” independent of “every niche app had a perfect day.”
+2. **Tighten the cap story.** Deploy batching and priority lists are already policy as code; next is clearer **operator feedback** when an app is enabled in admin but not in this week’s image set — so intent and reality don’t diverge silently.
+3. **Shared identity and auth where it hurts.** New apps shouldn’t each reinvent login; a thin shared layer means new demos stay demos, not security snowflakes.
+4. **Pause states, not just on/off.** “In the repo” vs “receiving traffic” vs “built this week” are three different knobs; exposing them reduces the temptation to fix everything with another full deploy.
+5. **Observability that matches the grid.** One place to see health across the manifest — not full APM for every toy, but **enough signal** to know what to restart before a human reports it.
+6. **Templates that encode decisions.** Scaffold + manifest + default test hooks so the path from prompt to *grid citizen* is shorter every time.
+7. **Scale the *protocols*, not just the apps.** MCP-style boundaries for how agents and tools touch production data — so governance rides on interfaces, not on saying “no” to the next demo.
+
+**The point**
+
+Vibe coding in the limit is not “slow down.” It is **speed with memory**: the same joy of shipping, but with a factory that remembers what shipped, where it lives, and whether it still runs. Demo chaos becomes a backlog with an owner; production order becomes the **flywheel** that lets the next hundred demos cost less than the last ten.
+
+That’s the bet: not less creativity — **more of it**, because the floor is solid enough to stand on.
+    `.trim(),
+  },
+  {
     slug: 'why-vlms-are-not-the-solution-for-vision-intelligence',
     title: 'Why VLMs are not the solution for vision intelligence',
     excerpt: 'Vision Language Models map pixels to text — but vision intelligence is about spatial reasoning, physics, and action. The language bottleneck loses what matters.',
