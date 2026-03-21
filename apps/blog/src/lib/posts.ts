@@ -8,6 +8,35 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'why-vlms-are-not-the-solution-for-vision-intelligence',
+    title: 'Why VLMs are not the solution for vision intelligence',
+    excerpt: 'Vision Language Models map pixels to text — but vision intelligence is about spatial reasoning, physics, and action. The language bottleneck loses what matters.',
+    date: '2026-03-21',
+    body: `
+Vision Language Models (VLMs) are having a moment. Throw an image at GPT-4V or Gemini, get a caption, answer a question, describe what you see. The demos are impressive. But VLMs are not the path to solving vision intelligence. They are a useful tool for one narrow slice of the problem — turning images into text — while the rest of what vision is for gets compressed away.
+
+**Vision is not a translation problem**
+
+Vision intelligence is fundamentally about spatial reasoning, object permanence, physics, and causality. A system that "understands" a scene knows that the cup behind the laptop is still there when you can't see it. It knows that pushing the block will move it, that the shadow implies a light source, that the person in the photo is the same entity across frames. None of that requires language. VLMs are trained to map pixels to tokens. The "understanding" that emerges is a side effect of predicting the next word — not of building internal representations of the visual world. The language layer is a lossy bottleneck. We're optimizing for "what would a human say about this image?" instead of "what is actually going on in this image?"
+
+**Benchmarks reward the wrong thing**
+
+VLMs excel at VQA, captioning, and visual reasoning benchmarks because those tasks are *defined* in linguistic terms. "Describe the scene." "What color is the car?" "How many objects are visible?" The benchmark is the model. When we measure vision by how well a system generates text about images, we get systems that are very good at generating text about images. But real vision intelligence — knowing that an occluded object persists, inferring force and motion from a single frame, understanding affordances ("graspable," "climbable") — doesn't reduce neatly to "describe what you see." We're measuring language output and calling it vision.
+
+**Action needs vision, not captions**
+
+True vision intelligence exists to support action: where to reach, how to navigate, what to avoid, how to manipulate. Robots, embodied agents, and interactive systems need vision that feeds directly into control. VLMs output text. The gap between "describe the red block" and "pick up the red block" is enormous. You can bolt a VLM onto a robot and prompt it to output coordinates or commands — and people do — but that's routing vision through a language model that was never trained for low-latency, precise, control-oriented output. The architecture is wrong for the task. Vision for action needs tight coupling between perception and motor control, not a detour through natural language generation.
+
+**Scale doesn't fix the architecture**
+
+Throwing more data and parameters at the vision-language mapping doesn't solve the fundamental mismatch. Vision deals with continuous, analog, high-dimensional signals. Language is discrete and symbolic. The translation layer necessarily loses information. A VLM can describe a face; it can't give you a representation that supports face recognition, emotion detection, gaze estimation, and 3D reconstruction with equal fidelity. It gives you one output: text. That's useful for chat. It's not a general vision substrate.
+
+**What would vision intelligence actually look like?**
+
+Not "describe this image." More like: representations that support many downstream tasks without going through language. Systems that reason over spatial structure, occlusion, and physics. Architectures that couple perception to action with minimal latency. Benchmarks that measure generalization to novel combinations, systematic variation, and embodied success — not "did the model say the right words?" VLMs are a great product for "show me an image and I'll talk about it." They are not the foundation for the kind of vision intelligence that agents, robots, and general-purpose AI will need. That path runs through different architectures, different training objectives, and a clear separation between "vision as a service to language" and "vision as a service to the world."
+    `.trim(),
+  },
+  {
     slug: 'investing-for-the-agi-slope',
     title: 'Investing for the AGI slope',
     excerpt: 'The AGI slope is not one event but a compounding curve. Here is a practical portfolio framework for uncertainty: bars-and-bell bets, compute leverage, and optionality without delusion.',
