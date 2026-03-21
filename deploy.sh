@@ -405,9 +405,14 @@ if [ "${RUNNING:-0}" -lt 4 ]; then
 else
   # Normal deploy — ensure all services are running, then only restart the ones
   # with new images. This avoids mass-restart OOM spikes.
-  echo "==> Normal deploy — ensuring all services are up..."
+  # Phase 1: Caddy + activator only. If a later service is missing an image, a single
+  # combined `compose up` can abort before activator is created — then every subdomain
+  # that redirects cold traffic to activator.6cubed.app returns 502.
+  echo "==> Normal deploy — phase 1: Caddy + activator..."
+  docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build caddy activator
+  echo "==> Normal deploy — phase 2: all enabled services..."
   # shellcheck disable=SC2086
-  docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build $COMPOSE_SERVICES
+  docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build $COMPOSE_SERVICES || true
 
   if [ -n "$(echo "${CHANGED_SERVICES:-}" | tr -d ' ')" ]; then
     echo "==> Restarting changed services: $CHANGED_SERVICES"
