@@ -365,7 +365,7 @@ fi
 
 # Force Caddy to reload so it picks up Caddyfile changes (e.g. new app vhosts like blog).
 echo "==> Reloading Caddy (pick up Caddyfile changes)..."
-docker compose --env-file .env --env-file .env.admin up -d --no-build --force-recreate caddy 2>/dev/null || true
+docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate caddy 2>/dev/null || true
 
 # Count currently running containers to decide startup strategy.
 RUNNING=$(docker ps --filter 'label=com.docker.compose.project=216labs' --format '{{.Names}}' 2>/dev/null | wc -l | tr -d ' ')
@@ -374,7 +374,7 @@ if [ "${RUNNING:-0}" -lt 4 ]; then
   # Initial startup (fresh server / post-reboot with no containers).
   # Start in batches to avoid OOM on memory-constrained hosts.
   echo "==> Initial startup — bringing up services in batches to avoid OOM..."
-  docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build caddy
+  docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build caddy
   echo "==> Infrastructure up. Waiting 15s..."
   sleep 15
 
@@ -385,7 +385,7 @@ if [ "${RUNNING:-0}" -lt 4 ]; then
     if [ "$count" -ge 4 ]; then
       echo "==> Starting batch:$batch"
       # shellcheck disable=SC2086
-      docker compose --env-file .env --env-file .env.admin up -d --no-build $batch
+      docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build $batch
       echo "==> Waiting 25s..."
       sleep 25
       batch="" ; count=0
@@ -394,7 +394,7 @@ if [ "${RUNNING:-0}" -lt 4 ]; then
   if [ -n "$(echo "$batch" | tr -d ' ')" ]; then
     echo "==> Starting final batch:$batch"
     # shellcheck disable=SC2086
-    docker compose --env-file .env --env-file .env.admin up -d --no-build $batch
+    docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build $batch
     sleep 10
   fi
 else
@@ -402,12 +402,12 @@ else
   # with new images. This avoids mass-restart OOM spikes.
   echo "==> Normal deploy — ensuring all services are up..."
   # shellcheck disable=SC2086
-  docker compose --env-file .env --env-file .env.admin up -d --remove-orphans --no-build $COMPOSE_SERVICES
+  docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build $COMPOSE_SERVICES
 
   if [ -n "$(echo "${CHANGED_SERVICES:-}" | tr -d ' ')" ]; then
     echo "==> Restarting changed services: $CHANGED_SERVICES"
     # shellcheck disable=SC2086
-    docker compose --env-file .env --env-file .env.admin up -d --no-build --force-recreate $CHANGED_SERVICES
+    docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate $CHANGED_SERVICES
   fi
 fi
 
