@@ -4,34 +4,57 @@
 
 {% block head %}
 <style>
-  .leader-wrap { padding: 2rem 0; }
-  .leader-wrap h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-  .leader-wrap .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem; }
+  .leader-wrap { padding: 1rem 0 3rem; }
+  .leader-wrap h1 {
+    font-size: clamp(1.35rem, 3vw, 1.65rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.35rem;
+  }
+  .leader-wrap .sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.25rem; max-width: 36rem; }
   .country-select { margin-bottom: 1.5rem; }
-  .country-select label { font-size: 0.8rem; color: var(--muted); margin-right: 0.5rem; }
+  .country-select label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-right: 0.5rem; }
   .country-select select {
-    padding: 0.4rem 0.75rem;
-    background: var(--surface);
+    padding: 0.5rem 0.75rem;
+    background: var(--bg2);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-sm);
     color: var(--text);
     font-size: 0.95rem;
+    cursor: pointer;
   }
-  .section-title { font-size: 0.85rem; font-weight: 600; color: var(--muted); margin: 1.5rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
-  .item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; text-align: center; }
-  .item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-  .item .rank { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
-  .item .elo { font-weight: 700; color: var(--accent); font-size: 1rem; }
+  .country-select select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .section-title {
+    font-size: 0.75rem; font-weight: 600; color: var(--muted);
+    margin: 1.75rem 0 0.85rem;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.85rem; }
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    text-align: center;
+    transition: border-color 0.15s, transform 0.12s;
+  }
+  .item:hover { border-color: #3f3f4b; transform: translateY(-2px); }
+  .item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg2); }
+  .item .rank { font-size: 0.72rem; color: var(--muted); margin-top: 0.35rem; }
+  .item .elo { font-weight: 700; color: var(--accent); font-size: 0.95rem; padding-bottom: 0.35rem; }
   .bottom .item .elo { color: var(--muted); }
+  .empty { color: var(--muted); font-size: 0.95rem; padding: 2rem 0; text-align: center; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="leader-wrap container">
   <h1>Leaderboard by country</h1>
-  <p class="sub">Top and bottom faces per country. Votes only affect your country’s ranking.</p>
+  <p class="sub">Elo rankings for each country you vote in. Top and bottom lists use the same pool of faces.</p>
 
+  {% if total_faces == 0 %}
+  <p class="empty">No faces loaded yet. The app seeds images after deploy — try again in a minute, or visit <a href="/" style="color: var(--accent);">Vote</a>.</p>
+  {% else %}
   <div class="country-select">
     <form method="get" action="/leaderboard">
       <label for="country">Country</label>
@@ -48,14 +71,14 @@
   <div class="grid">
     {% for f in top_faces[:10] %}
     <div class="item">
-      <img src="/static/faces/{{ f.filename }}" alt="Face #{{ f.id }}" loading="lazy" />
+      <img src="/static/faces/{{ f.filename }}" alt="" loading="lazy" width="200" height="200" />
       <div class="rank">#{{ loop.index }}</div>
       <div class="elo">{{ "%.0f"|format(f.elo) }}</div>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <p class="sub">No votes for this country yet. <a href="/">Vote</a> to build the leaderboard.</p>
+  <p class="empty">No leaderboard data.</p>
   {% endif %}
 
   <div class="section-title">Bottom 10 — {{ selected_country }}</div>
@@ -63,14 +86,15 @@
   <div class="grid bottom">
     {% for f in bottom_faces %}
     <div class="item">
-      <img src="/static/faces/{{ f.filename }}" alt="Face #{{ f.id }}" loading="lazy" />
+      <img src="/static/faces/{{ f.filename }}" alt="" loading="lazy" width="200" height="200" />
       <div class="rank">Bottom #{{ loop.index }}</div>
       <div class="elo">{{ "%.0f"|format(f.elo) }}</div>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <p class="sub">Not enough votes yet for a bottom 10.</p>
+  <p class="empty">Not enough faces to show a bottom list.</p>
+  {% endif %}
   {% endif %}
 </div>
 {% endblock %}

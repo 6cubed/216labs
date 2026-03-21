@@ -3,54 +3,108 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0c0c0f" />
   <title>{% block title %}FaceRate{% endblock %}</title>
   <style>
+    @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap");
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0f0f12;
-      --surface: #18181c;
-      --border: #2a2a32;
+      --bg: #0c0c0f;
+      --bg2: #12121a;
+      --surface: #18181f;
+      --surface2: #1f1f28;
+      --border: #2e2e38;
       --accent: #e879f9;
-      --accent2: #c084fc;
-      --text: #e4e4e7;
-      --muted: #71717a;
-      --radius: 12px;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --accent-dim: rgba(232, 121, 249, 0.15);
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --font: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     body {
       font-family: var(--font);
       background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232, 121, 249, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 50%, rgba(99, 102, 241, 0.06), transparent);
       color: var(--text);
       min-height: 100vh;
-      line-height: 1.5;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
     }
 
     a { color: inherit; text-decoration: none; }
 
     nav {
       border-bottom: 1px solid var(--border);
-      padding: 0 1.5rem;
-      height: 52px;
+      padding: 0 1.25rem;
+      min-height: 56px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--surface);
+      background: rgba(24, 24, 31, 0.85);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
     }
 
-    .nav-brand { font-weight: 700; color: #fff; }
+    .nav-brand {
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
     .nav-brand span { color: var(--accent); }
 
-    .nav-links { display: flex; gap: 1.25rem; }
-    .nav-links a { color: var(--muted); font-size: 0.9rem; }
-    .nav-links a:hover { color: var(--text); }
+    .nav-links { display: flex; gap: 0.25rem; align-items: center; }
+    .nav-links a {
+      color: var(--muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.45rem 0.75rem;
+      border-radius: var(--radius-sm);
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .nav-links a[aria-current="page"] { color: var(--text); background: var(--accent-dim); }
 
     .container {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
-      padding: 1.5rem;
+      padding: 1.25rem 1.25rem 3rem;
     }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.65rem 1.1rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--bg);
+      background: linear-gradient(135deg, var(--accent), #c084fc);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: transform 0.12s, filter 0.12s, box-shadow 0.12s;
+      box-shadow: 0 2px 12px rgba(232, 121, 249, 0.25);
+    }
+    .btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-secondary {
+      color: var(--text);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    .btn-secondary:hover { background: var(--surface); border-color: #3f3f4b; }
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -58,8 +112,8 @@
   <nav>
     <a href="/" class="nav-brand">Face<span>Rate</span></a>
     <div class="nav-links">
-      <a href="/">Vote</a>
-      <a href="/leaderboard">Leaderboard</a>
+      <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %}>Vote</a>
+      <a href="/leaderboard" {% if request.path.startswith('/leaderboard') %}aria-current="page"{% endif %}>Leaderboard</a>
     </div>
   </nav>
 

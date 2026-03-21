@@ -4,60 +4,153 @@
 
 {% block head %}
 <style>
-  .vote-wrap { text-align: center; padding: 2rem 0 4rem; }
-  .vote-wrap h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
-  .vote-wrap p { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .vote-wrap { padding: 1rem 0 3rem; max-width: 720px; margin: 0 auto; }
+  .hero { text-align: center; margin-bottom: 2rem; }
+  .hero h1 {
+    font-size: clamp(1.5rem, 4vw, 1.85rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+  .hero p { color: var(--muted); font-size: 0.95rem; max-width: 28rem; margin: 0 auto; }
+  .hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.75rem; opacity: 0.9; }
 
   .onboard {
-    max-width: 360px;
+    max-width: 380px;
     margin: 0 auto 2rem;
-    text-align: left;
-  }
-  .onboard label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 0.35rem; }
-  .onboard select {
-    width: 100%;
-    padding: 0.6rem;
+    padding: 1.25rem;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
+  }
+  .onboard label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.4rem; }
+  .onboard select {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     color: var(--text);
     font-size: 1rem;
     margin-bottom: 1rem;
+    cursor: pointer;
   }
-  .onboard .btn { width: 100%; justify-content: center; margin-top: 0.5rem; }
+  .onboard select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .onboard .btn { width: 100%; }
 
-  .pair { display: flex; gap: 1.5rem; justify-content: center; align-items: stretch; flex-wrap: wrap; margin-bottom: 2rem; }
-  .face-card {
-    flex: 1; min-width: 200px; max-width: 320px;
-    background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
-    overflow: hidden; cursor: pointer; transition: border-color 0.2s, transform 0.15s;
+  .prefs-bar {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem 1rem;
+    font-size: 0.85rem; color: var(--muted);
+    margin-bottom: 1.25rem;
+    padding: 0.6rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
   }
-  .face-card:hover { border-color: var(--accent); transform: scale(1.02); }
-  .face-card:active { transform: scale(0.98); }
-  .face-card img { width: 100%; height: auto; display: block; aspect-ratio: 1; object-fit: cover; }
-  .face-card .elo { padding: 0.5rem; font-size: 0.8rem; color: var(--muted); }
-  .vs { display: flex; align-items: center; font-size: 1.25rem; font-weight: 700; color: var(--muted); }
-  .loading, .error { padding: 3rem; color: var(--muted); }
-  .error { color: #f87171; }
-  .prefs-bar { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
-  .prefs-bar a { color: var(--accent); }
+  .prefs-bar a { color: var(--accent); font-weight: 500; }
+  .prefs-bar a:hover { text-decoration: underline; }
+
+  .pair-wrap { position: relative; min-height: 280px; }
+  .pair {
+    display: flex; gap: 1rem; justify-content: center; align-items: stretch;
+    flex-wrap: wrap; margin-bottom: 1rem;
+  }
+  .face-card {
+    flex: 1; min-width: 160px; max-width: 300px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  }
+  .face-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .face-card:hover { border-color: rgba(232, 121, 249, 0.5); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.35); }
+  .face-card:active { transform: translateY(0); }
+  .face-card.is-picked { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .face-card img { width: 100%; height: auto; display: block; aspect-ratio: 1; object-fit: cover; background: var(--bg2); }
+  .face-card .meta {
+    padding: 0.5rem 0.65rem;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 0.8rem; color: var(--muted);
+  }
+  .face-card .meta kbd {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    background: var(--bg2);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .vs {
+    display: flex; align-items: center;
+    font-size: 0.95rem; font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .actions {
+    display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-top: 0.5rem;
+  }
+
+  .loading {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1rem; padding: 3rem 1rem; color: var(--muted);
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error {
+    padding: 1.25rem;
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    border-radius: var(--radius-sm);
+    color: #fca5a5;
+    font-size: 0.95rem;
+    text-align: center;
+    max-width: 420px; margin: 0 auto;
+  }
+  .error button { margin-top: 0.75rem; }
+
+  .empty-db {
+    text-align: center; padding: 2rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="vote-wrap container">
-  <h1>Who’s more attractive?</h1>
-  <p>Votes only affect your country’s leaderboard. Same-gender pairs only.</p>
+  <div class="hero">
+    <h1>Which face wins?</h1>
+    <p>Tap a face to vote. Scores use Elo per country — same-gender pairs only.</p>
+    {% if total_faces == 0 %}
+    <p class="hint">Face images are loading in the background after deploy. Refresh in a minute if pairs fail.</p>
+    {% endif %}
+  </div>
 
+  {% if total_faces == 0 %}
+  <div class="empty-db">No faces in the database yet. Check back shortly.</div>
+  {% endif %}
+
+  {% if total_faces > 0 %}
   <div id="onboard" class="onboard" style="display: none;">
-    <label>I’m attracted to</label>
+    <label for="attraction">I’m attracted to</label>
     <select id="attraction" required>
-      <option value="" disabled>Choose…</option>
+      <option value="" disabled selected>Choose…</option>
       <option value="m">Men</option>
       <option value="f">Women</option>
-      <option value="all">All (alternating)</option>
+      <option value="all">All (random gender each round)</option>
     </select>
-    <label>My country</label>
+    <label for="country">My country (for the leaderboard)</label>
     <select id="country">
       {% for code, name in countries %}
       <option value="{{ code }}" {% if code == 'US' %}selected{% endif %}>{{ name }}</option>
@@ -67,22 +160,37 @@
   </div>
 
   <div id="prefsBar" class="prefs-bar" style="display: none;">
-    <span id="prefsText"></span> · <a href="#" onclick="showOnboard(); return false;">Change</a>
+    <span id="prefsText"></span>
+    <a href="#" onclick="showOnboard(); return false;">Change settings</a>
   </div>
 
-  <div id="pairContainer">
-    <div id="loading" class="loading">Loading pair…</div>
-    <div id="error" class="error" style="display: none;"></div>
+  <div id="pairContainer" class="pair-wrap">
+    <div id="loading" class="loading">
+      <div class="spinner" aria-hidden="true"></div>
+      <span>Loading pair…</span>
+    </div>
+    <div id="error" class="error" style="display: none;" role="alert"></div>
     <div id="pair" class="pair" style="display: none;">
-      <div class="face-card" id="cardA" data-id=""><img id="imgA" src="" alt="Face A" /><div class="elo">Elo <span id="eloA">—</span></div></div>
-      <div class="vs">vs</div>
-      <div class="face-card" id="cardB" data-id=""><img id="imgB" src="" alt="Face B" /><div class="elo">Elo <span id="eloB">—</span></div></div>
+      <div class="face-card" id="cardA" tabindex="0" role="button" data-id="" aria-label="Vote for face A, key 1">
+        <img id="imgA" src="" alt="Face A" width="512" height="512" decoding="async" />
+        <div class="meta"><span>Elo <strong id="eloA">—</strong></span><kbd>1</kbd></div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="face-card" id="cardB" tabindex="0" role="button" data-id="" aria-label="Vote for face B, key 2">
+        <img id="imgB" src="" alt="Face B" width="512" height="512" decoding="async" />
+        <div class="meta"><span>Elo <strong id="eloB">—</strong></span><kbd>2</kbd></div>
+      </div>
+    </div>
+    <div id="skipRow" class="actions" style="display: none;">
+      <button type="button" class="btn btn-secondary" id="btnSkip">Skip — new pair</button>
     </div>
   </div>
+  {% endif %}
 </div>
 
+{% if total_faces > 0 %}
 <script>
-  const STORAGE_KEY = 'facerate_prefs_v2';
+  const STORAGE_KEY = 'facerate_prefs_v3';
   const loading = document.getElementById('loading');
   const errEl = document.getElementById('error');
   const pairEl = document.getElementById('pair');
@@ -95,9 +203,12 @@
   const imgB = document.getElementById('imgB');
   const eloA = document.getElementById('eloA');
   const eloB = document.getElementById('eloB');
+  const skipRow = document.getElementById('skipRow');
+  const btnSkip = document.getElementById('btnSkip');
 
   let prefs = { attraction: 'all', country: 'US' };
   let current = { face_a: null, face_b: null };
+  let voting = false;
 
   function loadPrefs() {
     try {
@@ -110,33 +221,49 @@
   }
 
   function showOnboard() {
-    prefs.attraction = document.getElementById('attraction').value;
-    prefs.country = document.getElementById('country').value;
+    document.getElementById('attraction').value = prefs.attraction || '';
+    document.getElementById('country').value = prefs.country || 'US';
     onboardEl.style.display = 'block';
     prefsBarEl.style.display = 'none';
     pairEl.style.display = 'none';
+    skipRow.style.display = 'none';
     loading.style.display = 'none';
+    errEl.style.display = 'none';
   }
+
   function savePrefsAndStart() {
     const attraction = document.getElementById('attraction').value;
     const country = document.getElementById('country').value;
-    if (!attraction) { alert('Please choose who you\'re attracted to.'); return; }
+    if (!attraction) { alert('Choose who you want to compare.'); return; }
     prefs.attraction = attraction;
     prefs.country = country;
     savePrefs();
     onboardEl.style.display = 'none';
-    prefsBarEl.style.display = 'block';
+    prefsBarEl.style.display = 'flex';
     const names = { m: 'Men', f: 'Women', all: 'All' };
-    prefsTextEl.textContent = 'Attracted to: ' + (names[prefs.attraction] || prefs.attraction) + ' · Country: ' + prefs.country;
+    prefsTextEl.textContent = 'Comparing: ' + (names[prefs.attraction] || prefs.attraction) + ' · Leaderboard: ' + prefs.country;
     fetchPair();
   }
 
-  function showError(msg) {
+  function showError(msg, showRetry) {
     loading.style.display = 'none';
     pairEl.style.display = 'none';
-    errEl.textContent = msg;
+    skipRow.style.display = 'none';
+    errEl.innerHTML = '';
+    const p = document.createElement('p');
+    p.textContent = msg;
+    errEl.appendChild(p);
+    if (showRetry) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-secondary';
+      b.textContent = 'Try again';
+      b.onclick = () => fetchPair();
+      errEl.appendChild(b);
+    }
     errEl.style.display = 'block';
   }
+
   function showPair(data) {
     loading.style.display = 'none';
     errEl.style.display = 'none';
@@ -148,11 +275,16 @@
     eloA.textContent = data.face_a.elo;
     eloB.textContent = data.face_b.elo;
     pairEl.style.display = 'flex';
+    skipRow.style.display = 'flex';
+    cardA.classList.remove('is-picked');
+    cardB.classList.remove('is-picked');
   }
+
   function setLoading() {
     errEl.style.display = 'none';
     pairEl.style.display = 'none';
-    loading.style.display = 'block';
+    skipRow.style.display = 'none';
+    loading.style.display = 'flex';
   }
 
   async function fetchPair() {
@@ -160,17 +292,20 @@
     try {
       const res = await fetch('/api/pair?attraction=' + encodeURIComponent(prefs.attraction) + '&country=' + encodeURIComponent(prefs.country));
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load pair');
+      if (!res.ok) throw new Error(data.error || 'Could not load a pair');
       showPair(data);
     } catch (e) {
-      showError(e.message);
+      showError(e.message || 'Something went wrong', true);
     }
   }
 
   async function vote(winnerId) {
-    if (!current.face_a || !current.face_b) return;
+    if (voting || !current.face_a || !current.face_b) return;
+    voting = true;
+    const winCard = winnerId === current.face_a.id ? cardA : cardB;
+    winCard.classList.add('is-picked');
     try {
-      await fetch('/api/vote', {
+      const res = await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -180,26 +315,51 @@
           country_code: prefs.country,
         }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Vote failed');
       fetchPair();
     } catch (e) {
-      showError(e.message);
+      showError(e.message || 'Vote failed', true);
+    } finally {
+      voting = false;
     }
   }
 
   cardA.addEventListener('click', () => vote(parseInt(cardA.dataset.id, 10)));
   cardB.addEventListener('click', () => vote(parseInt(cardB.dataset.id, 10)));
 
+  cardA.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vote(parseInt(cardA.dataset.id, 10)); }
+  });
+  cardB.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vote(parseInt(cardB.dataset.id, 10)); }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (onboardEl.style.display === 'block' || loading.style.display === 'flex' || pairEl.style.display === 'none') return;
+    if (e.key === '1') vote(parseInt(cardA.dataset.id, 10));
+    if (e.key === '2') vote(parseInt(cardB.dataset.id, 10));
+    if (e.key === 's' || e.key === 'S' || e.key === 'Escape') {
+      e.preventDefault();
+      fetchPair();
+    }
+  });
+
+  btnSkip.addEventListener('click', () => fetchPair());
+
   loadPrefs();
   const hasValidPrefs = localStorage.getItem(STORAGE_KEY) && ['m','f','all'].includes(prefs.attraction);
   if (hasValidPrefs) {
     document.getElementById('attraction').value = prefs.attraction;
     document.getElementById('country').value = prefs.country;
-    prefsBarEl.style.display = 'block';
-    prefsTextEl.textContent = 'Attracted to: ' + (prefs.attraction === 'm' ? 'Men' : prefs.attraction === 'f' ? 'Women' : 'All') + ' · Country: ' + prefs.country;
+    prefsBarEl.style.display = 'flex';
+    const names = { m: 'Men', f: 'Women', all: 'All' };
+    prefsTextEl.textContent = 'Comparing: ' + (names[prefs.attraction] || prefs.attraction) + ' · Leaderboard: ' + prefs.country;
     fetchPair();
   } else {
     onboardEl.style.display = 'block';
     loading.style.display = 'none';
   }
 </script>
+{% endif %}
 {% endblock %}

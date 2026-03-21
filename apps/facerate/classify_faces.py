@@ -1,9 +1,11 @@
 """
-Set gender and excluded (under-18-looking) for faces using DeepFace.
-Run after seeding: pip install deepface, then python classify_faces.py
+Optional: set gender and excluded (under-18-looking) using DeepFace (not bundled in Docker).
 
-- gender: 'm' or 'f' (required for Men/Women attraction filters)
-- excluded: 1 if estimated age < 18, else 0 (faces excluded from voting)
+Production uses deterministic m/f labels from seed + DB migration so Men/Women filters work
+without ML. Run locally after `pip install deepface` if you want vision-based labels instead.
+
+- gender: 'm' or 'f'
+- excluded: 1 if estimated age < 18, else 0
 """
 import os
 import sys

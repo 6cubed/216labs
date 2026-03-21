@@ -49,7 +49,9 @@ def main():
     fast_until = min(start + 2, NUM_FACES)
     for i in range(start + 1, NUM_FACES + 1):
         if download_one(i):
-            insert_face(f"{i:04d}.jpg", gender="u", excluded=0)
+            # Alternating labels so Men/Women filters work without ML in Docker (see database migration).
+            g = "m" if i % 2 == 0 else "f"
+            insert_face(f"{i:04d}.jpg", gender=g, excluded=0)
             if i % 50 == 0:
                 print(f"  {i}/{NUM_FACES}")
         delay = 0.3 if i < fast_until else DELAY_SEC

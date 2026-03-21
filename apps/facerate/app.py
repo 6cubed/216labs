@@ -47,14 +47,16 @@ def index():
 @app.route("/leaderboard")
 def leaderboard_page():
     country = request.args.get("country", "US")
-    top = get_leaderboard(country_code=country, limit=100)
-    bottom = get_bottom(country_code=country, limit=10)
+    n_faces = face_count()
+    top = get_leaderboard(country_code=country, limit=100) if n_faces else []
+    bottom = get_bottom(country_code=country, limit=10) if n_faces else []
     return render_template(
         "leaderboard.html",
         countries=COUNTRIES,
         selected_country=country,
         top_faces=top,
         bottom_faces=bottom,
+        total_faces=n_faces,
     )
 
 

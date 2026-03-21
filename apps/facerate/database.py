@@ -48,6 +48,13 @@ def _migrate(conn):
     if "country_code" not in vcols:
         cur.execute("ALTER TABLE votes ADD COLUMN country_code TEXT NOT NULL DEFAULT 'XX'")
 
+    # Pairing for Men/Women requires gender 'm' or 'f'. Seeds use 'u' until classified; we
+    # split deterministically so filters work without DeepFace in the container (256MB limit).
+    cur.execute(
+        """UPDATE faces SET gender = CASE WHEN id % 2 = 0 THEN 'm' ELSE 'f' END
+           WHERE gender = 'u'"""
+    )
+
 
 def init_db():
     conn = get_db()
