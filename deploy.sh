@@ -367,6 +367,11 @@ fi
 echo "==> Reloading Caddy (pick up Caddyfile changes)..."
 docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate caddy 2>/dev/null || true
 
+# Activator must stay up: other vhosts redirect cold traffic here. If a later compose up fails
+# mid-stack, activator can be missing — start it right after Caddy whenever the image exists.
+echo "==> Ensuring activator (cold-start) is up..."
+docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build activator 2>/dev/null || true
+
 # Count currently running containers to decide startup strategy.
 RUNNING=$(docker ps --filter 'label=com.docker.compose.project=216labs' --format '{{.Names}}' 2>/dev/null | wc -l | tr -d ' ')
 
@@ -410,6 +415,9 @@ else
     docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate $CHANGED_SERVICES
   fi
 fi
+
+echo "==> Final ensure: activator (cold-start)..."
+docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build activator 2>/dev/null || true
 
 docker compose ps
 
