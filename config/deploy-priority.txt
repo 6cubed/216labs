@@ -5,6 +5,7 @@ admin
 landing
 blog
 npcworld
+impulse
 mysteryshopper
 llminternals
 pocket
