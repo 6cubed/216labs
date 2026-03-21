@@ -12,6 +12,7 @@ from urllib import request as urlrequest
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
+# v2: POST /api/start JSON errors + sqlite runtime columns optional
 
 PROJECT_ROOT = os.environ.get("ACTIVATOR_PROJECT_ROOT", "/workspace")
 DB_PATH = os.environ.get("ACTIVATOR_DB_PATH", os.path.join(PROJECT_ROOT, "216labs.db"))
