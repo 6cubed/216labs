@@ -122,6 +122,7 @@ const KNOWN_PORTS: Record<string, number> = {
   impulse: 8034,
   mediate: 8035,
   avatar: 8036,
+  activator: 8037,
 };
 
 let _db: Database.Database | null = null;
@@ -134,6 +135,22 @@ export function getDb(): Database.Database {
     initSchema(_db);
   }
   return _db;
+}
+
+/** Activator service updates these columns; add if DB predates activator. */
+function ensureActivatorRuntimeColumns(db: Database.Database) {
+  const cols = db.prepare("PRAGMA table_info(apps)").all() as { name: string }[];
+  const have = new Set(cols.map((c) => c.name));
+  const add = (name: string, ddl: string) => {
+    if (!have.has(name)) {
+      db.exec(ddl);
+      have.add(name);
+    }
+  };
+  add("runtime_status", "ALTER TABLE apps ADD COLUMN runtime_status TEXT");
+  add("last_runtime_error", "ALTER TABLE apps ADD COLUMN last_runtime_error TEXT");
+  add("last_started_at", "ALTER TABLE apps ADD COLUMN last_started_at TEXT");
+  add("last_accessed_at", "ALTER TABLE apps ADD COLUMN last_accessed_at TEXT");
 }
 
 function initSchema(db: Database.Database) {
@@ -166,6 +183,7 @@ function initSchema(db: Database.Database) {
       marketing_notes TEXT
     );
   `);
+  ensureActivatorRuntimeColumns(db);
   // env_vars: secrets (e.g. PIPESECURE_GITHUB_TOKEN) live here. Never bulk-delete or
   // truncate this table; only INSERT OR IGNORE new keys from manifests and UPDATE value on user save.
   db.exec(`

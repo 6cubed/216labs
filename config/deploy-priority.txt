@@ -2,6 +2,7 @@
 # from this list, intersected with ENABLED_APPS from DB. Edit this file to
 # change order; no code changes in deploy.sh needed.
 admin
+activator
 landing
 blog
 npcworld

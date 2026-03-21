@@ -1,6 +1,7 @@
 # App IDs that are always force-included in deploy (one per line).
 # Used when server DB doesn't have them yet so they can be toggled in admin.
 # Add/remove lines; no code changes needed.
+activator
 happypath
 blog
 worldphoto

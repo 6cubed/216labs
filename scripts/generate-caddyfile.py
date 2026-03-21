@@ -13,6 +13,7 @@ Set APP_HOST env var to change the domain (default: 6cubed.app).
 import sys
 import json
 import os
+from urllib.parse import quote
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.dirname(script_dir)
@@ -97,13 +98,36 @@ if root_domain_app:
         "",
     ]
 
+# On cold upstream (502/503/504), send users to Activator warmup so docker compose can start the app.
+# Skip activator itself and manifests with internal_port 0 (no HTTP upstream).
 for app_id, docker_svc, port in entries:
-    lines += [
-        f"{app_id}.{domain} {{",
-        f"\treverse_proxy {docker_svc}:{port}",
-        "}",
-        "",
-    ]
+    try:
+        p = int(port)
+    except (TypeError, ValueError):
+        p = 0
+    use_warmup = app_id != "activator" and p > 0
+    if use_warmup:
+        dest_enc = quote(f"https://{app_id}.{domain}", safe="")
+        warm = f"https://activator.{domain}/warmup?app={app_id}&dest={dest_enc}"
+        lines += [
+            f"{app_id}.{domain} {{",
+            "\thandle_errors {",
+            "\t\t@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`",
+            "\t\thandle @cold {",
+            f'\t\t\tredir "{warm}" 302',
+            "\t\t}",
+            "\t}",
+            f"\treverse_proxy {docker_svc}:{port}",
+            "}",
+            "",
+        ]
+    else:
+        lines += [
+            f"{app_id}.{domain} {{",
+            f"\treverse_proxy {docker_svc}:{port}",
+            "}",
+            "",
+        ]
 
 with open(output, "w") as f:
     f.write("\n".join(lines) + "\n")
