@@ -30,6 +30,11 @@ export interface DbApp {
   marketing_monthly: number;
   marketing_channel: string;
   marketing_notes: string | null;
+  /** Set by apps/activator; optional on older DBs until migration runs */
+  runtime_status?: string | null;
+  last_runtime_error?: string | null;
+  last_started_at?: string | null;
+  last_accessed_at?: string | null;
 }
 
 export interface DbEnvVar {

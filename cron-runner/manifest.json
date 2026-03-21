@@ -4,7 +4,7 @@
   "tagline": "Runs Telegram cron jobs from admin DB",
   "description": "Every 5 minutes reads enabled cron_jobs from 216labs.db, runs due handlers (daily digest, Happy Path summary, stubs), sends to Telegram, updates last_run_at.",
   "category": "admin",
-  "internal_port": 0,
+  "internal_port": 3029,
   "memory_limit": "128m",
   "docker_service": "cron-runner",
   "build_context": "./cron-runner",

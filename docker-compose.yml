@@ -579,7 +579,7 @@ services:
     restart: unless-stopped
     environment:
       - PORT=5000
-      - IMPULSE_BASE_URL=https://impulse.6cubed.app
+      - IMPULSE_BASE_URL=${IMPULSE_BASE_URL:-https://impulse.6cubed.app}
     expose:
       - "5000"
     mem_limit: 128m

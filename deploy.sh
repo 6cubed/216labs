@@ -317,6 +317,9 @@ fi
 
 cd "$APP_DIR"
 
+# 216labs images are built locally and loaded via deploy — never pull from Docker Hub.
+export COMPOSE_PULL_POLICY="${COMPOSE_PULL_POLICY:-never}"
+
 # Backup admin DB before any deploy steps. Never overwrite or delete 216labs.db;
 # env_vars and app state live here and must persist across deploys.
 if [ -f 216labs.db ]; then

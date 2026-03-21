@@ -50,6 +50,10 @@ Env vars defined in `manifest.json` are seeded into the admin DB (empty values, 
 
 ---
 
+## Production droplet: don’t pull `216labs/*` from Docker Hub
+
+Images are built on your machine and transferred with `deploy.sh`. The remote deploy script sets `COMPOSE_PULL_POLICY=never` so `docker compose up` does not try to pull missing tags from the registry (which would fail). You can set `COMPOSE_PULL_POLICY` in `.env` to override.
+
 ## How the pieces fit together
 
 | File | Purpose |
