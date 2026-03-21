@@ -443,6 +443,20 @@ services:
       - "3000"
     mem_limit: 512m
 
+  # ── Avatar (LLM + TTS talking head) ────────────────────────────
+  avatar:
+    image: 216labs/avatar:latest
+    build: ./apps/avatar
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - AVATAR_OPENAI_API_KEY=${AVATAR_OPENAI_API_KEY:-}
+      - AVATAR_MODEL=${AVATAR_MODEL:-gpt-4o-mini}
+      - AVATAR_TTS_VOICE=${AVATAR_TTS_VOICE:-nova}
+    expose:
+      - "5000"
+    mem_limit: 128m
+
 
   # ── Anchor ───────────────────────────────────────────────────
   anchor-api:

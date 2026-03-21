@@ -52,6 +52,10 @@ audioaicheckup.6cubed.app {
 	reverse_proxy audioaicheckup:3000
 }
 
+avatar.6cubed.app {
+	reverse_proxy avatar:5000
+}
+
 bigleroys.6cubed.app {
 	reverse_proxy bigleroys:5000
 }

@@ -1,0 +1,34 @@
+{
+  "id": "avatar",
+  "name": "Avatar",
+  "tagline": "Talk to a lifelike face — LLM replies with expressive speech and movement",
+  "description": "A conversational companion with a human-like animated head. Your messages go to an LLM; replies are spoken with neural text-to-speech while the face lip-syncs to the audio and shows subtle idle motion (blinks, micro-expressions, gentle head movement).",
+  "category": "ai",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "avatar",
+  "build_context": "./apps/avatar",
+  "stack": {
+    "frontend": "Vanilla JS + Web Audio API + CSS",
+    "backend": "Flask + Gunicorn",
+    "database": null,
+    "other": ["OpenAI Chat Completions", "OpenAI TTS"]
+  },
+  "env_vars": [
+    {
+      "key": "AVATAR_OPENAI_API_KEY",
+      "description": "OpenAI API key for chat and TTS",
+      "is_secret": true
+    },
+    {
+      "key": "AVATAR_MODEL",
+      "description": "Chat model id (default: gpt-4o-mini)",
+      "is_secret": false
+    },
+    {
+      "key": "AVATAR_TTS_VOICE",
+      "description": "OpenAI TTS voice: alloy, echo, fable, onyx, nova, shimmer (default: nova)",
+      "is_secret": false
+    }
+  ]
+}

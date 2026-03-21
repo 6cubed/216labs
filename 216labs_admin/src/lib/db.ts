@@ -121,6 +121,7 @@ const KNOWN_PORTS: Record<string, number> = {
   maxlearn: 8033,
   impulse: 8034,
   mediate: 8035,
+  avatar: 8036,
 };
 
 let _db: Database.Database | null = null;

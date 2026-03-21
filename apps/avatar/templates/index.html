@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Avatar — talk to a lifelike face</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header>
+      <h1>Avatar</h1>
+      <p>
+        Type a message — an LLM answers, neural voice speaks it, and the face moves with the sound
+        (lip sync, brows, subtle head motion, blinks).
+      </p>
+    </header>
+
+    <div class="stage-wrap">
+      <div class="stage" id="stage">
+        <div class="subtle-ring"></div>
+        <div class="hair" aria-hidden="true"></div>
+        <div class="face-shell" id="faceShell">
+          <div class="face-inner">
+            <div class="brow left"></div>
+            <div class="brow right"></div>
+            <div class="eye left">
+              <div class="eyelid"></div>
+              <div class="pupil"></div>
+            </div>
+            <div class="eye right">
+              <div class="eyelid"></div>
+              <div class="pupil"></div>
+            </div>
+            <div class="nose" aria-hidden="true"></div>
+            <div class="cheek left"></div>
+            <div class="cheek right"></div>
+            <div class="mouth-wrap">
+              <div class="mouth" id="mouth"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-panel">
+      <div class="log" id="log"></div>
+      <form class="row" id="chatForm" autocomplete="off">
+        <input
+          type="text"
+          id="userInput"
+          name="m"
+          maxlength="2000"
+          placeholder="Say something…"
+          aria-label="Your message"
+        />
+        <button type="submit" id="sendBtn">Send</button>
+      </form>
+      <div class="status" id="status"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
