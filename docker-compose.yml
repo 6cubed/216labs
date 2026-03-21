@@ -27,6 +27,12 @@ services:
       - ACTIVATOR_PROJECT_ROOT=/workspace
       - ACTIVATOR_DB_PATH=/app/216labs.db
       - ACTIVATOR_START_TIMEOUT_SECONDS=90
+      # LRU pool: keep at most N app containers up (0 = unlimited). Matches small-droplet scale-to-zero.
+      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-10}
+      - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
+      - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin}
+      # Optional: delete 216labs/<svc>:latest on eviction to free disk (next start may docker pull).
+      - ACTIVATOR_REMOVE_IMAGE_ON_EVICT=${ACTIVATOR_REMOVE_IMAGE_ON_EVICT:-false}
     volumes:
       - ./216labs.db:/app/216labs.db
       - ./:/workspace:ro

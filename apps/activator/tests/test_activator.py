@@ -68,6 +68,28 @@ class ActivatorTests(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"]["phase"], "ready")
 
+    def test_pick_lru_oldest_timestamp(self):
+        self.assertEqual(
+            activator.pick_lru_eviction_target(
+                [
+                    ("a", "a1", "2020-01-01 00:00:00"),
+                    ("b", "b1", "2025-01-01 00:00:00"),
+                ]
+            ),
+            "a",
+        )
+
+    def test_pick_lru_none_is_oldest(self):
+        self.assertEqual(
+            activator.pick_lru_eviction_target(
+                [
+                    ("a", "a1", None),
+                    ("b", "b1", "2025-01-01 00:00:00"),
+                ]
+            ),
+            "a",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

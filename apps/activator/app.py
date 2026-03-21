@@ -6,13 +6,13 @@ import subprocess
 import threading
 import time
 from datetime import datetime, timezone
-from typing import Dict
+from typing import Dict, List, Optional, Set, Tuple
 from urllib import request as urlrequest
 
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
-# v2: POST /api/start JSON errors + sqlite runtime columns optional
+# v3: LRU eviction + background reaper (scale-to-zero pool on small droplets)
 
 PROJECT_ROOT = os.environ.get("ACTIVATOR_PROJECT_ROOT", "/workspace")
 DB_PATH = os.environ.get("ACTIVATOR_DB_PATH", os.path.join(PROJECT_ROOT, "216labs.db"))
@@ -21,9 +21,27 @@ START_TIMEOUT_SECONDS = int(os.environ.get("ACTIVATOR_START_TIMEOUT_SECONDS", "4
 DEPLOY_TRIGGER_URL = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_URL", "").strip()
 DEPLOY_TRIGGER_TOKEN = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_TOKEN", "").strip()
 
+# 0 = unlimited (legacy). Set e.g. 10 on a 1GB droplet so only N app containers stay up.
+MAX_CONCURRENT_APPS = int(os.environ.get("ACTIVATOR_MAX_CONCURRENT_APPS", "0"))
+REAPER_INTERVAL_SECONDS = int(os.environ.get("ACTIVATOR_REAPER_INTERVAL_SECONDS", "120"))
+REMOVE_IMAGE_ON_EVICT = os.environ.get("ACTIVATOR_REMOVE_IMAGE_ON_EVICT", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
+def _parse_protected_services() -> Set[str]:
+    raw = os.environ.get("ACTIVATOR_PROTECTED_SERVICES", "caddy,activator,admin")
+    return {x.strip().lower() for x in raw.split(",") if x.strip()}
+
+
+PROTECTED_DOCKER_SERVICES = _parse_protected_services()
+
 _status_lock = threading.Lock()
 _status: Dict[str, Dict[str, object]] = {}
 _locks: Dict[str, threading.Lock] = {}
+_eviction_lock = threading.Lock()
 _APP_ID_RE = re.compile(r"^[a-z0-9][a-z0-9.-]*$")
 
 
@@ -99,6 +117,18 @@ def set_runtime_state(
         pass
 
 
+def touch_last_accessed_only(app_id: str) -> None:
+    try:
+        with db_connection() as conn:
+            conn.execute(
+                "UPDATE apps SET last_accessed_at = datetime('now') WHERE id = ?",
+                (app_id,),
+            )
+            conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+
 def run_compose(*args: str) -> subprocess.CompletedProcess:
     cmd = [
         "docker",
@@ -123,6 +153,112 @@ def compose_running(docker_service: str) -> bool:
     if ps.returncode != 0:
         return False
     return docker_service in ps.stdout.split()
+
+
+def docker_service_to_app_id(docker_service: str) -> Optional[str]:
+    try:
+        with db_connection() as conn:
+            row = conn.execute(
+                "SELECT id FROM apps WHERE docker_service = ? LIMIT 1",
+                (docker_service,),
+            ).fetchone()
+        return str(row["id"]) if row else None
+    except sqlite3.OperationalError:
+        return None
+
+
+def get_last_accessed_at(app_id: str) -> Optional[str]:
+    try:
+        with db_connection() as conn:
+            row = conn.execute(
+                "SELECT last_accessed_at FROM apps WHERE id = ?",
+                (app_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        v = row["last_accessed_at"]
+        return str(v) if v is not None else None
+    except sqlite3.OperationalError:
+        return None
+
+
+def pick_lru_eviction_target(
+    candidates: List[Tuple[str, str, Optional[str]]],
+) -> Optional[str]:
+    """Pick docker_service with oldest last_accessed_at (None/'' treated as oldest)."""
+    if not candidates:
+        return None
+    ranked = sorted(candidates, key=lambda t: (t[2] or ""))
+    return ranked[0][0]
+
+
+def running_compose_services() -> List[str]:
+    ps = run_compose("ps", "--status", "running", "--services")
+    if ps.returncode != 0:
+        return []
+    return [s.strip() for s in ps.stdout.splitlines() if s.strip()]
+
+
+def get_evictable_running_candidates() -> List[Tuple[str, str, Optional[str]]]:
+    """(docker_service, app_id, last_accessed_at) for running evictable compose services."""
+    out: List[Tuple[str, str, Optional[str]]] = []
+    for svc in running_compose_services():
+        if svc.lower() in PROTECTED_DOCKER_SERVICES:
+            continue
+        aid = docker_service_to_app_id(svc)
+        if not aid:
+            continue
+        out.append((svc, aid, get_last_accessed_at(aid)))
+    return out
+
+
+def evict_docker_service(docker_service: str) -> None:
+    app_id = docker_service_to_app_id(docker_service)
+    run_compose("stop", "-t", "15", docker_service)
+    if app_id:
+        set_runtime_state(app_id, "cold", "LRU eviction", touch_accessed=False)
+    if REMOVE_IMAGE_ON_EVICT:
+        subprocess.run(
+            ["docker", "rmi", "-f", f"216labs/{docker_service}:latest"],
+            cwd=PROJECT_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+
+def evict_until_under_limit(max_slots: int) -> None:
+    """Ensure fewer than max_slots evictable app containers are running."""
+    if max_slots <= 0:
+        return
+    with _eviction_lock:
+        while True:
+            candidates = get_evictable_running_candidates()
+            if len(candidates) < max_slots:
+                return
+            victim = pick_lru_eviction_target(candidates)
+            if not victim:
+                return
+            evict_docker_service(victim)
+
+
+def reaper_loop() -> None:
+    while True:
+        time.sleep(max(30, REAPER_INTERVAL_SECONDS))
+        try:
+            if MAX_CONCURRENT_APPS <= 0:
+                continue
+            with _eviction_lock:
+                while True:
+                    candidates = get_evictable_running_candidates()
+                    if len(candidates) <= MAX_CONCURRENT_APPS:
+                        break
+                    victim = pick_lru_eviction_target(candidates)
+                    if not victim:
+                        break
+                    evict_docker_service(victim)
+        except Exception:
+            pass
 
 
 def try_pull_image(docker_service: str) -> subprocess.CompletedProcess:
@@ -174,6 +310,9 @@ def start_app(app_id: str) -> Dict[str, object]:
             set_runtime_state(app_id, "ready", "", touch_accessed=True)
             status = set_status(app_id, "ready", "App already running.", docker_service=docker_service)
             return {"ok": True, "status": status}
+
+        if MAX_CONCURRENT_APPS > 0:
+            evict_until_under_limit(MAX_CONCURRENT_APPS)
 
         up = run_compose("up", "-d", "--no-build", docker_service)
         if up.returncode != 0:
@@ -248,6 +387,18 @@ def start(app_id: str):
     return jsonify(result["status"]), code
 
 
+@app.post("/api/touch/<app_id>")
+def touch(app_id: str):
+    """Optional: mark last_accessed_at for LRU (e.g. future Caddy subrequest or cron)."""
+    if not _APP_ID_RE.match(app_id):
+        return jsonify({"error": "Invalid app id"}), 400
+    row = get_app_row(app_id)
+    if row is None:
+        return jsonify({"error": "Unknown app id"}), 404
+    touch_last_accessed_only(app_id)
+    return "", 204
+
+
 @app.get("/warmup")
 def warmup():
     app_id = (request.args.get("app") or "").strip()
@@ -317,5 +468,8 @@ def warmup():
 
 
 if __name__ == "__main__":
+    if REAPER_INTERVAL_SECONDS > 0 and MAX_CONCURRENT_APPS > 0:
+        t = threading.Thread(target=reaper_loop, name="activator-reaper", daemon=True)
+        t.start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "3040")))
-# bump: error handling for start + sqlite runtime columns
+# bump: LRU eviction + reaper
