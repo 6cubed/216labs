@@ -423,10 +423,16 @@ if [ -f 216labs.db ]; then
     SIZE_MB=$((SIZE_BYTES / 1048576))
     sqlite3 216labs.db "UPDATE apps SET image_size_mb = $SIZE_MB WHERE docker_image = '$img';" 2>/dev/null || true
   done
+  # Per-service: capture Next.js "Ready in Xms" for startup_time_ms when present.
+  # Always set last_deployed_at so admin "Recent Activity" works for Flask/Python/etc.
+  # (Previously we only set last_deployed_at when "Ready in" matched — most stacks never log that.)
   for svc in $COMPOSE_SERVICES; do
+    case "$svc" in caddy) continue ;; esac
     MS=$(docker compose logs --no-follow --tail 30 "$svc" 2>/dev/null | grep -oE "Ready in [0-9]+" | grep -oE "[0-9]+" | tail -1)
     if [ -n "$MS" ]; then
       sqlite3 216labs.db "UPDATE apps SET startup_time_ms = $MS, last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
+    else
+      sqlite3 216labs.db "UPDATE apps SET last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
     fi
   done
   sqlite3 216labs.db "SELECT id, repo_path FROM apps" 2>/dev/null | while IFS='|' read -r id repo_path; do
@@ -451,14 +457,14 @@ if [ -f "$DB_FILE" ]; then
     fi
   done')
 
-  NOW=$(date -u +"%Y-%m-%d")
+  NOW=$(date -u +"%Y-%m-%d %H:%M:%S")
   while IFS='=' read -r SVC MS; do
     [ -z "$SVC" ] && continue
     sqlite3 "$DB_FILE" "UPDATE apps SET startup_time_ms = $MS, last_deployed_at = '$NOW' WHERE docker_service = '$SVC';" 2>/dev/null || true
     echo "  $SVC → ${MS}ms startup"
   done <<< "$STARTUP_DATA"
 
-  # Mark deploy time for all enabled apps
+  # Local dev copy of DB only (*.db is gitignored). Server authoritative timestamps are set in REMOTE_SCRIPT above.
   for app in $ENABLED_APPS; do
     sqlite3 "$DB_FILE" "UPDATE apps SET last_deployed_at = '$NOW' WHERE id = '$app';" 2>/dev/null || true
   done
