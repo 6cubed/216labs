@@ -29,13 +29,18 @@ www.6cubed.app {
 }
 
 1pageresearch.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy 1pageresearch:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=1pageresearch&dest=https%3A%2F%2F1pageresearch.6cubed.app" 302
 		}
 	}
-	reverse_proxy 1pageresearch:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=1pageresearch&dest=https%3A%2F%2F1pageresearch.6cubed.app" 302
+		}
+	}
 }
 
 activator.6cubed.app {
@@ -43,83 +48,123 @@ activator.6cubed.app {
 }
 
 agimemes.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy agimemes:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=agimemes&dest=https%3A%2F%2Fagimemes.6cubed.app" 302
 		}
 	}
-	reverse_proxy agimemes:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=agimemes&dest=https%3A%2F%2Fagimemes.6cubed.app" 302
+		}
+	}
 }
 
 agitshirts.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy agitshirts:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=agitshirts&dest=https%3A%2F%2Fagitshirts.6cubed.app" 302
 		}
 	}
-	reverse_proxy agitshirts:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=agitshirts&dest=https%3A%2F%2Fagitshirts.6cubed.app" 302
+		}
+	}
 }
 
 artisinaleurope.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy artisinaleurope:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=artisinaleurope&dest=https%3A%2F%2Fartisinaleurope.6cubed.app" 302
 		}
 	}
-	reverse_proxy artisinaleurope:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=artisinaleurope&dest=https%3A%2F%2Fartisinaleurope.6cubed.app" 302
+		}
+	}
 }
 
 audioaicheckup.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy audioaicheckup:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=audioaicheckup&dest=https%3A%2F%2Faudioaicheckup.6cubed.app" 302
 		}
 	}
-	reverse_proxy audioaicheckup:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=audioaicheckup&dest=https%3A%2F%2Faudioaicheckup.6cubed.app" 302
+		}
+	}
 }
 
 avatar.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy avatar:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=avatar&dest=https%3A%2F%2Favatar.6cubed.app" 302
 		}
 	}
-	reverse_proxy avatar:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=avatar&dest=https%3A%2F%2Favatar.6cubed.app" 302
+		}
+	}
 }
 
 bigleroys.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy bigleroys:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=bigleroys&dest=https%3A%2F%2Fbigleroys.6cubed.app" 302
 		}
 	}
-	reverse_proxy bigleroys:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=bigleroys&dest=https%3A%2F%2Fbigleroys.6cubed.app" 302
+		}
+	}
 }
 
 blog.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy blog:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=blog&dest=https%3A%2F%2Fblog.6cubed.app" 302
 		}
 	}
-	reverse_proxy blog:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=blog&dest=https%3A%2F%2Fblog.6cubed.app" 302
+		}
+	}
 }
 
 calibratedai.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy calibratedai:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=calibratedai&dest=https%3A%2F%2Fcalibratedai.6cubed.app" 302
 		}
 	}
-	reverse_proxy calibratedai:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=calibratedai&dest=https%3A%2F%2Fcalibratedai.6cubed.app" 302
+		}
+	}
 }
 
 cron-runner.6cubed.app {
@@ -127,242 +172,362 @@ cron-runner.6cubed.app {
 }
 
 crowdbulk.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy crowdbulk:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=crowdbulk&dest=https%3A%2F%2Fcrowdbulk.6cubed.app" 302
 		}
 	}
-	reverse_proxy crowdbulk:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=crowdbulk&dest=https%3A%2F%2Fcrowdbulk.6cubed.app" 302
+		}
+	}
 }
 
 emailgpt.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy emailgpt:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=emailgpt&dest=https%3A%2F%2Femailgpt.6cubed.app" 302
 		}
 	}
-	reverse_proxy emailgpt:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=emailgpt&dest=https%3A%2F%2Femailgpt.6cubed.app" 302
+		}
+	}
 }
 
 facerate.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy facerate:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=facerate&dest=https%3A%2F%2Ffacerate.6cubed.app" 302
 		}
 	}
-	reverse_proxy facerate:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=facerate&dest=https%3A%2F%2Ffacerate.6cubed.app" 302
+		}
+	}
 }
 
 happypath.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy happypath:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=happypath&dest=https%3A%2F%2Fhappypath.6cubed.app" 302
 		}
 	}
-	reverse_proxy happypath:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=happypath&dest=https%3A%2F%2Fhappypath.6cubed.app" 302
+		}
+	}
 }
 
 hivefind.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy hivefind:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=hivefind&dest=https%3A%2F%2Fhivefind.6cubed.app" 302
 		}
 	}
-	reverse_proxy hivefind:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=hivefind&dest=https%3A%2F%2Fhivefind.6cubed.app" 302
+		}
+	}
 }
 
 impulse.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy impulse:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=impulse&dest=https%3A%2F%2Fimpulse.6cubed.app" 302
 		}
 	}
-	reverse_proxy impulse:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=impulse&dest=https%3A%2F%2Fimpulse.6cubed.app" 302
+		}
+	}
 }
 
 landing.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy landing:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=landing&dest=https%3A%2F%2Flanding.6cubed.app" 302
 		}
 	}
-	reverse_proxy landing:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=landing&dest=https%3A%2F%2Flanding.6cubed.app" 302
+		}
+	}
 }
 
 llminternals.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy llminternals:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=llminternals&dest=https%3A%2F%2Fllminternals.6cubed.app" 302
 		}
 	}
-	reverse_proxy llminternals:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=llminternals&dest=https%3A%2F%2Fllminternals.6cubed.app" 302
+		}
+	}
 }
 
 maxlearn.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy maxlearn:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=maxlearn&dest=https%3A%2F%2Fmaxlearn.6cubed.app" 302
 		}
 	}
-	reverse_proxy maxlearn:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=maxlearn&dest=https%3A%2F%2Fmaxlearn.6cubed.app" 302
+		}
+	}
 }
 
 mediate.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy mediate:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=mediate&dest=https%3A%2F%2Fmediate.6cubed.app" 302
 		}
 	}
-	reverse_proxy mediate:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=mediate&dest=https%3A%2F%2Fmediate.6cubed.app" 302
+		}
+	}
 }
 
 muinteoir.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy muinteoir:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=muinteoir&dest=https%3A%2F%2Fmuinteoir.6cubed.app" 302
 		}
 	}
-	reverse_proxy muinteoir:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=muinteoir&dest=https%3A%2F%2Fmuinteoir.6cubed.app" 302
+		}
+	}
 }
 
 mysteryshopper.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy mysteryshopper:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=mysteryshopper&dest=https%3A%2F%2Fmysteryshopper.6cubed.app" 302
 		}
 	}
-	reverse_proxy mysteryshopper:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=mysteryshopper&dest=https%3A%2F%2Fmysteryshopper.6cubed.app" 302
+		}
+	}
 }
 
 npcworld.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy npcworld:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=npcworld&dest=https%3A%2F%2Fnpcworld.6cubed.app" 302
 		}
 	}
-	reverse_proxy npcworld:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=npcworld&dest=https%3A%2F%2Fnpcworld.6cubed.app" 302
+		}
+	}
 }
 
 offlinellm.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy offlinellm:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=offlinellm&dest=https%3A%2F%2Fofflinellm.6cubed.app" 302
 		}
 	}
-	reverse_proxy offlinellm:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=offlinellm&dest=https%3A%2F%2Fofflinellm.6cubed.app" 302
+		}
+	}
 }
 
 onefit.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy onefit:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=onefit&dest=https%3A%2F%2Fonefit.6cubed.app" 302
 		}
 	}
-	reverse_proxy onefit:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=onefit&dest=https%3A%2F%2Fonefit.6cubed.app" 302
+		}
+	}
 }
 
 oneroom.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy oneroom:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=oneroom&dest=https%3A%2F%2Foneroom.6cubed.app" 302
 		}
 	}
-	reverse_proxy oneroom:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=oneroom&dest=https%3A%2F%2Foneroom.6cubed.app" 302
+		}
+	}
 }
 
 pipesecure.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy pipesecure:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=pipesecure&dest=https%3A%2F%2Fpipesecure.6cubed.app" 302
 		}
 	}
-	reverse_proxy pipesecure:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=pipesecure&dest=https%3A%2F%2Fpipesecure.6cubed.app" 302
+		}
+	}
 }
 
 pocket.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy pocket:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=pocket&dest=https%3A%2F%2Fpocket.6cubed.app" 302
 		}
 	}
-	reverse_proxy pocket:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=pocket&dest=https%3A%2F%2Fpocket.6cubed.app" 302
+		}
+	}
 }
 
 priors.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy priors:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=priors&dest=https%3A%2F%2Fpriors.6cubed.app" 302
 		}
 	}
-	reverse_proxy priors:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=priors&dest=https%3A%2F%2Fpriors.6cubed.app" 302
+		}
+	}
 }
 
 ramblingradio.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy ramblingradio:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=ramblingradio&dest=https%3A%2F%2Framblingradio.6cubed.app" 302
 		}
 	}
-	reverse_proxy ramblingradio:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=ramblingradio&dest=https%3A%2F%2Framblingradio.6cubed.app" 302
+		}
+	}
 }
 
 storybook.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy storybook:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=storybook&dest=https%3A%2F%2Fstorybook.6cubed.app" 302
 		}
 	}
-	reverse_proxy storybook:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=storybook&dest=https%3A%2F%2Fstorybook.6cubed.app" 302
+		}
+	}
 }
 
 stroll.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy stroll:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=stroll&dest=https%3A%2F%2Fstroll.6cubed.app" 302
 		}
 	}
-	reverse_proxy stroll:5000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=stroll&dest=https%3A%2F%2Fstroll.6cubed.app" 302
+		}
+	}
 }
 
 thezurichdatinggame.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy thezurichdatinggame:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=thezurichdatinggame&dest=https%3A%2F%2Fthezurichdatinggame.6cubed.app" 302
 		}
 	}
-	reverse_proxy thezurichdatinggame:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=thezurichdatinggame&dest=https%3A%2F%2Fthezurichdatinggame.6cubed.app" 302
+		}
+	}
 }
 
 worldphoto.6cubed.app {
-	handle_errors {
-		@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @cold {
+	reverse_proxy worldphoto:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
 			redir "https://activator.6cubed.app/warmup?app=worldphoto&dest=https%3A%2F%2Fworldphoto.6cubed.app" 302
 		}
 	}
-	reverse_proxy worldphoto:3000
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=worldphoto&dest=https%3A%2F%2Fworldphoto.6cubed.app" 302
+		}
+	}
 }
 

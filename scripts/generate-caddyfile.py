@@ -109,15 +109,22 @@ for app_id, docker_svc, port in entries:
     if use_warmup:
         dest_enc = quote(f"https://{app_id}.{domain}", safe="")
         warm = f"https://activator.{domain}/warmup?app={app_id}&dest={dest_enc}"
+        # Upstream 502/503/504: handle_response (reverse_proxy does not use handle_errors for these).
+        # Dial / gateway failures: handle_errors with same redirect.
         lines += [
             f"{app_id}.{domain} {{",
-            "\thandle_errors {",
-            "\t\t@cold expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`",
-            "\t\thandle @cold {",
+            f"\treverse_proxy {docker_svc}:{port} {{",
+            "\t\t@cold status 502 503 504",
+            "\t\thandle_response @cold {",
             f'\t\t\tredir "{warm}" 302',
             "\t\t}",
             "\t}",
-            f"\treverse_proxy {docker_svc}:{port}",
+            "\thandle_errors {",
+            "\t\t@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`",
+            "\t\thandle @dial {",
+            f'\t\t\tredir "{warm}" 302',
+            "\t\t}",
+            "\t}",
             "}",
             "",
         ]
