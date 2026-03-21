@@ -120,6 +120,7 @@ const KNOWN_PORTS: Record<string, number> = {
   llminternals: 8032,
   maxlearn: 8033,
   impulse: 8034,
+  mediate: 8035,
 };
 
 let _db: Database.Database | null = null;

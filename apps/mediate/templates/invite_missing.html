@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Not found — Mediate</title>
+  <style>
+    body {
+      font-family: "DM Sans", -apple-system, sans-serif;
+      background: #0c1212;
+      color: #e7f4f2;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    h1 { color: #2dd4bf; font-size: 1.4rem; margin-bottom: 0.5rem; }
+    p { color: #6b8a86; }
+    a { color: #5eead4; }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>This invite doesn’t exist</h1>
+    <p>It may have expired or the link was mistyped.</p>
+    <p style="margin-top:1rem;"><a href="{{ url_for('index') }}">Start a new room</a></p>
+  </div>
+</body>
+</html>

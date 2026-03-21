@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Room ready — Mediate</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0c1212;
+      --surface: #141c1c;
+      --border: #243030;
+      --accent: #2dd4bf;
+      --text: #e7f4f2;
+      --muted: #6b8a86;
+      --radius: 14px;
+      --font: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      font-family: var(--font);
+      background: radial-gradient(ellipse 80% 50% at 50% -20%, #134e4a33, transparent), var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.55;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+    h1 { font-size: 1.65rem; margin-bottom: 0.75rem; color: var(--accent); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.35rem 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.35rem; }
+    .url-box {
+      word-break: break-all;
+      font-size: 0.95rem;
+      padding: 0.75rem 0.85rem;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      user-select: all;
+    }
+    .goal { color: var(--muted); font-size: 0.95rem; margin-top: 0.75rem; }
+    .goal strong { color: var(--text); }
+    a.btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.85rem 1.2rem;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #0d9488, #115e59);
+      color: #fff !important;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a.btn:hover { filter: brightness(1.06); }
+    .warn { font-size: 0.85rem; color: #fbbf24; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Your room is ready</h1>
+    <p style="color:var(--muted); margin-bottom:1.25rem;">Share the invite link with the other person. They join anonymously — you’re <strong>Party A</strong>, they’re <strong>Party B</strong>.</p>
+
+    {% if goal %}
+    <p class="goal"><strong>Goal:</strong> {{ goal }}</p>
+    {% endif %}
+
+    <div class="card">
+      <p class="label">Invite link</p>
+      <div class="url-box">{{ invite_url }}</div>
+    </div>
+
+    <div class="card">
+      <p class="label">Your recovery link (keep private)</p>
+      <div class="url-box">{{ host_recovery_url }}</div>
+      <p class="warn">If you lose this browser session, use the recovery link to return as host — don’t share it.</p>
+    </div>
+
+    <a class="btn" href="{{ url_for('room', room_id=room_id) }}">Open your side of the room</a>
+  </div>
+</body>
+</html>

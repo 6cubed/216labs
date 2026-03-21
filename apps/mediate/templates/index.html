@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mediate</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0c1212;
+      --surface: #141c1c;
+      --border: #243030;
+      --accent: #2dd4bf;
+      --accent-dim: #0d9488;
+      --text: #e7f4f2;
+      --muted: #6b8a86;
+      --radius: 14px;
+      --font: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      font-family: var(--font);
+      background: radial-gradient(ellipse 80% 50% at 50% -20%, #134e4a33, transparent), var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
+    h1 {
+      font-size: 2.35rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #5eead4 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tagline { color: var(--muted); font-size: 1.1rem; margin-bottom: 2rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.35rem;
+    }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; }
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 88px;
+    }
+    textarea::placeholder { color: var(--muted); opacity: 0.8; }
+    .hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; }
+    button[type="submit"] {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.95rem 1rem;
+      border: none;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent-dim), #115e59);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button[type="submit"]:hover { filter: brightness(1.06); }
+    .foot { margin-top: 2rem; font-size: 0.85rem; color: var(--muted); text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Mediate</h1>
+    <p class="tagline">Chat with someone through an LLM — you never see each other’s raw words.</p>
+    <div class="card">
+      <form method="post" action="{{ url_for('create') }}">
+        <label for="goal">Mediation goal (optional)</label>
+        <textarea id="goal" name="goal" placeholder="e.g. agree on a handoff date, apologize without blame, decide who keeps the cat…"></textarea>
+        <p class="hint">If set, the mediator tries to steer toward this outcome while staying fair.</p>
+        <button type="submit">Start a mediated room</button>
+      </form>
+    </div>
+    <p class="foot">You’ll get an invite link to share anonymously.</p>
+  </div>
+</body>
+</html>

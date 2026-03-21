@@ -551,6 +551,24 @@ services:
       - "5000"
     mem_limit: 128m
 
+  # ── Mediate (LLM-mediated two-party chat) ───────────────────
+  mediate:
+    image: 216labs/mediate:latest
+    build: ./apps/mediate
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - MEDIATE_DATA_DIR=/app/data
+      - MEDIATE_SECRET_KEY=${MEDIATE_SECRET_KEY:-}
+      - MEDIATE_OPENAI_API_KEY=${MEDIATE_OPENAI_API_KEY:-}
+      - MEDIATE_MODEL=${MEDIATE_MODEL:-gpt-4o-mini}
+      - MEDIATE_BASE_URL=${MEDIATE_BASE_URL:-https://mediate.6cubed.app}
+    volumes:
+      - ./apps/mediate/data:/app/data
+    expose:
+      - "5000"
+    mem_limit: 128m
+
 volumes:
   caddy_data:
   caddy_config:

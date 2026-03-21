@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invite used — Mediate</title>
+  <style>
+    body {
+      font-family: "DM Sans", -apple-system, sans-serif;
+      background: #0c1212;
+      color: #e7f4f2;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    h1 { color: #fbbf24; font-size: 1.4rem; margin-bottom: 0.5rem; }
+    p { color: #6b8a86; max-width: 420px; margin: 0 auto; line-height: 1.5; }
+    a { color: #5eead4; }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>This invite was already used</h1>
+    <p>Only one guest can join per link. Ask the host for a new room if you need another conversation.</p>
+    <p style="margin-top:1rem;"><a href="{{ url_for('index') }}">Mediate home</a></p>
+  </div>
+</body>
+</html>

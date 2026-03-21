@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Room — Mediate</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0c1212;
+      --surface: #141c1c;
+      --border: #243030;
+      --accent: #2dd4bf;
+      --you: #134e4a;
+      --other: #1e293b;
+      --text: #e7f4f2;
+      --muted: #6b8a86;
+      --radius: 12px;
+      --font: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    header h1 { font-size: 1.05rem; font-weight: 600; color: var(--accent); }
+    header .sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+    .goal-banner {
+      font-size: 0.85rem;
+      color: var(--muted);
+      padding: 0.65rem 1.25rem;
+      background: #0f1a1a;
+      border-bottom: 1px solid var(--border);
+    }
+    .goal-banner strong { color: #a7f3d0; font-weight: 500; }
+    #wait {
+      padding: 0.65rem 1.25rem;
+      background: #422006;
+      color: #fde68a;
+      font-size: 0.88rem;
+      display: none;
+    }
+    #wait.show { display: block; }
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.25rem 8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .bubble {
+      max-width: min(92vw, 520px);
+      align-self: flex-start;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .bubble.you { align-self: flex-end; background: var(--you); border-color: #115e59; }
+    .bubble.other { background: var(--other); }
+    .meta { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.35rem; }
+    .relay {
+      margin-top: 0.5rem;
+      font-size: 0.82rem;
+      color: #99f6e4;
+      opacity: 0.9;
+      padding-top: 0.45rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .composer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.75rem 1rem 1.25rem;
+      background: linear-gradient(transparent, var(--bg) 30%);
+      border-top: 1px solid var(--border);
+      background-color: var(--surface);
+    }
+    .composer-inner { max-width: 560px; margin: 0 auto; display: flex; gap: 0.5rem; }
+    textarea {
+      flex: 1;
+      min-height: 48px;
+      max-height: 140px;
+      padding: 0.75rem 0.85rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      resize: none;
+    }
+    button.send {
+      padding: 0 1.1rem;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0d9488, #115e59);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button.send:disabled { opacity: 0.45; cursor: not-allowed; }
+    .err { color: #fca5a5; font-size: 0.85rem; margin-top: 0.35rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mediated chat</h1>
+    <p class="sub">You are <strong id="roleLabel">…</strong> — messages to the other person pass through the LLM.</p>
+  </header>
+  <div id="goalBanner" class="goal-banner" style="display:none;"></div>
+  <div id="wait" class="show">Waiting for the other person to open the invite link…</div>
+  <div id="log"></div>
+  <div class="composer">
+    <div class="composer-inner">
+      <textarea id="msg" rows="1" placeholder="Write your message…"></textarea>
+      <button type="button" class="send" id="sendBtn">Send</button>
+    </div>
+    <p id="errLine" class="err" style="display:none;"></p>
+  </div>
+  <script>
+    const ROOM_ID = {{ room_id | tojson }};
+    const PARTY = {{ party | tojson }};
+    const logEl = document.getElementById("log");
+    const waitEl = document.getElementById("wait");
+    const goalBanner = document.getElementById("goalBanner");
+    const roleLabel = document.getElementById("roleLabel");
+    const msgEl = document.getElementById("msg");
+    const sendBtn = document.getElementById("sendBtn");
+    const errLine = document.getElementById("errLine");
+
+    roleLabel.textContent = PARTY === "a" ? "Party A (host)" : "Party B (guest)";
+
+    let lastIds = new Set();
+
+    function showErr(t) {
+      if (!t) { errLine.style.display = "none"; return; }
+      errLine.textContent = t;
+      errLine.style.display = "block";
+    }
+
+    function renderMessage(m) {
+      const mine = m.from_party === PARTY;
+      const wrap = document.createElement("div");
+      wrap.className = "bubble " + (mine ? "you" : "other");
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = mine ? "You (raw)" : "Other party (via mediator)";
+      wrap.appendChild(meta);
+      const body = document.createElement("div");
+      body.textContent = mine ? m.raw_text : m.mediated_text;
+      wrap.appendChild(body);
+      if (mine) {
+        const relay = document.createElement("div");
+        relay.className = "relay";
+        relay.textContent = "Relayed to them as: " + m.mediated_text;
+        wrap.appendChild(relay);
+      }
+      logEl.appendChild(wrap);
+    }
+
+    function syncScroll() {
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function poll() {
+      try {
+        const r = await fetch("/api/room/" + ROOM_ID + "/state");
+        if (!r.ok) throw new Error("Could not load room");
+        const data = await r.json();
+        if (data.goal) {
+          goalBanner.style.display = "block";
+          goalBanner.innerHTML = "<strong>Goal:</strong> " + escapeHtml(data.goal);
+        }
+        const gj = data.guest_joined;
+        waitEl.classList.toggle("show", PARTY === "a" && !gj);
+        const msgs = data.messages || [];
+        const ids = new Set(msgs.map((m) => m.id));
+        if (lastIds.size === 0 && msgs.length) {
+          msgs.forEach(renderMessage);
+          lastIds = ids;
+          syncScroll();
+        } else if (msgs.length > lastIds.size) {
+          for (const m of msgs) {
+            if (!lastIds.has(m.id)) renderMessage(m);
+          }
+          lastIds = ids;
+          syncScroll();
+        }
+      } catch (e) {
+        showErr(e.message || "Network error");
+      }
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    async function send() {
+      const text = msgEl.value.trim();
+      if (!text) return;
+      sendBtn.disabled = true;
+      showErr("");
+      try {
+        const r = await fetch("/api/room/" + ROOM_ID + "/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || "Send failed");
+        msgEl.value = "";
+        await poll();
+      } catch (e) {
+        showErr(e.message || "Send failed");
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    sendBtn.addEventListener("click", send);
+    msgEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    poll();
+    setInterval(poll, 1600);
+  </script>
+</body>
+</html>
