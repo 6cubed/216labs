@@ -1,0 +1,23 @@
+{
+  "id": "emailgpt",
+  "name": "EmailGPT",
+  "tagline": "One email per day nudging you along",
+  "description": "Landing page opt-in; subscribers get one daily email with a reflection, question, or nudge from EmailGPT.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "emailgpt",
+  "build_context": "./apps/emailgpt",
+  "stack": {
+    "frontend": "Flask + Jinja2",
+    "backend": "Flask + Gunicorn",
+    "database": "SQLite",
+    "other": ["Resend"]
+  },
+  "env_vars": [
+    { "key": "EMAILGPT_RESEND_API_KEY", "description": "Resend API key for sending emails", "is_secret": true },
+    { "key": "EMAILGPT_FROM_EMAIL", "description": "From address e.g. EmailGPT <nudge@emailgpt.6cubed.app>", "is_secret": false },
+    { "key": "EMAILGPT_CRON_SECRET", "description": "Secret for /api/send-daily cron calls", "is_secret": true },
+    { "key": "EMAILGPT_OPENAI_API_KEY", "description": "Optional: OpenAI key for GPT-generated nudges", "is_secret": true }
+  ]
+}

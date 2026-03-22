@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EmailGPT — One nudge per day</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f14;
+      --surface: #18181f;
+      --border: #2a2a35;
+      --accent: #a78bfa;
+      --accent-dim: #7c3aed;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --radius: 14px;
+      --font: "Instrument Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 5rem 1.5rem 6rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #c4b5fd 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 1.15rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .form-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-wrap form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .form-wrap input[type="email"] {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    .form-wrap input[type="email"]::placeholder {
+      color: var(--muted);
+    }
+
+    .form-wrap input[type="email"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2);
+    }
+
+    .form-wrap button {
+      padding: 0.9rem 1.25rem;
+      background: linear-gradient(135deg, var(--accent-dim), var(--accent));
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .form-wrap button:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .form-wrap button:active {
+      transform: translateY(0);
+    }
+
+    .flash {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .flash.success {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+    }
+
+    .flash.error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+
+    .fine {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>EmailGPT</h1>
+    <p class="tagline">One email per day. A nudge, a question, or a tiny reflection — nothing more.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="form-wrap">
+      <form action="{{ url_for('subscribe') }}" method="post">
+        <input type="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+        <button type="submit">Get daily nudges</button>
+      </form>
+      <p class="fine">No spam. One message per day. Unsubscribe anytime by replying.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -8,6 +8,70 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'github-actions-container-images-off-server-scale',
+    title:
+      'GitHub Actions and container registries: building off-server at scale',
+    excerpt:
+      'CI turns every push into reproducible images without touching production disks. Here is how Actions, caching, and a registry make “build once, run anywhere” real — and why that matters when you outgrow one laptop.',
+    date: '2026-03-22',
+    body: `
+Shipping **many services** from one monorepo eventually bumps into a boring truth: **building is work**, and **where** you build is a scaling decision. Laptops are finite. Production servers should not compile your dependency graph on every deploy. **GitHub Actions** (and the same idea in other CI clouds) exists so builds run on **disposable, parallel, off-server** machines — and **container registries** exist so the **output** of those builds is **stored as an artifact** you can pull later, not recreated by hand on each host.
+
+**What “off-server” means here**
+
+Not “mystical cloud.” It means: **the machine that runs \`docker build\` is not the machine that serves traffic.** Your droplet, VM, or Kubernetes node should mostly **pull an image** and **start a container** — not compile Rust, resolve npm, and warm caches while users wait. Off-server CI is how you keep that separation honest at **scale** (dozens of images, frequent pushes, clean audit trails).
+
+**GitHub Actions as a build farm**
+
+Actions gives you **on-demand Linux runners** (and Windows/macOS when you need them) with:
+
+- **Parallelism** — matrix builds for multiple apps, languages, or versions without serializing on one CPU.
+- **Caching** — layer caches for Docker BuildKit, dependency caches for npm/pip/cargo, so repeat builds are fast instead of punitive.
+- **Triggers** — push, PR, schedule, \`workflow_dispatch\`: the factory decides *when* a build is worth doing.
+- **Secrets without pasting** — registry credentials and deploy tokens live in GitHub, not in shell history.
+
+None of that requires your laptop to stay awake or your production box to have **gcc** and **300 GB of node_modules**.
+
+**Where the images live: registries at scale**
+
+A container image is a **content-addressed bundle** of layers. Once CI runs \`docker build\`, the usual move is **push** to a **registry**:
+
+- **GHCR** (GitHub Container Registry) sits next to your repo and permissions model.
+- **Docker Hub** and other vendors offer the same primitive: **upload layers, get a tag or digest**.
+
+That registry is **off-server storage** in the most important sense: it is the **system of record** for “what we built,” **versioned** and **immutable** (especially if you deploy by digest). Runtimes **pull** — they do not improvise a build.
+
+**Why this scales where “SSH and docker build” does not**
+
+For one pet project, building locally and copying an image to a server is fine. For **many apps** and **many contributors**, you hit:
+
+- **Nondeterminism** — “works on my machine” becomes “works on whoever ran deploy last.”
+- **Throughput** — one machine cannot compile the whole grid at once.
+- **Security** — production should not need compiler toolchains or read your full source tree to run a binary artifact.
+
+CI + registry replaces that with: **commit → workflow → image → tag/digest → deploy pulls artifact**. The **build** scales with GitHub’s pool; the **edge** stays thin.
+
+**How this fits “containers at scale”**
+
+At scale you care about:
+
+1. **Artifact immutability** — deploy references **digest**, not “latest” in anger.
+2. **Promotion** — same image from staging to prod; only config changes.
+3. **Parallel services** — each Dockerfile becomes a pipeline job or a matrix row; failures are **per app**, not a single giant script exit code.
+4. **Retention & cleanup** — registries hold old tags; policies GC what you do not need.
+
+Actions does not *replace* good architecture (manifests, compose, reverse proxies), but it **industrializes** the step that turns source into **something runnable**.
+
+**Honest contrast: not every shop uses CI for every image**
+
+Some teams **build locally** and transfer images ( bandwidth trade, air-gapped, or simplicity). The principle is the same: **the server that faces users is not where the heavy build belongs.** Actions is one way to get a **shared, logged, cacheable** build layer; the registry is where **scale** stops depending on any single laptop’s disk.
+
+**Bottom line**
+
+**GitHub Actions** gives you **off-server, parallel, cacheable builds**. **Container registries** give you **durable, versioned storage** for those builds. Together they are how teams run **many** containerized services without turning every production host into a compile farm — which is exactly what “at scale” has always meant: **separate the factory from the showroom**, then connect them with a **pull**.
+    `.trim(),
+  },
+  {
     slug: 'scalable-marketing-and-automated-early-signals',
     title:
       'Scalable marketing for a vibe code factory: dollar discipline and automated early signals',

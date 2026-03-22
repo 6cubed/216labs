@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>German Daily — 10 Wörter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0e12;
+      --surface: #141820;
+      --border: #2a3140;
+      --accent: #e8b84a;
+      --accent-dim: #b8892a;
+      --text: #e8eaef;
+      --muted: #8b93a5;
+      --up: #4ade80;
+      --down: #f87171;
+      --radius: 14px;
+      --font: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: radial-gradient(1200px 600px at 20% -10%, #1a1f2e 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.55;
+    }
+
+    .wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 3rem 1.25rem 4rem;
+    }
+
+    header {
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.35rem;
+      background: linear-gradient(135deg, #fde68a 0%, var(--accent) 45%, #d97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .pill {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.2rem 1rem;
+      position: relative;
+    }
+
+    .headword {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    .english {
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .ex {
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .ex small {
+      display: block;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 0.2rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      justify-content: flex-end;
+    }
+
+    button.vote {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    button.vote:hover {
+      border-color: var(--accent-dim);
+      color: var(--text);
+    }
+
+    button.vote.active-up {
+      border-color: var(--up);
+      color: var(--up);
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    button.vote.active-down {
+      border-color: var(--down);
+      color: var(--down);
+      background: rgba(248, 113, 113, 0.08);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.65rem 1rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: transform 0.25s, opacity 0.25s;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>German Daily</h1>
+      <p class="sub">Ten words for <strong>{{ date_label }}</strong> (Europe/Berlin). Thumbs tune topic mix for the next day.</p>
+      <span class="pill">{% if has_llm %}AI-assisted batches{% else %}Offline word pool{% endif %}</span>
+    </header>
+
+    <div class="cards">
+      {% for w in words %}
+      <article class="card" data-word-id="{{ w.id }}">
+        <div class="headword">{{ w.german }}</div>
+        <div class="english">{{ w.english }}</div>
+        <div class="ex">
+          {{ w.example_de }}
+          <small>{{ w.example_en }}</small>
+        </div>
+        <div class="actions">
+          <button type="button" class="vote down{% if w.user_vote == -1 %} active-down{% endif %}" data-vote="-1" title="Not for me" aria-label="Thumbs down">👎</button>
+          <button type="button" class="vote up{% if w.user_vote == 1 %} active-up{% endif %}" data-vote="1" title="More like this" aria-label="Thumbs up">👍</button>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(window.__toastT);
+      window.__toastT = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    document.querySelectorAll('.card').forEach((card) => {
+      const id = card.getAttribute('data-word-id');
+      card.querySelectorAll('button.vote').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const vote = parseInt(btn.getAttribute('data-vote'), 10);
+          const res = await fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ word_id: parseInt(id, 10), vote }),
+          });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok || !j.ok) {
+            showToast('Could not save vote');
+            return;
+          }
+          card.querySelectorAll('button.vote').forEach((b) => {
+            b.classList.remove('active-up', 'active-down');
+          });
+          if (vote === 1) btn.classList.add('active-up');
+          else btn.classList.add('active-down');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

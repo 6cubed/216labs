@@ -1,0 +1,15 @@
+---
+description: Deploy is expected after every change — do not wait for the user to ask
+alwaysApply: true
+---
+
+# Deploy after every change
+
+**Everything should always be deployed.** After any change to an app or infrastructure in this repo:
+
+1. Commit and push.
+2. Run `./deploy.sh root@46.101.88.197` yourself (with a long timeout, e.g. 300000ms).
+
+Do not wait for the user to ask. Consider the task incomplete until deploy has been run. The only exception: if Docker is not running locally, commit and push anyway and tell the user what still needs deploying.
+
+See the Digital Ocean droplet rule for the full checklist (verify admin, containers, etc.).

@@ -1,0 +1,4 @@
+flask>=3.0
+gunicorn>=21.0
+resend>=0.8
+openai>=1.0
