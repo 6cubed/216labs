@@ -19,6 +19,7 @@ services:
   # ── Activator (on-demand docker compose up for cold apps) ─────
   activator:
     image: 216labs/activator:latest
+    pull_policy: never
     build: ./apps/activator
     restart: unless-stopped
     environment:
@@ -31,8 +32,10 @@ services:
       - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-10}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
       - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin}
-      # Optional: delete 216labs/<svc>:latest on eviction to free disk (next start may docker pull).
+      # Optional: delete 216labs/<svc>:latest on eviction to free disk (reload image via deploy).
       - ACTIVATOR_REMOVE_IMAGE_ON_EVICT=${ACTIVATOR_REMOVE_IMAGE_ON_EVICT:-false}
+      # true only if you host 216labs/* in a registry (default: do not docker pull).
+      - ACTIVATOR_TRY_DOCKER_PULL=${ACTIVATOR_TRY_DOCKER_PULL:-false}
     volumes:
       - ./216labs.db:/app/216labs.db
       - ./:/workspace:ro
@@ -56,6 +59,7 @@ services:
   # ── RamblingRadio ─────────────────────────────────────────────
   ramblingradio:
     image: 216labs/ramblingradio:latest
+    pull_policy: never
     build: ./apps/RamblingRadio
     restart: unless-stopped
     environment:
@@ -71,6 +75,7 @@ services:
   # ── Stroll.live ───────────────────────────────────────────────
   stroll:
     image: 216labs/stroll:latest
+    pull_policy: never
     build: ./apps/Stroll.live
     restart: unless-stopped
     environment:
@@ -83,6 +88,7 @@ services:
   # ── OneRoom ───────────────────────────────────────────────────
   oneroom:
     image: 216labs/oneroom:latest
+    pull_policy: never
     build: ./apps/oneroom
     restart: unless-stopped
     environment:
@@ -98,6 +104,7 @@ services:
   # ── OneFit ────────────────────────────────────────────────────
   onefit:
     image: 216labs/onefit:latest
+    pull_policy: never
     build: ./apps/onefit
     restart: unless-stopped
     environment:
@@ -113,6 +120,7 @@ services:
   # ── HiveFind ─────────────────────────────────────────────────
   hivefind:
     image: 216labs/hivefind:latest
+    pull_policy: never
     build: ./apps/hivefind
     restart: unless-stopped
     environment:
@@ -125,6 +133,7 @@ services:
   # ── PipeSecure ───────────────────────────────────────────────
   pipesecure:
     image: 216labs/pipesecure:latest
+    pull_policy: never
     build: ./pipesecure
     restart: unless-stopped
     environment:
@@ -143,6 +152,7 @@ services:
   # ── Happy Path (clickthrough tests) ──────────────────────────
   happypath:
     image: 216labs/happypath:latest
+    pull_policy: never
     build: ./happypath
     restart: unless-stopped
     environment:
@@ -162,6 +172,7 @@ services:
   # ── 216labs Admin Dashboard ─────────────────────────────────
   admin:
     image: 216labs/admin:latest
+    pull_policy: never
     build: ./216labs_admin
     restart: unless-stopped
     environment:
@@ -185,6 +196,7 @@ services:
   # ── Cron runner (Telegram cron jobs from admin DB) ───────────
   cron-runner:
     image: 216labs/cron-runner:latest
+    pull_policy: never
     build: ./cron-runner
     restart: unless-stopped
     environment:
@@ -203,6 +215,7 @@ services:
   # ── AGI Memes ────────────────────────────────────────────────
   agimemes:
     image: 216labs/agimemes:latest
+    pull_policy: never
     build: ./apps/agimemes.com
     restart: unless-stopped
     environment:
@@ -217,6 +230,7 @@ services:
   # ── Priors ───────────────────────────────────────────────────
   priors:
     image: 216labs/priors:latest
+    pull_policy: never
     build: ./apps/priors
     restart: unless-stopped
     environment:
@@ -237,6 +251,7 @@ services:
   # ── Big Leroy's Premier League Guessing Bonanza ──────────────
   bigleroys:
     image: 216labs/bigleroys:latest
+    pull_policy: never
     build: ./apps/bigleroys
     restart: unless-stopped
     environment:
@@ -256,6 +271,7 @@ services:
   # ── AgitShirts ────────────────────────────────────────────────
   agitshirts:
     image: 216labs/agitshirts:latest
+    pull_policy: never
     build: ./apps/agitshirts
     restart: unless-stopped
     environment:
@@ -270,6 +286,7 @@ services:
   # ── Artisanal Europe ─────────────────────────────────────────
   artisinaleurope:
     image: 216labs/artisinaleurope:latest
+    pull_policy: never
     build: ./apps/artisinaleurope
     restart: unless-stopped
     environment:
@@ -282,6 +299,7 @@ services:
   # ── CalibratedAI ─────────────────────────────────────────────
   calibratedai:
     image: 216labs/calibratedai:latest
+    pull_policy: never
     build: ./apps/calibratedai
     restart: unless-stopped
     environment:
@@ -298,6 +316,7 @@ services:
   # ── 1PageResearch ────────────────────────────────────────────
   1pageresearch:
     image: 216labs/1pageresearch:latest
+    pull_policy: never
     build: ./apps/1pageresearch
     restart: unless-stopped
     environment:
@@ -314,6 +333,7 @@ services:
   # ── The Zurich Dating Game ───────────────────────────────────
   thezurichdatinggame:
     image: 216labs/thezurichdatinggame:latest
+    pull_policy: never
     build: ./apps/thezurichdatinggame
     restart: unless-stopped
     environment:
@@ -332,6 +352,7 @@ services:
   # ── StoryMagic ───────────────────────────────────────────────
   storybook:
     image: 216labs/storybook:latest
+    pull_policy: never
     build: ./apps/storybook
     restart: unless-stopped
     environment:
@@ -356,6 +377,7 @@ services:
   # ── OfflineLLM ───────────────────────────────────────────────────
   offlinellm:
     image: 216labs/offlinellm:latest
+    pull_policy: never
     build: ./apps/offlinellm
     restart: unless-stopped
     environment:
@@ -368,6 +390,7 @@ services:
   # ── Pocket ───────────────────────────────────────────────────────
   pocket:
     image: 216labs/pocket:latest
+    pull_policy: never
     build: ./apps/pocket
     restart: unless-stopped
     environment:
@@ -380,6 +403,7 @@ services:
   # ── Blog ──────────────────────────────────────────────────────
   blog:
     image: 216labs/blog:latest
+    pull_policy: never
     build: ./apps/blog
     restart: unless-stopped
     environment:
@@ -392,6 +416,7 @@ services:
   # ── World Photo ─────────────────────────────────────────────
   worldphoto:
     image: 216labs/worldphoto:latest
+    pull_policy: never
     build: ./apps/worldphoto
     restart: unless-stopped
     environment:
@@ -407,6 +432,7 @@ services:
   # ── 216labs Landing (6cubed.app + www) ──────────────────────────
   landing:
     image: 216labs/landing:latest
+    pull_policy: never
     build: ./apps/landing
     restart: unless-stopped
     environment:
@@ -418,6 +444,7 @@ services:
   # ── FaceRate ──────────────────────────────────────────────────
   facerate:
     image: 216labs/facerate:latest
+    pull_policy: never
     build: ./apps/facerate
     restart: unless-stopped
     environment:
@@ -434,6 +461,7 @@ services:
   # ── CrowdBulk ─────────────────────────────────────────────────
   crowdbulk:
     image: 216labs/crowdbulk:latest
+    pull_policy: never
     build: ./apps/crowdbulk
     restart: unless-stopped
     environment:
@@ -450,6 +478,7 @@ services:
   # ── NPCWorld ──────────────────────────────────────────────────
   npcworld:
     image: 216labs/npcworld:latest
+    pull_policy: never
     build:
       context: ./apps/npcworld
       args:
@@ -466,6 +495,7 @@ services:
   # ── Audio AI Checkup ─────────────────────────────────────────
   audioaicheckup:
     image: 216labs/audioaicheckup:latest
+    pull_policy: never
     build: ./apps/audioaicheckup
     restart: unless-stopped
     environment:
@@ -483,6 +513,7 @@ services:
   # ── Avatar (LLM + TTS talking head) ────────────────────────────
   avatar:
     image: 216labs/avatar:latest
+    pull_policy: never
     build: ./apps/avatar
     restart: unless-stopped
     environment:
@@ -498,6 +529,7 @@ services:
   # ── Anchor ───────────────────────────────────────────────────
   anchor-api:
     image: 216labs/anchor-api:latest
+    pull_policy: never
     build: ./apps/anchor/backend
     restart: unless-stopped
     environment:
@@ -511,6 +543,7 @@ services:
 
   anchor-web:
     image: 216labs/anchor-web:latest
+    pull_policy: never
     build: ./apps/anchor/frontend
     restart: unless-stopped
     expose:
@@ -520,6 +553,7 @@ services:
   # ── EmailGPT ───────────────────────────────────────────────────
   emailgpt:
     image: 216labs/emailgpt:latest
+    pull_policy: never
     build: ./apps/emailgpt
     restart: unless-stopped
     environment:
@@ -538,6 +572,7 @@ services:
   # ── Mystery Shopper (ground truth fleet / shelfies) ────────────
   mysteryshopper:
     image: 216labs/mysteryshopper:latest
+    pull_policy: never
     build: ./apps/mysteryshopper
     restart: unless-stopped
     environment:
@@ -553,6 +588,7 @@ services:
   # ── LLM Internals (dissect tiny LLM in browser) ────────────────
   llminternals:
     image: 216labs/llminternals:latest
+    pull_policy: never
     build: ./apps/llminternals
     restart: unless-stopped
     environment:
@@ -565,6 +601,7 @@ services:
   # ── MaxLearn (Tinder for Wikipedia rabbit holes) ───────────────
   maxlearn:
     image: 216labs/maxlearn:latest
+    pull_policy: never
     build: ./apps/maxlearn
     restart: unless-stopped
     environment:
@@ -579,6 +616,7 @@ services:
   # ── Múinteoir ─────────────────────────────────────────────────
   muinteoir:
     image: 216labs/muinteoir:latest
+    pull_policy: never
     build: ./apps/muinteoir
     restart: unless-stopped
     environment:
@@ -593,6 +631,7 @@ services:
   # ── Impulse (nearby local offers) ───────────────────────────
   impulse:
     image: 216labs/impulse:latest
+    pull_policy: never
     build: ./apps/impulse
     restart: unless-stopped
     environment:
@@ -605,6 +644,7 @@ services:
   # ── Mediate (LLM-mediated two-party chat) ───────────────────
   mediate:
     image: 216labs/mediate:latest
+    pull_policy: never
     build: ./apps/mediate
     restart: unless-stopped
     environment:

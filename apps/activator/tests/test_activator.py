@@ -58,6 +58,8 @@ class ActivatorTests(unittest.TestCase):
         with patch.object(
             activator, "get_app_row", return_value={"docker_service": "pocket"}
         ), patch.object(activator, "set_runtime_state"), patch.object(
+            activator, "TRY_DOCKER_PULL", True
+        ), patch.object(
             activator, "run_compose", side_effect=fake_run_compose
         ), patch.object(
             activator, "try_pull_image", return_value=DummyProc(returncode=0)

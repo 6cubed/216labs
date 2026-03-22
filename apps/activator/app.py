@@ -29,6 +29,12 @@ REMOVE_IMAGE_ON_EVICT = os.environ.get("ACTIVATOR_REMOVE_IMAGE_ON_EVICT", "").st
     "true",
     "yes",
 )
+# 216labs/* images are not on Docker Hub; deploy transfers them. Optional registry pull.
+TRY_DOCKER_PULL = os.environ.get("ACTIVATOR_TRY_DOCKER_PULL", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
 
 
 def _parse_protected_services() -> Set[str]:
@@ -315,7 +321,7 @@ def start_app(app_id: str) -> Dict[str, object]:
             evict_until_under_limit(MAX_CONCURRENT_APPS)
 
         up = run_compose("up", "-d", "--no-build", docker_service)
-        if up.returncode != 0:
+        if up.returncode != 0 and TRY_DOCKER_PULL:
             pull = try_pull_image(docker_service)
             if pull.returncode == 0:
                 up = run_compose("up", "-d", "--no-build", docker_service)
@@ -332,6 +338,12 @@ def start_app(app_id: str) -> Dict[str, object]:
                 )
                 return {"ok": False, "status": status}
             err = up.stderr.strip() or up.stdout.strip() or "Container start failed."
+            low = err.lower()
+            if "no such image" in low or "pull access denied" in low or "pulling" in low:
+                err = (
+                    f"{err} — Image 216labs/{docker_service}:latest must exist locally "
+                    f"(./deploy.sh from dev machine, or: docker compose build {docker_service})."
+                )
             set_runtime_state(app_id, "failed", err, touch_accessed=True)
             status = set_status(app_id, "failed", err, docker_service=docker_service)
             return {"ok": False, "status": status}

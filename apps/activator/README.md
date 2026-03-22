@@ -27,6 +27,12 @@ This service is the **cold-start orchestrator** for 216labs: when Caddy sees a d
 
 Per-request LRU without extra latency would require Caddy subrequests or a sidecar; today recency is driven by warmup/status touches and starts.
 
+## Registry pulls
+
+`216labs/*` images are **not** on Docker Hub. The activator does **not** run `docker pull` unless `ACTIVATOR_TRY_DOCKER_PULL=true`. Missing images must come from `./deploy.sh` (or `docker compose build <service>` on a dev machine).
+
+Compose sets `pull_policy: never` on each `216labs/*` service so a plain `docker compose up` does not try to pull private tags.
+
 ## Environment
 
 See `docker-compose.yml` `activator` service. Key variables:
