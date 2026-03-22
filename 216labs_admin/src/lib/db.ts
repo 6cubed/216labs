@@ -133,6 +133,7 @@ const KNOWN_PORTS: Record<string, number> = {
   valentine: 8039,
   tigertank: 8040,
   explore: 8041,
+  angelwatcher: 8042,
 };
 
 let _db: Database.Database | null = null;

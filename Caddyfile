@@ -77,6 +77,21 @@ agitshirts.6cubed.app {
 	}
 }
 
+angelwatcher.6cubed.app {
+	reverse_proxy angelwatcher:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=angelwatcher&dest=https%3A%2F%2Fangelwatcher.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=angelwatcher&dest=https%3A%2F%2Fangelwatcher.6cubed.app" 302
+		}
+	}
+}
+
 artisinaleurope.6cubed.app {
 	reverse_proxy artisinaleurope:3000 {
 		@cold status 502 503 504

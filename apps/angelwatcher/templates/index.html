@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AngelWatcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0c10;
+      --surface: #12161e;
+      --surface2: #1a1f2a;
+      --border: #2a3344;
+      --accent: #e8c547;
+      --accent-dim: #b8942e;
+      --text: #e8eaef;
+      --muted: #8b93a5;
+      --good: #4ade80;
+      --warn: #fbbf24;
+      --radius: 14px;
+      --font: "Instrument Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: radial-gradient(1000px 500px at 15% -5%, #1e2433 0%, var(--bg) 50%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.55;
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+
+    header {
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.4rem;
+      background: linear-gradient(120deg, #fde68a 0%, var(--accent) 40%, #d97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 52ch;
+    }
+
+    .disclaimer {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-left: 3px solid var(--border);
+      padding-left: 0.75rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin: 1.75rem 0 1.25rem;
+    }
+
+    label.chk {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    select.filt {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.65rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .btn:hover {
+      border-color: var(--accent-dim);
+      background: #222836;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ca8a04 0%, var(--accent-dim) 100%);
+      border-color: transparent;
+      color: #0a0c10;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-ghost {
+      background: transparent;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .panel h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 560px) {
+      .form-grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    input[type="text"], input[type="url"], input[type="number"], textarea {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+
+    textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    .signal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.45rem 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .signal-grid label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.45rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.2rem 1rem;
+      position: relative;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .score {
+      flex-shrink: 0;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.25rem 0.55rem;
+      border-radius: 8px;
+      background: rgba(232, 197, 71, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(232, 197, 71, 0.25);
+    }
+
+    .meta {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.65rem;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.2rem 0.45rem;
+      border-radius: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .tag.on {
+      color: var(--good);
+      border-color: rgba(74, 222, 128, 0.35);
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    .line {
+      font-size: 0.95rem;
+      margin: 0.35rem 0;
+    }
+
+    .notes {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
+    .actions {
+      margin-top: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .btn-sm {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.8rem;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+
+    .edit-panel {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+
+    .edit-panel.open {
+      display: block;
+    }
+
+    .err {
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>AngelWatcher</h1>
+      <p class="sub">
+        A personal watchlist for <strong>&lt;$10M</strong> implied valuations — scored by signals like xoogler-led teams,
+        Tier-1 VC intros, YC, repeat founders, and sector heat. For research only.
+      </p>
+      <p class="disclaimer">
+        Not investment advice. Signals are heuristics; do your own diligence. Data stays in this app&rsquo;s database on the server.
+      </p>
+    </header>
+
+    <div class="toolbar">
+      <label class="chk">
+        <input type="checkbox" id="underOnly" checked />
+        Hide rows over ${{ ceiling_m }}M implied
+      </label>
+      <select class="filt" id="signalFilt" aria-label="Filter by signal">
+        <option value="">All signals</option>
+      </select>
+      <button type="button" class="btn btn-ghost" id="reloadBtn">Refresh</button>
+    </div>
+
+    <section class="panel">
+      <h2>Add company</h2>
+      <form id="addForm" class="form-grid">
+        <div class="form-grid two">
+          <div>
+            <label for="fName">Name</label>
+            <input type="text" id="fName" name="name" required placeholder="Company name" />
+          </div>
+          <div>
+            <label for="fVal">Implied valuation (USD)</label>
+            <input type="number" id="fVal" name="valuation_usd" min="0" step="1000" placeholder="Optional — e.g. 5000000" />
+          </div>
+        </div>
+        <div>
+          <label for="fLine">One-liner</label>
+          <input type="text" id="fLine" name="one_liner" placeholder="What they do" />
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label for="fSector">Sector</label>
+            <input type="text" id="fSector" name="sector" placeholder="e.g. AI infra" />
+          </div>
+          <div>
+            <label for="fStage">Stage</label>
+            <input type="text" id="fStage" name="stage" value="Pre-seed" />
+          </div>
+        </div>
+        <div>
+          <label for="fUrl">Website</label>
+          <input type="url" id="fUrl" name="website_url" placeholder="https://…" />
+        </div>
+        <div>
+          <label for="fNotes">Notes</label>
+          <textarea id="fNotes" name="notes" placeholder="How you heard about it, cap on SAFE, etc."></textarea>
+        </div>
+        <div>
+          <span>Signals</span>
+          <div class="signal-grid" id="signalChecks"></div>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary">Add to watchlist</button>
+          <span class="err" id="formErr" hidden></span>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <h2 class="visually-hidden" style="position:absolute;left:-9999px;">Watchlist</h2>
+      <div id="listMount" class="list"></div>
+    </section>
+
+    <footer>
+      Valuation ceiling for filters: <strong>${{ ceiling_m }}M</strong> USD post-money (adjust in product copy; logic uses 10,000,000).
+    </footer>
+  </div>
+
+  <script>
+    const ceilingUsd = 10000000;
+
+    async function loadSignals() {
+      const r = await fetch("/api/signals");
+      const data = await r.json();
+      const sel = document.getElementById("signalFilt");
+      const keep = sel.value;
+      sel.innerHTML = '<option value="">All signals</option>';
+      for (const s of data.signals) {
+        const opt = document.createElement("option");
+        opt.value = s.slug;
+        opt.textContent = s.label + " (w" + s.weight + ")";
+        sel.appendChild(opt);
+      }
+      sel.value = keep;
+
+      const box = document.getElementById("signalChecks");
+      box.innerHTML = "";
+      for (const s of data.signals) {
+        const id = "sig_" + s.slug;
+        const lab = document.createElement("label");
+        lab.innerHTML = '<input type="checkbox" name="signal" value="' + s.slug + '" id="' + id + '"/> <span>' + s.label + "</span>";
+        box.appendChild(lab);
+      }
+    }
+
+    function fmtUsd(n) {
+      if (n == null) return "TBD";
+      if (n >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
+      if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+      if (n >= 1e3) return "$" + (n / 1e3).toFixed(0) + "K";
+      return "$" + n;
+    }
+
+    function selectedSlugsFromForm() {
+      return Array.from(document.querySelectorAll('#signalChecks input[type="checkbox"]:checked')).map(function (x) { return x.value; });
+    }
+
+    async function loadList() {
+      const under = document.getElementById("underOnly").checked ? "1" : "0";
+      const sig = document.getElementById("signalFilt").value;
+      let url = "/api/companies?under_ceiling=" + under;
+      if (sig) url += "&signal=" + encodeURIComponent(sig);
+      const r = await fetch(url);
+      const data = await r.json();
+      const mount = document.getElementById("listMount");
+      if (!data.companies || data.companies.length === 0) {
+        mount.innerHTML = '<div class="empty">No companies match. Add one above or widen filters.</div>';
+        return;
+      }
+      mount.innerHTML = "";
+      for (const c of data.companies) {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.dataset.id = c.id;
+        const over = c.valuation_usd != null && c.valuation_usd > ceilingUsd;
+        const valStr = fmtUsd(c.valuation_usd) + (over ? " (over ceiling)" : "");
+        const tags = (c.signals || []).map(function (s) {
+          return '<span class="tag on">' + escapeHtml(s.label) + "</span>";
+        }).join("");
+        card.innerHTML =
+          '<div class="card-top">' +
+          '<div><h3>' + escapeHtml(c.name) + "</h3>" +
+          '<div class="meta">' + escapeHtml(c.stage) + " · " + escapeHtml(c.sector) + " · " + valStr + "</div></div>" +
+          '<div class="score" title="Weighted signal score">★ ' + c.score + "</div></div>" +
+          '<p class="line">' + escapeHtml(c.one_liner || "—") + "</p>" +
+          (c.website_url ? '<p class="meta"><a href="' + escapeAttr(c.website_url) + '" target="_blank" rel="noopener">' + escapeHtml(c.website_url) + "</a></p>" : "") +
+          (c.notes ? '<p class="notes">' + escapeHtml(c.notes) + "</p>" : "") +
+          '<div class="tags">' + tags + "</div>" +
+          '<div class="actions">' +
+          '<button type="button" class="btn btn-sm btn-ghost edit-toggle">Edit</button>' +
+          '<button type="button" class="btn btn-sm btn-ghost del-btn">Remove</button>' +
+          "</div>" +
+          '<div class="edit-panel"></div>';
+        mount.appendChild(card);
+
+        card.querySelector(".edit-toggle").addEventListener("click", function () {
+          const ep = card.querySelector(".edit-panel");
+          if (ep.classList.contains("open")) {
+            ep.classList.remove("open");
+            ep.innerHTML = "";
+            return;
+          }
+          openEditor(card, c);
+        });
+        card.querySelector(".del-btn").addEventListener("click", async function () {
+          if (!confirm("Remove " + c.name + " from the watchlist?")) return;
+          await fetch("/api/companies/" + c.id, { method: "DELETE" });
+          loadList();
+        });
+      }
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function escapeAttr(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+
+    function openEditor(card, c) {
+      const ep = card.querySelector(".edit-panel");
+      ep.classList.add("open");
+      let checks = "";
+      fetch("/api/signals").then(function (r) { return r.json(); }).then(function (data) {
+        for (const s of data.signals) {
+          const on = c.signal_slugs.indexOf(s.slug) >= 0 ? " checked" : "";
+          checks += '<label><input type="checkbox" class="e-sig" value="' + s.slug + '"' + on + "/> " + s.label + "</label><br/>";
+        }
+        ep.innerHTML =
+          '<div class="form-grid">' +
+          '<div class="form-grid two"><div><label>Name<br/><input type="text" class="e-name" value="' + escapeAttr(c.name) + '"/></div>' +
+          '<div><label>Valuation USD<br/><input type="number" class="e-val" value="' + (c.valuation_usd != null ? c.valuation_usd : "") + '" placeholder="optional"/></div></div>' +
+          '<div><label>One-liner<br/><input type="text" class="e-line" value="' + escapeAttr(c.one_liner) + '"/></div>' +
+          '<div class="form-grid two"><div><label>Sector<br/><input type="text" class="e-sector" value="' + escapeAttr(c.sector) + '"/></div>' +
+          '<div><label>Stage<br/><input type="text" class="e-stage" value="' + escapeAttr(c.stage) + '"/></div></div>' +
+          '<div><label>Website<br/><input type="url" class="e-url" value="' + escapeAttr(c.website_url) + '"/></div>' +
+          '<div><label>Notes<br/><textarea class="e-notes">' + escapeHtml(c.notes) + "</textarea></div>" +
+          "<div><strong>Signals</strong><div class=\"signal-grid\">" + checks + "</div></div>" +
+          '<div><button type="button" class="btn btn-primary e-save">Save</button> <span class="err e-err" hidden></span></div></div>';
+
+        ep.querySelector(".e-save").addEventListener("click", async function () {
+          const slugs = Array.from(ep.querySelectorAll(".e-sig:checked")).map(function (x) { return x.value; });
+          const payload = {
+            name: ep.querySelector(".e-name").value.trim(),
+            one_liner: ep.querySelector(".e-line").value,
+            sector: ep.querySelector(".e-sector").value,
+            stage: ep.querySelector(".e-stage").value,
+            website_url: ep.querySelector(".e-url").value,
+            notes: ep.querySelector(".e-notes").value,
+            signal_slugs: slugs,
+          };
+          const rawV = ep.querySelector(".e-val").value;
+          payload.valuation_usd = rawV === "" ? null : parseInt(rawV, 10);
+          const err = ep.querySelector(".e-err");
+          err.hidden = true;
+          const res = await fetch("/api/companies/" + c.id, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            const j = await res.json().catch(function () { return {}; });
+            err.textContent = j.error || "Save failed";
+            err.hidden = false;
+            return;
+          }
+          ep.classList.remove("open");
+          ep.innerHTML = "";
+          loadList();
+        });
+      });
+    }
+
+    document.getElementById("addForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const err = document.getElementById("formErr");
+      err.hidden = true;
+      const fd = new FormData(e.target);
+      const rawV = fd.get("valuation_usd");
+      const payload = {
+        name: (fd.get("name") || "").trim(),
+        one_liner: fd.get("one_liner") || "",
+        sector: fd.get("sector") || "",
+        stage: fd.get("stage") || "Pre-seed",
+        website_url: fd.get("website_url") || "",
+        notes: fd.get("notes") || "",
+        signal_slugs: selectedSlugsFromForm(),
+        valuation_usd: rawV === "" ? null : parseInt(String(rawV), 10),
+      };
+      if (!payload.name) return;
+      const res = await fetch("/api/companies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(function () { return {}; });
+        err.textContent = j.error || "Could not add";
+        err.hidden = false;
+        return;
+      }
+      e.target.reset();
+      document.getElementById("fStage").value = "Pre-seed";
+      loadList();
+    });
+
+    document.getElementById("underOnly").addEventListener("change", loadList);
+    document.getElementById("signalFilt").addEventListener("change", loadList);
+    document.getElementById("reloadBtn").addEventListener("click", loadList);
+
+    loadSignals().then(loadList);
+  </script>
+</body>
+</html>
