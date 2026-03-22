@@ -8,6 +8,7 @@ angelwatcher
 activator
 landing
 blog
+marketing
 onefitblog
 emailgpt
 germandaily

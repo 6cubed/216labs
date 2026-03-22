@@ -1,5 +1,7 @@
 {
   "id": "blog",
+  "affiliated_app_id": null,
+  "marketing_campaign_kind": "dedicated_blog",
   "name": "Blog",
   "tagline": "The blog of the 216labs project",
   "description": "Essays and updates from the 216labs vibe coding ecosystem — why it exists, how it works, and what we're building.",

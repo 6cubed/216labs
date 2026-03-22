@@ -4,6 +4,7 @@
 activator
 happypath
 blog
+marketing
 onefitblog
 tigertank
 worldphoto

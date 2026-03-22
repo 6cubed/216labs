@@ -1,5 +1,7 @@
 {
   "id": "onefitblog",
+  "affiliated_app_id": "onefit",
+  "marketing_campaign_kind": "dedicated_blog",
   "name": "OneFit Fashion Journal",
   "tagline": "Fashion tips with AI-generated outfit ideas",
   "description": "Blog for the OneFit fashion project: practical styling principles illustrated with genAI-inspired looks on abstract figures — trainers, socks, pants, colour harmony, and how skin tone and hair colour complete the picture.",
