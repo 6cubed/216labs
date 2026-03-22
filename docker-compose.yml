@@ -441,6 +441,19 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── Tigertank (thinktank) ───────────────────────────────────
+  tigertank:
+    image: 216labs/tigertank:latest
+    pull_policy: never
+    build: ./apps/tigertank
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── World Photo ─────────────────────────────────────────────
   worldphoto:
     image: 216labs/worldphoto:latest

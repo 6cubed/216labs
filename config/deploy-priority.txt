@@ -5,6 +5,7 @@ admin
 activator
 landing
 blog
+tigertank
 valentine
 npcworld
 impulse
