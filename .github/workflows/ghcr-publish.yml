@@ -1,0 +1,88 @@
+# Build 216labs/* images and push to GHCR so the droplet activator can
+# `docker pull` + retag on cold start when the image is missing locally.
+name: Publish images to GHCR
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "docker-compose.yml"
+      - ".github/workflows/ghcr-publish.yml"
+      - "scripts/compose-ghcr-matrix.py"
+      - "apps/**"
+      - "216labs_admin/**"
+      - "happypath/**"
+      - "pipesecure/**"
+      - "cron-runner/**"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY_PREFIX: ghcr.io/6cubed/216labs
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      count: ${{ steps.set-matrix.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure compose env files
+        run: |
+          test -f .env || cp .env.example .env
+          touch .env.admin
+      - name: Docker compose config (JSON)
+        run: docker compose --env-file .env --env-file .env.admin config --format json > compose.json
+      - id: set-matrix
+        run: |
+          python3 scripts/compose-ghcr-matrix.py compose.json > matrix.json
+          echo "matrix<<GHA_JSON" >> "$GITHUB_OUTPUT"
+          cat matrix.json >> "$GITHUB_OUTPUT"
+          echo "GHA_JSON" >> "$GITHUB_OUTPUT"
+          COUNT=$(python3 -c "import json; print(len(json.load(open('matrix.json'))))")
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+      - name: Matrix size
+        run: python3 -c "import json; print('services:', len(json.load(open('matrix.json'))))"
+
+  build-push:
+    needs: setup
+    if: needs.setup.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure compose env files
+        run: |
+          test -f .env || cp .env.example .env
+          touch .env.admin
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        env:
+          SERVICE: ${{ matrix.service }}
+          SRC_IMAGE: ${{ matrix.image }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          if [ -n "${PLATFORM:-}" ]; then
+            export DOCKER_DEFAULT_PLATFORM="$PLATFORM"
+          fi
+          docker compose --env-file .env --env-file .env.admin build "$SERVICE"
+          short="${SRC_IMAGE#216labs/}"
+          short="${short%%:*}"
+          DEST="${{ env.REGISTRY_PREFIX }}/${short}:latest"
+          docker tag "$SRC_IMAGE" "$DEST"
+          docker push "$DEST"

@@ -29,6 +29,21 @@
       "key": "ACTIVATOR_DEPLOY_TRIGGER_TOKEN",
       "description": "Optional bearer token for deploy trigger webhook",
       "is_secret": true
+    },
+    {
+      "key": "ACTIVATOR_REGISTRY_PREFIX",
+      "description": "GHCR image prefix for cold-start pull (e.g. ghcr.io/6cubed/216labs); retags to 216labs/<service>:latest",
+      "is_secret": false
+    },
+    {
+      "key": "GHCR_USERNAME",
+      "description": "GitHub username for ghcr.io login (PAT owner); use with GHCR_TOKEN read:packages",
+      "is_secret": false
+    },
+    {
+      "key": "GHCR_TOKEN",
+      "description": "PAT with read:packages for ghcr.io so activator can pull on cold start",
+      "is_secret": true
     }
   ]
 }

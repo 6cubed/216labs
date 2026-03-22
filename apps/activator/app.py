@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import re
@@ -18,7 +19,7 @@ app = Flask(__name__)
 PROJECT_ROOT = os.environ.get("ACTIVATOR_PROJECT_ROOT", "/workspace")
 DB_PATH = os.environ.get("ACTIVATOR_DB_PATH", os.path.join(PROJECT_ROOT, "216labs.db"))
 APP_HOST = os.environ.get("APP_HOST", "6cubed.app")
-START_TIMEOUT_SECONDS = int(os.environ.get("ACTIVATOR_START_TIMEOUT_SECONDS", "45"))
+START_TIMEOUT_SECONDS = int(os.environ.get("ACTIVATOR_START_TIMEOUT_SECONDS", "120"))
 DEPLOY_TRIGGER_URL = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_URL", "").strip()
 DEPLOY_TRIGGER_TOKEN = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_TOKEN", "").strip()
 
@@ -36,6 +37,10 @@ TRY_DOCKER_PULL = os.environ.get("ACTIVATOR_TRY_DOCKER_PULL", "").strip().lower(
     "true",
     "yes",
 )
+# e.g. ghcr.io/6cubed/216labs — cold-start pulls then retags to 216labs/<service>:latest
+REGISTRY_PREFIX = os.environ.get("ACTIVATOR_REGISTRY_PREFIX", "").strip()
+GHCR_TOKEN = os.environ.get("GHCR_TOKEN", "").strip()
+GHCR_USERNAME = os.environ.get("GHCR_USERNAME", "token").strip() or "token"
 
 
 def _parse_protected_services() -> Set[str]:
@@ -357,6 +362,45 @@ def reaper_loop() -> None:
             pass
 
 
+def _docker_cmd_env_for_ghcr() -> dict[str, str]:
+    """Set DOCKER_AUTH_CONFIG for ghcr.io when GHCR_TOKEN is set (read:packages PAT)."""
+    env = os.environ.copy()
+    if not GHCR_TOKEN:
+        return env
+    auth = base64.b64encode(f"{GHCR_USERNAME}:{GHCR_TOKEN}".encode()).decode()
+    cfg = {"auths": {"ghcr.io": {"auth": auth}}}
+    env["DOCKER_AUTH_CONFIG"] = json.dumps(cfg)
+    return env
+
+
+def try_registry_pull(docker_service: str) -> bool:
+    """Pull ACTIVATOR_REGISTRY_PREFIX/<service>:latest and retag to 216labs/<service>:latest."""
+    if not REGISTRY_PREFIX:
+        return False
+    remote = f"{REGISTRY_PREFIX.rstrip('/')}/{docker_service}:latest"
+    local = f"216labs/{docker_service}:latest"
+    env = _docker_cmd_env_for_ghcr()
+    pull = subprocess.run(
+        ["docker", "pull", remote],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+    if pull.returncode != 0:
+        return False
+    tag = subprocess.run(
+        ["docker", "tag", remote, local],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+    return tag.returncode == 0
+
+
 def try_pull_image(docker_service: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["docker", "pull", f"216labs/{docker_service}:latest"],
@@ -422,6 +466,8 @@ def start_app(app_id: str) -> Dict[str, object]:
             return {"ok": True, "status": status}
 
         up = run_compose("up", "-d", "--no-build", docker_service)
+        if up.returncode != 0 and try_registry_pull(docker_service):
+            up = run_compose("up", "-d", "--no-build", docker_service)
         if up.returncode != 0 and TRY_DOCKER_PULL:
             pull = try_pull_image(docker_service)
             if pull.returncode == 0:
@@ -491,6 +537,8 @@ def healthz():
             "max_concurrent_apps": MAX_CONCURRENT_APPS,
             "lru_enabled": MAX_CONCURRENT_APPS > 0,
             "manifest_fallback": True,
+            "registry_prefix": REGISTRY_PREFIX or None,
+            "ghcr_auth_configured": bool(GHCR_TOKEN),
         }
     )
 
