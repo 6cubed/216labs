@@ -8,6 +8,80 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'six-dollar-droplet-price-sheet-and-scaling-thousands-of-demos',
+    title:
+      'The $6 droplet price sheet: what this whole setup costs and how thousands of demos still fit',
+    excerpt:
+      'A line-item overview of the 216labs hosting stack on one small DigitalOcean instance, what is effectively free, what scales with you — and how on-demand cold starts make “thousands of demos” honest without turning one box into a datacenter.',
+    date: '2026-03-22',
+    body: `
+People love a **single number** on the invoice. In our case, the headline is boring on purpose: **one small DigitalOcean droplet** — often marketed around **\$6/month** on the lowest **Basic** tier (check the live pricing page; regions and promos move the exact dollar). Everything else in the factory is either **\$0** or **optional** until you deliberately add it. This post is a **price overview** of the whole setup and a **realistic** story for scaling to **on-demand access to thousands of demos** while keeping **one** instance as the edge.
+
+**What you are buying with that droplet**
+
+A Basic droplet is not a mystery box: it is roughly **1 vCPU**, **1 GB RAM**, **25 GB SSD**, and **1 TB** transfer in the common configuration — again, verify on DigitalOcean’s calculator. That is **enough to terminate TLS**, run a **reverse proxy** (Caddy), host a **small control plane** (Activator + admin), and keep **a handful of app containers warm** — not **hundreds** of fat Node processes at full memory simultaneously.
+
+The important mental model: **you are renting a showroom stall**, not a hyperscale region. The architecture has to admit that.
+
+**Line items (typical factory bill)**
+
+1. **Compute: one droplet** — the **\$6-class** line (or whatever Basic costs when you read this). This is the only *mandatory* recurring hosting charge for “everything on one box.”
+
+2. **IPv4 / networking** — usually **included** in the droplet; no separate “per demo” fee. You point **DNS** at the droplet; Caddy handles **HTTPS**.
+
+3. **Domain & DNS** — **not** DigitalOcean-specific. Budget **roughly \$10–\$15/year** for a domain at a registrar (varies wildly). DNS can be free (many registrars) or part of a provider you already use. This is **per brand**, not per app.
+
+4. **Source control** — **GitHub** (or equivalent) for a private or public monorepo: **\$0** on free tiers for normal team sizes; **paid** only if you need private collaborators at scale or advanced org features. The factory does not charge you per demo in git.
+
+5. **Container registry** — we **do not** rely on pulling a private **\`216labs/*\`** image from Docker Hub for production. **Images are built elsewhere** (developer laptop or CI) and **loaded on the host** during deploy. So you are **not** paying Docker Hub pull fees for every cold start in the default workflow. If you *choose* to move to a registry + pull model later, that becomes a **deliberate** cost line.
+
+6. **Build minutes** — if CI builds images in **GitHub Actions**, you may hit **free tier limits** at high velocity; that is **not** the droplet’s bill. Many small apps stay inside free allowances; heavy matrix builds might need **paid CI** or fewer parallel jobs. Treat this as **optional scale tax**, not “\$6 droplet tax.”
+
+7. **Email / transactional** — only if an app sends mail (Resend, etc.). **Per-app**, usage-based; **not** required to host static or read-only demos.
+
+8. **Secrets** — **\$0** if you store them in your existing admin DB and env injection; the cost is **operational discipline**, not a SKU.
+
+**What does *not* scale on the \$6 line**
+
+- **RAM** — each running container has a **floor** cost (even “small” Node apps are tens to hundreds of MB). **Thousands of demos in git** is easy; **thousands concurrently running** on **1 GB** is fantasy.
+- **Disk** — **25 GB** holds **many** images only if you **prune** old layers and avoid shipping a **1 GB** dependency tree in every app.
+- **CPU** — cold starts and TLS are fine; **sustained parallel load** across many apps will **queue** on one vCPU.
+
+So the honest claim is not “\$6 runs infinite production.” It is “**\$6 runs a disciplined grid** where **most demos are stopped** until someone hits the URL.”
+
+**How “thousands of demos” becomes realistic**
+
+The factory separates three quantities:
+
+1. **Catalog size** — how many apps exist in the monorepo (**can be thousands over time**).
+2. **Images on disk** — how many **built** images sit on the droplet (**bounded by SSD** and hygiene).
+3. **Running processes** — how many containers are **up right now** (**bounded by RAM**).
+
+**On-demand** means **(3)** tracks **traffic**, not **(1)**. The **Activator** path (warmup page → **\`docker compose up -d --no-build\`**) turns a **502** into a **cold start** instead of a permanent failure. That is how you get **thousands of URLs** without **thousands of hot processes**.
+
+**Scaling levers that stay compatible with one instance**
+
+- **Cold by default** — demos **sleep** when idle; the **edge** (Caddy + Activator) stays **always on** within the droplet’s tiny footprint.
+- **No server-side builds** — **never** compile on the droplet; **build locally or in CI**, transfer artifacts. That keeps CPU spikes off the **\$6** box and avoids installing toolchains in production.
+- **Deploy batching & priority** — when disk or time is tight, **ship the spine first** (proxy, activator, admin), then **tail apps** in later batches. The deploy script already thinks in terms of **caps** and **priority lists** so one bad tail app does not starve the whole fleet.
+- **Optional LRU eviction** — you *can* cap concurrent running apps to protect RAM, at the cost of **churn** if someone browses many subdomains quickly. Defaults in a **browsing** grid often favor **no cap**; a **RAM-starved** host might turn the cap back on with eyes open.
+
+**When you outgrow \$6 without changing the story**
+
+You do not need to abandon the **single-droplet demo grid** to grow. You **graduate** specific workloads:
+
+- **Move heavy databases** or **large object storage** to managed services (still cheap at small scale).
+- **Put CI** on **paid minutes** when **parallelism** matters more than **\$0**.
+- **Add a CDN** in front of static assets if **global latency** matters — still orthogonal to “one origin droplet.”
+
+The **narrative** stays: **one origin**, **many demos**, **cold until needed** — until traffic or compliance forces a split.
+
+**Bottom line**
+
+The **entire** 216labs-style setup, at minimum, is **domain + one small droplet + free git + your time**. The **\$6** line buys **TLS, routing, and a place to run a few warm containers**; **thousands of demos** live in **git and on disk** as **artifacts**, with **on-demand wake** so **RAM** tracks **attention**, not **ambition**. That is how the math stays boring — and **honest**.
+    `.trim(),
+  },
+  {
     slug: 'github-actions-container-images-off-server-scale',
     title:
       'GitHub Actions and container registries: building off-server at scale',
