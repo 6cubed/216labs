@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { randomUUID } from "crypto";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
@@ -223,6 +224,25 @@ function initSchema(db: Database.Database) {
       updated_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS todo_columns (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS todo_cards (
+      id TEXT PRIMARY KEY,
+      column_id TEXT NOT NULL REFERENCES todo_columns(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+  seedTodoColumnsIfEmpty(db);
 
   syncTopLevelProjects(db);
   backfillAppAnalytics(db);
@@ -672,6 +692,181 @@ export function getAppAnalyticsMap(): Record<string, DbAppAnalytics> {
   const map: Record<string, DbAppAnalytics> = {};
   for (const r of rows) map[r.app_id] = r;
   return map;
+}
+
+function seedTodoColumnsIfEmpty(db: Database.Database): void {
+  const row = db.prepare("SELECT COUNT(*) as c FROM todo_columns").get() as {
+    c: number;
+  };
+  if (row.c > 0) return;
+  db.exec(`
+    INSERT INTO todo_columns (id, title, sort_order, created_at) VALUES
+    ('col_backlog', 'Backlog', 0, datetime('now')),
+    ('col_doing', 'In progress', 1, datetime('now')),
+    ('col_done', 'Done', 2, datetime('now'));
+  `);
+}
+
+export interface DbTodoColumn {
+  id: string;
+  title: string;
+  sort_order: number;
+  created_at: string | null;
+}
+
+export interface DbTodoCard {
+  id: string;
+  column_id: string;
+  title: string;
+  body: string;
+  sort_order: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type DbTodoBoardColumn = DbTodoColumn & { cards: DbTodoCard[] };
+
+export function getTodoBoard(): DbTodoBoardColumn[] {
+  const db = getDb();
+  seedTodoColumnsIfEmpty(db);
+  const columns = db
+    .prepare("SELECT * FROM todo_columns ORDER BY sort_order ASC, id ASC")
+    .all() as DbTodoColumn[];
+  const cards = db
+    .prepare("SELECT * FROM todo_cards ORDER BY column_id, sort_order ASC, id ASC")
+    .all() as DbTodoCard[];
+  const byCol = new Map<string, DbTodoCard[]>();
+  for (const c of cards) {
+    const arr = byCol.get(c.column_id) ?? [];
+    arr.push(c);
+    byCol.set(c.column_id, arr);
+  }
+  return columns.map((col) => ({
+    ...col,
+    cards: byCol.get(col.id) ?? [],
+  }));
+}
+
+export function createTodoCard(
+  columnId: string,
+  title: string,
+  body?: string
+): string {
+  const db = getDb();
+  const id = randomUUID();
+  const maxRow = db
+    .prepare(
+      "SELECT COALESCE(MAX(sort_order), -1) as m FROM todo_cards WHERE column_id = ?"
+    )
+    .get(columnId) as { m: number };
+  const sort_order = maxRow.m + 1;
+  db.prepare(
+    `INSERT INTO todo_cards (id, column_id, title, body, sort_order, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+  ).run(id, columnId, title.trim(), (body ?? "").trim(), sort_order);
+  return id;
+}
+
+export function updateTodoCard(
+  cardId: string,
+  data: { title?: string; body?: string | null }
+): void {
+  const db = getDb();
+  const sets: string[] = ["updated_at = datetime('now')"];
+  const values: (string | null)[] = [];
+  if (data.title !== undefined) {
+    sets.push("title = ?");
+    values.push(data.title.trim());
+  }
+  if (data.body !== undefined) {
+    sets.push("body = ?");
+    values.push(data.body ?? "");
+  }
+  if (values.length === 0) return;
+  values.push(cardId);
+  db.prepare(`UPDATE todo_cards SET ${sets.join(", ")} WHERE id = ?`).run(
+    ...values
+  );
+}
+
+export function deleteTodoCard(cardId: string): void {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT column_id FROM todo_cards WHERE id = ?")
+    .get(cardId) as { column_id: string } | undefined;
+  if (!row) return;
+  db.prepare("DELETE FROM todo_cards WHERE id = ?").run(cardId);
+  const rest = db
+    .prepare(
+      "SELECT id FROM todo_cards WHERE column_id = ? ORDER BY sort_order ASC, id ASC"
+    )
+    .all(row.column_id) as { id: string }[];
+  rest.forEach((r, i) => {
+    db.prepare("UPDATE todo_cards SET sort_order = ? WHERE id = ?").run(i, r.id);
+  });
+}
+
+export function moveTodoCard(
+  cardId: string,
+  toColumnId: string,
+  toIndex: number
+): void {
+  const db = getDb();
+  const card = db
+    .prepare("SELECT * FROM todo_cards WHERE id = ?")
+    .get(cardId) as DbTodoCard | undefined;
+  if (!card) return;
+
+  const run = db.transaction(() => {
+    const fromId = card.column_id;
+
+    if (fromId === toColumnId) {
+      const all = (
+        db
+          .prepare(
+            "SELECT * FROM todo_cards WHERE column_id = ? ORDER BY sort_order ASC, id ASC"
+          )
+          .all(fromId) as DbTodoCard[]
+      ).filter((c) => c.id !== cardId);
+      const idx = Math.min(Math.max(0, toIndex), all.length);
+      const ordered = [...all.slice(0, idx), card, ...all.slice(idx)];
+      ordered.forEach((c, i) => {
+        db.prepare(
+          "UPDATE todo_cards SET sort_order = ?, updated_at = datetime('now') WHERE id = ?"
+        ).run(i, c.id);
+      });
+      return;
+    }
+
+    const fromCards = (
+      db
+        .prepare(
+          "SELECT * FROM todo_cards WHERE column_id = ? ORDER BY sort_order ASC, id ASC"
+        )
+        .all(fromId) as DbTodoCard[]
+    ).filter((c) => c.id !== cardId);
+    const toCards = (
+      db
+        .prepare(
+          "SELECT * FROM todo_cards WHERE column_id = ? ORDER BY sort_order ASC, id ASC"
+        )
+        .all(toColumnId) as DbTodoCard[]
+    ).filter((c) => c.id !== cardId);
+    const idx = Math.min(Math.max(0, toIndex), toCards.length);
+    const newToList = [...toCards.slice(0, idx), card, ...toCards.slice(idx)];
+
+    fromCards.forEach((c, i) => {
+      db.prepare(
+        "UPDATE todo_cards SET sort_order = ?, updated_at = datetime('now') WHERE id = ?"
+      ).run(i, c.id);
+    });
+    newToList.forEach((c, i) => {
+      db.prepare(
+        "UPDATE todo_cards SET column_id = ?, sort_order = ?, updated_at = datetime('now') WHERE id = ?"
+      ).run(toColumnId, i, c.id);
+    });
+  });
+  run();
 }
 
 export function upsertAppAnalytics(

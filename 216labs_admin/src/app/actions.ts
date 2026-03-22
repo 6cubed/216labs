@@ -1,6 +1,16 @@
 "use server";
 
-import { setDeployEnabled, setEnvVarValue, setCronJobEnabled, getDb, upsertAppAnalytics } from "@/lib/db";
+import {
+  setDeployEnabled,
+  setEnvVarValue,
+  setCronJobEnabled,
+  getDb,
+  upsertAppAnalytics,
+  createTodoCard,
+  updateTodoCard,
+  deleteTodoCard,
+  moveTodoCard,
+} from "@/lib/db";
 import { startContainer, stopContainer } from "@/lib/docker";
 import { revalidatePath } from "next/cache";
 import { writeFileSync, existsSync, readFileSync } from "fs";
@@ -196,6 +206,46 @@ export async function saveAppAnalytics(
 ): Promise<ActionResult> {
   upsertAppAnalytics(appId, data);
   revalidatePath("/analytics");
+  return { success: true };
+}
+
+export async function createTodoCardAction(
+  columnId: string,
+  title: string,
+  body?: string
+): Promise<ActionResult> {
+  const t = title.trim();
+  if (!t) return { error: "Title is required" };
+  createTodoCard(columnId, t, body);
+  revalidatePath("/todos");
+  return { success: true };
+}
+
+export async function updateTodoCardAction(
+  cardId: string,
+  data: { title?: string; body?: string | null }
+): Promise<ActionResult> {
+  if (data.title !== undefined && !data.title.trim()) {
+    return { error: "Title cannot be empty" };
+  }
+  updateTodoCard(cardId, data);
+  revalidatePath("/todos");
+  return { success: true };
+}
+
+export async function deleteTodoCardAction(cardId: string): Promise<ActionResult> {
+  deleteTodoCard(cardId);
+  revalidatePath("/todos");
+  return { success: true };
+}
+
+export async function moveTodoCardAction(
+  cardId: string,
+  toColumnId: string,
+  toIndex: number
+): Promise<ActionResult> {
+  moveTodoCard(cardId, toColumnId, toIndex);
+  revalidatePath("/todos");
   return { success: true };
 }
 
