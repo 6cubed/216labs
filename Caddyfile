@@ -452,6 +452,21 @@ onefit.6cubed.app {
 	}
 }
 
+onefitblog.6cubed.app {
+	reverse_proxy onefitblog:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=onefitblog&dest=https%3A%2F%2Fonefitblog.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=onefitblog&dest=https%3A%2F%2Fonefitblog.6cubed.app" 302
+		}
+	}
+}
+
 oneroom.6cubed.app {
 	reverse_proxy oneroom:3000 {
 		@cold status 502 503 504

@@ -4,6 +4,7 @@
 activator
 happypath
 blog
+onefitblog
 tigertank
 worldphoto
 offlinellm

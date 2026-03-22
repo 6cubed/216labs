@@ -1,0 +1,18 @@
+{
+  "id": "onefitblog",
+  "name": "OneFit Fashion Journal",
+  "tagline": "Fashion tips with AI-generated outfit ideas",
+  "description": "Blog for the OneFit fashion project: practical styling principles illustrated with genAI-inspired looks on abstract figures — trainers, socks, pants, colour harmony, and how skin tone and hair colour complete the picture.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "onefitblog",
+  "build_context": "./apps/onefitblog",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": null,
+    "database": null,
+    "other": ["Tailwind CSS", "Static posts"]
+  },
+  "env_vars": []
+}
