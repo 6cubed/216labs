@@ -8,6 +8,139 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'scalable-marketing-and-automated-early-signals',
+    title:
+      'Scalable marketing for a vibe code factory: dollar discipline and automated early signals',
+    excerpt:
+      'How a factory of many small apps can buy distribution without lighting money on fire — and why the same spend pipeline can double as an early product signal loop across the portfolio.',
+    date: '2026-03-22',
+    body: `
+A **vibe code factory** does not ship one hero product; it ships **many experiments** that each deserve a fair shot at users. Marketing at that scale cannot be “hire a growth team per app.” It has to be **repeatable**, **measurable**, and honest about **marginal value per dollar** — and it should produce **early signal** that tells you which demos deserve more wood behind the arrow.
+
+This post outlines several **distribution approaches**, with **pros and cons**, and ties them to a simple idea: **marketing spend is also a probe**. If you instrument it, the same dollars that buy reach can buy **ranked comparisons** across apps.
+
+**The constraint: spend that still feels like money**
+
+Scalable marketing is not “spend more.” It is **spend with a closed loop**:
+
+- **Unit economics you can name** — cost per click, per install, per qualified sign-up, per retained session — even if early numbers are rough.
+- **Creative throughput** — you can generate many variants without a human bottleneck.
+- **Portfolio comparability** — two apps can be judged on the same dashboard, not two different anecdotes.
+- **Kill / pivot rules** — when an app fails cheap tests, the factory stops funding it and ships the next one.
+
+That last point is how marketing stays aligned with **value for dollar**: every channel is also a **filter**.
+
+**Approach 1: Paid social with video UGC — including AI “human” presenters**
+
+**What it is:** Short vertical ads (Meta, TikTok, etc.) that look like user-generated content: a face in frame, a hook in the first second, a screen recording or demo, a strong CTA. **AI-generated or AI-assisted** presenters (avatars, lip-sync, or synthetic hosts) can scale **face + voice + localization** faster than casting.
+
+**Pros**
+
+- **Creative velocity:** dozens of hooks and angles per app without a production crew every time.
+- **Platform-native feel:** UGC-style ads often beat glossy brand spots for app installs.
+- **Rapid iteration:** swap hooks weekly; the factory learns what resonates per category.
+- **Portfolio leverage:** one “ad recipe” (structure, pacing, captions) can template across many apps; only the demo and offer change.
+
+**Cons**
+
+- **Trust and platform risk:** synthetic humans can trigger **uncanny valley**, policy scrutiny, or user backlash if disclosure is unclear. **Label thoughtfully** and prefer authenticity where it matters.
+- **Attribution mess:** iOS privacy and multi-touch journeys make “which ad won?” noisy — you need modeled outcomes and humility.
+- **Creative fatigue:** fast iteration can become spammy noise unless quality bars exist.
+- **Not every app is “video-shaped”:** B2B tools and niche utilities may not convert from TikTok energy; the format selects for certain products.
+
+**Signal value:** Strong for **hook-market fit** and **message-market fit** before you over-invest in product. Weak alone for deep retention unless you pair installs with in-product events.
+
+**Approach 2: Search and intent capture (Google, Apple Search Ads, long-tail SEO)**
+
+**What it is:** Bidding on **high-intent keywords** and building **landing pages** that map one problem → one app. For mobile, **ASA** meets users already searching the store.
+
+**Pros**
+
+- **Demand is pre-qualified** — people are literally searching for a solution.
+- **Easier to compare apps** — CPC and conversion rates sit on the same axis across the portfolio.
+- **Compounds with good naming** — clear app names and screenshots reduce wasted clicks.
+
+**Cons**
+
+- **Crowded auctions** — generic keywords are expensive; niche apps need **long tail** discipline.
+- **SEO latency** — organic search is a slow burn; not a week-one spike channel.
+- **Thin pages at scale** — programmatic SEO can become **junk** if each app does not have a defensible, specific promise.
+
+**Signal value:** Excellent **problem-solution fit** signal. If intent exists and your app still loses, the bottleneck is likely **product or positioning**, not awareness.
+
+**Approach 3: Community and forum presence (Reddit, Discord, niche forums) — organic + light promotion**
+
+**What it is:** Show up where **self-selected** users already discuss the pain. Value-first posts, AMAs, “I built this because…” transparency, and **rules-respecting** promotion.
+
+**Pros**
+
+- **High-trust environments** for certain personas (developers, hobbyists, parents, etc.).
+- **Cheap learning** — comments are qualitative gold if you read them as data.
+- **Story assets** — real objections become better ad copy elsewhere.
+
+**Cons**
+
+- **Does not scale linearly** — time-heavy; automation is risky (spam kills accounts).
+- **Reputation risk** — one tone-deaf post scales **negatively**.
+- **Inconsistent reach** — hard to compare apps fairly on the same timeline.
+
+**Signal value:** Best for **language-market fit** and **objection libraries**. Use it to **inform** paid creative, not as the only growth lever.
+
+**Approach 4: Cross-app house inventory (newsletter, “new drop” feed, shared social)**
+
+**What it is:** The factory itself is a **media property**: subscribers who like *one* 216labs-style experiment opt in to hear about **the next**. A lightweight changelog / “app of the week” reduces marginal CAC for new launches.
+
+**Pros**
+
+- **Zero marginal CAC** at send time for the next app (not zero to build the list).
+- **Brand compounding** — “I trust this studio” lowers skepticism for new demos.
+- **Natural A/B** — which subject lines and which apps get clicks becomes a **portfolio leaderboard**.
+
+**Cons**
+
+- **Audience fit ceiling** — subscribers may not match every niche app.
+- **Fatigue** — too many launches erode attention; cadence matters.
+- **Still requires content** — someone must ship honest updates worth opening.
+
+**Signal value:** Great for **sequential learning** and **warm launches**. Pair with deep links and per-app analytics.
+
+**Approach 5: Partnerships and embeds (APIs, integrations, “works with…”)**
+
+**What it is:** Distribution through **other products’ ecosystems** — calendars, Notion, Shopify, browser stores, etc.
+
+**Pros**
+
+- **Trust transfer** from platforms users already use.
+- **Defensible** if the integration solves a real workflow.
+
+**Cons**
+
+- **Slow and bespoke** per integration — poor fit for a pure “ship fast every week” model unless you standardize a **connector playbook**.
+- **Platform dependency** — API changes can break you.
+
+**Signal value:** High when it works — **workflow-market fit**. Hard to run as a blanket strategy for every app.
+
+**Automated early signal: make the ad account a lab**
+
+The scalable move is to treat **campaign metadata + outcomes** as a first-class feed:
+
+1. **Stable naming** — every ad carries \`app_id\`, \`channel\`, \`creative_id\`, \`hypothesis\` (e.g. “pain-first hook vs curiosity hook”).
+2. **Event plumbing** — install → first value action (time-to-first-success) → D7 return, even if minimal.
+3. **Portfolio dashboards** — sort apps by **cost per first success**, not vanity installs.
+4. **Automatic triage** — rules like “if spend > X and no success events, pause and write a post-mortem stub” keep the factory honest.
+
+That is how marketing stays **scalable in decision-making**, not just in ad volume: **machines aggregate**, humans **interpret** the top and bottom of the leaderboard.
+
+**Where AI-generated humans fit**
+
+They are a **production accelerant**, not a strategy. Used well, they lower the cost of testing **many messages**. Used poorly, they substitute **fake charisma** for **clear value**. The winning pattern is: **synthetic presenter + real screen capture + specific promise + disclosed synthesis when material**.
+
+**Bottom line**
+
+The vibe code factory wins when **distribution is templated**, **economics are visible**, and **each dollar buys both users and information**. Meta ads with AI-assisted spokespeople are one tile in that mosaic — powerful for creative throughput, dangerous if trust is treated as optional. Mix **intent channels**, **community listening**, **house inventory**, and **selective partnerships** so no single platform owns your learning — then let **automated measurement** turn spend into a **ranked map** of which apps deserve the next chapter.
+    `.trim(),
+  },
+  {
     slug: 'activator-thousands-of-demos-on-one-droplet',
     title: 'Activator: thousands of demos on one $6 droplet (for real)',
     excerpt:
