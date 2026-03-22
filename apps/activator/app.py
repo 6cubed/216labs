@@ -7,6 +7,7 @@ import threading
 import time
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Set, Tuple
+import urllib.error
 from urllib import request as urlrequest
 
 from flask import Flask, jsonify, request
@@ -140,6 +141,36 @@ def load_manifest_for_app(app_id: str) -> Optional[dict]:
         except (OSError, json.JSONDecodeError):
             continue
     return None
+
+
+def get_internal_http_port(app_id: str) -> int:
+    """Container listen port from manifest (matches Caddy reverse_proxy target)."""
+    m = load_manifest_for_app(app_id)
+    if m:
+        try:
+            p = int(m.get("internal_port", 3000))
+            if p > 0:
+                return p
+        except (TypeError, ValueError):
+            pass
+    return 3000
+
+
+def http_upstream_ready(docker_service: str, port: int, timeout: float = 2.5) -> bool:
+    """True when something accepts HTTP on the compose service (avoids Caddy↔warmup redirect loops)."""
+    url = f"http://{docker_service}:{port}/"
+    try:
+        req = urlrequest.Request(
+            url,
+            headers={"Connection": "close", "User-Agent": "activator-health/1.0"},
+        )
+        with urlrequest.urlopen(req, timeout=timeout) as _resp:
+            return True
+    except urllib.error.HTTPError:
+        # Any HTTP response from the app means the socket is up (4xx/5xx still listening).
+        return True
+    except Exception:
+        return False
 
 
 def resolve_docker_service(app_id: str) -> Optional[str]:
@@ -371,13 +402,9 @@ def start_app(app_id: str) -> Dict[str, object]:
         return {"ok": False, "status": status, "queued": True}
 
     try:
+        internal_port = get_internal_http_port(app_id)
         set_runtime_state(app_id, "starting", "", touch_accessed=True)
         set_status(app_id, "starting", "Starting container.", docker_service=docker_service)
-
-        if compose_running(docker_service):
-            set_runtime_state(app_id, "ready", "", touch_accessed=True)
-            status = set_status(app_id, "ready", "App already running.", docker_service=docker_service)
-            return {"ok": True, "status": status}
 
         if MAX_CONCURRENT_APPS > 0:
             evict_until_under_limit(MAX_CONCURRENT_APPS)
@@ -412,18 +439,27 @@ def start_app(app_id: str) -> Dict[str, object]:
 
         deadline = time.time() + START_TIMEOUT_SECONDS
         while time.time() < deadline:
-            if compose_running(docker_service):
+            if compose_running(docker_service) and http_upstream_ready(
+                docker_service, internal_port
+            ):
                 set_runtime_state(app_id, "ready", "", touch_started=True, touch_accessed=True)
                 status = set_status(
                     app_id,
                     "ready",
-                    "Container is running.",
+                    "App is serving HTTP.",
                     docker_service=docker_service,
                 )
                 return {"ok": True, "status": status}
-            time.sleep(1)
+            if compose_running(docker_service):
+                set_status(
+                    app_id,
+                    "starting",
+                    "Container up; waiting for HTTP…",
+                    docker_service=docker_service,
+                )
+            time.sleep(0.5)
 
-        msg = "Container did not report running before timeout."
+        msg = "Container did not become reachable over HTTP before timeout."
         set_runtime_state(app_id, "failed", msg, touch_accessed=True)
         status = set_status(app_id, "failed", msg, docker_service=docker_service)
         return {"ok": False, "status": status}
@@ -517,36 +553,47 @@ def warmup():
     const appId = {safe_app};
     const destination = {safe_dest};
     const statusEl = document.getElementById("status");
+    const bounceKey = "warmup_bounce_" + appId;
+    let bounced = JSON.parse(sessionStorage.getItem(bounceKey) || '{{"n":0,"t":0}}');
+    if (Date.now() - bounced.t > 300000) bounced = {{ n: 0, t: Date.now() }};
 
-    async function start() {{
-      try {{
-        await fetch(`/api/start/${{encodeURIComponent(appId)}}`, {{ method: "POST" }});
-      }} catch (_err) {{
-        // Keep polling status even if start request races with another request.
-      }}
-    }}
+    if (bounced.n >= 5) {{
+      statusEl.textContent = "This page reloaded too many times while the app stayed unreachable. Wait a minute, then try the site again.";
+    }} else {{
+      bounced.n += 1;
+      bounced.t = Date.now();
+      sessionStorage.setItem(bounceKey, JSON.stringify(bounced));
 
-    async function poll() {{
-      try {{
-        const res = await fetch(`/api/status/${{encodeURIComponent(appId)}}?touch=1`);
-        const data = await res.json();
-        statusEl.textContent = data.message || data.phase || "Starting...";
-        if (data.phase === "ready") {{
-          window.location.replace(destination);
-          return;
+      async function start() {{
+        try {{
+          await fetch(`/api/start/${{encodeURIComponent(appId)}}`, {{ method: "POST" }});
+        }} catch (_err) {{
+          // Keep polling status even if start request races with another request.
         }}
-        if (data.phase === "failed") {{
-          statusEl.textContent = `Failed: ${{data.message || "unknown error"}}`;
-          return;
-        }}
-      }} catch (_err) {{
-        statusEl.textContent = "Waiting for activator...";
       }}
-      setTimeout(poll, 1500);
-    }}
 
-    start();
-    poll();
+      async function poll() {{
+        try {{
+          const res = await fetch(`/api/status/${{encodeURIComponent(appId)}}?touch=1`);
+          const data = await res.json();
+          statusEl.textContent = data.message || data.phase || "Starting...";
+          if (data.phase === "ready") {{
+            window.location.replace(destination);
+            return;
+          }}
+          if (data.phase === "failed") {{
+            statusEl.textContent = `Failed: ${{data.message || "unknown error"}}`;
+            return;
+          }}
+        }} catch (_err) {{
+          statusEl.textContent = "Waiting for activator...";
+        }}
+        setTimeout(poll, 1500);
+      }}
+
+      start();
+      poll();
+    }}
   </script>
 </body>
 </html>"""

@@ -259,6 +259,7 @@
 
   <script>
     (function() {
+      try { sessionStorage.removeItem('warmup_bounce_maxlearn'); } catch (_e) {}
       const cardContainer = document.getElementById('card-container');
       const card = document.getElementById('card');
       const cardTitle = document.getElementById('card-title');
