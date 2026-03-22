@@ -10,9 +10,9 @@ This service is the **cold-start orchestrator** for 216labs: when Caddy sees a d
 
 3. **Cold-start pull** — `try_pull_image` + `docker compose up` after eviction makes room (see below).
 
-4. **LRU reaper** — When `ACTIVATOR_MAX_CONCURRENT_APPS` is set (e.g. `10` on a 1GB droplet), before starting another app the activator **stops** the least-recently-used evictable compose service (by `last_accessed_at` in `216labs.db`). A background thread repeats the same rule if the pool ever exceeds the cap.
+4. **LRU reaper (optional)** — **Compose defaults to `ACTIVATOR_MAX_CONCURRENT_APPS=0` (off).** If you set a cap (e.g. `10` on a 1GB droplet), opening many subdomains in a row will **stop** older containers to stay under the limit—so hopping between apps feels broken unless you raise the cap or add services to `ACTIVATOR_PROTECTED_SERVICES`. When enabled, before starting another app the activator **stops** the least-recently-used evictable compose service (by `last_accessed_at`). A background thread repeats the same rule if the pool exceeds the cap.
 
-**Protected services** (never evicted): `caddy`, `activator`, `admin` by default (`ACTIVATOR_PROTECTED_SERVICES`).
+**Protected services** (never evicted): `caddy`, `activator`, `admin`, `landing` by default (`ACTIVATOR_PROTECTED_SERVICES`).
 
 **Optional disk reclaim**: `ACTIVATOR_REMOVE_IMAGE_ON_EVICT=true` runs `docker rmi` on eviction (next cold start may need a pull).
 
@@ -37,6 +37,6 @@ Compose sets `pull_policy: never` on each `216labs/*` service so a plain `docker
 
 See `docker-compose.yml` `activator` service. Key variables:
 
-- `ACTIVATOR_MAX_CONCURRENT_APPS` — `0` = unlimited; default in compose is `10`.
+- `ACTIVATOR_MAX_CONCURRENT_APPS` — `0` = unlimited (default); set e.g. `10` in `.env` only when you need a RAM cap.
 - `ACTIVATOR_REAPER_INTERVAL_SECONDS` — background trim interval (set `0` to disable reaper thread).
 - `ACTIVATOR_PROTECTED_SERVICES` — comma-separated compose service names.

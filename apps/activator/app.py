@@ -12,7 +12,7 @@ from urllib import request as urlrequest
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
-# v3: LRU eviction + background reaper (scale-to-zero pool on small droplets)
+# v4: LRU off by default; landing protected — avoids evicting when browsing many apps
 
 PROJECT_ROOT = os.environ.get("ACTIVATOR_PROJECT_ROOT", "/workspace")
 DB_PATH = os.environ.get("ACTIVATOR_DB_PATH", os.path.join(PROJECT_ROOT, "216labs.db"))
@@ -38,7 +38,7 @@ TRY_DOCKER_PULL = os.environ.get("ACTIVATOR_TRY_DOCKER_PULL", "").strip().lower(
 
 
 def _parse_protected_services() -> Set[str]:
-    raw = os.environ.get("ACTIVATOR_PROTECTED_SERVICES", "caddy,activator,admin")
+    raw = os.environ.get("ACTIVATOR_PROTECTED_SERVICES", "caddy,activator,admin,landing")
     return {x.strip().lower() for x in raw.split(",") if x.strip()}
 
 
