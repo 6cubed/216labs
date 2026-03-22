@@ -124,7 +124,7 @@ else
 fi
 
 # Cap total apps to avoid filling droplet disk (default 10). Set DEPLOY_MAX_APPS to override.
-MAX_APPS="${DEPLOY_MAX_APPS:-10}"
+MAX_APPS="${DEPLOY_MAX_APPS:-11}"
 # Priority order from config (scale: edit config/deploy-priority.txt, not this script)
 PRIORITY_FILE="config/deploy-priority.txt"
 if [ -f "$PRIORITY_FILE" ]; then
