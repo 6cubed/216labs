@@ -305,15 +305,16 @@ echo "    Changed (will restart): ${CHANGED_COMPOSE_SVCS:-none}"
 # Use __none__ sentinel so the empty string survives SSH argument passing
 # (SSH joins args with spaces, collapsing empty strings and shifting positions).
 CHANGED_ARG="${CHANGED_COMPOSE_SVCS:-__none__}"
-# Pass changed-services sentinel as $3, then all services as individual args ($4+)
-ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
+# Pass changed-services sentinel as $3, enabled app ids as $4 (single arg), then compose services ($5+)
+ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$ENABLED_APPS" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
 CHANGED_SERVICES="$3"   # "__none__" when nothing changed, else space-separated names
+ENABLED_APPS="$4"       # space-separated app ids (matches local deploy.sh / DB primary key)
 [ "$CHANGED_SERVICES" = "__none__" ] && CHANGED_SERVICES=""
-shift 3
-COMPOSE_SERVICES="$*"   # all services as individual args
+shift 4
+COMPOSE_SERVICES="$*"   # all compose service names as individual args
 
 if ! command -v docker &>/dev/null; then
   echo "==> Installing Docker..."
@@ -450,17 +451,30 @@ if [ -f 216labs.db ]; then
     sqlite3 216labs.db "UPDATE apps SET image_size_mb = $SIZE_MB WHERE docker_image = '$img';" 2>/dev/null || true
   done
   # Per-service: capture Next.js "Ready in Xms" for startup_time_ms when present.
-  # Always set last_deployed_at so admin "Recent Activity" works for Flask/Python/etc.
-  # (Previously we only set last_deployed_at when "Ready in" matched — most stacks never log that.)
   for svc in $COMPOSE_SERVICES; do
     case "$svc" in caddy) continue ;; esac
     MS=$(docker compose logs --no-follow --tail 30 "$svc" 2>/dev/null | grep -oE "Ready in [0-9]+" | grep -oE "[0-9]+" | tail -1)
     if [ -n "$MS" ]; then
-      sqlite3 216labs.db "UPDATE apps SET startup_time_ms = $MS, last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
-    else
-      sqlite3 216labs.db "UPDATE apps SET last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
+      sqlite3 216labs.db "UPDATE apps SET startup_time_ms = $MS WHERE docker_service = '$svc';" 2>/dev/null || true
     fi
   done
+  # last_deployed_at must use app id, not docker_service — compose names can drift from DB rows and
+  # UPDATE ... WHERE docker_service = ? then touches 0 rows (empty "Recent Activity" on admin).
+  ADMIN_META=$(docker ps --filter name=admin --format "{{.Names}}" 2>/dev/null | head -1 || true)
+  if [ -n "$ADMIN_META" ]; then
+    docker exec -e NOW_TS="$NOW" -e APP_IDS="$ENABLED_APPS" "$ADMIN_META" node -e "
+const db = require('better-sqlite3')('/app/216labs.db');
+const ids = (process.env.APP_IDS || '').trim().split(/\s+/).filter(Boolean);
+const stmt = db.prepare('UPDATE apps SET last_deployed_at = ? WHERE id = ?');
+for (const id of ids) stmt.run(process.env.NOW_TS, id);
+" 2>/dev/null || true
+    echo "==> Recorded last_deployed_at for enabled apps (by id)"
+  else
+    for svc in $COMPOSE_SERVICES; do
+      case "$svc" in caddy) continue ;; esac
+      sqlite3 216labs.db "UPDATE apps SET last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
+    done
+  fi
   sqlite3 216labs.db "SELECT id, repo_path FROM apps" 2>/dev/null | while IFS='|' read -r id repo_path; do
     [ -z "$id" ] && continue
     COMMITS=$(git log --oneline -- "$repo_path" 2>/dev/null | wc -l | tr -d ' ')
