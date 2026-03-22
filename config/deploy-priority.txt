@@ -7,6 +7,9 @@ angelwatcher
 activator
 landing
 blog
+emailgpt
+germandaily
+maxlearn
 tigertank
 valentine
 npcworld
@@ -15,7 +18,6 @@ mediate
 avatar
 mysteryshopper
 llminternals
-maxlearn
 pocket
 1pageresearch
 facerate

@@ -62,6 +62,7 @@ function buildRecentActivity(apps: AppInfo[]): RecentActivityItem[] {
         sortTimeMs,
       };
     })
+    .filter((item) => Number.isFinite(item.sortTimeMs))
     .sort((a, b) => (b.sortTimeMs || 0) - (a.sortTimeMs || 0))
     .slice(0, 8);
 }

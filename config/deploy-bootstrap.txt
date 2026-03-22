@@ -13,6 +13,7 @@ landing
 crowdbulk
 cron-runner
 emailgpt
+germandaily
 mysteryshopper
 llminternals
 maxlearn
