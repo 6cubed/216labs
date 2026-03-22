@@ -153,6 +153,7 @@ export async function fulfillStorybookOrder(orderId: string): Promise<ActionResu
     const { patchStorybookOrder } = await import("@/lib/storybook");
     await patchStorybookOrder(orderId, "fulfilled");
     revalidatePath("/");
+    revalidatePath("/orders");
     return { success: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to update order" };

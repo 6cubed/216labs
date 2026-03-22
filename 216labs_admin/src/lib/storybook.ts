@@ -1,3 +1,6 @@
+/** Avoid hanging the admin Orders page when Storybook is down or misconfigured. */
+const STORYBOOK_FETCH_TIMEOUT_MS = 10_000;
+
 export interface StorybookOrder {
   id: string;
   bookId: string;
@@ -48,5 +51,6 @@ export async function patchStorybookOrder(
         : {}),
     },
     body: JSON.stringify({ orderId, status }),
+    signal: AbortSignal.timeout(STORYBOOK_FETCH_TIMEOUT_MS),
   });
 }
