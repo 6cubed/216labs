@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPostBySlug, getAllSlugs, type ContentBlock } from '@/lib/posts'
 import { OutfitShowcase } from '@/components/OutfitShowcase'
+import { OneFitUpsellCard } from '@/components/OneFitUpsell'
 
 function renderBody(body: string) {
   return body.split(/\n\n+/).map((block, i) => {
@@ -45,21 +46,25 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         </time>
         <h1 className="mt-2 text-2xl font-semibold text-[var(--text)] leading-snug">{post.title}</h1>
         <p className="mt-3 text-sm text-[var(--muted)]">
-          Sister project:{' '}
+          Published by the OneFit team —{' '}
           <a
             href="https://onefit.6cubed.app"
-            className="text-[var(--accent)] hover:underline"
+            className="text-[var(--accent)] hover:underline font-medium"
             target="_blank"
             rel="noopener noreferrer"
           >
-            OneFit
+            open the AI stylist app
           </a>{' '}
-          — AI stylist & outfit visualisation
+          to apply these ideas to your own photos.
         </p>
       </header>
 
       <div className="prose prose-invert prose-sm max-w-none text-[var(--text)]">
         {post.content ? renderBlocks(post.content) : post.body ? renderBody(post.body) : null}
+      </div>
+
+      <div className="mt-14 not-prose">
+        <OneFitUpsellCard />
       </div>
     </div>
   )

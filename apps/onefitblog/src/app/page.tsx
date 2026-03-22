@@ -1,15 +1,16 @@
 import Link from 'next/link'
 import { posts } from '@/lib/posts'
+import { OneFitUpsellCard } from '@/components/OneFitUpsell'
 
 export default function HomePage() {
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
-      <header className="mb-12">
+      <header className="mb-8">
         <Link href="/" className="text-xl font-semibold text-[var(--accent)] hover:underline">
           OneFit Fashion Journal
         </Link>
         <p className="text-[var(--muted)] text-sm mt-1">
-          Fashion tips with genAI outfit ideas — sister site to{' '}
+          Fashion tips with genAI outfit ideas — the editorial arm of{' '}
           <a
             href="https://onefit.6cubed.app"
             className="text-[var(--accent)] hover:underline"
@@ -18,8 +19,13 @@ export default function HomePage() {
           >
             OneFit
           </a>
+          , your AI stylist.
         </p>
       </header>
+
+      <div className="mb-12">
+        <OneFitUpsellCard variant="compact" />
+      </div>
 
       <main className="space-y-10">
         {posts.map((post) => (
