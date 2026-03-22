@@ -475,11 +475,12 @@ for (const id of ids) stmt.run(process.env.NOW_TS, id);
       sqlite3 216labs.db "UPDATE apps SET last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
     done
   fi
-  sqlite3 216labs.db "SELECT id, repo_path FROM apps" 2>/dev/null | while IFS='|' read -r id repo_path; do
+  # Avoid `sqlite3 | while` under pipefail when host has no sqlite3 (droplet); use here-string instead.
+  while IFS='|' read -r id repo_path; do
     [ -z "$id" ] && continue
     COMMITS=$(git log --oneline -- "$repo_path" 2>/dev/null | wc -l | tr -d ' ')
     [ -n "$COMMITS" ] && sqlite3 216labs.db "UPDATE apps SET total_commits = $COMMITS WHERE id = '$id';" 2>/dev/null || true
-  done
+  done <<< "$(sqlite3 216labs.db 'SELECT id, repo_path FROM apps' 2>/dev/null || true)"
 fi
 
 echo "==> Done."
