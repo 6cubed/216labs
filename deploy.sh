@@ -250,12 +250,20 @@ else
       USE_ZSTD=true
     fi
   fi
+  # One image per transfer so the droplet never needs enough free space for a multi-image
+  # tarball unpack at once (25GB disks fill up on `docker save a b c ... | load`).
   if [ "$USE_ZSTD" = true ]; then
-    echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd)..."
-    docker save "${BUILT_IMAGES[@]}" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'
+    echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd, sequential)..."
+    for TAG in "${BUILT_IMAGES[@]}"; do
+      echo "  -> $TAG"
+      docker save "$TAG" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'
+    done
   else
-    echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE..."
-    docker save "${BUILT_IMAGES[@]}" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
+    echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE (sequential)..."
+    for TAG in "${BUILT_IMAGES[@]}"; do
+      echo "  -> $TAG"
+      docker save "$TAG" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
+    done
   fi
   # Persist source hashes so next deploy can skip unchanged apps
   for svc in "${SERVICES_TO_BUILD[@]}"; do

@@ -1,4 +1,4 @@
-# Node + Playwright with Chromium for headless browser tests
+# Chromium only (no --with-deps): avoids apt/GPG failures during docker build on some hosts.
 FROM node:20-bookworm
 
 WORKDIR /app
@@ -6,8 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Install Playwright's Chromium and system dependencies
-RUN npx playwright install chromium --with-deps
+RUN npx playwright install chromium
 
 COPY tsconfig.json ./
 COPY src ./src

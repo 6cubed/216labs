@@ -11,6 +11,7 @@ mediate
 avatar
 mysteryshopper
 llminternals
+maxlearn
 pocket
 1pageresearch
 facerate
