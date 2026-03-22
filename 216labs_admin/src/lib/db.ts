@@ -588,6 +588,22 @@ export function getAllApps(): DbApp[] {
   return db.prepare("SELECT * FROM apps ORDER BY port").all() as DbApp[];
 }
 
+/** Apps with a recorded deploy time, most recent first (dashboard “Recent Activity”). */
+export function getRecentDeploymentActivity(limit = 12): DbApp[] {
+  const db = getDb();
+  syncTopLevelProjects(db);
+  ensureAdminAlwaysEnabled(db);
+  ensureBootstrapFromFile(db);
+  return db
+    .prepare(
+      `SELECT * FROM apps
+       WHERE last_deployed_at IS NOT NULL AND TRIM(last_deployed_at) != ''
+       ORDER BY last_deployed_at DESC
+       LIMIT ?`,
+    )
+    .all(limit) as DbApp[];
+}
+
 export function getAllEnvVars(): DbEnvVar[] {
   return getDb()
     .prepare("SELECT * FROM env_vars ORDER BY key")

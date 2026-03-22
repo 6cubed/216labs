@@ -444,8 +444,11 @@ docker image prune -f
 # Update server DB with current image sizes, startup times, and commit counts so admin dashboard shows correct numbers.
 if [ -f 216labs.db ]; then
   echo "==> Updating admin DB metadata (sizes, startup times, commits)..."
+  # pipefail + pipelines like `docker images | grep` or missing sqlite3 can abort this block; relax for metadata only.
+  set +o pipefail
   NOW=$(date -u +"%Y-%m-%d %H:%M:%S")
-  for img in $(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep '^216labs/' || true); do
+  IMG_LIST=$(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null || true)
+  for img in $(echo "$IMG_LIST" | grep '^216labs/' || true); do
     SIZE_BYTES=$(docker image inspect --format '{{.Size}}' "$img" 2>/dev/null || echo 0)
     SIZE_MB=$((SIZE_BYTES / 1048576))
     sqlite3 216labs.db "UPDATE apps SET image_size_mb = $SIZE_MB WHERE docker_image = '$img';" 2>/dev/null || true
@@ -458,29 +461,23 @@ if [ -f 216labs.db ]; then
       sqlite3 216labs.db "UPDATE apps SET startup_time_ms = $MS WHERE docker_service = '$svc';" 2>/dev/null || true
     fi
   done
-  # last_deployed_at must use app id, not docker_service — compose names can drift from DB rows and
-  # UPDATE ... WHERE docker_service = ? then touches 0 rows (empty "Recent Activity" on admin).
-  ADMIN_META=$(docker ps --filter name=admin --format "{{.Names}}" 2>/dev/null | head -1 || true)
-  if [ -n "$ADMIN_META" ]; then
-    docker exec -e NOW_TS="$NOW" -e APP_IDS="$ENABLED_APPS" "$ADMIN_META" node -e "
-const db = require('better-sqlite3')('/app/216labs.db');
-const ids = (process.env.APP_IDS || '').trim().split(/\s+/).filter(Boolean);
-const stmt = db.prepare('UPDATE apps SET last_deployed_at = ? WHERE id = ?');
-for (const id of ids) stmt.run(process.env.NOW_TS, id);
-" 2>/dev/null || true
-    echo "==> Recorded last_deployed_at for enabled apps (by id)"
-  else
-    for svc in $COMPOSE_SERVICES; do
-      case "$svc" in caddy) continue ;; esac
-      sqlite3 216labs.db "UPDATE apps SET last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
-    done
-  fi
+  # last_deployed_at: update by app id (deploy cap list) and by compose service name (covers id≠service).
+  # Use host sqlite3 on the droplet — same DB file as admin; avoids relying on docker exec + Node.
+  for id in $ENABLED_APPS; do
+    sqlite3 216labs.db "UPDATE apps SET last_deployed_at = '$NOW' WHERE id = '$id';" 2>/dev/null || true
+  done
+  for svc in $COMPOSE_SERVICES; do
+    case "$svc" in caddy) continue ;; esac
+    sqlite3 216labs.db "UPDATE apps SET last_deployed_at = '$NOW' WHERE docker_service = '$svc';" 2>/dev/null || true
+  done
+  echo "==> Recorded last_deployed_at for deployed apps (by id and docker_service)"
   # Avoid `sqlite3 | while` under pipefail when host has no sqlite3 (droplet); use here-string instead.
   while IFS='|' read -r id repo_path; do
     [ -z "$id" ] && continue
     COMMITS=$(git log --oneline -- "$repo_path" 2>/dev/null | wc -l | tr -d ' ')
     [ -n "$COMMITS" ] && sqlite3 216labs.db "UPDATE apps SET total_commits = $COMMITS WHERE id = '$id';" 2>/dev/null || true
   done <<< "$(sqlite3 216labs.db 'SELECT id, repo_path FROM apps' 2>/dev/null || true)"
+  set -o pipefail
 fi
 
 echo "==> Done."

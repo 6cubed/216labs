@@ -1,4 +1,4 @@
-import { getAllApps } from "@/lib/db";
+import { getAllApps, getRecentDeploymentActivity } from "@/lib/db";
 import { dbRowToAppInfo, infrastructure } from "@/data/apps";
 import { MetricCard } from "@/components/MetricCard";
 import { InfraOverview } from "@/components/InfraOverview";
@@ -10,6 +10,8 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const rows = getAllApps();
   const apps = rows.map(dbRowToAppInfo);
+  const recentRows = getRecentDeploymentActivity(8);
+  const recentApps = recentRows.map(dbRowToAppInfo);
   const enabledApps = new Set(
     apps.filter((a) => a.deployEnabled || a.id === "admin").map((a) => a.id)
   );
@@ -54,7 +56,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="animate-fade-in mt-8">
-        <RecentActivity apps={apps} />
+        <RecentActivity apps={recentApps} />
       </section>
     </>
   );
