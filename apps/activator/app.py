@@ -409,6 +409,18 @@ def start_app(app_id: str) -> Dict[str, object]:
         if MAX_CONCURRENT_APPS > 0:
             evict_until_under_limit(MAX_CONCURRENT_APPS)
 
+        if compose_running(docker_service) and http_upstream_ready(
+            docker_service, internal_port
+        ):
+            set_runtime_state(app_id, "ready", "", touch_accessed=True)
+            status = set_status(
+                app_id,
+                "ready",
+                "App already serving.",
+                docker_service=docker_service,
+            )
+            return {"ok": True, "status": status}
+
         up = run_compose("up", "-d", "--no-build", docker_service)
         if up.returncode != 0 and TRY_DOCKER_PULL:
             pull = try_pull_image(docker_service)

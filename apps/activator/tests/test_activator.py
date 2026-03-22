@@ -37,7 +37,7 @@ class ActivatorTests(unittest.TestCase):
             activator, "get_app_row", return_value={"docker_service": "pocket"}
         ), patch.object(activator, "set_runtime_state"), patch.object(
             activator, "compose_running", return_value=True
-        ):
+        ), patch.object(activator, "http_upstream_ready", return_value=True):
             out = activator.start_app("pocket")
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"]["phase"], "ready")
@@ -65,7 +65,7 @@ class ActivatorTests(unittest.TestCase):
             activator, "try_pull_image", return_value=DummyProc(returncode=0)
         ), patch.object(
             activator, "compose_running", side_effect=fake_running
-        ):
+        ), patch.object(activator, "http_upstream_ready", return_value=True):
             out = activator.start_app("pocket")
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"]["phase"], "ready")
@@ -99,7 +99,7 @@ class ActivatorTests(unittest.TestCase):
             return_value={"docker_service": "npcworld", "internal_port": 3000},
         ), patch.object(activator, "set_runtime_state"), patch.object(
             activator, "compose_running", return_value=True
-        ):
+        ), patch.object(activator, "http_upstream_ready", return_value=True):
             out = activator.start_app("npcworld")
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"]["phase"], "ready")
