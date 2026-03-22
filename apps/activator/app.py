@@ -100,6 +100,65 @@ def get_app_row(app_id: str):
     return row
 
 
+def _manifest_search_dirs() -> List[str]:
+    """Directories that may contain manifest.json (aligned with scripts/app-lookup.py)."""
+    dirs: List[str] = []
+    try:
+        for entry in os.listdir(PROJECT_ROOT):
+            if entry.startswith(".") or entry in ("scripts", "apps"):
+                continue
+            path = os.path.join(PROJECT_ROOT, entry)
+            if os.path.isdir(path):
+                dirs.append(path)
+    except OSError:
+        pass
+    apps_dir = os.path.join(PROJECT_ROOT, "apps")
+    try:
+        if os.path.isdir(apps_dir):
+            for entry in os.listdir(apps_dir):
+                if entry.startswith("."):
+                    continue
+                path = os.path.join(apps_dir, entry)
+                if os.path.isdir(path):
+                    dirs.append(path)
+    except OSError:
+        pass
+    return dirs
+
+
+def load_manifest_for_app(app_id: str) -> Optional[dict]:
+    """Load manifest.json for app_id from the repo (no admin DB row required)."""
+    for d in _manifest_search_dirs():
+        mp = os.path.join(d, "manifest.json")
+        if not os.path.isfile(mp):
+            continue
+        try:
+            with open(mp, encoding="utf-8") as f:
+                m = json.load(f)
+            if m.get("id") == app_id:
+                return m
+        except (OSError, json.JSONDecodeError):
+            continue
+    return None
+
+
+def resolve_docker_service(app_id: str) -> Optional[str]:
+    """Compose service name from admin DB, else from on-disk manifest (HTTP apps only)."""
+    row = get_app_row(app_id)
+    if row is not None:
+        return str(row["docker_service"])
+    m = load_manifest_for_app(app_id)
+    if m is None:
+        return None
+    try:
+        p = int(m.get("internal_port", 3000))
+        if p <= 0:
+            return None
+    except (TypeError, ValueError):
+        pass
+    return str(m.get("docker_service", app_id))
+
+
 def set_runtime_state(
     app_id: str,
     status: str,
@@ -297,12 +356,15 @@ def trigger_remote_deploy(app_id: str, docker_service: str) -> bool:
 
 
 def start_app(app_id: str) -> Dict[str, object]:
-    row = get_app_row(app_id)
-    if row is None:
-        status = set_status(app_id, "failed", "Unknown app ID.")
+    docker_service = resolve_docker_service(app_id)
+    if docker_service is None:
+        status = set_status(
+            app_id,
+            "failed",
+            "Unknown app ID (not in admin DB and no matching manifest with HTTP port).",
+        )
         return {"ok": False, "status": status}
 
-    docker_service = row["docker_service"]
     app_lock = get_lock(app_id)
     if not app_lock.acquire(blocking=False):
         status = get_status(app_id)
@@ -374,15 +436,22 @@ def start_app(app_id: str) -> Dict[str, object]:
 
 @app.get("/healthz")
 def healthz():
-    return jsonify({"ok": True, "service": "activator"})
+    return jsonify(
+        {
+            "ok": True,
+            "service": "activator",
+            "max_concurrent_apps": MAX_CONCURRENT_APPS,
+            "lru_enabled": MAX_CONCURRENT_APPS > 0,
+            "manifest_fallback": True,
+        }
+    )
 
 
 @app.get("/api/status/<app_id>")
 def status(app_id: str):
     if not _APP_ID_RE.match(app_id):
         return jsonify({"error": "Invalid app id"}), 400
-    row = get_app_row(app_id)
-    if row is None:
+    if resolve_docker_service(app_id) is None:
         return jsonify({"error": "Unknown app id"}), 404
     touch_access = request.args.get("touch") == "1"
     if touch_access:
@@ -404,8 +473,7 @@ def touch(app_id: str):
     """Optional: mark last_accessed_at for LRU (e.g. future Caddy subrequest or cron)."""
     if not _APP_ID_RE.match(app_id):
         return jsonify({"error": "Invalid app id"}), 400
-    row = get_app_row(app_id)
-    if row is None:
+    if resolve_docker_service(app_id) is None:
         return jsonify({"error": "Unknown app id"}), 404
     touch_last_accessed_only(app_id)
     return "", 204
@@ -416,6 +484,11 @@ def warmup():
     app_id = (request.args.get("app") or "").strip()
     if not _APP_ID_RE.match(app_id):
         return "Invalid app id.", 400
+    if resolve_docker_service(app_id) is None:
+        return (
+            "<!doctype html><html><body><p>Unknown app. Not in admin DB and no manifest found.</p></body></html>",
+            404,
+        )
 
     dest = (request.args.get("dest") or f"https://{app_id}.{APP_HOST}").strip()
     safe_dest = json.dumps(dest)
@@ -484,4 +557,4 @@ if __name__ == "__main__":
         t = threading.Thread(target=reaper_loop, name="activator-reaper", daemon=True)
         t.start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "3040")))
-# bump: LRU eviction + reaper
+# bump: manifest fallback for cold start without DB row

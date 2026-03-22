@@ -2,6 +2,8 @@
 
 This service is the **cold-start orchestrator** for 216labs: when Caddy sees a dead upstream (502/503/504), users hit `/warmup`, which calls `POST /api/start/<app_id>` so `docker compose up` runs for that app.
 
+**Admin DB optional for wake:** `resolve_docker_service()` reads `docker_service` from `216labs.db` first; if the app row is missing, it loads `manifest.json` from the repo (same paths as `scripts/app-lookup.py`). Apps with `internal_port` ≤ 0 are skipped (workers without HTTP). This lets you ship new demos in git before the admin backfill runs, as long as the image exists on the host.
+
 ## Four pillars (how this maps to the architecture)
 
 1. **Off-server builds** — Images are built on your laptop or CI (`./deploy.sh`), not on the droplet. The activator only runs `docker compose up --no-build` and optional `docker pull` for missing layers.

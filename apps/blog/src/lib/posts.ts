@@ -8,6 +8,60 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'activator-thousands-of-demos-on-one-droplet',
+    title: 'Activator: thousands of demos on one $6 droplet (for real)',
+    excerpt:
+      'Cold containers, a reverse proxy, and honest limits — how we wake demos on demand without building on the server, and what we changed so the story matches the code.',
+    date: '2026-03-22',
+    body: `
+A **$6 DigitalOcean droplet** is not a generous computer: about **1 GB RAM**, **1 vCPU**, **25 GB disk**. It is, however, enough to **host a showroom** — if you refuse to pretend it is a Kubernetes cluster. The trick is to separate three ideas that people often smush together:
+
+1. **Owning the code** for many demos (thousands over time, in one monorepo).
+2. **Shipping** those demos as **pre-built images** from your laptop or CI — never compiling on the droplet.
+3. **Running** only what traffic needs **right now**, and waking the rest **on demand**.
+
+That third piece is what we call the **Activator**.
+
+**What users see**
+
+A demo lives at \`{app}.yourdomain.com\`. If its container is stopped, the reverse proxy (Caddy) does not magically invent an upstream — it sees a dead socket and returns **502**. We catch that and send the browser to a small **warmup** page served by the Activator. That page calls \`POST /api/start/{app}\`, which runs \`docker compose up -d --no-build\` for **one** compose service, waits until it is healthy enough, then sends the user back to the real URL.
+
+No custom Go proxy is required: **Caddy + Flask + Docker** are enough. The “serverless” feel is **hold connection → start workload → retry**, not fairy dust.
+
+**What “thousands of demos” actually means**
+
+You can store **thousands** of app folders in git. You cannot run **thousands** of Node or Python containers at full RAM simultaneously on a 1 GB machine — and you should not try. The honest model is:
+
+- **Disk**: images for all shipped apps can exist on disk over time (within 25 GB if you prune sensibly and transfer images **sequentially** during deploy so the daemon never unpacks a giant multi-image tarball in one gulp).
+- **RAM**: only **N** containers are **running** at once; the rest are **stopped** images. **N** is bounded by memory, not by your ambition.
+- **CPU**: cold starts cost seconds; that is acceptable for a **demo grid**, not for a latency-sensitive API.
+
+So “thousands of demos” means **thousands available to wake**, not thousands concurrently hot. Production honesty beats marketing.
+
+**Where we fixed the story in code**
+
+While writing this, two behaviours did not match a grid you can actually browse:
+
+1. **LRU eviction with a low cap** — We had experimented with a **max concurrent app** pool so the droplet would stop idle containers to save RAM. That is valid on paper, but **browsing many subdomains in a row** looks like an attack on the pool: container 11 evicts container 1, so demos “randomly” go cold. **Default is now unlimited** (\`ACTIVATOR_MAX_CONCURRENT_APPS=0\`); turn a cap on only when you are truly RAM-starved and understand the tradeoff. Edge services (**Caddy, Activator, Admin, Landing**) stay protected from eviction when a cap is enabled.
+
+2. **SQLite as a gate** — Cold start used to require a row in \`216labs.db\` for every app. That is great for the admin dashboard, but it is a poor gate for **git-first** demos. The Activator now **falls back to \`manifest.json\`** on disk (same layout as the rest of the repo) to resolve \`docker_service\` and to refuse apps with **no HTTP port** (\`internal_port <= 0\`). If the image is on the host, you can wake the demo **before** the admin backfill catches up.
+
+**What still has to be true**
+
+- **Images exist locally** on the droplet (\`216labs/{service}:latest\`). We do **not** pull private \`216labs/*\` tags from Docker Hub; **\`./deploy.sh\`** builds on your machine and loads images over SSH. Compose uses \`pull_policy: never\` so a missing tag does not become a failed \`docker pull\`.
+- **Caddy knows the hostname** — subdomains are generated from manifests so new apps get TLS and routing.
+- **Activator stays up** — deploy runs in **phases** (edge + Activator first) so a bad tail app does not prevent the warmup path from working.
+
+**GET /healthz** on the Activator returns \`max_concurrent_apps\`, \`lru_enabled\`, and \`manifest_fallback: true\` so you can verify behaviour without reading env files.
+
+**Why this is worth doing**
+
+If your goal is **a permanent URL per demo** and **paying coffee money for hosting**, you need a architecture that admits **small hardware** and **large ambition**. The Activator is not “scale to zero” in the cloud-vendor sense; it is **scale to zero running processes** on **one** machine you control, with **one** deploy story and **one** place to look when something is cold.
+
+That is the bet: **thousands of demos in the repo**, **one droplet on the invoice**, and **honest cold starts** instead of a 502 and a shrug.
+    `.trim(),
+  },
+  {
     slug: 'vibe-coding-in-the-limit-putting-production-order-on-demo-chaos',
     title: 'Vibe-coding in the limit: Putting production order on demo chaos',
     excerpt:

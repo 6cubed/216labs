@@ -92,6 +92,18 @@ class ActivatorTests(unittest.TestCase):
             "a",
         )
 
+    def test_manifest_fallback_when_not_in_db(self):
+        with patch.object(activator, "get_app_row", return_value=None), patch.object(
+            activator,
+            "load_manifest_for_app",
+            return_value={"docker_service": "npcworld", "internal_port": 3000},
+        ), patch.object(activator, "set_runtime_state"), patch.object(
+            activator, "compose_running", return_value=True
+        ):
+            out = activator.start_app("npcworld")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["status"]["phase"], "ready")
+
 
 if __name__ == "__main__":
     unittest.main()
