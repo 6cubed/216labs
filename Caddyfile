@@ -152,21 +152,6 @@ blog.6cubed.app {
 	}
 }
 
-tigertank.6cubed.app {
-	reverse_proxy tigertank:3000 {
-		@cold status 502 503 504
-		handle_response @cold {
-			redir "https://activator.6cubed.app/warmup?app=tigertank&dest=https%3A%2F%2Ftigertank.6cubed.app" 302
-		}
-	}
-	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @dial {
-			redir "https://activator.6cubed.app/warmup?app=tigertank&dest=https%3A%2F%2Ftigertank.6cubed.app" 302
-		}
-	}
-}
-
 calibratedai.6cubed.app {
 	reverse_proxy calibratedai:3000 {
 		@cold status 502 503 504
@@ -223,6 +208,21 @@ emailgpt.6cubed.app {
 		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=emailgpt&dest=https%3A%2F%2Femailgpt.6cubed.app" 302
+		}
+	}
+}
+
+explore.6cubed.app {
+	reverse_proxy explore:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=explore&dest=https%3A%2F%2Fexplore.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=explore&dest=https%3A%2F%2Fexplore.6cubed.app" 302
 		}
 	}
 }
@@ -527,21 +527,6 @@ storybook.6cubed.app {
 	}
 }
 
-valentine.6cubed.app {
-	reverse_proxy valentine:3000 {
-		@cold status 502 503 504
-		handle_response @cold {
-			redir "https://activator.6cubed.app/warmup?app=valentine&dest=https%3A%2F%2Fvalentine.6cubed.app" 302
-		}
-	}
-	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @dial {
-			redir "https://activator.6cubed.app/warmup?app=valentine&dest=https%3A%2F%2Fvalentine.6cubed.app" 302
-		}
-	}
-}
-
 stroll.6cubed.app {
 	reverse_proxy stroll:5000 {
 		@cold status 502 503 504
@@ -568,6 +553,36 @@ thezurichdatinggame.6cubed.app {
 		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=thezurichdatinggame&dest=https%3A%2F%2Fthezurichdatinggame.6cubed.app" 302
+		}
+	}
+}
+
+tigertank.6cubed.app {
+	reverse_proxy tigertank:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=tigertank&dest=https%3A%2F%2Ftigertank.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=tigertank&dest=https%3A%2F%2Ftigertank.6cubed.app" 302
+		}
+	}
+}
+
+valentine.6cubed.app {
+	reverse_proxy valentine:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=valentine&dest=https%3A%2F%2Fvalentine.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=valentine&dest=https%3A%2F%2Fvalentine.6cubed.app" 302
 		}
 	}
 }
