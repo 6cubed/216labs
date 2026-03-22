@@ -351,6 +351,20 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── Shannon Airport (satellite + flight context) ─────────────
+  shannonairport:
+    image: 216labs/shannonairport:latest
+    pull_policy: never
+    build: ./apps/shannonairport
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - SHANNONAIRPORT_BASE_URL=https://shannonairport.6cubed.app
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── StoryMagic ───────────────────────────────────────────────
   storybook:
     image: 216labs/storybook:latest

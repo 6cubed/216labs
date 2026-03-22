@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+*.db
+*.sqlite
+.env*
+*.log
+coverage
+.turbo

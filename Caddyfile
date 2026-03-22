@@ -527,6 +527,21 @@ ramblingradio.6cubed.app {
 	}
 }
 
+shannonairport.6cubed.app {
+	reverse_proxy shannonairport:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=shannonairport&dest=https%3A%2F%2Fshannonairport.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=shannonairport&dest=https%3A%2F%2Fshannonairport.6cubed.app" 302
+		}
+	}
+}
+
 storybook.6cubed.app {
 	reverse_proxy storybook:3000 {
 		@cold status 502 503 504

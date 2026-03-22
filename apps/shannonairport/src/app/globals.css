@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0f14;
+  --foreground: #e6edf3;
+  --accent: #3fb950;
+  --accent-dim: #238636;
+  --surface: #111820;
+  --surface-light: #1a2332;
+  --border: #2d3a4a;
+  --muted: #8b9cb3;
+  --warn: #d29922;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-surface: var(--surface);
+  --color-surface-light: var(--surface-light);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.leaflet-container {
+  background: #0a0f14;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
