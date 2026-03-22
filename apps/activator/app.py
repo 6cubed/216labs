@@ -240,12 +240,18 @@ def run_compose(*args: str) -> subprocess.CompletedProcess:
         ".env.admin",
         *args,
     ]
+    env = os.environ.copy()
+    # Compose defaults project name to the cwd basename; ACTIVATOR_PROJECT_ROOT is /workspace in production,
+    # which would create a separate "workspace_*" stack invisible to Caddy on the 216labs network.
+    if env.get("ACTIVATOR_PROJECT_ROOT", "").rstrip("/") == "/workspace":
+        env.setdefault("COMPOSE_PROJECT_NAME", "216labs")
     return subprocess.run(
         cmd,
         cwd=PROJECT_ROOT,
         text=True,
         capture_output=True,
         check=False,
+        env=env,
     )
 
 

@@ -25,6 +25,8 @@ services:
     environment:
       - PORT=3040
       - APP_HOST=${APP_HOST:-6cubed.app}
+      # Match deploy's project name (/opt/216labs → 216labs). Default compose name from /workspace would be "workspace" and cold-starts would create duplicate containers on the wrong network.
+      - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-216labs}
       - ACTIVATOR_PROJECT_ROOT=/workspace
       - ACTIVATOR_DB_PATH=/app/216labs.db
       - ACTIVATOR_START_TIMEOUT_SECONDS=120
