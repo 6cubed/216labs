@@ -227,6 +227,21 @@ facerate.6cubed.app {
 	}
 }
 
+germandaily.6cubed.app {
+	reverse_proxy germandaily:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=germandaily&dest=https%3A%2F%2Fgermandaily.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=germandaily&dest=https%3A%2F%2Fgermandaily.6cubed.app" 302
+		}
+	}
+}
+
 happypath.6cubed.app {
 	reverse_proxy happypath:3000 {
 		@cold status 502 503 504
@@ -493,6 +508,21 @@ storybook.6cubed.app {
 		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=storybook&dest=https%3A%2F%2Fstorybook.6cubed.app" 302
+		}
+	}
+}
+
+valentine.6cubed.app {
+	reverse_proxy valentine:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=valentine&dest=https%3A%2F%2Fvalentine.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=valentine&dest=https%3A%2F%2Fvalentine.6cubed.app" 302
 		}
 	}
 }

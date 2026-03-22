@@ -23,6 +23,8 @@ const PROJECTS_ROOT =
 const PREFIX_TO_DIR_FALLBACK: Array<[string, string]> = [
   ["NEXT_PUBLIC_STORYBOOK_", "apps/storybook"],
   ["STORYBOOK_", "apps/storybook"],
+  ["NEXT_PUBLIC_VALENTINE_", "apps/valentine"],
+  ["VALENTINE_", "apps/valentine"],
   ["AUDIOAICHECKUP_", "apps/audioaicheckup"],
   ["NEXT_PUBLIC_ONEFIT_", "apps/onefit"],
   ["ONEFIT_", "apps/onefit"],
@@ -162,6 +164,18 @@ export async function fulfillStorybookOrder(orderId: string): Promise<ActionResu
   try {
     const { patchStorybookOrder } = await import("@/lib/storybook");
     await patchStorybookOrder(orderId, "fulfilled");
+    revalidatePath("/");
+    revalidatePath("/orders");
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to update order" };
+  }
+}
+
+export async function fulfillValentineOrder(orderId: string): Promise<ActionResult> {
+  try {
+    const { patchValentineOrder } = await import("@/lib/valentine");
+    await patchValentineOrder(orderId, "fulfilled");
     revalidatePath("/");
     revalidatePath("/orders");
     return { success: true };

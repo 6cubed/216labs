@@ -129,6 +129,8 @@ const KNOWN_PORTS: Record<string, number> = {
   mediate: 8035,
   avatar: 8036,
   activator: 8037,
+  germandaily: 8038,
+  valentine: 8039,
 };
 
 let _db: Database.Database | null = null;

@@ -183,6 +183,8 @@ services:
       - NEXT_PUBLIC_APP_HOST=${APP_HOST:-6cubed.app}
       - STORYBOOK_INTERNAL_URL=${STORYBOOK_INTERNAL_URL:-http://storybook:3000}
       - STORYBOOK_ADMIN_TOKEN=${STORYBOOK_ADMIN_TOKEN:-}
+      - VALENTINE_INTERNAL_URL=${VALENTINE_INTERNAL_URL:-http://valentine:3000}
+      - VALENTINE_ADMIN_TOKEN=${VALENTINE_ADMIN_TOKEN:-}
       - CRON_RUNNER_SECRET=${CRON_RUNNER_SECRET:-}
       - CRON_RUNNER_INTERNAL_URL=${CRON_RUNNER_INTERNAL_URL:-http://cron-runner:3029}
     volumes:
@@ -374,6 +376,32 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── HeartInk (Valentine cards) ────────────────────────────────
+  valentine:
+    image: 216labs/valentine:latest
+    pull_policy: never
+    build: ./apps/valentine
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - VALENTINE_OPENAI_API_KEY=${VALENTINE_OPENAI_API_KEY:-}
+      - VALENTINE_STRIPE_SECRET_KEY=${VALENTINE_STRIPE_SECRET_KEY:-}
+      - VALENTINE_STRIPE_WEBHOOK_SECRET=${VALENTINE_STRIPE_WEBHOOK_SECRET:-}
+      - NEXT_PUBLIC_VALENTINE_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_VALENTINE_STRIPE_PUBLISHABLE_KEY:-}
+      - VALENTINE_CARD_PRICE_CENTS=${VALENTINE_CARD_PRICE_CENTS:-1999}
+      - NEXT_PUBLIC_VALENTINE_CARD_PRICE_CENTS=${NEXT_PUBLIC_VALENTINE_CARD_PRICE_CENTS:-1999}
+      - VALENTINE_ADMIN_TOKEN=${VALENTINE_ADMIN_TOKEN:-}
+      - VALENTINE_RESEND_API_KEY=${VALENTINE_RESEND_API_KEY:-}
+      - VALENTINE_ADMIN_EMAIL=${VALENTINE_ADMIN_EMAIL:-}
+      - VALENTINE_FROM_EMAIL=${VALENTINE_FROM_EMAIL:-}
+      - DATA_DIR=/app/data
+    volumes:
+      - ./apps/valentine/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── OfflineLLM ───────────────────────────────────────────────────
   offlinellm:
     image: 216labs/offlinellm:latest
@@ -549,6 +577,22 @@ services:
     expose:
       - "80"
     mem_limit: 64m
+
+  # ── German Daily (10 words / day, votes steer topics) ────────
+  germandaily:
+    image: 216labs/germandaily:latest
+    pull_policy: never
+    build: ./apps/germandaily
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - GERMANDAILY_DATA_DIR=/app/data
+      - GERMANDAILY_OPENAI_API_KEY=${GERMANDAILY_OPENAI_API_KEY:-}
+    volumes:
+      - ./apps/germandaily/data:/app/data
+    expose:
+      - "5000"
+    mem_limit: 128m
 
   # ── EmailGPT ───────────────────────────────────────────────────
   emailgpt:
