@@ -478,6 +478,7 @@ services:
     restart: unless-stopped
     environment:
       - PORT=5000
+      - ADMIN_INTERNAL_URL=${ADMIN_INTERNAL_URL:-http://admin:3000}
     expose:
       - "5000"
     mem_limit: 64m

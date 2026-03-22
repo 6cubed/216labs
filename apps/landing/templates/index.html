@@ -99,6 +99,44 @@
 
     footer a { color: var(--accent2); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
+
+    .feed-intro {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .feed-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .feed-list li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 0.75rem;
+      padding: 0.65rem 0.85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+    }
+
+    .feed-list .name { font-weight: 600; color: var(--text); }
+    .feed-list .host {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 0.8rem;
+      color: var(--accent2);
+    }
+    .feed-list .when { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+    .feed-list a.host-link {
+      color: var(--accent2);
+      text-decoration: none;
+    }
+    .feed-list a.host-link:hover { text-decoration: underline; }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -108,6 +146,26 @@
   <div class="wrap">
     <h1>216labs</h1>
     <p class="tagline">Vibe coding &amp; small experiments. One monorepo, one deploy, a growing set of apps and tools.</p>
+
+    {% if recent_activity %}
+    <section class="section">
+      <h2>Recent activity</h2>
+      <p class="feed-intro">Latest app deployments (admin dashboard updates are not listed).</p>
+      <ul class="feed-list">
+        {% for item in recent_activity %}
+        <li>
+          <span class="name">{{ item.name }}</span>
+          {% if item.url %}
+          <a class="host-link host" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.host }}</a>
+          {% else %}
+          <span class="host">{{ item.host }}</span>
+          {% endif %}
+          <span class="when" title="{{ item.absolute }}">{{ item.relative }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
 
     <section class="section">
       <h2>Popular projects</h2>
