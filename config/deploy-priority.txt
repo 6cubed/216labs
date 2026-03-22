@@ -8,6 +8,7 @@ angelwatcher
 activator
 landing
 blog
+onefitblog
 emailgpt
 germandaily
 maxlearn
@@ -33,7 +34,6 @@ pipesecure
 ramblingradio
 stroll
 onefit
-onefitblog
 hivefind
 agimemes
 agitshirts
