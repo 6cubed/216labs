@@ -113,13 +113,66 @@
     }
     button.send:disabled { opacity: 0.45; cursor: not-allowed; }
     .err { color: #fca5a5; font-size: 0.85rem; margin-top: 0.35rem; text-align: center; }
+    #devicePanel {
+      display: none;
+      margin: 0 1.25rem 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid #115e59;
+      background: #0f1a1a;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    #devicePanel.show { display: block; }
+    #devicePanel strong { color: #a7f3d0; font-weight: 500; }
+    #devicePanel .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
+    #devicePanel select {
+      flex: 1;
+      min-width: 140px;
+      padding: 0.4rem 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    #devicePanel button.load {
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #115e59;
+      background: #134e4a;
+      color: #ecfdf5;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.8rem;
+    }
+    #devicePanel button.load:disabled { opacity: 0.45; cursor: not-allowed; }
+    #deviceStatus { margin-top: 0.45rem; font-size: 0.78rem; color: #99f6e4; }
   </style>
 </head>
-<body>
+<body
+  data-room-id="{{ room_id }}"
+  data-party="{{ party }}"
+  data-mediator-mode="{{ mediator_mode }}"
+>
   <header>
     <h1>Mediated chat</h1>
-    <p class="sub">You are <strong id="roleLabel">…</strong> — messages to the other person pass through the LLM.</p>
+    <p class="sub">You are <strong id="roleLabel">…</strong> — <span id="subMediate">messages to the other person pass through the LLM.</span></p>
   </header>
+  <div id="devicePanel">
+    <strong>On-device mediator</strong> — Load a small model once (WebGPU). Your raw text never goes to OpenAI; mediation runs in this browser.
+    <div class="row">
+      <select id="deviceModel" aria-label="Model">
+        <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B</option>
+        <option value="Qwen2.5-0.5B-Instruct-q4f16_1-MLC">Qwen 2.5 0.5B</option>
+        <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi 3.5 Mini</option>
+      </select>
+      <button type="button" class="load" id="loadModelBtn">Load model</button>
+    </div>
+    <div id="deviceStatus"></div>
+  </div>
   <div id="goalBanner" class="goal-banner" style="display:none;"></div>
   <div id="wait" class="show">Waiting for the other person to open the invite link…</div>
   <div id="log"></div>
@@ -130,9 +183,11 @@
     </div>
     <p id="errLine" class="err" style="display:none;"></p>
   </div>
-  <script>
-    const ROOM_ID = {{ room_id | tojson }};
-    const PARTY = {{ party | tojson }};
+  <script type="module">
+    const ROOM_ID = document.body.getAttribute("data-room-id") || "";
+    const PARTY = document.body.getAttribute("data-party") || "a";
+    let mediatorMode = (document.body.getAttribute("data-mediator-mode") || "server").toLowerCase();
+
     const logEl = document.getElementById("log");
     const waitEl = document.getElementById("wait");
     const goalBanner = document.getElementById("goalBanner");
@@ -140,10 +195,81 @@
     const msgEl = document.getElementById("msg");
     const sendBtn = document.getElementById("sendBtn");
     const errLine = document.getElementById("errLine");
+    const devicePanel = document.getElementById("devicePanel");
+    const deviceModel = document.getElementById("deviceModel");
+    const loadModelBtn = document.getElementById("loadModelBtn");
+    const deviceStatus = document.getElementById("deviceStatus");
+    const subMediate = document.getElementById("subMediate");
 
     roleLabel.textContent = PARTY === "a" ? "Party A (host)" : "Party B (guest)";
 
+    let roomState = null;
     let lastIds = new Set();
+    let browserEngine = null;
+    let deviceLoadState = "idle";
+
+    if (mediatorMode === "device") {
+      devicePanel.classList.add("show");
+      subMediate.textContent =
+        "messages are mediated by a model running in your browser (not on the server).";
+    }
+
+    function buildMediationMessages(state, sender, raw) {
+      const goal = state && state.goal;
+      const msgs = (state && state.messages) || [];
+      const lines = [];
+      for (const m of msgs.slice(-24)) {
+        const label = m.from_party === "a" ? "Party A" : "Party B";
+        lines.push(`${label}: ${m.mediated_text}`);
+      }
+      const historyBlock = lines.length ? lines.join("\n") : "(no prior messages yet)";
+      let goalBlock = (goal && String(goal).trim()) || "";
+      if (!goalBlock) goalBlock = "No specific goal; keep the conversation constructive and fair.";
+      const senderLabel = sender === "a" ? "Party A" : "Party B";
+      const recipientLabel = sender === "a" ? "Party B" : "Party A";
+      const system =
+        "You are a neutral mediator between two people who never see each other's raw text. " +
+        "You rewrite each message so it can be relayed to the other party. " +
+        "Preserve intent, reduce unnecessary hostility, avoid manipulation, and stay concise. " +
+        "Output the single message text for the recipient only — no preamble, no quotes, no meta.";
+      const user =
+        `Mediation goal / context:\n${goalBlock}\n\n` +
+        `Mediated conversation so far:\n${historyBlock}\n\n` +
+        `${senderLabel} writes (raw — do not repeat verbatim):\n${raw}\n\n` +
+        `Write ONLY the mediated message that ${recipientLabel} will receive.`;
+      return { system, user };
+    }
+
+    async function ensureDeviceEngine() {
+      if (browserEngine) return browserEngine;
+      throw new Error("Load the on-device model first (button above).");
+    }
+
+    loadModelBtn.addEventListener("click", async () => {
+      deviceLoadState = "loading";
+      loadModelBtn.disabled = true;
+      deviceStatus.textContent = "Loading…";
+      try {
+        const { CreateMLCEngine } = await import("https://esm.sh/@mlc-ai/web-llm@0.2.82");
+        const mid = deviceModel.value;
+        browserEngine = await CreateMLCEngine(mid, {
+          initProgressCallback: (p) => {
+            const prog = typeof p === "number" ? p : p && p.progress != null ? p.progress : 0;
+            deviceStatus.textContent = `Downloading / compiling… ${Math.round(prog * 100)}%`;
+          },
+        });
+        deviceLoadState = "ready";
+        deviceStatus.textContent = "Ready — you can send messages.";
+      } catch (e) {
+        console.error(e);
+        deviceLoadState = "error";
+        browserEngine = null;
+        deviceStatus.textContent =
+          (e && e.message) || "Could not load model. Try Chrome with WebGPU, or another model.";
+      } finally {
+        loadModelBtn.disabled = false;
+      }
+    });
 
     function showErr(t) {
       if (!t) { errLine.style.display = "none"; return; }
@@ -180,6 +306,13 @@
         const r = await fetch("/api/room/" + ROOM_ID + "/state");
         if (!r.ok) throw new Error("Could not load room");
         const data = await r.json();
+        roomState = data;
+        if (data.mediator_mode) mediatorMode = data.mediator_mode;
+        if (data.mediator_mode === "device") {
+          devicePanel.classList.add("show");
+          subMediate.textContent =
+            "messages are mediated by a model running in your browser (not on the server).";
+        }
         if (data.goal) {
           goalBanner.style.display = "block";
           goalBanner.innerHTML = "<strong>Goal:</strong> " + escapeHtml(data.goal);
@@ -216,10 +349,36 @@
       sendBtn.disabled = true;
       showErr("");
       try {
+        let payload = { text };
+        if (mediatorMode === "device") {
+          if (!roomState) await poll();
+          if (!roomState) throw new Error("Could not load room state. Try again.");
+          await ensureDeviceEngine();
+          const { system, user } = buildMediationMessages(roomState, PARTY, text);
+          deviceStatus.textContent = "Mediating…";
+          const stream = await browserEngine.chat.completions.create({
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: user },
+            ],
+            temperature: 0.4,
+            max_tokens: 800,
+            stream: true,
+          });
+          let mediated = "";
+          for await (const chunk of stream) {
+            mediated +=
+              chunk.choices?.[0]?.delta?.content ?? chunk.choices?.[0]?.message?.content ?? "";
+          }
+          mediated = mediated.trim();
+          if (!mediated) throw new Error("On-device model returned empty mediation. Try again.");
+          payload = { text, mediated_text: mediated };
+          deviceStatus.textContent = "Ready — you can send messages.";
+        }
         const r = await fetch("/api/room/" + ROOM_ID + "/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify(payload),
         });
         const data = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(data.error || "Send failed");

@@ -12,7 +12,7 @@
     "frontend": "Flask + Jinja2 + vanilla JS",
     "backend": "Flask + Gunicorn",
     "database": "SQLite",
-    "other": ["OpenAI API"]
+    "other": ["OpenAI API", "optional WebLLM on-device mediation in the browser"]
   },
   "env_vars": [
     { "key": "MEDIATE_OPENAI_API_KEY", "description": "OpenAI API key for the mediator model", "is_secret": true },

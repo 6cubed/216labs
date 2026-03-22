@@ -67,6 +67,12 @@
     <p class="goal"><strong>Goal:</strong> {{ goal }}</p>
     {% endif %}
 
+    {% if mediator_mode == "device" %}
+    <p class="goal" style="margin-top:0.75rem;"><strong>Mediator:</strong> on-device (WebLLM in each browser). No OpenAI key is used for this room.</p>
+    {% else %}
+    <p class="goal" style="margin-top:0.75rem;"><strong>Mediator:</strong> server (OpenAI).</p>
+    {% endif %}
+
     <div class="card">
       <p class="label">Invite link</p>
       <div class="url-box">{{ invite_url }}</div>

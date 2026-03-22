@@ -52,6 +52,15 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room_id, id);
             """
         )
+        _ensure_mediator_mode_column(conn)
+
+
+def _ensure_mediator_mode_column(conn: sqlite3.Connection) -> None:
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(rooms)").fetchall()}
+    if "mediator_mode" not in cols:
+        conn.execute(
+            "ALTER TABLE rooms ADD COLUMN mediator_mode TEXT NOT NULL DEFAULT 'server'"
+        )
 
 
 @app.before_request
@@ -66,22 +75,15 @@ def _base_url() -> str:
     return flask.request.url_root.rstrip("/")
 
 
-def _openai_mediates(
+def build_mediation_messages(
     *,
     goal: str | None,
     history_mediated: list[tuple[str, str]],
     sender: str,
     raw: str,
     recipient: str,
-) -> str:
-    api_key = (os.environ.get("MEDIATE_OPENAI_API_KEY") or "").strip()
-    if not api_key:
-        return (
-            "[Mediator unavailable: set MEDIATE_OPENAI_API_KEY on the server] "
-            + raw[:500]
-        )
-
-    model = (os.environ.get("MEDIATE_MODEL") or "gpt-4o-mini").strip()
+) -> tuple[str, str]:
+    """Return (system_prompt, user_prompt). Kept in sync with client-side device mediation in room.html."""
     lines = []
     for party, text in history_mediated[-24:]:
         label = "Party A" if party == "a" else "Party B"
@@ -111,6 +113,32 @@ Mediated conversation so far:
 {raw}
 
 Write ONLY the mediated message that {recipient_label} will receive."""
+    return system, user
+
+
+def _openai_mediates(
+    *,
+    goal: str | None,
+    history_mediated: list[tuple[str, str]],
+    sender: str,
+    raw: str,
+    recipient: str,
+) -> str:
+    api_key = (os.environ.get("MEDIATE_OPENAI_API_KEY") or "").strip()
+    if not api_key:
+        return (
+            "[Mediator unavailable: set MEDIATE_OPENAI_API_KEY on the server] "
+            + raw[:500]
+        )
+
+    model = (os.environ.get("MEDIATE_MODEL") or "gpt-4o-mini").strip()
+    system, user = build_mediation_messages(
+        goal=goal,
+        history_mediated=history_mediated,
+        sender=sender,
+        raw=raw,
+        recipient=recipient,
+    )
 
     from openai import OpenAI
 
@@ -165,14 +193,17 @@ def index():
 @app.route("/create", methods=["POST"])
 def create():
     goal = (flask.request.form.get("goal") or "").strip() or None
+    mediator_mode = (flask.request.form.get("mediator_mode") or "server").strip().lower()
+    if mediator_mode not in ("server", "device"):
+        mediator_mode = "server"
     room_id = uuid.uuid4().hex
     invite_token = uuid.uuid4().hex + uuid.uuid4().hex
     host_key = uuid.uuid4().hex + uuid.uuid4().hex
 
     with get_db() as conn:
         conn.execute(
-            "INSERT INTO rooms (id, invite_token, host_key, goal) VALUES (?, ?, ?, ?)",
-            (room_id, invite_token, host_key, goal),
+            "INSERT INTO rooms (id, invite_token, host_key, goal, mediator_mode) VALUES (?, ?, ?, ?, ?)",
+            (room_id, invite_token, host_key, goal, mediator_mode),
         )
 
     flask.session["mediate_room"] = room_id
@@ -186,6 +217,7 @@ def create():
         invite_url=invite_url,
         host_recovery_url=f"{base}/room/{room_id}?h={host_key}",
         goal=goal,
+        mediator_mode=mediator_mode,
     )
 
 
@@ -241,7 +273,13 @@ def room(room_id: str):
     if not party:
         return flask.redirect(flask.url_for("index"))
 
-    return flask.render_template("room.html", room_id=room_id, party=party)
+    mediator_mode = (row["mediator_mode"] or "server").strip().lower()
+    if mediator_mode not in ("server", "device"):
+        mediator_mode = "server"
+
+    return flask.render_template(
+        "room.html", room_id=room_id, party=party, mediator_mode=mediator_mode
+    )
 
 
 @app.route("/api/room/<room_id>/state")
@@ -274,11 +312,16 @@ def api_state(room_id: str):
         for r in rows
     ]
 
+    mm = (row["mediator_mode"] or "server").strip().lower()
+    if mm not in ("server", "device"):
+        mm = "server"
+
     return flask.jsonify(
         {
             "you": party,
             "goal": row["goal"],
             "guest_joined": bool(row["guest_joined"]),
+            "mediator_mode": mm,
             "messages": msgs,
         }
     )
@@ -309,19 +352,37 @@ def api_send(room_id: str):
             if not row:
                 return flask.jsonify({"error": "not found"}), 404
 
+            mediator_mode = (row["mediator_mode"] or "server").strip().lower()
+            if mediator_mode not in ("server", "device"):
+                mediator_mode = "server"
+
             prev = conn.execute(
                 "SELECT from_party, mediated_text FROM messages WHERE room_id = ? ORDER BY id ASC",
                 (room_id,),
             ).fetchall()
             history = [(r["from_party"], r["mediated_text"]) for r in prev]
 
-            mediated = _openai_mediates(
-                goal=row["goal"],
-                history_mediated=history,
-                sender=party,
-                raw=raw,
-                recipient=recipient,
-            )
+            if mediator_mode == "device":
+                mediated = (body.get("mediated_text") or "").strip()
+                if not mediated:
+                    return (
+                        flask.jsonify(
+                            {
+                                "error": "mediated_text required for on-device mediator rooms",
+                            }
+                        ),
+                        400,
+                    )
+                if len(mediated) > 8000:
+                    return flask.jsonify({"error": "mediated text too long"}), 400
+            else:
+                mediated = _openai_mediates(
+                    goal=row["goal"],
+                    history_mediated=history,
+                    sender=party,
+                    raw=raw,
+                    recipient=recipient,
+                )
 
             cur = conn.execute(
                 "INSERT INTO messages (room_id, from_party, raw_text, mediated_text) VALUES (?, ?, ?, ?)",

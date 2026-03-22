@@ -57,6 +57,28 @@
     }
     textarea::placeholder { color: var(--muted); opacity: 0.8; }
     .hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; }
+    fieldset.mediator {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.9rem 1rem 1rem;
+      margin-top: 1rem;
+    }
+    fieldset.mediator legend { padding: 0 0.35rem; font-size: 0.8rem; color: var(--muted); }
+    .radio-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .radio-row label.opt {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .radio-row input { margin-top: 0.25rem; }
+    .radio-row .opt-desc { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
     button[type="submit"] {
       margin-top: 1rem;
       width: 100%;
@@ -83,6 +105,25 @@
         <label for="goal">Mediation goal (optional)</label>
         <textarea id="goal" name="goal" placeholder="e.g. agree on a handoff date, apologize without blame, decide who keeps the cat…"></textarea>
         <p class="hint">If set, the mediator tries to steer toward this outcome while staying fair.</p>
+        <fieldset class="mediator">
+          <legend>Mediator</legend>
+          <div class="radio-row">
+            <label class="opt">
+              <input type="radio" name="mediator_mode" value="server" checked />
+              <span>
+                <strong>Server (OpenAI)</strong>
+                <div class="opt-desc">Uses the API key on the server. Works in any browser; no large download.</div>
+              </span>
+            </label>
+            <label class="opt">
+              <input type="radio" name="mediator_mode" value="device" />
+              <span>
+                <strong>On-device (WebLLM)</strong>
+                <div class="opt-desc">Each person runs a small model in their own browser (WebGPU). Nothing is sent to OpenAI; first load downloads weights.</div>
+              </span>
+            </label>
+          </div>
+        </fieldset>
         <button type="submit">Start a mediated room</button>
       </form>
     </div>

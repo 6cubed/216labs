@@ -78,6 +78,39 @@ class MediateTests(unittest.TestCase):
             if old_key is not None:
                 os.environ["MEDIATE_OPENAI_API_KEY"] = old_key
 
+    def test_device_mediator_accepts_client_mediated_text_without_openai(self):
+        old_key = os.environ.pop("MEDIATE_OPENAI_API_KEY", None)
+        try:
+            r = self.client.post("/create", data={"mediator_mode": "device"})
+            self.assertEqual(r.status_code, 200)
+            with self.client.session_transaction() as sess:
+                rid = sess["mediate_room"]
+            r2 = self.client.post(
+                f"/api/room/{rid}/send",
+                json={"text": "raw hello", "mediated_text": "Polite hello"},
+                content_type="application/json",
+            )
+            self.assertEqual(r2.status_code, 200)
+            data = r2.get_json()
+            self.assertTrue(data.get("ok"))
+            self.assertEqual(data.get("mediated_text"), "Polite hello")
+        finally:
+            if old_key is not None:
+                os.environ["MEDIATE_OPENAI_API_KEY"] = old_key
+
+    def test_device_mediator_requires_mediated_text(self):
+        r = self.client.post("/create", data={"mediator_mode": "device"})
+        self.assertEqual(r.status_code, 200)
+        with self.client.session_transaction() as sess:
+            rid = sess["mediate_room"]
+        r2 = self.client.post(
+            f"/api/room/{rid}/send",
+            json={"text": "only raw"},
+            content_type="application/json",
+        )
+        self.assertEqual(r2.status_code, 400)
+        self.assertIn("mediated_text", r2.get_json().get("error", ""))
+
 
 if __name__ == "__main__":
     unittest.main()
