@@ -5,6 +5,7 @@ admin
 activator
 landing
 blog
+valentine
 npcworld
 impulse
 mediate
@@ -36,4 +37,3 @@ thezurichdatinggame
 oneroom
 audioaicheckup
 storybook
-valentine
