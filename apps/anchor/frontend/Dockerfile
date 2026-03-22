@@ -1,6 +1,8 @@
 # Stage 1 — build Flutter web
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 
+RUN flutter config --no-analytics && flutter precache --web
+
 WORKDIR /app
 COPY pubspec.yaml ./
 RUN flutter pub get

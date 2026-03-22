@@ -3,11 +3,20 @@
 
 Reads `docker compose config --format json` output (file path or stdin).
 Each matrix row has: service, image, and optional platform (e.g. cron-runner -> linux/amd64).
+
+Services in SKIP_GHCR_SERVICES are omitted: they need a larger runner, manual publish,
+or a follow-up fix (e.g. Flutter web without pubspec.lock).
 """
 from __future__ import annotations
 
 import json
+import os
 import sys
+
+# Omit from CI matrix — publish via ./deploy.sh or workflow_dispatch on a beefy runner.
+SKIP_GHCR_SERVICES = frozenset(
+    {s.strip().lower() for s in os.environ.get("GHCR_SKIP_SERVICES", "anchor-web").split(",") if s.strip()}
+)
 
 
 def main() -> None:
@@ -21,6 +30,8 @@ def main() -> None:
     include: list[dict[str, str]] = []
     for name in sorted(services.keys()):
         if name == "caddy":
+            continue
+        if name.lower() in SKIP_GHCR_SERVICES:
             continue
         svc = services[name]
         if "build" not in svc:

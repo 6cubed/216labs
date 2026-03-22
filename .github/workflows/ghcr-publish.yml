@@ -23,6 +23,8 @@ permissions:
 
 env:
   REGISTRY_PREFIX: ghcr.io/6cubed/216labs
+  # Comma-separated compose service names to skip (see scripts/compose-ghcr-matrix.py). Empty = build all.
+  GHCR_SKIP_SERVICES: anchor-web
 
 jobs:
   setup:
