@@ -133,7 +133,7 @@ export async function toggleAppDeploy(
   if (row?.docker_service && appId !== "admin") {
     try {
       if (nextEnabled) {
-        await startContainer(row.docker_service);
+        await startContainer(row.docker_service, appId);
       } else {
         await stopContainer(row.docker_service);
       }

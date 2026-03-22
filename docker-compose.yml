@@ -187,6 +187,7 @@ services:
       - VALENTINE_ADMIN_TOKEN=${VALENTINE_ADMIN_TOKEN:-}
       - CRON_RUNNER_SECRET=${CRON_RUNNER_SECRET:-}
       - CRON_RUNNER_INTERNAL_URL=${CRON_RUNNER_INTERNAL_URL:-http://cron-runner:3029}
+      - ACTIVATOR_INTERNAL_URL=${ACTIVATOR_INTERNAL_URL:-http://activator:3040}
     volumes:
       - ./216labs.db:/app/216labs.db
       - ./:/workspace:ro

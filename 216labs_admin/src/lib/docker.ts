@@ -18,23 +18,59 @@ function getClient(): Dockerode | null {
   }
 }
 
-export async function startContainer(dockerService: string): Promise<void> {
+/**
+ * Start a compose service. If the container has never been created (cold server
+ * or app never included in a deploy), `docker start` cannot work — we POST to
+ * the Activator so `docker compose up` runs (same path as subdomain warmup).
+ */
+export async function startContainer(
+  dockerService: string,
+  appId: string = dockerService
+): Promise<void> {
   const docker = getClient();
   if (!docker) return;
-  const container = docker.getContainer(containerName(dockerService));
-  const info = await container.inspect();
-  if (!info.State.Running) {
-    await container.start();
+  const name = containerName(dockerService);
+  const container = docker.getContainer(name);
+  try {
+    const info = await container.inspect();
+    if (!info.State.Running) {
+      await container.start();
+    }
+    return;
+  } catch (err: unknown) {
+    const code = (err as { statusCode?: number }).statusCode;
+    if (code !== 404) throw err;
   }
+
+  const base = (
+    process.env.ACTIVATOR_INTERNAL_URL || "http://activator:3040"
+  ).replace(/\/$/, "");
+  const url = `${base}/api/start/${encodeURIComponent(appId)}`;
+  const res = await fetch(url, {
+    method: "POST",
+    signal: AbortSignal.timeout(120_000),
+  });
+  if (res.status === 200 || res.status === 202) return;
+
+  const body = await res.text();
+  throw new Error(
+    `Activator start failed (${res.status}): ${body.slice(0, 800)}`
+  );
 }
 
 export async function stopContainer(dockerService: string): Promise<void> {
   const docker = getClient();
   if (!docker) return;
   const container = docker.getContainer(containerName(dockerService));
-  const info = await container.inspect();
-  if (info.State.Running) {
-    await container.stop({ t: 5 });
+  try {
+    const info = await container.inspect();
+    if (info.State.Running) {
+      await container.stop({ t: 5 });
+    }
+  } catch (err: unknown) {
+    const code = (err as { statusCode?: number }).statusCode;
+    if (code === 404) return;
+    throw err;
   }
 }
 
