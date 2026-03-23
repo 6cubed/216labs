@@ -38,8 +38,9 @@ TRY_DOCKER_PULL = os.environ.get("ACTIVATOR_TRY_DOCKER_PULL", "").strip().lower(
     "true",
     "yes",
 )
-# e.g. ghcr.io/6cubed/216labs — cold-start pulls then retags to 216labs/<service>:latest
-REGISTRY_PREFIX = os.environ.get("ACTIVATOR_REGISTRY_PREFIX", "").strip()
+# Default to GHCR org path so cold starts can recover from missing local images
+# even when ACTIVATOR_REGISTRY_PREFIX is unset on the droplet.
+REGISTRY_PREFIX = os.environ.get("ACTIVATOR_REGISTRY_PREFIX", "ghcr.io/6cubed/216labs").strip()
 GHCR_TOKEN = os.environ.get("GHCR_TOKEN", "").strip()
 GHCR_USERNAME = os.environ.get("GHCR_USERNAME", "token").strip() or "token"
 
