@@ -46,13 +46,28 @@ export async function startContainer(
     process.env.ACTIVATOR_INTERNAL_URL || "http://activator:3040"
   ).replace(/\/$/, "");
   const url = `${base}/api/start/${encodeURIComponent(appId)}`;
+  // Activator waits up to ACTIVATOR_START_TIMEOUT_SECONDS for HTTP *after* compose up/pull.
+  // Total time often exceeds that cap; aborting at 120s caused flaky admin "on demand" failures.
+  const ms = Number.parseInt(
+    process.env.ACTIVATOR_ADMIN_FETCH_TIMEOUT_MS || "240000",
+    10
+  );
+  const timeoutMs = Number.isFinite(ms) && ms > 0 ? ms : 240_000;
   const res = await fetch(url, {
     method: "POST",
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
-  if (res.status === 200 || res.status === 202) return;
-
   const body = await res.text();
+  if (res.status === 200 || res.status === 202) return;
+  // Image missing but deploy webhook accepted — container will appear after deploy; keep toggle on.
+  if (res.status === 503) {
+    try {
+      const data = JSON.parse(body) as { phase?: string };
+      if (data.phase === "deploying") return;
+    } catch {
+      /* fall through */
+    }
+  }
   throw new Error(
     `Activator start failed (${res.status}): ${body.slice(0, 800)}`
   );
