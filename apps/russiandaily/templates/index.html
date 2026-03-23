@@ -112,7 +112,47 @@
       display: flex;
       gap: 0.5rem;
       margin-top: 1rem;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .audio-btns {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .vote-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    button.audio {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      min-width: 2.5rem;
+      height: 2.5rem;
+      padding: 0 0.45rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: 0.02em;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    button.audio:hover {
+      border-color: var(--accent-dim);
+      color: var(--text);
+    }
+
+    button.audio.playing {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(232, 184, 74, 0.08);
     }
 
     button.vote {
@@ -171,23 +211,34 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
 </head>
-<body>
+<body data-server-tts="{% if has_server_tts %}true{% else %}false{% endif %}">
   <div class="wrap">
     <header>
       <h1>Russian Daily</h1>
-      <p class="sub">Ten topical headlines for <strong>{{ date_label }}</strong> (Europe/Moscow). Highlighted word + gloss; full English below. Thumbs tune topic mix for the next day.</p>
-      <span class="pill">{% if has_llm %}AI-assisted batches{% else %}Offline headline pool{% endif %}</span>
+      <p class="sub">Ten topical headlines for <strong>{{ date_label }}</strong> (Europe/Moscow). Highlighted word + gloss; full English below. {% if has_server_tts %}OpenAI pronunciation{% else %}Browser pronunciation{% endif %} on each card; thumbs tune topics.</p>
+      <span class="pill">{% if has_llm %}AI headlines + OpenAI TTS{% else %}Offline pool · browser speech{% endif %}</span>
     </header>
 
     <div class="cards">
       {% for item in items %}
-      <article class="card" data-word-id="{{ item.id }}">
+      <article
+        class="card"
+        data-word-id="{{ item.id }}"
+        data-headline-ru="{{ item.headline_ru|e }}"
+        data-highlight-ru="{{ item.highlight_ru|e }}"
+      >
         <div class="headline-text">{{ item.headline_html|safe }}</div>
         <div class="word-en">{{ item.word_en }}</div>
         <div class="full-en">{{ item.headline_en }}</div>
         <div class="actions">
-          <button type="button" class="vote down{% if item.user_vote == -1 %} active-down{% endif %}" data-vote="-1" title="Not for me" aria-label="Thumbs down">👎</button>
-          <button type="button" class="vote up{% if item.user_vote == 1 %} active-up{% endif %}" data-vote="1" title="More like this" aria-label="Thumbs up">👍</button>
+          <div class="audio-btns">
+            <button type="button" class="audio" data-part="headline" title="Play full headline" aria-label="Play full headline Russian">Sentence</button>
+            <button type="button" class="audio" data-part="word" title="Play highlighted word" aria-label="Play highlighted Russian word">Word</button>
+          </div>
+          <div class="vote-btns">
+            <button type="button" class="vote down{% if item.user_vote == -1 %} active-down{% endif %}" data-vote="-1" title="Not for me" aria-label="Thumbs down">👎</button>
+            <button type="button" class="vote up{% if item.user_vote == 1 %} active-up{% endif %}" data-vote="1" title="More like this" aria-label="Thumbs up">👍</button>
+          </div>
         </div>
       </article>
       {% endfor %}
@@ -204,7 +255,118 @@
       window.__toastT = setTimeout(() => t.classList.remove('show'), 2200);
     }
 
+    const serverTts = document.body.dataset.serverTts === 'true';
+    let currentAudio = null;
+    let playingBtn = null;
+
+    function clearPlayingState() {
+      if (playingBtn) {
+        playingBtn.classList.remove('playing');
+        playingBtn = null;
+      }
+    }
+
+    function stopServerAudio() {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.src = '';
+        currentAudio = null;
+      }
+    }
+
+    function pickRuVoice() {
+      const vs = window.speechSynthesis.getVoices();
+      return vs.find((v) => /^ru/i.test(v.lang)) || vs.find((v) => /ru/i.test(v.lang));
+    }
+
+    function speakBrowserRussian(text, btn) {
+      if (!text || !text.trim()) {
+        showToast('Nothing to play');
+        return;
+      }
+      stopServerAudio();
+      window.speechSynthesis.cancel();
+      clearPlayingState();
+      if (btn) {
+        btn.classList.add('playing');
+        playingBtn = btn;
+      }
+      const u = new SpeechSynthesisUtterance(text.trim());
+      u.lang = 'ru-RU';
+      const v = pickRuVoice();
+      if (v) u.voice = v;
+      u.rate = 0.9;
+      u.onend = () => clearPlayingState();
+      u.onerror = () => {
+        clearPlayingState();
+        showToast('Speech not available');
+      };
+      window.speechSynthesis.speak(u);
+    }
+
+    async function playServerTts(wordId, part, btn) {
+      stopServerAudio();
+      window.speechSynthesis.cancel();
+      clearPlayingState();
+      btn.classList.add('playing');
+      playingBtn = btn;
+      try {
+        const res = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word_id: wordId, part }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error || res.statusText);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        currentAudio = audio;
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          if (currentAudio === audio) currentAudio = null;
+          clearPlayingState();
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          if (currentAudio === audio) currentAudio = null;
+          clearPlayingState();
+          showToast('Could not play audio');
+        };
+        await audio.play();
+      } catch (e) {
+        clearPlayingState();
+        showToast('Could not load pronunciation');
+      }
+    }
+
+    function bindAudio(card) {
+      const id = parseInt(card.getAttribute('data-word-id'), 10);
+      card.querySelectorAll('button.audio').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const part = btn.getAttribute('data-part');
+          if (serverTts) {
+            playServerTts(id, part, btn);
+          } else {
+            const headline = card.getAttribute('data-headline-ru') || '';
+            const word = card.getAttribute('data-highlight-ru') || '';
+            const text = part === 'word' ? word : headline;
+            speakBrowserRussian(text, btn);
+          }
+        });
+      });
+    }
+
+    if (window.speechSynthesis && window.speechSynthesis.getVoices().length === 0) {
+      window.speechSynthesis.addEventListener('voiceschanged', function once() {
+        window.speechSynthesis.removeEventListener('voiceschanged', once);
+      });
+    }
+
     document.querySelectorAll('.card').forEach((card) => {
+      bindAudio(card);
       const id = card.getAttribute('data-word-id');
       card.querySelectorAll('button.vote').forEach((btn) => {
         btn.addEventListener('click', async () => {
