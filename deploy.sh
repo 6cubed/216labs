@@ -239,9 +239,10 @@ fi
 IMAGES_TO_TRANSFER=()
 _transfer_add() {
   local tag="$1"
-  local x
-  for x in "${IMAGES_TO_TRANSFER[@]}"; do
-    [ "$x" = "$tag" ] && return 0
+  local i
+  # Indexed loop avoids set -u + empty "${arr[@]}" on older bash (e.g. macOS 3.2).
+  for ((i = 0; i < ${#IMAGES_TO_TRANSFER[@]}; i++)); do
+    [ "${IMAGES_TO_TRANSFER[i]}" = "$tag" ] && return 0
   done
   IMAGES_TO_TRANSFER+=("$tag")
 }
