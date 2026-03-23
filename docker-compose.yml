@@ -37,6 +37,8 @@ services:
       - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-0}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
       - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing}
+      # Compose services that refuse /api/start (avoid restarting edge or self).
+      - ACTIVATOR_BLOCK_START_SERVICES=${ACTIVATOR_BLOCK_START_SERVICES:-caddy,activator}
       # Optional: delete 216labs/<svc>:latest on eviction to free disk (reload image via deploy).
       - ACTIVATOR_REMOVE_IMAGE_ON_EVICT=${ACTIVATOR_REMOVE_IMAGE_ON_EVICT:-false}
       # true only if you host 216labs/* in a registry (default: do not docker pull).

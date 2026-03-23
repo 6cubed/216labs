@@ -9,6 +9,7 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Set, Tuple
 import urllib.error
+from urllib.parse import urlparse
 from urllib import request as urlrequest
 
 from flask import Flask, jsonify, request
@@ -50,6 +51,15 @@ def _parse_protected_services() -> Set[str]:
 
 PROTECTED_DOCKER_SERVICES = _parse_protected_services()
 
+
+def _parse_block_start_services() -> Set[str]:
+    raw = os.environ.get("ACTIVATOR_BLOCK_START_SERVICES", "caddy,activator")
+    return {x.strip().lower() for x in raw.split(",") if x.strip()}
+
+
+# Never start via warmup/API — avoids breaking the edge or recursion.
+BLOCK_START_DOCKER_SERVICES = _parse_block_start_services()
+
 _status_lock = threading.Lock()
 _status: Dict[str, Dict[str, object]] = {}
 _locks: Dict[str, threading.Lock] = {}
@@ -59,6 +69,33 @@ _APP_ID_RE = re.compile(r"^[a-z0-9][a-z0-9.-]*$")
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def normalize_app_id(raw: str) -> Optional[str]:
+    """Lowercase app id from URL/query; None if invalid (Caddy uses lowercase; tolerates mixed case)."""
+    s = (raw or "").strip().lower()
+    if not s or not _APP_ID_RE.match(s):
+        return None
+    return s
+
+
+def safe_warmup_dest(dest: Optional[str], app_id: str) -> str:
+    """Only allow https://{app_id}.{APP_HOST}[...] to prevent open redirects."""
+    default = f"https://{app_id}.{APP_HOST}"
+    if not dest or not str(dest).strip():
+        return default
+    dest_s = str(dest).strip()
+    try:
+        u = urlparse(dest_s)
+    except Exception:
+        return default
+    if u.scheme != "https":
+        return default
+    host = (u.hostname or "").lower()
+    expected = f"{app_id.lower()}.{APP_HOST.lower()}"
+    if host == expected:
+        return dest_s
+    return default
 
 
 def get_lock(app_id: str) -> threading.Lock:
@@ -163,19 +200,20 @@ def get_internal_http_port(app_id: str) -> int:
 
 def http_upstream_ready(docker_service: str, port: int, timeout: float = 2.5) -> bool:
     """True when something accepts HTTP on the compose service (avoids Caddy↔warmup redirect loops)."""
-    url = f"http://{docker_service}:{port}/"
-    try:
-        req = urlrequest.Request(
-            url,
-            headers={"Connection": "close", "User-Agent": "activator-health/1.0"},
-        )
-        with urlrequest.urlopen(req, timeout=timeout) as _resp:
+    per_path = max(0.9, min(timeout, 4.0) / 2)
+    headers = {"Connection": "close", "User-Agent": "activator-health/1.0"}
+    for path in ("/", "/healthz"):
+        url = f"http://{docker_service}:{port}{path}"
+        try:
+            req = urlrequest.Request(url, headers=headers)
+            with urlrequest.urlopen(req, timeout=per_path) as _resp:
+                return True
+        except urllib.error.HTTPError:
+            # Any HTTP response means the socket is up (4xx/5xx still listening).
             return True
-    except urllib.error.HTTPError:
-        # Any HTTP response from the app means the socket is up (4xx/5xx still listening).
-        return True
-    except Exception:
-        return False
+        except Exception:
+            continue
+    return False
 
 
 def resolve_docker_service(app_id: str) -> Optional[str]:
@@ -446,6 +484,12 @@ def start_app(app_id: str) -> Dict[str, object]:
         )
         return {"ok": False, "status": status}
 
+    if docker_service.lower() in BLOCK_START_DOCKER_SERVICES:
+        msg = "This compose service cannot be started via the activator (edge infrastructure)."
+        set_runtime_state(app_id, "failed", msg, touch_accessed=True)
+        status = set_status(app_id, "failed", msg, docker_service=docker_service)
+        return {"ok": False, "status": status}
+
     app_lock = get_lock(app_id)
     if not app_lock.acquire(blocking=False):
         status = get_status(app_id)
@@ -545,13 +589,15 @@ def healthz():
             "manifest_fallback": True,
             "registry_prefix": REGISTRY_PREFIX or None,
             "ghcr_auth_configured": bool(GHCR_TOKEN),
+            "block_start_services": sorted(BLOCK_START_DOCKER_SERVICES),
         }
     )
 
 
 @app.get("/api/status/<app_id>")
 def status(app_id: str):
-    if not _APP_ID_RE.match(app_id):
+    app_id = normalize_app_id(app_id) or ""
+    if not app_id:
         return jsonify({"error": "Invalid app id"}), 400
     if resolve_docker_service(app_id) is None:
         return jsonify({"error": "Unknown app id"}), 404
@@ -563,7 +609,8 @@ def status(app_id: str):
 
 @app.post("/api/start/<app_id>")
 def start(app_id: str):
-    if not _APP_ID_RE.match(app_id):
+    app_id = normalize_app_id(app_id) or ""
+    if not app_id:
         return jsonify({"error": "Invalid app id"}), 400
     result = start_app(app_id)
     code = 200 if result.get("ok") else 202 if result.get("queued") else 503
@@ -573,7 +620,8 @@ def start(app_id: str):
 @app.post("/api/touch/<app_id>")
 def touch(app_id: str):
     """Optional: mark last_accessed_at for LRU (e.g. future Caddy subrequest or cron)."""
-    if not _APP_ID_RE.match(app_id):
+    app_id = normalize_app_id(app_id) or ""
+    if not app_id:
         return jsonify({"error": "Invalid app id"}), 400
     if resolve_docker_service(app_id) is None:
         return jsonify({"error": "Unknown app id"}), 404
@@ -583,8 +631,8 @@ def touch(app_id: str):
 
 @app.get("/warmup")
 def warmup():
-    app_id = (request.args.get("app") or "").strip()
-    if not _APP_ID_RE.match(app_id):
+    app_id = normalize_app_id(request.args.get("app") or "")
+    if not app_id:
         return "Invalid app id.", 400
     if resolve_docker_service(app_id) is None:
         return (
@@ -592,7 +640,7 @@ def warmup():
             404,
         )
 
-    dest = (request.args.get("dest") or f"https://{app_id}.{APP_HOST}").strip()
+    dest = safe_warmup_dest(request.args.get("dest"), app_id)
     safe_dest = json.dumps(dest)
     safe_app = json.dumps(app_id)
     return f"""<!doctype html>
@@ -670,4 +718,3 @@ if __name__ == "__main__":
         t = threading.Thread(target=reaper_loop, name="activator-reaper", daemon=True)
         t.start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "3040")))
-# bump: manifest fallback for cold start without DB row

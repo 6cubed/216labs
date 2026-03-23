@@ -16,6 +16,10 @@ This service is the **cold-start orchestrator** for 216labs: when Caddy sees a d
 
 **Protected services** (never evicted): `caddy`, `activator`, `admin`, `landing` by default (`ACTIVATOR_PROTECTED_SERVICES`).
 
+**Blocked starts** (warmup/API will not `compose up`): `caddy`, `activator` by default (`ACTIVATOR_BLOCK_START_SERVICES`). Admin and landing can still be cold-started if their subdomain ever 502s.
+
+**Warmup `dest`**: only `https://{app_id}.{APP_HOST}` is accepted; other URLs fall back to that default (open-redirect safe).
+
 **Optional disk reclaim**: `ACTIVATOR_REMOVE_IMAGE_ON_EVICT=true` runs `docker rmi` on eviction (next cold start may need a pull).
 
 ## Endpoints
@@ -42,5 +46,6 @@ See `docker-compose.yml` `activator` service. Key variables:
 - `ACTIVATOR_MAX_CONCURRENT_APPS` — `0` = unlimited (default); set e.g. `10` in `.env` only when you need a RAM cap.
 - `ACTIVATOR_REAPER_INTERVAL_SECONDS` — background trim interval (set `0` to disable reaper thread).
 - `ACTIVATOR_PROTECTED_SERVICES` — comma-separated compose service names.
+- `ACTIVATOR_BLOCK_START_SERVICES` — compose services that refuse `/api/start` (default `caddy,activator`).
 - `ACTIVATOR_REGISTRY_PREFIX` — e.g. `ghcr.io/6cubed/216labs` for cold-start pull.
 - `GHCR_USERNAME` / `GHCR_TOKEN` — droplet login for private packages (`read:packages`).
