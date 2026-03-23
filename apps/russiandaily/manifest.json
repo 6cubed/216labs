@@ -1,0 +1,24 @@
+{
+  "id": "russiandaily",
+  "name": "Russian Daily",
+  "tagline": "Ten topical Russian headlines a day — one word highlighted, with English",
+  "description": "Single-user web app: each calendar day (Europe/Moscow) shows 10 news-style Russian headlines. Each item highlights one vocabulary word and shows its English gloss plus a full English headline translation. Thumb up or down to steer topic mix for the next batch. Uses OpenAI when configured; otherwise a built-in headline pool.",
+  "category": "education",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "russiandaily",
+  "build_context": "./apps/russiandaily",
+  "stack": {
+    "frontend": "Jinja2 + vanilla JS",
+    "backend": "Python + Flask + Gunicorn",
+    "database": "SQLite",
+    "other": ["OpenAI optional", "Europe/Moscow day boundary"]
+  },
+  "env_vars": [
+    {
+      "key": "RUSSIANDAILY_OPENAI_API_KEY",
+      "description": "Optional. When set, daily batches are generated with gpt-4o-mini; otherwise a static weighted pool is used.",
+      "is_secret": true
+    }
+  ]
+}

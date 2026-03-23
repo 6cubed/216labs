@@ -16,6 +16,7 @@ crowdbulk
 cron-runner
 emailgpt
 germandaily
+russiandaily
 mysteryshopper
 llminternals
 maxlearn

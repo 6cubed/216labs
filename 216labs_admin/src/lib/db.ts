@@ -130,6 +130,7 @@ const KNOWN_PORTS: Record<string, number> = {
   avatar: 8036,
   activator: 8037,
   germandaily: 8038,
+  russiandaily: 8046,
   valentine: 8039,
   tigertank: 8040,
   explore: 8041,

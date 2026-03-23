@@ -653,6 +653,22 @@ services:
       - "5000"
     mem_limit: 128m
 
+  # ── Russian Daily (10 headlines / day, votes steer topics) ─────
+  russiandaily:
+    image: 216labs/russiandaily:latest
+    pull_policy: never
+    build: ./apps/russiandaily
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - RUSSIANDAILY_DATA_DIR=/app/data
+      - RUSSIANDAILY_OPENAI_API_KEY=${RUSSIANDAILY_OPENAI_API_KEY:-}
+    volumes:
+      - ./apps/russiandaily/data:/app/data
+    expose:
+      - "5000"
+    mem_limit: 128m
+
   # ── Explore (nearby instant experiences, Ireland seed) ───────
   explore:
     image: 216labs/explore:latest

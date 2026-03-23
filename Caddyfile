@@ -272,6 +272,21 @@ germandaily.6cubed.app {
 	}
 }
 
+russiandaily.6cubed.app {
+	reverse_proxy russiandaily:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=russiandaily&dest=https%3A%2F%2Frussiandaily.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=russiandaily&dest=https%3A%2F%2Frussiandaily.6cubed.app" 302
+		}
+	}
+}
+
 happypath.6cubed.app {
 	reverse_proxy happypath:3000 {
 		@cold status 502 503 504

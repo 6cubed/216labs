@@ -12,6 +12,7 @@ marketing
 onefitblog
 emailgpt
 germandaily
+russiandaily
 maxlearn
 tigertank
 valentine
