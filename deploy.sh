@@ -214,12 +214,17 @@ get_context_hash() {
 echo "==> Checking for source changes..."
 SERVICES_TO_BUILD=()
 ALL_IMAGES=()
+SKIP_BUILD="${DEPLOY_SKIP_BUILD:-0}"
 for svc in "${SERVICES[@]}"; do
   IFS=: read -r NAME CTX DFILE <<< "$svc"
   TAG="216labs/$NAME:latest"
   ALL_IMAGES+=("$TAG")
   CTX_HASH=$(get_context_hash "$CTX")
   STORED=$(grep "^$TAG=" "$HASH_FILE" 2>/dev/null | head -1 | sed 's/^[^=]*=//' || true)
+  if [ "$SKIP_BUILD" = "1" ]; then
+    echo "  [skip]  $NAME (DEPLOY_SKIP_BUILD=1)"
+    continue
+  fi
   if [ "$CTX_HASH" = "$STORED" ] && docker image inspect "$TAG" &>/dev/null 2>&1; then
     echo "  [skip]  $NAME (source unchanged)"
   else
@@ -232,7 +237,9 @@ done
 # BuildKit speeds up rebuilds via better layer caching (helps lightweight UI-only changes).
 export DOCKER_BUILDKIT=1
 BUILT_IMAGES=()
-if [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
+if [ "$SKIP_BUILD" = "1" ]; then
+  echo "==> DEPLOY_SKIP_BUILD=1, skipping local builds; will sync missing images from local cache"
+elif [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
   echo "==> Building ${#SERVICES_TO_BUILD[@]}/${#ALL_IMAGES[@]} images locally..."
   for svc in "${SERVICES_TO_BUILD[@]}"; do
     IFS=: read -r NAME CTX DFILE <<< "$svc"
@@ -279,8 +286,8 @@ _transfer_add() {
   done
   IMAGES_TO_TRANSFER+=("$tag")
 }
-for TAG in "${BUILT_IMAGES[@]}"; do
-  _transfer_add "$TAG"
+for ((i = 0; i < ${#BUILT_IMAGES[@]}; i++)); do
+  _transfer_add "${BUILT_IMAGES[i]}"
 done
 REMOTE_IMAGE_LIST=""
 REMOTE_LIST_OK=0
