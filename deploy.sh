@@ -164,10 +164,18 @@ else
 fi
 CAPPED=""
 for app in $DEPLOY_PRIORITY; do
-  if [[ " $ENABLED_APPS " == *" $app "* ]]; then
+  if [[ " $ENABLED_APPS " == *" $app "* ]] && [[ " $CAPPED " != *" $app "* ]]; then
     CAPPED="$CAPPED $app"
     count=$(echo "$CAPPED" | wc -w | tr -d ' ')
     [ "$count" -ge "$MAX_APPS" ] && break
+  fi
+done
+# Include enabled apps not listed in priority (or listed after cap), preserving safety cap.
+for app in $ENABLED_APPS; do
+  count=$(echo "$CAPPED" | wc -w | tr -d ' ')
+  [ "$count" -ge "$MAX_APPS" ] && break
+  if [[ " $CAPPED " != *" $app "* ]]; then
+    CAPPED="$CAPPED $app"
   fi
 done
 if [ -n "$CAPPED" ]; then
