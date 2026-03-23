@@ -40,7 +40,32 @@ SSH_OPTS=(
   -o BatchMode=yes
   -o StrictHostKeyChecking=accept-new
   -o ConnectTimeout=20
+  -o ServerAliveInterval=15
+  -o ServerAliveCountMax=8
 )
+
+# Retry SSH operations (transient "connection refused" under load or brief network blips).
+ssh_retry() {
+  local desc="$1"
+  shift
+  local attempt=1
+  local max=6
+  local delay=4
+  while [ "$attempt" -le "$max" ]; do
+    if "$@"; then
+      return 0
+    fi
+    echo "==> $desc failed (attempt $attempt/$max); retrying in ${delay}s..." >&2
+    sleep "$delay"
+    attempt=$((attempt + 1))
+    delay=$((delay + 2))
+  done
+  return 1
+}
+
+_fetch_remote_docker_tags() {
+  ssh "${SSH_OPTS[@]}" "$REMOTE" "docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null"
+}
 
 # ── Service mapping helpers ───────────────────────────────────
 # Try manifest.json first; fall back to hardcoded cases for apps
@@ -250,27 +275,30 @@ for TAG in "${BUILT_IMAGES[@]}"; do
   _transfer_add "$TAG"
 done
 REMOTE_IMAGE_LIST=""
-if REMOTE_IMAGE_LIST=$(ssh "${SSH_OPTS[@]}" "$REMOTE" "docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null" 2>/dev/null); then
-  :
+REMOTE_LIST_OK=0
+if REMOTE_IMAGE_LIST=$(ssh_retry "List remote Docker images" _fetch_remote_docker_tags); then
+  REMOTE_LIST_OK=1
 else
-  REMOTE_IMAGE_LIST=""
+  echo "==> WARN: could not list remote images; only built images will transfer (no missing-on-server sync)." >&2
 fi
 SYNC_ONLY_COUNT=0
-for TAG in "${ALL_IMAGES[@]}"; do
-  if echo "$REMOTE_IMAGE_LIST" | grep -qxF "$TAG" 2>/dev/null; then
-    continue
-  fi
-  if docker image inspect "$TAG" &>/dev/null 2>&1; then
-    before=${#IMAGES_TO_TRANSFER[@]}
-    _transfer_add "$TAG"
-    if [ "${#IMAGES_TO_TRANSFER[@]}" -gt "$before" ]; then
-      SYNC_ONLY_COUNT=$((SYNC_ONLY_COUNT + 1))
-      echo "  [sync]  $TAG (missing on server, present locally — pushing cached image)"
+if [ "$REMOTE_LIST_OK" -eq 1 ]; then
+  for TAG in "${ALL_IMAGES[@]}"; do
+    if echo "$REMOTE_IMAGE_LIST" | grep -qxF "$TAG" 2>/dev/null; then
+      continue
     fi
-  else
-    echo "  [warn]  $TAG enabled for deploy but no local image — build once (touch app or docker build) then redeploy."
-  fi
-done
+    if docker image inspect "$TAG" &>/dev/null 2>&1; then
+      before=${#IMAGES_TO_TRANSFER[@]}
+      _transfer_add "$TAG"
+      if [ "${#IMAGES_TO_TRANSFER[@]}" -gt "$before" ]; then
+        SYNC_ONLY_COUNT=$((SYNC_ONLY_COUNT + 1))
+        echo "  [sync]  $TAG (missing on server, present locally — pushing cached image)"
+      fi
+    else
+      echo "  [warn]  $TAG enabled for deploy but no local image — build once (touch app or docker build) then redeploy."
+    fi
+  done
+fi
 if [ "$SYNC_ONLY_COUNT" -gt 0 ]; then
   echo "==> $SYNC_ONLY_COUNT image(s) missing on $REMOTE; will transfer without rebuild."
 fi
@@ -284,7 +312,7 @@ else
   # tagged 216labs/* images must stay on disk when a container is stopped, or the next
   # deploy has nothing to run (e.g. activator cold-start) until a full rebuild+transfer.
   echo "==> Pruning dangling images on server (keeps tagged 216labs images)..."
-  ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -f 2>/dev/null; echo "Prune done"' 2>/dev/null || true
+  ssh_retry "Prune dangling images on server" ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -f 2>/dev/null; echo "Prune done"' 2>/dev/null || true
 
   USE_ZSTD=false
   if command -v zstd &>/dev/null; then
@@ -298,13 +326,37 @@ else
     echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd, sequential)..."
     for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
       echo "  -> $TAG"
-      docker save "$TAG" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'
+      ok=0
+      for tattempt in 1 2 3 4 5 6; do
+        if docker save "$TAG" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'; then
+          ok=1
+          break
+        fi
+        echo "==> Transfer $TAG failed (attempt $tattempt/6); retrying in 5s..." >&2
+        sleep 5
+      done
+      if [ "$ok" -ne 1 ]; then
+        echo "ERROR: could not transfer $TAG after 6 attempts." >&2
+        exit 1
+      fi
     done
   else
     echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (sequential)..."
     for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
       echo "  -> $TAG"
-      docker save "$TAG" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
+      ok=0
+      for tattempt in 1 2 3 4 5 6; do
+        if docker save "$TAG" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'; then
+          ok=1
+          break
+        fi
+        echo "==> Transfer $TAG failed (attempt $tattempt/6); retrying in 5s..." >&2
+        sleep 5
+      done
+      if [ "$ok" -ne 1 ]; then
+        echo "ERROR: could not transfer $TAG after 6 attempts." >&2
+        exit 1
+      fi
     done
   fi
   # Persist source hashes so next deploy can skip unchanged apps
