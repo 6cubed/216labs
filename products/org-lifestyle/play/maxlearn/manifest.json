@@ -1,0 +1,17 @@
+{
+  "id": "maxlearn",
+  "name": "MaxLearn",
+  "tagline": "Tinder for Wikipedia rabbit holes",
+  "description": "Swipe through Wikipedia snippets. Like one and we add 10 related articles to your feed. Your interests steer the feed so you get more of what you love.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "256m",
+  "docker_service": "maxlearn",
+  "build_context": "./products/org-lifestyle/play/maxlearn",
+  "stack": {
+    "frontend": "Flask + Jinja2",
+    "backend": "Flask + Gunicorn",
+    "database": "SQLite",
+    "other": ["Wikipedia API"]
+  }
+}

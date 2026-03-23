@@ -1,0 +1,30 @@
+{
+  "id": "valentine",
+  "name": "HeartInk",
+  "tagline": "AI Valentine's cards from a single idea",
+  "description": "Describe your Valentine in a sentence — AI writes the inside message and illustrates the cover. Order a professionally printed card via Stripe checkout, same flow as StoryMagic.",
+  "category": "ai",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "valentine",
+  "build_context": "./products/org-shopping/valentine",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": ["OpenAI GPT-4o", "DALL-E 3", "Stripe", "Framer Motion"]
+  },
+  "env_vars": [
+    { "key": "VALENTINE_OPENAI_API_KEY", "description": "HeartInk OpenAI API key (GPT-4o copy + DALL-E 3 cover)", "is_secret": true },
+    { "key": "VALENTINE_STRIPE_SECRET_KEY", "description": "HeartInk Stripe secret key (sk_live_...)", "is_secret": true },
+    { "key": "VALENTINE_STRIPE_WEBHOOK_SECRET", "description": "HeartInk Stripe webhook signing secret (whsec_...)", "is_secret": true },
+    { "key": "NEXT_PUBLIC_VALENTINE_STRIPE_PUBLISHABLE_KEY", "description": "HeartInk Stripe publishable key (pk_live_...)", "is_secret": false },
+    { "key": "VALENTINE_CARD_PRICE_CENTS", "description": "Printed card price in cents (default: 1999 = $19.99)", "is_secret": false },
+    { "key": "NEXT_PUBLIC_VALENTINE_CARD_PRICE_CENTS", "description": "Same as VALENTINE_CARD_PRICE_CENTS for checkout button label", "is_secret": false },
+    { "key": "VALENTINE_ADMIN_TOKEN", "description": "HeartInk shared secret for admin→valentine API calls", "is_secret": true },
+    { "key": "VALENTINE_RESEND_API_KEY", "description": "HeartInk Resend API key for order notification emails", "is_secret": true },
+    { "key": "VALENTINE_ADMIN_EMAIL", "description": "HeartInk email address to notify on new orders", "is_secret": false },
+    { "key": "VALENTINE_FROM_EMAIL", "description": "HeartInk sender address (e.g. HeartInk <orders@yourdomain.com>)", "is_secret": false },
+    { "key": "VALENTINE_INTERNAL_URL", "description": "HeartInk internal Docker URL for admin to query orders (http://valentine:3000)", "is_secret": false }
+  ]
+}

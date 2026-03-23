@@ -11,11 +11,8 @@ on:
       - "docker-compose.yml"
       - ".github/workflows/ghcr-publish.yml"
       - "scripts/compose-ghcr-matrix.py"
-      - "apps/**"
-      - "216labs_admin/**"
-      - "happypath/**"
-      - "pipesecure/**"
-      - "cron-runner/**"
+      - "products/**"
+      - "internal/**"
 
 permissions:
   contents: read

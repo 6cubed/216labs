@@ -4,8 +4,8 @@
 # Usage: ./scripts/new-app.sh <app-id> [nextjs|flask|fastapi]
 #
 # Creates:
-#   <app-id>/manifest.json   — app metadata (source of truth)
-#   <app-id>/Dockerfile      — starter Dockerfile
+#   products/org-platform/local/<app-id>/manifest.json   — app metadata (source of truth)
+#   products/org-platform/local/<app-id>/Dockerfile    — starter Dockerfile
 #
 # Then prints the docker-compose.yml and Caddyfile snippets to add manually.
 
@@ -24,14 +24,14 @@ if [ -z "$APP_ID" ]; then
   exit 1
 fi
 
-APP_DIR="$REPO_ROOT/apps/$APP_ID"
+APP_DIR="$REPO_ROOT/products/org-platform/local/$APP_ID"
 
 if [ -d "$APP_DIR" ]; then
   echo "Error: directory $APP_DIR already exists"
   exit 1
 fi
 
-mkdir -p "$REPO_ROOT/apps"
+mkdir -p "$REPO_ROOT/products/org-platform/local"
 
 # ── Determine port based on stack ─────────────────────────────
 case "$STACK" in
@@ -77,7 +77,7 @@ cat > "$APP_DIR/manifest.json" << MANIFEST
   "internal_port": $INTERNAL_PORT,
   "memory_limit": "256m",
   "docker_service": "$APP_ID",
-  "build_context": "./apps/$APP_ID",
+  "build_context": "./products/org-platform/local/$APP_ID",
   "stack": {
     "frontend": null,
     "backend": null,
@@ -111,7 +111,7 @@ CMD ["node", "server.js"]
 DOCKERFILE
     COMPOSE_SNIPPET="  $APP_ID:
     image: 216labs/$APP_ID:latest
-    build: ./apps/$APP_ID
+    build: ./products/org-platform/local/$APP_ID
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -132,7 +132,7 @@ CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120",
 DOCKERFILE
     COMPOSE_SNIPPET="  $APP_ID:
     image: 216labs/$APP_ID:latest
-    build: ./apps/$APP_ID
+    build: ./products/org-platform/local/$APP_ID
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -152,7 +152,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3000"]
 DOCKERFILE
     COMPOSE_SNIPPET="  $APP_ID:
     image: 216labs/$APP_ID:latest
-    build: ./apps/$APP_ID
+    build: ./products/org-platform/local/$APP_ID
     restart: unless-stopped
     environment:
       - PORT=3000

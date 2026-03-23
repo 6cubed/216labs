@@ -1,0 +1,28 @@
+{
+  "id": "shannonairport",
+  "name": "Shannon Airport",
+  "tagline": "Public satellite layers, time-stamped imagery, and live flight context for EINN",
+  "description": "Browse Shannon Airport (Ireland) with multiple public satellite basemaps (Esri, USGS, NASA GIBS MODIS/VIIRS with selectable dates, Sentinel-2 cloudless mosaic). Compare change over time via dated NASA layers. Cross-reference with OpenSky ADS-B state data near the field, with heuristic highlighting of US-linked traffic for research (not authoritative). Includes links to Copernicus, EO Browser, and reference material.",
+  "category": "tool",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "shannonairport",
+  "build_context": "./products/org-social/shannonairport",
+  "stack": {
+    "frontend": "Next.js + Leaflet",
+    "backend": "Next.js Route Handlers (OpenSky proxy)",
+    "database": null,
+    "other": [
+      "Leaflet multi-source tiles",
+      "NASA GIBS time dimension",
+      "OpenSky Network bounding-box API"
+    ]
+  },
+  "env_vars": [
+    {
+      "key": "SHANNONAIRPORT_BASE_URL",
+      "description": "Public base URL for metadata (e.g. https://shannonairport.6cubed.app)",
+      "is_secret": false
+    }
+  ]
+}

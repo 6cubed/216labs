@@ -4,8 +4,10 @@
 
 ## Layout
 
-- **`apps/`** — General applications (RamblingRadio, OneFit, StoryMagic, etc.). Add new apps here via `./scripts/new-app.sh <app-id>`.
-- **Top level** — Ecosystem/special apps that work across all apps: **216labs_admin** (workflow dashboard), **happypath** (clickthrough tests), **pipesecure** (security pipeline).
+- **`products/`** — Customer-facing products grouped by **org** and **vertical** (for example `org-shopping`, `org-growth/ads`, `org-media`, `org-platform/ai`). New scaffolds default to `products/org-platform/local/<id>` via `./scripts/new-app.sh <app-id>`.
+- **`internal/`** — Internal-only services: **admin** (workflow dashboard), **quality/happypath** (clickthrough tests), **security/pipesecure** (security pipeline), **ops/cron-runner**, **platform/activator**, and similar.
+- **`packages/`** — Reserved for shared libraries and design-system style code reused across products (empty until extracted).
+- **`config/`** — Deploy caps, bootstrap lists, and other repo-level configuration.
 
 ## Projects
 

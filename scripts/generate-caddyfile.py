@@ -51,18 +51,31 @@ entries = []
 root_domain_app = None  # (docker_svc, port) for 6cubed.app + www.6cubed.app
 
 def manifest_dirs():
-    # Top-level (admin, happypath, pipesecure, etc.)
+    skip_top = {"scripts", "apps", "products", "internal", "node_modules"}
     for entry in os.listdir(repo_root):
+        if entry.startswith(".") or entry in skip_top:
+            continue
         path = os.path.join(repo_root, entry)
-        if os.path.isdir(path) and not entry.startswith("."):
+        if os.path.isdir(path):
             yield path
-    # Apps under apps/
-    apps_dir = os.path.join(repo_root, "apps")
-    if os.path.isdir(apps_dir):
-        for entry in os.listdir(apps_dir):
-            path = os.path.join(apps_dir, entry)
-            if os.path.isdir(path) and not entry.startswith("."):
-                yield path
+    for root_name in ("products", "internal"):
+        base = os.path.join(repo_root, root_name)
+        if not os.path.isdir(base):
+            continue
+        stack = [base]
+        while stack:
+            dirpath = stack.pop()
+            for name in os.listdir(dirpath):
+                if name.startswith(".") or name == "node_modules":
+                    continue
+                sub = os.path.join(dirpath, name)
+                if not os.path.isdir(sub):
+                    continue
+                if os.path.isfile(os.path.join(sub, "manifest.json")):
+                    yield sub
+                else:
+                    stack.append(sub)
+
 
 for dir_path in manifest_dirs():
     manifest_path = os.path.join(dir_path, "manifest.json")

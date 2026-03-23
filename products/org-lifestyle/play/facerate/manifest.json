@@ -1,0 +1,17 @@
+{
+  "id": "facerate",
+  "name": "FaceRate",
+  "tagline": "Rate AI-generated faces, build an Elo leaderboard",
+  "description": "Vote on which of two AI-generated faces is more attractive. Faces are seeded from thispersondoesnotexist.com; per-country Elo ranks them over time. Gender filters use deterministic labels so pairing works without heavy ML in the container.",
+  "category": "tool",
+  "internal_port": 5000,
+  "memory_limit": "256m",
+  "docker_service": "facerate",
+  "build_context": "./products/org-lifestyle/play/facerate",
+  "stack": {
+    "frontend": "Flask + Jinja2",
+    "backend": "Flask + Gunicorn",
+    "database": "SQLite",
+    "other": ["Elo rating", "thispersondoesnotexist.com"]
+  }
+}

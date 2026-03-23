@@ -1,0 +1,21 @@
+{
+  "id": "happypath",
+  "name": "Happy Path",
+  "tagline": "Selenium-style happy path clickthrough tests for all 216labs apps",
+  "description": "Periodically runs common-sense browser tests against each deployed app: load homepage, follow first sensible link, assert no crash. Reports pass/fail per app on a status dashboard.",
+  "category": "tool",
+  "memory_limit": "512m",
+  "internal_port": 3000,
+  "docker_service": "happypath",
+  "build_context": "./internal/quality/happypath",
+  "stack": {
+    "backend": "Node.js (scheduled runner)",
+    "database": "SQLite (test results)",
+    "other": ["Playwright", "Chromium"]
+  },
+  "env_vars": [
+    { "key": "HAPPYPATH_APP_HOST", "description": "Base domain for apps (e.g. 6cubed.app → https://ramblingradio.6cubed.app)", "is_secret": false },
+    { "key": "HAPPYPATH_TEST_INTERVAL_HOURS", "description": "How often to run tests in hours (default: 6)", "is_secret": false },
+    { "key": "HAPPYPATH_DATABASE_PATH", "description": "Path to 216labs.db to read enabled apps (optional, for local dev)", "is_secret": false }
+  ]
+}

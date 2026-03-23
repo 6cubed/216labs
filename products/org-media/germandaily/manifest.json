@@ -1,0 +1,24 @@
+{
+  "id": "germandaily",
+  "name": "German Daily",
+  "tagline": "Ten German words a day with examples — your votes shape tomorrow",
+  "description": "Single-user web app: each calendar day (Europe/Berlin) shows 10 vocabulary items with English gloss and bilingual example sentences. Play pronunciation for the German headword or the example sentence (OpenAI TTS when API key is set; otherwise browser speech where available). Thumb up or down to steer topic mix for the next batch. Uses OpenAI when configured; otherwise a built-in word pool.",
+  "category": "education",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "germandaily",
+  "build_context": "./products/org-media/germandaily",
+  "stack": {
+    "frontend": "Jinja2 + vanilla JS",
+    "backend": "Python + Flask + Gunicorn",
+    "database": "SQLite",
+    "other": ["OpenAI optional", "OpenAI TTS pronunciation", "browser speech fallback", "Europe/Berlin day boundary"]
+  },
+  "env_vars": [
+    {
+      "key": "GERMANDAILY_OPENAI_API_KEY",
+      "description": "Optional. When set, daily batches use gpt-4o-mini and word/example audio uses OpenAI TTS; otherwise a static pool and browser speech (where available).",
+      "is_secret": true
+    }
+  ]
+}

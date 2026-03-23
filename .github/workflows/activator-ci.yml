@@ -2,11 +2,11 @@ name: activator-ci
 on:
   push:
     paths:
-      - "apps/activator/**"
+      - "internal/platform/activator/**"
       - ".github/workflows/activator-ci.yml"
   pull_request:
     paths:
-      - "apps/activator/**"
+      - "internal/platform/activator/**"
 
 jobs:
   test:
@@ -17,6 +17,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install deps
-        run: pip install -r apps/activator/requirements.txt
+        run: pip install -r internal/platform/activator/requirements.txt
       - name: Unit tests
-        run: python -m unittest discover -s apps/activator/tests -p "test_*.py" -v
+        run: python -m unittest discover -s internal/platform/activator/tests -p "test_*.py" -v

@@ -1,0 +1,24 @@
+{
+  "id": "impulse",
+  "name": "Impulse",
+  "tagline": "Nearby local offers — browse impulse buys closest to you",
+  "description": "Uses your location to surface the nearest flash deals, food steals, and retail impulse buys in a swipe-friendly grid. Demo catalog with real coordinates worldwide; extend with your own offer feed or partner API.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "impulse",
+  "build_context": "./products/org-platform/local/impulse",
+  "stack": {
+    "frontend": "Vanilla JS + Leaflet (OSM)",
+    "backend": "Python + Flask",
+    "database": null,
+    "other": ["Geolocation API", "Haversine distance sort", "Demo offer JSON"]
+  },
+  "env_vars": [
+    {
+      "key": "IMPULSE_BASE_URL",
+      "description": "Public base URL for Open Graph / links",
+      "is_secret": false
+    }
+  ]
+}

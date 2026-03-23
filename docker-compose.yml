@@ -20,7 +20,7 @@ services:
   activator:
     image: 216labs/activator:latest
     pull_policy: never
-    build: ./apps/activator
+    build: ./internal/platform/activator
     restart: unless-stopped
     environment:
       - PORT=3040
@@ -67,14 +67,14 @@ services:
   ramblingradio:
     image: 216labs/ramblingradio:latest
     pull_policy: never
-    build: ./apps/RamblingRadio
+    build: ./products/org-media/RamblingRadio
     restart: unless-stopped
     environment:
       - PORT=5000
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/ramblingradio.db
     volumes:
-      - ./apps/RamblingRadio/data:/app/data
+      - ./products/org-media/RamblingRadio/data:/app/data
     expose:
       - "5000"
     mem_limit: 256m
@@ -83,7 +83,7 @@ services:
   stroll:
     image: 216labs/stroll:latest
     pull_policy: never
-    build: ./apps/Stroll.live
+    build: ./products/org-social/Stroll.live
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -96,7 +96,7 @@ services:
   oneroom:
     image: 216labs/oneroom:latest
     pull_policy: never
-    build: ./apps/oneroom
+    build: ./products/org-social/oneroom
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -112,7 +112,7 @@ services:
   onefit:
     image: 216labs/onefit:latest
     pull_policy: never
-    build: ./apps/onefit
+    build: ./products/org-shopping/onefit
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -128,7 +128,7 @@ services:
   hivefind:
     image: 216labs/hivefind:latest
     pull_policy: never
-    build: ./apps/hivefind
+    build: ./products/org-platform/ai/hivefind
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -141,7 +141,7 @@ services:
   pipesecure:
     image: 216labs/pipesecure:latest
     pull_policy: never
-    build: ./pipesecure
+    build: ./internal/security/pipesecure
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -151,7 +151,7 @@ services:
       - SCAN_INTERVAL_HOURS=${PIPESECURE_SCAN_INTERVAL_HOURS:-24}
       - PORT=3000
     volumes:
-      - ./pipesecure/data:/app/data
+      - ./internal/security/pipesecure/data:/app/data
     expose:
       - "3000"
     mem_limit: 512m
@@ -160,7 +160,7 @@ services:
   happypath:
     image: 216labs/happypath:latest
     pull_policy: never
-    build: ./happypath
+    build: ./internal/quality/happypath
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -171,7 +171,7 @@ services:
       - PORT=3000
     volumes:
       - ./216labs.db:/app/216labs.db:ro
-      - ./happypath/data:/app/data
+      - ./internal/quality/happypath/data:/app/data
     expose:
       - "3000"
     mem_limit: 512m
@@ -180,7 +180,7 @@ services:
   admin:
     image: 216labs/admin:latest
     pull_policy: never
-    build: ./216labs_admin
+    build: ./internal/admin
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -209,7 +209,7 @@ services:
   cron-runner:
     image: 216labs/cron-runner:latest
     pull_policy: never
-    build: ./cron-runner
+    build: ./internal/ops/cron-runner
     restart: unless-stopped
     environment:
       - DATABASE_PATH=/app/216labs.db
@@ -228,7 +228,7 @@ services:
   agimemes:
     image: 216labs/agimemes:latest
     pull_policy: never
-    build: ./apps/agimemes.com
+    build: ./products/org-lifestyle/play/agimemes.com
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -243,7 +243,7 @@ services:
   priors:
     image: 216labs/priors:latest
     pull_policy: never
-    build: ./apps/priors
+    build: ./products/org-platform/ai/priors
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -251,7 +251,7 @@ services:
       - PRIORS_SECRET_KEY=${PRIORS_SECRET_KEY:-change-me}
       - GEMINI_API_KEY=${PRIORS_GEMINI_API_KEY:-}
     volumes:
-      - ./apps/priors/data:/app/data
+      - ./products/org-platform/ai/priors/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -260,7 +260,7 @@ services:
   bigleroys:
     image: 216labs/bigleroys:latest
     pull_policy: never
-    build: ./apps/bigleroys
+    build: ./products/org-shopping/bigleroys
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -270,8 +270,8 @@ services:
       - BIGLEROYS_GOOGLE_CLIENT_ID=${BIGLEROYS_GOOGLE_CLIENT_ID:-}
       - BIGLEROYS_DATABASE_PATH=/app/data/bigleroys.db
     volumes:
-      - ./apps/bigleroys/data:/app/data
-      - ./apps/bigleroys/client_secret.json:/app/client_secret.json:ro
+      - ./products/org-shopping/bigleroys/data:/app/data
+      - ./products/org-shopping/bigleroys/client_secret.json:/app/client_secret.json:ro
     expose:
       - "5000"
     mem_limit: 128m
@@ -280,7 +280,7 @@ services:
   agitshirts:
     image: 216labs/agitshirts:latest
     pull_policy: never
-    build: ./apps/agitshirts
+    build: ./products/org-shopping/agitshirts
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -295,7 +295,7 @@ services:
   artisinaleurope:
     image: 216labs/artisinaleurope:latest
     pull_policy: never
-    build: ./apps/artisinaleurope
+    build: ./products/org-lifestyle/geo/artisinaleurope
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -308,7 +308,7 @@ services:
   calibratedai:
     image: 216labs/calibratedai:latest
     pull_policy: never
-    build: ./apps/calibratedai
+    build: ./products/org-platform/ai/calibratedai
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -316,7 +316,7 @@ services:
       - CALIBRATEDAI_OPENROUTER_API_KEY=${CALIBRATEDAI_OPENROUTER_API_KEY:-}
       - CALIBRATEDAI_DB_PATH=/app/data/calibratedai.db
     volumes:
-      - ./apps/calibratedai/data:/app/data
+      - ./products/org-platform/ai/calibratedai/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -325,7 +325,7 @@ services:
   1pageresearch:
     image: 216labs/1pageresearch:latest
     pull_policy: never
-    build: ./apps/1pageresearch
+    build: ./products/org-platform/ai/1pageresearch
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -333,7 +333,7 @@ services:
       - ONEPAGE_MODEL=${ONEPAGE_MODEL:-google/gemini-2.0-flash-001}
       - ONEPAGE_DB_PATH=/app/data/1pageresearch.db
     volumes:
-      - ./apps/1pageresearch/data:/app/data
+      - ./products/org-platform/ai/1pageresearch/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -342,7 +342,7 @@ services:
   thezurichdatinggame:
     image: 216labs/thezurichdatinggame:latest
     pull_policy: never
-    build: ./apps/thezurichdatinggame
+    build: ./products/org-social/thezurichdatinggame
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -352,7 +352,7 @@ services:
       - ZDGAME_OPENROUTER_API_KEY=${ZDGAME_OPENROUTER_API_KEY:-}
       - ZDGAME_MODEL=${ZDGAME_MODEL:-google/gemini-2.0-flash-001}
     volumes:
-      - ./apps/thezurichdatinggame/data:/app/data
+      - ./products/org-social/thezurichdatinggame/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -361,7 +361,7 @@ services:
   shannonairport:
     image: 216labs/shannonairport:latest
     pull_policy: never
-    build: ./apps/shannonairport
+    build: ./products/org-social/shannonairport
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -375,7 +375,7 @@ services:
   storybook:
     image: 216labs/storybook:latest
     pull_policy: never
-    build: ./apps/storybook
+    build: ./products/org-lifestyle/play/storybook
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -391,7 +391,7 @@ services:
       - STORYBOOK_FROM_EMAIL=${STORYBOOK_FROM_EMAIL:-}
       - DATA_DIR=/app/data
     volumes:
-      - ./apps/storybook/data:/app/data
+      - ./products/org-lifestyle/play/storybook/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -400,7 +400,7 @@ services:
   valentine:
     image: 216labs/valentine:latest
     pull_policy: never
-    build: ./apps/valentine
+    build: ./products/org-shopping/valentine
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -417,7 +417,7 @@ services:
       - VALENTINE_FROM_EMAIL=${VALENTINE_FROM_EMAIL:-}
       - DATA_DIR=/app/data
     volumes:
-      - ./apps/valentine/data:/app/data
+      - ./products/org-shopping/valentine/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -426,7 +426,7 @@ services:
   offlinellm:
     image: 216labs/offlinellm:latest
     pull_policy: never
-    build: ./apps/offlinellm
+    build: ./products/org-platform/ai/offlinellm
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -439,7 +439,7 @@ services:
   pocket:
     image: 216labs/pocket:latest
     pull_policy: never
-    build: ./apps/pocket
+    build: ./products/org-platform/ai/pocket
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -452,7 +452,7 @@ services:
   pocketcursor:
     image: 216labs/pocketcursor:latest
     pull_policy: never
-    build: ./apps/pocketcursor
+    build: ./products/org-platform/ai/pocketcursor
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -464,7 +464,7 @@ services:
       - POCKETCURSOR_VERBOSITY=${POCKETCURSOR_VERBOSITY:-normal}
       - POCKETCURSOR_REQUIRE_WHITELIST=${POCKETCURSOR_REQUIRE_WHITELIST:-true}
     volumes:
-      - ./apps/pocketcursor/data:/app/data
+      - ./products/org-platform/ai/pocketcursor/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -473,7 +473,7 @@ services:
   blog:
     image: 216labs/blog:latest
     pull_policy: never
-    build: ./apps/blog
+    build: ./products/org-media/blog
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -486,7 +486,7 @@ services:
   marketing:
     image: 216labs/marketing:latest
     pull_policy: never
-    build: ./apps/marketing
+    build: ./products/org-growth/ads/marketing
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -500,7 +500,7 @@ services:
   onefitblog:
     image: 216labs/onefitblog:latest
     pull_policy: never
-    build: ./apps/onefitblog
+    build: ./products/org-shopping/onefitblog
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -513,7 +513,7 @@ services:
   tigertank:
     image: 216labs/tigertank:latest
     pull_policy: never
-    build: ./apps/tigertank
+    build: ./products/org-lifestyle/play/tigertank
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -526,14 +526,14 @@ services:
   worldphoto:
     image: 216labs/worldphoto:latest
     pull_policy: never
-    build: ./apps/worldphoto
+    build: ./products/org-lifestyle/geo/worldphoto
     restart: unless-stopped
     environment:
       - PORT=3000
       - NODE_ENV=production
       - DATA_DIR=/app/data
     volumes:
-      - ./apps/worldphoto/data:/app/data
+      - ./products/org-lifestyle/geo/worldphoto/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -542,7 +542,7 @@ services:
   landing:
     image: 216labs/landing:latest
     pull_policy: never
-    build: ./apps/landing
+    build: ./products/org-growth/ads/landing
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -555,7 +555,7 @@ services:
   labshq:
     image: 216labs/labshq:latest
     pull_policy: never
-    build: ./apps/labshq
+    build: ./products/org-lifestyle/play/labshq
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -568,15 +568,15 @@ services:
   facerate:
     image: 216labs/facerate:latest
     pull_policy: never
-    build: ./apps/facerate
+    build: ./products/org-lifestyle/play/facerate
     restart: unless-stopped
     environment:
       - PORT=5000
       - FACERATE_DB_PATH=/app/data/facerate.db
       - FACERATE_FACES_DIR=/app/static/faces
     volumes:
-      - ./apps/facerate/data:/app/data
-      - ./apps/facerate/static/faces:/app/static/faces
+      - ./products/org-lifestyle/play/facerate/data:/app/data
+      - ./products/org-lifestyle/play/facerate/static/faces:/app/static/faces
     expose:
       - "5000"
     mem_limit: 256m
@@ -585,7 +585,7 @@ services:
   crowdbulk:
     image: 216labs/crowdbulk:latest
     pull_policy: never
-    build: ./apps/crowdbulk
+    build: ./products/org-platform/ai/crowdbulk
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -593,7 +593,7 @@ services:
       - CROWDBULK_DB_PATH=/app/data/crowdbulk.db
       - CROWDBULK_BASE_URL=https://crowdbulk.6cubed.app
     volumes:
-      - ./apps/crowdbulk/data:/app/data
+      - ./products/org-platform/ai/crowdbulk/data:/app/data
     expose:
       - "3000"
     mem_limit: 512m
@@ -603,7 +603,7 @@ services:
     image: 216labs/npcworld:latest
     pull_policy: never
     build:
-      context: ./apps/npcworld
+      context: ./products/org-platform/ai/npcworld
       args:
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     restart: unless-stopped
@@ -619,7 +619,7 @@ services:
   audioaicheckup:
     image: 216labs/audioaicheckup:latest
     pull_policy: never
-    build: ./apps/audioaicheckup
+    build: ./products/org-platform/ai/audioaicheckup
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -628,7 +628,7 @@ services:
       - AUDIOAICHECKUP_GEMINI_API_KEY=${AUDIOAICHECKUP_GEMINI_API_KEY:-}
       - DATA_DIR=/app/data
     volumes:
-      - ./apps/audioaicheckup/data:/app/data
+      - ./products/org-platform/ai/audioaicheckup/data:/app/data
     expose:
       - "3000"
     mem_limit: 512m
@@ -637,7 +637,7 @@ services:
   avatar:
     image: 216labs/avatar:latest
     pull_policy: never
-    build: ./apps/avatar
+    build: ./products/org-lifestyle/play/avatar
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -653,13 +653,13 @@ services:
   anchor-api:
     image: 216labs/anchor-api:latest
     pull_policy: never
-    build: ./apps/anchor/backend
+    build: ./products/org-lifestyle/play/anchor/backend
     restart: unless-stopped
     environment:
       - ANCHOR_DATABASE_URL=sqlite+aiosqlite:///./data/anchor.db
       - ANCHOR_SECRET_KEY=${ANCHOR_SECRET_KEY:-change-me}
     volumes:
-      - ./apps/anchor/data:/app/data
+      - ./products/org-lifestyle/play/anchor/data:/app/data
     expose:
       - "8000"
     mem_limit: 256m
@@ -667,7 +667,7 @@ services:
   anchor-web:
     image: 216labs/anchor-web:latest
     pull_policy: never
-    build: ./apps/anchor/frontend
+    build: ./products/org-lifestyle/play/anchor/frontend
     restart: unless-stopped
     expose:
       - "80"
@@ -677,14 +677,14 @@ services:
   germandaily:
     image: 216labs/germandaily:latest
     pull_policy: never
-    build: ./apps/germandaily
+    build: ./products/org-media/germandaily
     restart: unless-stopped
     environment:
       - PORT=5000
       - GERMANDAILY_DATA_DIR=/app/data
       - GERMANDAILY_OPENAI_API_KEY=${GERMANDAILY_OPENAI_API_KEY:-}
     volumes:
-      - ./apps/germandaily/data:/app/data
+      - ./products/org-media/germandaily/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -693,14 +693,14 @@ services:
   russiandaily:
     image: 216labs/russiandaily:latest
     pull_policy: never
-    build: ./apps/russiandaily
+    build: ./products/org-media/russiandaily
     restart: unless-stopped
     environment:
       - PORT=5000
       - RUSSIANDAILY_DATA_DIR=/app/data
       - RUSSIANDAILY_OPENAI_API_KEY=${RUSSIANDAILY_OPENAI_API_KEY:-}
     volumes:
-      - ./apps/russiandaily/data:/app/data
+      - ./products/org-media/russiandaily/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -709,14 +709,14 @@ services:
   explore:
     image: 216labs/explore:latest
     pull_policy: never
-    build: ./apps/explore
+    build: ./products/org-platform/local/explore
     restart: unless-stopped
     environment:
       - PORT=5000
       - EXPLORE_DATA_DIR=/app/data
       - EXPLORE_OPENAI_API_KEY=${EXPLORE_OPENAI_API_KEY:-}
     volumes:
-      - ./apps/explore/data:/app/data
+      - ./products/org-platform/local/explore/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -725,13 +725,13 @@ services:
   angelwatcher:
     image: 216labs/angelwatcher:latest
     pull_policy: never
-    build: ./apps/angelwatcher
+    build: ./products/org-lifestyle/play/angelwatcher
     restart: unless-stopped
     environment:
       - PORT=5000
       - ANGELWATCHER_DATA_DIR=/app/data
     volumes:
-      - ./apps/angelwatcher/data:/app/data
+      - ./products/org-lifestyle/play/angelwatcher/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -740,7 +740,7 @@ services:
   emailgpt:
     image: 216labs/emailgpt:latest
     pull_policy: never
-    build: ./apps/emailgpt
+    build: ./products/org-growth/ads/emailgpt
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -750,7 +750,7 @@ services:
       - EMAILGPT_CRON_SECRET=${EMAILGPT_CRON_SECRET:-}
       - EMAILGPT_OPENAI_API_KEY=${EMAILGPT_OPENAI_API_KEY:-}
     volumes:
-      - ./apps/emailgpt/data:/app/data
+      - ./products/org-growth/ads/emailgpt/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -759,7 +759,7 @@ services:
   tldrtech:
     image: 216labs/tldrtech:latest
     pull_policy: never
-    build: ./apps/tldrtech
+    build: ./products/org-media/tldrtech
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -773,7 +773,7 @@ services:
       - TLDRTECH_CRON_SECRET=${TLDRTECH_CRON_SECRET:-}
       - TLDRTECH_OPENAI_API_KEY=${TLDRTECH_OPENAI_API_KEY:-}
     volumes:
-      - ./apps/tldrtech/data:/app/data
+      - ./products/org-media/tldrtech/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m
@@ -782,14 +782,14 @@ services:
   mysteryshopper:
     image: 216labs/mysteryshopper:latest
     pull_policy: never
-    build: ./apps/mysteryshopper
+    build: ./products/org-shopping/mysteryshopper
     restart: unless-stopped
     environment:
       - PORT=3000
       - NODE_ENV=production
       - MYSTERYSHOPPER_DATA_DIR=/app/data
     volumes:
-      - ./apps/mysteryshopper/data:/app/data
+      - ./products/org-shopping/mysteryshopper/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -798,7 +798,7 @@ services:
   llminternals:
     image: 216labs/llminternals:latest
     pull_policy: never
-    build: ./apps/llminternals
+    build: ./products/org-platform/ai/llminternals
     restart: unless-stopped
     environment:
       - PORT=3000
@@ -811,13 +811,13 @@ services:
   maxlearn:
     image: 216labs/maxlearn:latest
     pull_policy: never
-    build: ./apps/maxlearn
+    build: ./products/org-lifestyle/play/maxlearn
     restart: unless-stopped
     environment:
       - PORT=5000
       - MAXLEARN_DATA_DIR=/app/data
     volumes:
-      - ./apps/maxlearn/data:/app/data
+      - ./products/org-lifestyle/play/maxlearn/data:/app/data
     expose:
       - "5000"
     mem_limit: 256m
@@ -826,13 +826,13 @@ services:
   muinteoir:
     image: 216labs/muinteoir:latest
     pull_policy: never
-    build: ./apps/muinteoir
+    build: ./products/org-lifestyle/play/muinteoir
     restart: unless-stopped
     environment:
       - PORT=3000
       - NODE_ENV=production
     volumes:
-      - ./apps/muinteoir/data:/app/data
+      - ./products/org-lifestyle/play/muinteoir/data:/app/data
     expose:
       - "3000"
     mem_limit: 256m
@@ -841,7 +841,7 @@ services:
   impulse:
     image: 216labs/impulse:latest
     pull_policy: never
-    build: ./apps/impulse
+    build: ./products/org-platform/local/impulse
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -854,7 +854,7 @@ services:
   mediate:
     image: 216labs/mediate:latest
     pull_policy: never
-    build: ./apps/mediate
+    build: ./products/org-social/mediate
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -864,7 +864,7 @@ services:
       - MEDIATE_MODEL=${MEDIATE_MODEL:-gpt-4o-mini}
       - MEDIATE_BASE_URL=${MEDIATE_BASE_URL:-https://mediate.6cubed.app}
     volumes:
-      - ./apps/mediate/data:/app/data
+      - ./products/org-social/mediate/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m

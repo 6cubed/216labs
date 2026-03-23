@@ -1,0 +1,49 @@
+{
+  "id": "activator",
+  "name": "Activator",
+  "tagline": "On-demand app startup service",
+  "description": "Cold-start helper that starts stopped app containers for demo traffic, shows a warmup page, and reports readiness.",
+  "category": "infra",
+  "internal_port": 3040,
+  "memory_limit": "128m",
+  "docker_service": "activator",
+  "build_context": "./internal/platform/activator",
+  "stack": {
+    "frontend": "Flask static warmup page",
+    "backend": "Flask + Gunicorn",
+    "database": "SQLite (shared 216labs.db)",
+    "other": ["Docker CLI", "Docker Compose plugin"]
+  },
+  "env_vars": [
+    {
+      "key": "ACTIVATOR_START_TIMEOUT_SECONDS",
+      "description": "Timeout in seconds for waiting until a started app reports running state",
+      "is_secret": false
+    },
+    {
+      "key": "ACTIVATOR_DEPLOY_TRIGGER_URL",
+      "description": "Optional webhook URL for external minimal deploy trigger when image is missing",
+      "is_secret": false
+    },
+    {
+      "key": "ACTIVATOR_DEPLOY_TRIGGER_TOKEN",
+      "description": "Optional bearer token for deploy trigger webhook",
+      "is_secret": true
+    },
+    {
+      "key": "ACTIVATOR_REGISTRY_PREFIX",
+      "description": "GHCR image prefix for cold-start pull (e.g. ghcr.io/6cubed/216labs); retags to 216labs/<service>:latest",
+      "is_secret": false
+    },
+    {
+      "key": "GHCR_USERNAME",
+      "description": "GitHub username for ghcr.io login (PAT owner); use with GHCR_TOKEN read:packages",
+      "is_secret": false
+    },
+    {
+      "key": "GHCR_TOKEN",
+      "description": "PAT with read:packages for ghcr.io so activator can pull on cold start",
+      "is_secret": true
+    }
+  ]
+}

@@ -29,10 +29,10 @@ python3 scripts/generate-caddyfile.py
 
 If the app has a critical user flow (e.g. model load, chat, form submit), add a test so the regular Happy Path run catches regressions:
 
-1. **Stub mode in the app** — When `?happypath=1` is in the URL, skip real external/expensive work (e.g. real LLM load, real API calls) and fake success so the test can run without WebGPU/network. See `apps/pocket` and `apps/offlinellm` for examples.
-2. **Dedicated test in `happypath/src/runner.ts`** — Add `run<AppId>Test(browser, baseUrl)` that opens `baseUrl?happypath=1`, drives the flow (click load, fill form, etc.), and asserts the expected outcome. Return a `RunResult`.
+1. **Stub mode in the app** — When `?happypath=1` is in the URL, skip real external/expensive work (e.g. real LLM load, real API calls) and fake success so the test can run without WebGPU/network. See `products/org-platform/ai/pocket` and `products/org-platform/ai/offlinellm` for examples.
+2. **Dedicated test in `internal/quality/happypath/src/runner.ts`** — Add `run<AppId>Test(browser, baseUrl)` that opens `baseUrl?happypath=1`, drives the flow (click load, fill form, etc.), and asserts the expected outcome. Return a `RunResult`.
 3. **Wire the test** — In `runAllTests()`, when `appId === "<app-id>"`, call your test instead of `runTestForApp()`.
-4. **Default app list** — In `happypath/src/db.ts`, add `<app-id>` to the fallback array in `getEnabledAppIds()` so the test runs when the admin DB isn’t available.
+4. **Default app list** — In `internal/quality/happypath/src/db.ts`, add `<app-id>` to the fallback array in `getEnabledAppIds()` so the test runs when the admin DB isn’t available.
 
 Without this, basic failures (e.g. model load error, broken button) can ship until someone manually tests.
 
@@ -64,7 +64,7 @@ Images are built on your machine and transferred with `deploy.sh`. On the drople
 | `docker-compose.yml` | Service definitions (manual today; at scale use `scripts/generate-compose.py` for app blocks) |
 | `Caddyfile` | Auto-generated from manifests via `scripts/generate-caddyfile.py` |
 | `deploy.sh` | Reads config files + manifests via `scripts/app-lookup.py` for build contexts |
-| `216labs_admin` | Discovers apps from filesystem, syncs from manifests; env prefix derived from manifest |
+| `internal/admin` | Discovers apps from filesystem, syncs from manifests; env prefix derived from manifest |
 
 See **docs/SCALING.md** for scaling to 100s–1000s of apps and agent concurrency.
 

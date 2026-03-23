@@ -80,8 +80,8 @@ service_spec() {
   fi
   # Fallback for apps without manifests
   case "$1" in
-    anchor-api) echo "./apps/anchor/backend" ;;
-    anchor-web) echo "./apps/anchor/frontend" ;;
+    anchor-api) echo "./products/org-lifestyle/play/anchor/backend" ;;
+    anchor-web) echo "./products/org-lifestyle/play/anchor/frontend" ;;
     *) echo "" ;;
   esac
 }
@@ -248,7 +248,7 @@ elif [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
     if [ "$NAME" = "cron-runner" ]; then
       BUILD_ARGS+=(--platform linux/amd64)
       # One-time: ensure no cached layer from better-sqlite3 build
-      [ -f "cron-runner/.deploy-no-cache" ] && BUILD_ARGS+=(--no-cache) && rm -f cron-runner/.deploy-no-cache
+      [ -f "internal/ops/cron-runner/.deploy-no-cache" ] && BUILD_ARGS+=(--no-cache) && rm -f internal/ops/cron-runner/.deploy-no-cache
     fi
     if [ -n "${DFILE:-}" ]; then
       BUILD_ARGS+=(-f "$CTX/$DFILE")
