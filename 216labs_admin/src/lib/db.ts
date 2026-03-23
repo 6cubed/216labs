@@ -603,7 +603,7 @@ export function getRecentDeploymentActivity(limit = 12): DbApp[] {
     .prepare(
       `SELECT * FROM apps
        WHERE last_deployed_at IS NOT NULL AND TRIM(last_deployed_at) != ''
-       ORDER BY last_deployed_at DESC
+       ORDER BY datetime(last_deployed_at) DESC, last_deployed_at DESC
        LIMIT ?`,
     )
     .all(limit) as DbApp[];

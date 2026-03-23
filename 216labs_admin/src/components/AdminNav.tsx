@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
+  { href: "/activity", label: "Activity" },
   { href: "/applications", label: "Applications" },
   { href: "/analytics", label: "Analytics" },
   { href: "/env", label: "Env" },
@@ -16,7 +17,6 @@ const NAV_ITEMS = [
 
 export function AdminNav() {
   const pathname = usePathname();
-  const base = pathname?.split("/")[1] ?? "";
 
   return (
     <nav className="flex items-center gap-1 border-b border-border">

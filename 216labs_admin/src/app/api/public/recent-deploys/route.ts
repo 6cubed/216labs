@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getRecentDeploymentActivity } from "@/lib/db";
+import { buildRecentActivityFeed } from "@/lib/recent-activity";
 
 export const dynamic = "force-dynamic";
 
@@ -8,29 +9,25 @@ export const dynamic = "force-dynamic";
  * Used by the www landing page; excludes admin dashboard deploys.
  */
 export async function GET() {
-  const rows = getDb()
-    .prepare(
-      `SELECT id, name, last_deployed_at
-       FROM apps
-       WHERE id != 'admin'
-         AND last_deployed_at IS NOT NULL
-         AND TRIM(last_deployed_at) != ''
-       ORDER BY last_deployed_at DESC
-       LIMIT 20`,
-    )
-    .all() as { id: string; name: string; last_deployed_at: string }[];
-
-  const appHost = process.env.NEXT_PUBLIC_APP_HOST || "6cubed.app";
-  const items = rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    lastDeployedAt: r.last_deployed_at,
-    host: `${r.id}.${appHost}`,
-    url: `https://${r.id}.${appHost}`,
-  }));
+  const rows = getRecentDeploymentActivity(40).filter((row) => row.id !== "admin");
+  const items = buildRecentActivityFeed(
+    rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      lastDeployedAt: row.last_deployed_at,
+    })),
+  ).slice(0, 20);
 
   return NextResponse.json(
-    { items },
+    {
+      items: items.map((item) => ({
+        id: item.appId,
+        name: item.appName,
+        lastDeployedAt: item.deployedAtRaw,
+        host: item.host,
+        url: item.url,
+      })),
+    },
     {
       headers: {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
