@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TLDRTech - Daily Tech Briefing</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #070b14;
+      --surface: #0f172a;
+      --surface-2: #111827;
+      --border: #243044;
+      --accent: #60a5fa;
+      --accent-2: #34d399;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --radius: 16px;
+    }
+    body {
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 90% -10%, rgba(52, 211, 153, 0.16), transparent 60%),
+        radial-gradient(900px 500px at -5% 10%, rgba(96, 165, 250, 0.18), transparent 55%),
+        var(--bg);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 4rem 1.25rem 5rem; }
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      border-radius: 999px;
+      padding: 0.3rem 0.62rem;
+      margin-bottom: 1rem;
+      background: rgba(96, 165, 250, 0.08);
+    }
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+    .gradient {
+      background: linear-gradient(120deg, var(--accent) 10%, var(--accent-2) 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .sub {
+      color: var(--muted);
+      max-width: 58ch;
+      font-size: 1.06rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(17,24,39,0.96), rgba(15,23,42,0.96));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.35rem;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+    form { display: grid; gap: 0.8rem; }
+    input[type="email"] {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 1rem;
+      padding: 0.92rem 0.95rem;
+      font-family: inherit;
+    }
+    input[type="email"]::placeholder { color: #6b7280; }
+    input[type="email"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 0.88rem 1rem;
+      color: #03111f;
+      font-weight: 700;
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      background: linear-gradient(120deg, var(--accent), #93c5fd);
+      transition: transform .12s ease, opacity .12s ease;
+    }
+    button:hover { transform: translateY(-1px); opacity: 0.98; }
+    button:active { transform: translateY(0); }
+    .fine {
+      font-size: 0.86rem;
+      color: #94a3b8;
+      margin-top: 0.3rem;
+    }
+    .flash {
+      border-radius: 12px;
+      padding: 0.72rem 0.9rem;
+      margin-bottom: 0.85rem;
+      font-size: 0.93rem;
+      border: 1px solid;
+    }
+    .flash.success { background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.35); color: #a7f3d0; }
+    .flash.error { background: rgba(248, 113, 113, 0.14); border-color: rgba(248, 113, 113, 0.35); color: #fecaca; }
+    .points {
+      margin-top: 1rem;
+      display: grid;
+      gap: 0.38rem;
+      color: #cbd5e1;
+      font-size: 0.93rem;
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="wrap">
+    <p class="eyebrow">TLDRTech</p>
+    <h1>Get yesterday's tech chaos in a <span class="gradient">2-minute email</span>.</h1>
+    <p class="sub">Every day: 3-5 headlines and sharp hot takes from the previous day in tech. No fluff, no doomscrolling.</p>
+    <section class="card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      <form action="{{ url_for('subscribe') }}" method="post">
+        <input type="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+        <button type="submit">Subscribe for free</button>
+      </form>
+      <p class="fine">One email a day. Unsubscribe any time with one click.</p>
+      <div class="points">
+        <p>- 3-5 key stories from the previous day</p>
+        <p>- direct links to primary sources</p>
+        <p>- a concise one-line "why it matters"</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -122,6 +122,7 @@ const KNOWN_PORTS: Record<string, number> = {
   crowdbulk: 8028,
   "cron-runner": 8029,
   emailgpt: 8030,
+  tldrtech: 8049,
   mysteryshopper: 8031,
   llminternals: 8032,
   labshq: 8047,

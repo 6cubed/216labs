@@ -1,0 +1,23 @@
+{
+  "id": "tldrtech",
+  "name": "TLDRTech",
+  "tagline": "Daily tech newsletter with 3-5 sharp headlines",
+  "description": "Landing page for email signups plus a daily cron-triggered newsletter email with a quick, beautiful roundup of 3-5 major tech headlines or hot takes from the previous day.",
+  "category": "media",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "tldrtech",
+  "build_context": "./apps/tldrtech",
+  "stack": {
+    "frontend": "Flask + Jinja2",
+    "backend": "Flask + Gunicorn",
+    "database": "SQLite",
+    "other": ["Resend", "Hacker News API", "OpenAI optional"]
+  },
+  "env_vars": [
+    { "key": "TLDRTECH_RESEND_API_KEY", "description": "Resend API key for sending the daily newsletter", "is_secret": true },
+    { "key": "TLDRTECH_FROM_EMAIL", "description": "From address, e.g. TLDRTech <daily@tldrtech.6cubed.app>", "is_secret": false },
+    { "key": "TLDRTECH_CRON_SECRET", "description": "Bearer token secret for POST /api/send-daily", "is_secret": true },
+    { "key": "TLDRTECH_OPENAI_API_KEY", "description": "Optional OpenAI key for improved one-line hot takes per headline", "is_secret": true }
+  ]
+}

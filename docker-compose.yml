@@ -755,6 +755,25 @@ services:
       - "5000"
     mem_limit: 128m
 
+  # ── TLDRTech (daily 3-5 tech headlines newsletter) ──────────────
+  tldrtech:
+    image: 216labs/tldrtech:latest
+    pull_policy: never
+    build: ./apps/tldrtech
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - TLDRTECH_DATA_DIR=/app/data
+      - TLDRTECH_RESEND_API_KEY=${TLDRTECH_RESEND_API_KEY:-}
+      - TLDRTECH_FROM_EMAIL=${TLDRTECH_FROM_EMAIL:-}
+      - TLDRTECH_CRON_SECRET=${TLDRTECH_CRON_SECRET:-}
+      - TLDRTECH_OPENAI_API_KEY=${TLDRTECH_OPENAI_API_KEY:-}
+    volumes:
+      - ./apps/tldrtech/data:/app/data
+    expose:
+      - "5000"
+    mem_limit: 128m
+
   # ── Mystery Shopper (ground truth fleet / shelfies) ────────────
   mysteryshopper:
     image: 216labs/mysteryshopper:latest
