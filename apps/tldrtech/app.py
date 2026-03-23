@@ -1,19 +1,17 @@
 import json
 import os
 import random
+import smtplib
 import sqlite3
 import urllib.parse
 import urllib.request
 from datetime import UTC, datetime, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Any
 
 import flask
-
-try:
-    from resend import Resend  # type: ignore[attr-defined]
-except Exception:
-    Resend = None  # type: ignore[assignment]
 
 app = flask.Flask(__name__)
 app.secret_key = os.environ.get("TLDRTECH_SESSION_SECRET", "tldrtech-dev-secret")
@@ -195,35 +193,29 @@ def build_email_html(items: list[dict[str, str]], date_label: str) -> str:
 </html>"""
 
 
-def send_via_resend(
-    api_key: str,
+def send_via_smtp(
+    smtp_host: str,
+    smtp_port: int,
+    smtp_username: str,
+    smtp_password: str,
+    smtp_use_tls: bool,
     from_email: str,
     to_email: str,
     subject: str,
     html: str,
 ) -> None:
-    if Resend is not None:
-        client = Resend(api_key)
-        client.emails.send(
-            from_=from_email,
-            to=to_email,
-            subject=subject,
-            html=html,
-        )
-        return
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html", "utf-8"))
 
-    # Compatibility for newer resend SDKs that expose module-level API.
-    import resend  # type: ignore
-
-    resend.api_key = api_key
-    resend.Emails.send(
-        {
-            "from": from_email,
-            "to": [to_email],
-            "subject": subject,
-            "html": html,
-        }
-    )
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+        if smtp_use_tls:
+            server.starttls()
+        if smtp_username:
+            server.login(smtp_username, smtp_password)
+        server.sendmail(from_email, [to_email], msg.as_string())
 
 
 @app.route("/")
@@ -258,9 +250,25 @@ def send_daily() -> tuple[flask.Response, int] | flask.Response:
         if auth != f"Bearer {secret}":
             return flask.jsonify({"error": "Unauthorized"}), 401
 
-    api_key = os.environ.get("TLDRTECH_RESEND_API_KEY", "").strip()
-    if not api_key:
-        return flask.jsonify({"error": "TLDRTECH_RESEND_API_KEY not set"}), 500
+    smtp_host = os.environ.get("TLDRTECH_SMTP_HOST", "").strip()
+    smtp_port_raw = os.environ.get("TLDRTECH_SMTP_PORT", "587").strip()
+    smtp_username = os.environ.get("TLDRTECH_SMTP_USERNAME", "").strip()
+    smtp_password = os.environ.get("TLDRTECH_SMTP_PASSWORD", "").strip()
+    smtp_use_tls = os.environ.get("TLDRTECH_SMTP_USE_TLS", "true").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+    if not smtp_host:
+        return flask.jsonify({"error": "TLDRTECH_SMTP_HOST not set"}), 500
+    try:
+        smtp_port = int(smtp_port_raw)
+    except ValueError:
+        return flask.jsonify({"error": "TLDRTECH_SMTP_PORT must be an integer"}), 500
+    if smtp_username and not smtp_password:
+        return flask.jsonify({"error": "TLDRTECH_SMTP_PASSWORD not set"}), 500
 
     from_email = os.environ.get(
         "TLDRTECH_FROM_EMAIL", "TLDRTech <daily@tldrtech.6cubed.app>"
@@ -283,8 +291,12 @@ def send_daily() -> tuple[flask.Response, int] | flask.Response:
     results: list[dict[str, Any]] = []
     for recipient in recipients:
         try:
-            send_via_resend(
-                api_key=api_key,
+            send_via_smtp(
+                smtp_host=smtp_host,
+                smtp_port=smtp_port,
+                smtp_username=smtp_username,
+                smtp_password=smtp_password,
+                smtp_use_tls=smtp_use_tls,
                 from_email=from_email,
                 to_email=recipient,
                 subject=subject,
