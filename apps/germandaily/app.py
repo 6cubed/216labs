@@ -334,11 +334,79 @@ def index():
             (today,),
         ).fetchall()
 
+    api_key = (os.environ.get("GERMANDAILY_OPENAI_API_KEY") or "").strip()
     return flask.render_template(
         "index.html",
         date_label=today,
         words=[dict(r) for r in rows],
-        has_llm=bool((os.environ.get("GERMANDAILY_OPENAI_API_KEY") or "").strip()),
+        has_llm=bool(api_key),
+        has_server_tts=bool(api_key),
+    )
+
+
+def _tts_text_for_row(row: sqlite3.Row, part: str) -> str | None:
+    if part == "example":
+        t = (row["example_de"] or "").strip()
+        return t or None
+    if part == "word":
+        t = (row["german"] or "").strip()
+        return t or None
+    return None
+
+
+@app.route("/api/tts", methods=["POST"])
+def api_tts():
+    api_key = (os.environ.get("GERMANDAILY_OPENAI_API_KEY") or "").strip()
+    if not api_key:
+        return flask.jsonify({"ok": False, "error": "TTS not configured"}), 503
+
+    data = flask.request.get_json(silent=True) or {}
+    try:
+        word_id = int(data.get("word_id"))
+    except (TypeError, ValueError):
+        return flask.jsonify({"ok": False, "error": "invalid word_id"}), 400
+    part = str(data.get("part", "example")).strip().lower()
+    if part not in ("example", "word"):
+        return flask.jsonify({"ok": False, "error": "part must be example or word"}), 400
+
+    today = berlin_date_str()
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT german, example_de
+            FROM daily_words
+            WHERE id = ? AND date = ?
+            """,
+            (word_id, today),
+        ).fetchone()
+
+    if not row:
+        return flask.jsonify({"ok": False, "error": "unknown word"}), 404
+
+    text = _tts_text_for_row(row, part)
+    if not text:
+        return flask.jsonify({"ok": False, "error": "nothing to speak"}), 400
+    if len(text) > 600:
+        return flask.jsonify({"ok": False, "error": "text too long"}), 400
+
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=api_key)
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice="nova",
+            input=text,
+            response_format="mp3",
+        )
+        audio = response.read()
+    except Exception:
+        return flask.jsonify({"ok": False, "error": "TTS failed"}), 502
+
+    return flask.Response(
+        audio,
+        mimetype="audio/mpeg",
+        headers={"Cache-Control": "private, max-age=86400"},
     )
 
 
