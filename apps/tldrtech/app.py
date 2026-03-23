@@ -9,7 +9,11 @@ from pathlib import Path
 from typing import Any
 
 import flask
-from resend import Resend
+
+try:
+    from resend import Resend  # type: ignore[attr-defined]
+except Exception:
+    Resend = None  # type: ignore[assignment]
 
 app = flask.Flask(__name__)
 app.secret_key = os.environ.get("TLDRTECH_SESSION_SECRET", "tldrtech-dev-secret")
@@ -191,6 +195,37 @@ def build_email_html(items: list[dict[str, str]], date_label: str) -> str:
 </html>"""
 
 
+def send_via_resend(
+    api_key: str,
+    from_email: str,
+    to_email: str,
+    subject: str,
+    html: str,
+) -> None:
+    if Resend is not None:
+        client = Resend(api_key)
+        client.emails.send(
+            from_=from_email,
+            to=to_email,
+            subject=subject,
+            html=html,
+        )
+        return
+
+    # Compatibility for newer resend SDKs that expose module-level API.
+    import resend  # type: ignore
+
+    resend.api_key = api_key
+    resend.Emails.send(
+        {
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html,
+        }
+    )
+
+
 @app.route("/")
 def index() -> str:
     return flask.render_template("index.html")
@@ -230,8 +265,6 @@ def send_daily() -> tuple[flask.Response, int] | flask.Response:
     from_email = os.environ.get(
         "TLDRTECH_FROM_EMAIL", "TLDRTech <daily@tldrtech.6cubed.app>"
     ).strip()
-    resend = Resend(api_key)
-
     item_count = random.randint(3, 5)
     items = _fetch_hn_top_stories_for_previous_day(max_items=item_count)
     items = _augment_items_with_openai(items)
@@ -250,9 +283,10 @@ def send_daily() -> tuple[flask.Response, int] | flask.Response:
     results: list[dict[str, Any]] = []
     for recipient in recipients:
         try:
-            resend.emails.send(
-                from_=from_email,
-                to=recipient,
+            send_via_resend(
+                api_key=api_key,
+                from_email=from_email,
+                to_email=recipient,
                 subject=subject,
                 html=html,
             )
