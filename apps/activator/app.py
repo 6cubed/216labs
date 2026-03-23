@@ -538,8 +538,9 @@ def start_app(app_id: str) -> Dict[str, object]:
             low = err.lower()
             if "no such image" in low or "pull access denied" in low or "pulling" in low:
                 err = (
-                    f"{err} — Image 216labs/{docker_service}:latest must exist locally "
-                    f"(./deploy.sh from dev machine, or: docker compose build {docker_service})."
+                    f"{err} — Image 216labs/{docker_service}:latest must exist on the droplet. "
+                    f"Run ./deploy.sh from a machine that has the image locally (deploy syncs missing tags); "
+                    f"do not build on the server."
                 )
             set_runtime_state(app_id, "failed", err, touch_accessed=True)
             status = set_status(app_id, "failed", err, docker_service=docker_service)

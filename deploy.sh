@@ -233,10 +233,51 @@ if [ -f "$DB_FILE" ] && [ ${#BUILT_IMAGES[@]} -gt 0 ]; then
   done
 fi
 
-# ── Transfer newly built images ───────────────────────────────
+# ── Images to transfer: newly built + any enabled image missing on the server ──
+# Skip-build deploys used to transfer nothing, so a cold droplet or prune could leave
+# compose/activator with "no such image" even though local Docker still had the tag.
+IMAGES_TO_TRANSFER=()
+_transfer_add() {
+  local tag="$1"
+  local x
+  for x in "${IMAGES_TO_TRANSFER[@]}"; do
+    [ "$x" = "$tag" ] && return 0
+  done
+  IMAGES_TO_TRANSFER+=("$tag")
+}
+for TAG in "${BUILT_IMAGES[@]}"; do
+  _transfer_add "$TAG"
+done
+REMOTE_IMAGE_LIST=""
+if REMOTE_IMAGE_LIST=$(ssh "${SSH_OPTS[@]}" "$REMOTE" "docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null" 2>/dev/null); then
+  :
+else
+  REMOTE_IMAGE_LIST=""
+fi
+SYNC_ONLY_COUNT=0
+for TAG in "${ALL_IMAGES[@]}"; do
+  if echo "$REMOTE_IMAGE_LIST" | grep -qxF "$TAG" 2>/dev/null; then
+    continue
+  fi
+  if docker image inspect "$TAG" &>/dev/null 2>&1; then
+    before=${#IMAGES_TO_TRANSFER[@]}
+    _transfer_add "$TAG"
+    if [ "${#IMAGES_TO_TRANSFER[@]}" -gt "$before" ]; then
+      SYNC_ONLY_COUNT=$((SYNC_ONLY_COUNT + 1))
+      echo "  [sync]  $TAG (missing on server, present locally — pushing cached image)"
+    fi
+  else
+    echo "  [warn]  $TAG enabled for deploy but no local image — build once (touch app or docker build) then redeploy."
+  fi
+done
+if [ "$SYNC_ONLY_COUNT" -gt 0 ]; then
+  echo "==> $SYNC_ONLY_COUNT image(s) missing on $REMOTE; will transfer without rebuild."
+fi
+
+# ── Transfer images (built + server-side missing) ─────────────
 # Use zstd when available (faster than gzip). On server: apt install zstd.
-if [ ${#BUILT_IMAGES[@]} -eq 0 ]; then
-  echo "==> All images up to date, skipping transfer"
+if [ ${#IMAGES_TO_TRANSFER[@]} -eq 0 ]; then
+  echo "==> All images up to date on server, skipping transfer"
 else
   # Free disk on server before transfer. Use dangling-only image prune — NOT `prune -a`:
   # tagged 216labs/* images must stay on disk when a container is stopped, or the next
@@ -253,14 +294,14 @@ else
   # One image per transfer so the droplet never needs enough free space for a multi-image
   # tarball unpack at once (25GB disks fill up on `docker save a b c ... | load`).
   if [ "$USE_ZSTD" = true ]; then
-    echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd, sequential)..."
-    for TAG in "${BUILT_IMAGES[@]}"; do
+    echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd, sequential)..."
+    for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
       echo "  -> $TAG"
       docker save "$TAG" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'
     done
   else
-    echo "==> Transferring ${#BUILT_IMAGES[@]}/${#ALL_IMAGES[@]} images to $REMOTE (sequential)..."
-    for TAG in "${BUILT_IMAGES[@]}"; do
+    echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (sequential)..."
+    for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
       echo "  -> $TAG"
       docker save "$TAG" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'
     done
