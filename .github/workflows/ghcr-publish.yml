@@ -34,6 +34,26 @@ jobs:
       count: ${{ steps.set-matrix.outputs.count }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: changed
+        name: Collect changed files
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            : > changed_files.txt
+          else
+            BEFORE="${{ github.event.before }}"
+            AFTER="${{ github.sha }}"
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              git ls-files > changed_files.txt
+            else
+              git diff --name-only "$BEFORE" "$AFTER" > changed_files.txt
+            fi
+          fi
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          cat changed_files.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
       - name: Ensure compose env files
         run: |
           test -f .env || cp .env.example .env
@@ -41,6 +61,8 @@ jobs:
       - name: Docker compose config (JSON)
         run: docker compose --env-file .env --env-file .env.admin config --format json > compose.json
       - id: set-matrix
+        env:
+          GHCR_CHANGED_FILES: ${{ steps.changed.outputs.files }}
         run: |
           python3 scripts/compose-ghcr-matrix.py compose.json > matrix.json
           echo "matrix<<GHA_JSON" >> "$GITHUB_OUTPUT"
