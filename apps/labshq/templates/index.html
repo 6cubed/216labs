@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>216labs HQ</title>
+  <style>
+    :root {
+      --bg: #07090f;
+      --surface: #0f1320;
+      --text: #e6ebff;
+      --muted: #a8b3d1;
+      --accent: #6ea8fe;
+      --border: #202a43;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top right, #132042 0%, var(--bg) 45%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 1.25rem 4rem;
+    }
+    h1 {
+      font-size: 2.4rem;
+      line-height: 1.1;
+      margin: 0 0 0.8rem;
+    }
+    .lead {
+      color: var(--muted);
+      max-width: 62ch;
+      font-size: 1.05rem;
+      margin-bottom: 2rem;
+    }
+    .pill {
+      display: inline-block;
+      border: 1px solid var(--border);
+      background: rgba(110, 168, 254, 0.1);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 0.25rem 0.7rem;
+      font-size: 0.8rem;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      margin: 2rem 0 0.9rem;
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 0.85rem;
+    }
+    .card h3 {
+      margin: 0 0 0.25rem;
+      font-size: 1.1rem;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .meta {
+      margin-top: 0.5rem;
+      font-size: 0.82rem;
+      color: var(--accent);
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    a.card:hover { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <span class="pill">216labs Research</span>
+    <h1>Building the first ambient AI world models</h1>
+    <p class="lead">{{ mission }}</p>
+
+    <h2 class="section-title">Publications</h2>
+    {% for item in publications %}
+    <a class="card" href="/publications/{{ item.slug }}">
+      <h3>{{ item.title }}</h3>
+      <p>{{ item.summary }}</p>
+      <div class="meta">Published {{ item.published_on }} · {{ item.authors|join(", ") }}</div>
+    </a>
+    {% endfor %}
+  </main>
+</body>
+</html>

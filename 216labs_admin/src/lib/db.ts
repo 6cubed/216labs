@@ -124,6 +124,7 @@ const KNOWN_PORTS: Record<string, number> = {
   emailgpt: 8030,
   mysteryshopper: 8031,
   llminternals: 8032,
+  labshq: 8047,
   maxlearn: 8033,
   impulse: 8034,
   mediate: 8035,

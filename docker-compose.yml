@@ -530,6 +530,19 @@ services:
       - "5000"
     mem_limit: 64m
 
+  # ── 216labs HQ website (publications + citations) ───────────────
+  labshq:
+    image: 216labs/labshq:latest
+    pull_policy: never
+    build: ./apps/labshq
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - LABSHQ_BASE_URL=${LABSHQ_BASE_URL:-https://labshq.6cubed.app}
+    expose:
+      - "5000"
+    mem_limit: 128m
+
   # ── FaceRate ──────────────────────────────────────────────────
   facerate:
     image: 216labs/facerate:latest

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ paper.title }} · 216labs Publications</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #101219;
+      --muted: #5c6478;
+      --accent: #1f5bd9;
+      --border: #d9dfef;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", Times, serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+    }
+    .paper {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 2.4rem 1.1rem 3rem;
+    }
+    h1 { margin: 0 0 0.3rem; line-height: 1.25; }
+    .subtitle { margin: 0 0 0.8rem; color: var(--muted); }
+    .meta {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .canonical {
+      margin: 0.8rem 0 1.3rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    h2 { margin-top: 1.8rem; line-height: 1.35; }
+    .refs {
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+      padding-top: 1rem;
+    }
+    .refs ol { padding-left: 1.15rem; }
+    .refs li { margin-bottom: 0.6rem; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <article class="paper">
+    <h1>{{ paper.title }}</h1>
+    <p class="subtitle">{{ paper.subtitle }}</p>
+    <div class="meta">
+      {{ paper.authors|join(", ") }} · Published {{ paper.published_on }}
+    </div>
+    <p class="canonical">
+      Cite this as: {{ paper.authors[0] }} ({{ paper.published_on[:4] }}). <em>{{ paper.title }}</em>. 216labs Publications.
+      URL: <a href="{{ canonical_url }}">{{ canonical_url }}</a>
+    </p>
+
+    {% for section in paper.sections %}
+    <section>
+      <h2>{{ section.heading }}</h2>
+      <p>{{ section.body }}</p>
+    </section>
+    {% endfor %}
+
+    <section class="refs">
+      <h2>References</h2>
+      <ol>
+        {% for citation in paper.citations %}
+        <li id="{{ citation.id }}">{{ citation.text }} <a href="{{ citation.url }}">{{ citation.url }}</a></li>
+        {% endfor %}
+      </ol>
+    </section>
+  </article>
+</body>
+</html>

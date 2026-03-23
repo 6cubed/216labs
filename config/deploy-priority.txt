@@ -17,6 +17,7 @@ maxlearn
 tigertank
 valentine
 npcworld
+labshq
 impulse
 mediate
 avatar

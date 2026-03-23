@@ -1,0 +1,20 @@
+{
+  "id": "labshq",
+  "name": "216labs HQ",
+  "tagline": "Frontier AI lab website for reactive ambient world models",
+  "description": "Official 216labs website for mission, research focus, and publication-style posts with citable references.",
+  "category": "ai",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "labshq",
+  "build_context": "./apps/labshq",
+  "stack": {
+    "frontend": "Flask + Jinja2",
+    "backend": "Flask + Gunicorn",
+    "database": null,
+    "other": ["Publication-style article pages", "Reference and citation formatting"]
+  },
+  "env_vars": [
+    { "key": "LABSHQ_BASE_URL", "description": "Public base URL used when generating canonical publication links", "is_secret": false }
+  ]
+}
