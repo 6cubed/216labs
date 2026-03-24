@@ -1,0 +1,25 @@
+{
+  "id": "bugbounty",
+  "name": "Bug Bounty Program",
+  "tagline": "Coordinated disclosure for the 216Labs public app portfolio.",
+  "description": "Public policy page for security researchers: scope, safe harbor, rules of engagement, severity, rewards, and how to report vulnerabilities affecting apps hosted under the 6cubed.app namespace.",
+  "category": "platform",
+  "internal_port": 3000,
+  "memory_limit": "128m",
+  "docker_service": "bugbounty",
+  "build_context": "./products/org-platform/security/bugbounty",
+  "env_prefix": "BUGBOUNTY",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": null,
+    "database": null,
+    "other": null
+  },
+  "env_vars": [
+    {
+      "key": "BUGBOUNTY_SECURITY_EMAIL",
+      "description": "Inbound address for vulnerability reports (shown on the policy page).",
+      "is_secret": false
+    }
+  ]
+}

@@ -113,7 +113,18 @@ function writeEnvLocal(appDir: string): void {
   if (appVars.length === 0) return;
 
   const content = appVars.map(({ key, value }) => `${key}=${value}`).join("\n") + "\n";
-  writeFileSync(join(appPath, ".env.local"), content, "utf-8");
+  const target = join(appPath, ".env.local");
+  try {
+    writeFileSync(target, content, "utf-8");
+  } catch (err) {
+    // Production admin mounts PROJECTS_ROOT read-only (/workspace:ro). SQLite env_vars
+    // remains the source of truth; deploy.sh merges them into .env.admin for compose.
+    console.warn(
+      "[admin] writeEnvLocal skipped (read-only or missing path):",
+      target,
+      err instanceof Error ? err.message : err,
+    );
+  }
 }
 
 type ActionResult = { error: string } | { success: true } | undefined;
