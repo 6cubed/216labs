@@ -1,0 +1,5 @@
+# 216Labs — coordinated disclosure (see policy page for full program text)
+Contact: mailto:security@6cubed.app
+Policy: https://bugbounty.6cubed.app/
+Preferred-Languages: en
+Canonical: https://bugbounty.6cubed.app/.well-known/security.txt
