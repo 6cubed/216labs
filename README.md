@@ -1,10 +1,14 @@
-# 216labs
+# 216Labs
 
-**Enterprise-grade vibe coding workflow.** A monorepo factory that makes debugging and accountability tractable when building with AI: one source of truth (SQLite), a single pipeline dashboard, and explicit control over what ships. All apps run on a single VPS via Docker Compose behind Caddy with automatic HTTPS.
+**At 216Labs we are building the toolkit for production grade vibes.** In practice: a monorepo factory that makes debugging and accountability tractable when building with AI — one source of truth (SQLite), a single pipeline dashboard, and explicit control over what ships. All apps run on a single VPS via Docker Compose behind Caddy with automatic HTTPS.
+
+## Toolkit vs portfolio
+
+The repo is designed to stay **client-agnostic**: manifests, one admin DB, one deploy path, Caddy, and optional activator cold-starts. **`products/org-platform/toolkit-demos/`** holds tiny **hello-world** apps (Next.js + Flask) that demonstrate that pipeline on a fresh install. A larger set of apps under `products/` is the live portfolio; you can trim or fork for your own stack. See **`docs/TOOLKIT.md`** for greenfield setup, `config/toolkit-default-enabled.txt` for no-DB deploy defaults, and **`config/examples/toolkit-starter/`** for minimal deploy config you can copy when publishing a community starter repo.
 
 ## Layout
 
-- **`products/`** — Customer-facing products grouped by **org** and **vertical** (for example `org-shopping`, `org-growth/ads`, `org-media`, `org-platform/ai`). New scaffolds default to `products/org-platform/local/<id>` via `./scripts/new-app.sh <app-id>`.
+- **`products/`** — Customer-facing products grouped by **org** and **vertical** (for example `org-shopping`, `org-growth/ads`, `org-media`, `org-platform/ai`). New scaffolds default to `products/org-platform/local/<id>` via `./scripts/new-app.sh <app-id>`. Reference demos live in **`products/org-platform/toolkit-demos/`**.
 - **`internal/`** — Internal-only services: **admin** (workflow dashboard), **quality/happypath** (clickthrough tests), **security/pipesecure** (security pipeline), **ops/cron-runner**, **platform/activator**, and similar.
 - **`packages/`** — Reserved for shared libraries and design-system style code reused across products (empty until extracted).
 - **`config/`** — Deploy caps, bootstrap lists, and other repo-level configuration.
@@ -32,7 +36,7 @@
 | **Múinteoir** | Next.js, SQLite, OpenAI | [muinteoir.6cubed.app](https://muinteoir.6cubed.app) |
 | **Pocket** | Next.js, WebGPU, WebSocket relay | [pocket.6cubed.app](https://pocket.6cubed.app) |
 | **StoryMagic** | Next.js, SQLite, OpenAI, Stripe | [storybook.6cubed.app](https://storybook.6cubed.app) |
-| **216labs Admin** | Next.js (workflow & pipeline dashboard) | [admin.6cubed.app](https://admin.6cubed.app) |
+| **216Labs Admin** | Next.js (workflow & pipeline dashboard) | [admin.6cubed.app](https://admin.6cubed.app) |
 
 ## Deploy
 
@@ -85,7 +89,7 @@ To run a single app without Docker, `cd` into its directory and follow its own R
 
 The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors Cursor’s chat with Telegram on your phone; it does **not** run the whole monorepo in Docker.
 
-**Prerequisites:** Python 3.10+ (`python3 --version`), Cursor installed at `/Applications/Cursor.app`, and a Telegram bot token from [@BotFather](https://t.me/BotFather).
+**Prerequisites:** **Python 3.10+** (many Macs still default to `python3` **3.7** — run `python3 --version`; if needed install `brew install python@3.12` and use it, or set `POCKETCURSOR_PYTHON` to that binary). Cursor at `/Applications/Cursor.app`, and a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
 **One command** from the repo root (after `git clone` and `cd 216labs`):
 

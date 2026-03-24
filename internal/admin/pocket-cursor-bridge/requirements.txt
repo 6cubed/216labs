@@ -1,9 +1,7 @@
-# Local CDP bridge only (pocket_cursor.py). Docker adds Flask via requirements-docker.txt.
-#
-# Keep openai on 1.x: openai 2.x has a much larger dependency tree and pip often
-# reports ResolutionImpossible on older pip/Python. The 1.x client supports the
-# same OpenAI() + audio.transcriptions API used by pocket_cursor.py.
-requests>=2.28.0,<3
-websocket-client>=1.6.0,<2
-openai>=1.52.0,<2
-Pillow>=9.0.0,<13
+# Local CDP bridge (pocket_cursor.py). Requires Python 3.10+ — see scripts/pocket-cursor-bridge.sh.
+# Exact pins avoid pip backtracking / ResolutionImpossible across environments.
+requests==2.32.3
+websocket-client==1.8.0
+# Pin a real PyPI release (1.59.0 / 1.109.2 do not exist). Last 1.x before 2.0 is 1.109.1.
+openai==1.109.1
+Pillow==11.1.0
