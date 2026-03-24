@@ -520,24 +520,25 @@ if [ "${PULL_FROM_GHCR:-0}" = "1" ]; then
   REG="${ACTIVATOR_REGISTRY_PREFIX:-ghcr.io/6cubed/216labs}"
   REG="${REG%/}"
   if [ -z "${GHCR_TOKEN:-}" ] || [ -z "${GHCR_USERNAME:-}" ]; then
-    echo "ERROR: GHCR pull enabled but GHCR_TOKEN or GHCR_USERNAME missing in $APP_DIR/.env" >&2
-    echo "Set them (packages read token) or use DEPLOY_IMAGE_SOURCE=local when running deploy.sh." >&2
-    exit 1
+    echo "WARN: GHCR pull skipped — GHCR_TOKEN or GHCR_USERNAME missing in $APP_DIR/.env" >&2
+    echo "      Add them (read:packages PAT + GitHub username) to pull CI-built images; see .env.example." >&2
+    echo "      Continuing with images already on the server (or use DEPLOY_IMAGE_SOURCE=local)." >&2
+  else
+    echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+    TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
+    while IFS= read -r tag || [ -n "$tag" ]; do
+      [ -z "$tag" ] && continue
+      short="${tag#216labs/}"
+      short="${short%%:*}"
+      src="$REG/$short:latest"
+      echo "==> GHCR pull: $src -> $tag"
+      if docker pull "$src"; then
+        docker tag "$src" "$tag"
+      else
+        echo "WARN: pull failed for $short — if the image is optional/skipped in CI, ignore; else fix GHCR publish." >&2
+      fi
+    done <<< "$TAGS_LIST"
   fi
-  echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-  TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
-  while IFS= read -r tag || [ -n "$tag" ]; do
-    [ -z "$tag" ] && continue
-    short="${tag#216labs/}"
-    short="${short%%:*}"
-    src="$REG/$short:latest"
-    echo "==> GHCR pull: $src -> $tag"
-    if docker pull "$src"; then
-      docker tag "$src" "$tag"
-    else
-      echo "WARN: pull failed for $short — if the image is optional/skipped in CI, ignore; else fix GHCR publish." >&2
-    fi
-  done <<< "$TAGS_LIST"
 fi
 
 # Write env vars from running admin container — the authoritative source.
