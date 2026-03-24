@@ -528,40 +528,48 @@ if [ "${PULL_FROM_GHCR:-0}" = "1" ]; then
   GHCR_TAGS_B64="$SAVED_TAGS_B64"
   REG="${ACTIVATOR_REGISTRY_PREFIX:-ghcr.io/6cubed/216labs}"
   REG="${REG%/}"
-  if [ -z "${GHCR_TOKEN:-}" ] || [ -z "${GHCR_USERNAME:-}" ]; then
-    echo "WARN: GHCR pull skipped — GHCR_TOKEN or GHCR_USERNAME missing (.env, 216labs.db env_vars, or admin Env page)" >&2
-    echo "      Set them in admin → Environment (stored in DB) or in $APP_DIR/.env; see .env.example." >&2
-    TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
-    ghcr_skip_missing=0
-    total_tags=0
-    while IFS= read -r tag || [ -n "$tag" ]; do
-      [ -z "$tag" ] && continue
-      total_tags=$((total_tags + 1))
-      if ! docker image inspect "$tag" &>/dev/null; then
-        ghcr_skip_missing=$((ghcr_skip_missing + 1))
-      fi
-    done <<< "$TAGS_LIST"
-    if [ "$ghcr_skip_missing" -gt 0 ]; then
-      echo "ERROR: $ghcr_skip_missing of $total_tags app image(s) missing on server and GHCR_TOKEN/GHCR_USERNAME unset." >&2
-      echo "      Fix: set GHCR_USERNAME, GHCR_TOKEN, ACTIVATOR_REGISTRY_PREFIX in admin Env or $APP_DIR/.env" >&2
-      echo "      Or one-time: DEPLOY_IMAGE_SOURCE=local ./deploy.sh ... from a machine with Docker (build + transfer)." >&2
-      exit 1
+  echo "==> GHCR: pulling app images (public packages pull anonymously; private packages need GHCR_USERNAME + GHCR_TOKEN in .env or admin Env)"
+  TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
+  GHCR_LOGGED_IN=0
+  while IFS= read -r tag || [ -n "$tag" ]; do
+    [ -z "$tag" ] && continue
+    short="${tag#216labs/}"
+    short="${short%%:*}"
+    src="$REG/$short:latest"
+    echo "==> GHCR pull: $src -> $tag"
+    if docker pull "$src"; then
+      docker tag "$src" "$tag"
+      continue
     fi
-  else
-    echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-    TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
-    while IFS= read -r tag || [ -n "$tag" ]; do
-      [ -z "$tag" ] && continue
-      short="${tag#216labs/}"
-      short="${short%%:*}"
-      src="$REG/$short:latest"
-      echo "==> GHCR pull: $src -> $tag"
+    if [ -n "${GHCR_TOKEN:-}" ] && [ -n "${GHCR_USERNAME:-}" ]; then
+      if [ "$GHCR_LOGGED_IN" != "1" ]; then
+        echo "==> GHCR: anonymous pull failed for at least one image; logging in to ghcr.io and retrying failed pulls..."
+        echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+        GHCR_LOGGED_IN=1
+      fi
       if docker pull "$src"; then
         docker tag "$src" "$tag"
-      else
-        echo "WARN: pull failed for $short — if the image is optional/skipped in CI, ignore; else fix GHCR publish." >&2
+        continue
       fi
-    done <<< "$TAGS_LIST"
+    else
+      echo "      Hint: private GHCR packages require GHCR_TOKEN + GHCR_USERNAME (admin Env or $APP_DIR/.env)." >&2
+    fi
+    echo "WARN: pull failed for $short — skipped in CI, network blip, or private without credentials; see ghcr-publish workflow." >&2
+  done <<< "$TAGS_LIST"
+
+  ghcr_skip_missing=0
+  total_tags=0
+  while IFS= read -r tag || [ -n "$tag" ]; do
+    [ -z "$tag" ] && continue
+    total_tags=$((total_tags + 1))
+    if ! docker image inspect "$tag" &>/dev/null; then
+      ghcr_skip_missing=$((ghcr_skip_missing + 1))
+    fi
+  done <<< "$TAGS_LIST"
+  if [ "$ghcr_skip_missing" -gt 0 ]; then
+    echo "ERROR: $ghcr_skip_missing of $total_tags app image(s) still missing after GHCR pull attempts." >&2
+    echo "      Fix: ensure images exist in GHCR (workflow publish), set GHCR_* for private packages, or DEPLOY_IMAGE_SOURCE=local once." >&2
+    exit 1
   fi
 fi
 
