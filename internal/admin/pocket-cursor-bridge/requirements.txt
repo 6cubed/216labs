@@ -1,5 +1,9 @@
 # Local CDP bridge only (pocket_cursor.py). Docker adds Flask via requirements-docker.txt.
-requests>=2.28.0
-websocket-client>=1.6.0
-openai>=1.40.0
-Pillow>=9.0.0
+#
+# Keep openai on 1.x: openai 2.x has a much larger dependency tree and pip often
+# reports ResolutionImpossible on older pip/Python. The 1.x client supports the
+# same OpenAI() + audio.transcriptions API used by pocket_cursor.py.
+requests>=2.28.0,<3
+websocket-client>=1.6.0,<2
+openai>=1.52.0,<2
+Pillow>=9.0.0,<13
