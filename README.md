@@ -91,12 +91,20 @@ The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors
 
 **Prerequisites:** **Python 3.10+** (many Macs still default to `python3` **3.7** — run `python3 --version`; if needed install `brew install python@3.12` and use it, or set `POCKETCURSOR_PYTHON` to that binary). Cursor at `/Applications/Cursor.app`, and a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
-**Config:** export **`TELEGRAM_BOT_TOKEN`** in your environment (shell profile, direnv, 1Password shell plugin, etc.). Optional file `internal/admin/pocket-cursor-bridge/.env` only fills variables that are **not** already set — process environment always wins.
+**Config:** export **`TELEGRAM_BOT_TOKEN`** (and optionally **`TELEGRAM_OWNER_ID`**) in your environment, **or** set them in **[admin Env](https://admin.6cubed.app/env)** (keys `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_ID` under the PocketCursor app) and sync to your Mac:
+
+```bash
+./scripts/sync-pocket-bridge-env.sh   # writes .env.admin-sync from the droplet SQLite DB (SSH)
+# or plug-and-play in one step:
+POCKET_SYNC_FROM_ADMIN=1 ./scripts/pocket-cursor-bridge.sh
+```
+
+Merge order: **exported env vars** win; then **`.env.admin-sync`** (from admin); then **`.env`** (local overrides). `TELEGRAM_OWNER_ID` locks the bridge to your Telegram user id so the first stranger does not auto-pair.
 
 **One command** from the repo root (after `git clone` and `cd 216labs`):
 
 ```bash
-export TELEGRAM_BOT_TOKEN='…'   # once per session, or add to ~/.zshrc / direnv
+export TELEGRAM_BOT_TOKEN='…'   # unless you sync from admin (see above)
 ./scripts/pocket-cursor-bridge.sh
 ```
 

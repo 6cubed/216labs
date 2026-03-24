@@ -2,6 +2,7 @@
 __pycache__
 *.pyc
 .env
+.env.admin-sync
 node_modules
 data/*
 !data/.gitkeep

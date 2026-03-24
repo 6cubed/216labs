@@ -14,6 +14,16 @@ if [[ ! -d "$BRIDGE" ]]; then
 fi
 cd "$BRIDGE"
 
+# Optional: pull TELEGRAM_BOT_TOKEN + TELEGRAM_OWNER_ID from droplet admin DB (after setting them in admin UI).
+if [[ "${POCKET_SYNC_FROM_ADMIN:-}" == "1" ]]; then
+  SYNC_SCRIPT="$ROOT/scripts/sync-pocket-bridge-env.sh"
+  if [[ -x "$SYNC_SCRIPT" ]]; then
+    "$SYNC_SCRIPT" || echo "[pocket-cursor-bridge] sync-pocket-bridge-env.sh failed (continuing with existing env files)"
+  else
+    bash "$SYNC_SCRIPT" || echo "[pocket-cursor-bridge] sync failed"
+  fi
+fi
+
 resolve_python() {
   local c
   for c in "${POCKETCURSOR_PYTHON:-}" python3.13 python3.12 python3.11 python3.10 python3; do
@@ -52,11 +62,12 @@ fi
 "$PY" -m pip install -q --upgrade pip setuptools wheel
 "$PIP" install -q -r requirements.txt
 
-# Token: prefer exported TELEGRAM_BOT_TOKEN; else optional .env (read by Python; do not override env).
-if [[ -z "${TELEGRAM_BOT_TOKEN:-}" && ! -f .env ]]; then
+# Token: exported env, or .env.admin-sync / .env (merged in Python; export wins).
+if [[ -z "${TELEGRAM_BOT_TOKEN:-}" && ! -f .env && ! -f .env.admin-sync ]]; then
   echo "TELEGRAM_BOT_TOKEN not set. Either:"
   echo "  export TELEGRAM_BOT_TOKEN='…'"
-  echo "  or create internal/admin/pocket-cursor-bridge/.env (copy from .env.example)."
+  echo "  or run: POCKET_SYNC_FROM_ADMIN=1 $0   (after setting token in admin + SSH to droplet)"
+  echo "  or create .env / .env.admin-sync (see .env.example)"
   exit 1
 fi
 

@@ -42,14 +42,17 @@ print = ts_print
 
 
 # ── Config ───────────────────────────────────────────────────────────────────
-# Process env (shell, launchd, direnv, CI, IDE) wins; .env only fills missing keys.
-def _load_dotenv_optional(path: Path) -> None:
+# Precedence: process env (shell, launchd, direnv) wins. Then merged files:
+#   .env.admin-sync — from admin DB via scripts/sync-pocket-bridge-env.sh (team defaults)
+#   .env — local overrides (later wins among files for the same key)
+def _parse_env_file(path: Path) -> dict:
+    out = {}
     if not path.is_file():
-        return
+        return out
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
-        return
+        return out
     for raw in text.splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
@@ -58,12 +61,23 @@ def _load_dotenv_optional(path: Path) -> None:
             continue
         key, val = line.split("=", 1)
         key = key.strip()
-        if not key or key in os.environ:
+        if not key:
             continue
-        os.environ[key] = val.strip()
+        out[key] = val.strip()
+    return out
 
 
-_load_dotenv_optional(Path(__file__).parent / ".env")
+def _apply_merged_env_files() -> None:
+    bridge = Path(__file__).parent
+    merged = {}
+    merged.update(_parse_env_file(bridge / ".env.admin-sync"))
+    merged.update(_parse_env_file(bridge / ".env"))
+    for key, val in merged.items():
+        if key not in os.environ:
+            os.environ[key] = val
+
+
+_apply_merged_env_files()
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
