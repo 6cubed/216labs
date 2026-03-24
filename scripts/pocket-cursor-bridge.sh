@@ -52,9 +52,11 @@ fi
 "$PY" -m pip install -q --upgrade pip setuptools wheel
 "$PIP" install -q -r requirements.txt
 
-if [[ ! -f .env ]]; then
-  cp .env.example .env
-  echo "Created .env — set TELEGRAM_BOT_TOKEN, then run this script again."
+# Token: prefer exported TELEGRAM_BOT_TOKEN; else optional .env (read by Python; do not override env).
+if [[ -z "${TELEGRAM_BOT_TOKEN:-}" && ! -f .env ]]; then
+  echo "TELEGRAM_BOT_TOKEN not set. Either:"
+  echo "  export TELEGRAM_BOT_TOKEN='…'"
+  echo "  or create internal/admin/pocket-cursor-bridge/.env (copy from .env.example)."
   exit 1
 fi
 

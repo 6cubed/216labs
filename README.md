@@ -91,15 +91,16 @@ The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors
 
 **Prerequisites:** **Python 3.10+** (many Macs still default to `python3` **3.7** — run `python3 --version`; if needed install `brew install python@3.12` and use it, or set `POCKETCURSOR_PYTHON` to that binary). Cursor at `/Applications/Cursor.app`, and a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
+**Config:** export **`TELEGRAM_BOT_TOKEN`** in your environment (shell profile, direnv, 1Password shell plugin, etc.). Optional file `internal/admin/pocket-cursor-bridge/.env` only fills variables that are **not** already set — process environment always wins.
+
 **One command** from the repo root (after `git clone` and `cd 216labs`):
 
 ```bash
+export TELEGRAM_BOT_TOKEN='…'   # once per session, or add to ~/.zshrc / direnv
 ./scripts/pocket-cursor-bridge.sh
 ```
 
-The **first** run creates `.venv`, installs only the bridge dependencies (no Flask), copies `.env.example` → `internal/admin/pocket-cursor-bridge/.env`, and exits — set **`TELEGRAM_BOT_TOKEN`** there, then run the same script again.
-
-On the **second** run it starts Cursor with CDP (via `start_cursor.py`) and then runs `pocket_cursor.py` (leave the terminal open; Ctrl+C to stop). Voice notes from Telegram are not transcribed; use text or photos.
+The **first** run creates `.venv` and installs bridge dependencies. It then starts Cursor with CDP (`start_cursor.py`) and runs `pocket_cursor.py` (leave the terminal open; Ctrl+C to stop). Voice notes from Telegram are not transcribed; use text or photos.
 
 **Phone outbox** (Markdown → PNG): in `internal/admin/pocket-cursor-bridge/`, run `npm install` for Puppeteer. **Windows:** use `restart_pocket_cursor.py` in that folder instead of bash.
 

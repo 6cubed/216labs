@@ -42,17 +42,35 @@ print = ts_print
 
 
 # ── Config ───────────────────────────────────────────────────────────────────
+# Process env (shell, launchd, direnv, CI, IDE) wins; .env only fills missing keys.
+def _load_dotenv_optional(path: Path) -> None:
+    if not path.is_file():
+        return
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        key = key.strip()
+        if not key or key in os.environ:
+            continue
+        os.environ[key] = val.strip()
 
-env_path = Path(__file__).parent / '.env'
-if env_path.exists():
-    for line in env_path.read_text().strip().splitlines():
-        if '=' in line and not line.startswith('#'):
-            key, val = line.split('=', 1)
-            os.environ[key.strip()] = val.strip()
 
-TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+_load_dotenv_optional(Path(__file__).parent / ".env")
+
+TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
-    print("ERROR: TELEGRAM_BOT_TOKEN not set.")
+    print(
+        "ERROR: TELEGRAM_BOT_TOKEN not set. Export it in your environment "
+        "(e.g. export TELEGRAM_BOT_TOKEN=...) or add it to .env beside pocket_cursor.py."
+    )
     sys.exit(1)
 
 TG_API = f"https://api.telegram.org/bot{TOKEN}"
