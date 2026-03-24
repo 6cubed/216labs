@@ -1,0 +1,3 @@
+# Used only by the Docker image (app.py Flask admin + Telegram worker).
+flask>=2.2.0,<4
+python-dotenv>=1.0.0

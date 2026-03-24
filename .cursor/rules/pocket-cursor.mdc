@@ -5,8 +5,8 @@ alwaysApply: true
 
 ## PocketCursor bridge ("restart", "restart bridge", "restart pocket cursor")
 
-- **Script:** `internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` (Windows; full path: workspace `internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py`)
-- **Run:** `python internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` with `block_until_ms: 0` (long-running process).
+- **macOS / Linux:** `./scripts/pocket-cursor-bridge.sh` from repo root (one script: venv, deps, CDP, bridge).
+- **Windows:** `internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` — `python internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` with `block_until_ms: 0` (long-running process).
 - **Auto-restart:** When editing any file under `internal/admin/pocket-cursor-bridge/`, always restart the bridge after changes that affect runtime behavior (bug fixes, features, refactors). Do not wait for the user to ask.
 - If the user reports unexpected behavior, check if a restart is needed first.
 

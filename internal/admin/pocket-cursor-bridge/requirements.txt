@@ -1,8 +1,5 @@
-# Flask admin + Telegram worker (Docker)
-flask>=3.0.0
-python-dotenv>=1.0.1
-# Local CDP bridge (pocket_cursor.py — run on dev machine, not required in Docker image)
-requests>=2.32.5
-websocket-client>=1.9.0
-openai>=2.21.0
-Pillow>=12.1.1
+# Local CDP bridge only (pocket_cursor.py). Docker adds Flask via requirements-docker.txt.
+requests>=2.28.0
+websocket-client>=1.6.0
+openai>=1.40.0
+Pillow>=9.0.0

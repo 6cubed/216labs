@@ -85,62 +85,21 @@ To run a single app without Docker, `cd` into its directory and follow its own R
 
 The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors Cursor’s chat with Telegram on your phone; it does **not** run the whole monorepo in Docker.
 
-**Prerequisites**
+**Prerequisites:** Python 3.10+ (`python3 --version`), Cursor installed at `/Applications/Cursor.app`, and a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
-- **Python 3.10+** (macOS: `python3 --version`; install from [python.org](https://www.python.org/downloads/) or Homebrew if needed).
-- **Cursor** installed at `/Applications/Cursor.app` (default install).
-- A **Telegram bot** token from [@BotFather](https://t.me/BotFather).
-
-**1. Clone and open the repo**
+**One command** from the repo root (after `git clone` and `cd 216labs`):
 
 ```bash
-git clone git@github.com:6cubed/216labs.git
-cd 216labs
+./scripts/pocket-cursor-bridge.sh
 ```
 
-**2. Start the bridge (first run)**
+The **first** run creates `.venv`, installs only the bridge dependencies (no Flask), copies `.env.example` → `internal/admin/pocket-cursor-bridge/.env`, and exits — set **`TELEGRAM_BOT_TOKEN`** there, then run the same script again.
 
-From the repo root:
+On the **second** run it starts Cursor with CDP (via `start_cursor.py`) and then runs `pocket_cursor.py` (leave the terminal open; Ctrl+C to stop). Optional: **`OPENAI_API_KEY`** in `.env` for voice-to-text.
 
-```bash
-./scripts/ensure-and-start-pocket-cursor.sh
-```
+**Phone outbox** (Markdown → PNG): in `internal/admin/pocket-cursor-bridge/`, run `npm install` for Puppeteer. **Windows:** use `restart_pocket_cursor.py` in that folder instead of bash.
 
-The first run will:
-
-- Create `internal/admin/pocket-cursor-bridge/.venv` and install `requirements.txt`.
-- Copy `internal/admin/pocket-cursor-bridge/.env.example` to `.env` and **exit** so you can edit secrets.
-
-Edit `internal/admin/pocket-cursor-bridge/.env` and set at least **`TELEGRAM_BOT_TOKEN`**. Optionally set **`OPENAI_API_KEY`** for voice-to-text from Telegram.
-
-**3. Launch Cursor with Chrome DevTools Protocol (CDP)**
-
-The bridge talks to Cursor over CDP. If Cursor was started from the Dock without debugging flags, **close Cursor**, then from a terminal:
-
-```bash
-cd internal/admin/pocket-cursor-bridge
-source .venv/bin/activate
-python start_cursor.py
-```
-
-That starts (or reuses) Cursor with CDP on port **9222** (or the next free port). Use `python start_cursor.py --check` to verify CDP is up without launching a new window.
-
-**4. Run the bridge again**
-
-With `.env` filled in and Cursor running with CDP:
-
-```bash
-./scripts/ensure-and-start-pocket-cursor.sh
-```
-
-Leave that terminal open; the bridge runs until you stop it (Ctrl+C). To restart later, run the same script (it stops any existing `pocket_cursor.py` process first).
-
-**Optional**
-
-- **Phone outbox images** (Markdown → styled PNG for Telegram): in `internal/admin/pocket-cursor-bridge/`, run `npm install` so `md_to_image.mjs` can use Puppeteer (see `.env.example` for `RENDER_LOCAL_DIR` if the repo is on slow storage).
-- **Windows** dev machines: use `internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` (kill + start in one step) instead of the shell script.
-
-The **Flask + Telegram** service on the VPS (`pocketcursor` in `docker-compose.yml`) is separate; it is for group policy and a small admin UI at `pocketcursor.6cubed.app`, not a substitute for your local `pocket_cursor.py`.
+The **Flask** service on the VPS (`pocketcursor` in `docker-compose.yml`) is separate; it is for group policy and `pocketcursor.6cubed.app`, not a substitute for local `pocket_cursor.py`.
 
 ## Architecture
 
