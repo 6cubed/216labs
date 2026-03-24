@@ -23,7 +23,9 @@ Use this skill when:
 ./deploy.sh root@46.101.88.197
 ```
 
-Use a long timeout (for example 300000 ms) because build + transfer can take minutes.
+Use a long timeout (for example 300000 ms) because the remote stack update can take several minutes.
+
+**Image source (default):** `deploy.sh` uses **GHCR** — the droplet runs `docker pull` after `git push` once GitHub Actions **Publish images to GHCR** has produced `latest` tags. Local Docker is **not** required. Legacy: `DEPLOY_IMAGE_SOURCE=local` restores local build + `docker save` over SSH.
 
 ## Verification checklist
 
@@ -42,8 +44,6 @@ ssh root@46.101.88.197 "sqlite3 /opt/216labs/216labs.db \"SELECT key FROM env_va
 
 ## Failure handling
 
-- If Docker is not running locally:
-  - Still commit and push.
-  - Tell the user deployment is pending until Docker Desktop is started.
-- Do not build images on the server.
-- Do not skip deployment unless explicitly blocked by local Docker availability.
+- If you used `DEPLOY_IMAGE_SOURCE=local` and Docker is not running locally: still commit and push; tell the user deployment is pending until Docker Desktop is started.
+- With the default **GHCR** flow, do not build images on the laptop; CI builds and the droplet pulls (never run `docker compose build` on the server).
+- Do not skip deployment without a clear blocker (e.g. no network, no SSH).

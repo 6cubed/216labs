@@ -4,7 +4,10 @@ set -euo pipefail
 # Usage: ./deploy.sh user@host
 #
 # 216labs vibe-coding workflow: single source of truth (216labs.db) for what ships.
-# Reads 216labs.db (SQLite) to decide which apps to build/transfer.
+# Reads 216labs.db (SQLite) to decide which apps to deploy.
+#
+# Images (default): pulled from GHCR after GitHub Actions "Publish images to GHCR" (main / workflow_dispatch).
+# Set DEPLOY_IMAGE_SOURCE=local to restore local docker build + ssh transfer (legacy).
 # 216labs.db holds app state and env_vars (secrets); it is never overwritten by
 # this script. A timestamped backup is made on the server before each deploy.
 # Toggle apps on/off via the admin dashboard at https://admin.6cubed.app
@@ -204,7 +207,10 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-# ── Source-change detection (git-based) ──────────────────────
+# ── Image source: GHCR (default) vs local build + transfer ───
+IMAGE_SOURCE="${DEPLOY_IMAGE_SOURCE:-ghcr}"
+
+# ── Source-change detection (git-based, local image source only) ─
 # docker build always produces a new image ID (timestamps differ), so
 # comparing local vs remote IDs always shows "changed". Instead we hash
 # the last git commit touching each context dir plus any uncommitted diff.
@@ -218,178 +224,193 @@ get_context_hash() {
   echo "${commit_hash}:${diff_hash}"
 }
 
-echo "==> Checking for source changes..."
+echo "==> Image source: $IMAGE_SOURCE"
 SERVICES_TO_BUILD=()
 ALL_IMAGES=()
 SKIP_BUILD="${DEPLOY_SKIP_BUILD:-0}"
-for svc in "${SERVICES[@]}"; do
-  IFS=: read -r NAME CTX DFILE <<< "$svc"
-  TAG="216labs/$NAME:latest"
-  ALL_IMAGES+=("$TAG")
-  CTX_HASH=$(get_context_hash "$CTX")
-  STORED=$(grep "^$TAG=" "$HASH_FILE" 2>/dev/null | head -1 | sed 's/^[^=]*=//' || true)
-  if [ "$SKIP_BUILD" = "1" ]; then
-    echo "  [skip]  $NAME (DEPLOY_SKIP_BUILD=1)"
-    continue
-  fi
-  if [ "$CTX_HASH" = "$STORED" ] && docker image inspect "$TAG" &>/dev/null 2>&1; then
-    echo "  [skip]  $NAME (source unchanged)"
-  else
-    echo "  [build] $NAME"
-    SERVICES_TO_BUILD+=("$svc")
-  fi
-done
-
-# ── Build locally (only changed) ──────────────────────────────
-# BuildKit speeds up rebuilds via better layer caching (helps lightweight UI-only changes).
-export DOCKER_BUILDKIT=1
-BUILT_IMAGES=()
-if [ "$SKIP_BUILD" = "1" ]; then
-  echo "==> DEPLOY_SKIP_BUILD=1, skipping local builds; will sync missing images from local cache"
-elif [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
-  echo "==> Building ${#SERVICES_TO_BUILD[@]}/${#ALL_IMAGES[@]} images locally..."
-  for svc in "${SERVICES_TO_BUILD[@]}"; do
+if [ "$IMAGE_SOURCE" = "local" ]; then
+  echo "==> Checking for source changes (local builds)..."
+  for svc in "${SERVICES[@]}"; do
     IFS=: read -r NAME CTX DFILE <<< "$svc"
     TAG="216labs/$NAME:latest"
-    BUILD_ARGS=(-q -t "$TAG")
-    if [ "$NAME" = "cron-runner" ]; then
-      BUILD_ARGS+=(--platform linux/amd64)
-      # One-time: ensure no cached layer from better-sqlite3 build
-      [ -f "internal/ops/cron-runner/.deploy-no-cache" ] && BUILD_ARGS+=(--no-cache) && rm -f internal/ops/cron-runner/.deploy-no-cache
-    fi
-    if [ -n "${DFILE:-}" ]; then
-      BUILD_ARGS+=(-f "$CTX/$DFILE")
-    fi
-    BUILD_ARGS+=("$CTX")
-    echo "  [$NAME] building..."
-    docker build "${BUILD_ARGS[@]}"
-    BUILT_IMAGES+=("$TAG")
-  done
-else
-  echo "==> No source changes detected, skipping all builds"
-fi
-
-# ── Record image sizes to DB ──────────────────────────────────
-if [ -f "$DB_FILE" ] && [ ${#BUILT_IMAGES[@]} -gt 0 ]; then
-  echo "==> Recording image sizes..."
-  for TAG in "${BUILT_IMAGES[@]}"; do
-    SIZE_BYTES=$(docker image inspect --format '{{.Size}}' "$TAG" 2>/dev/null || echo 0)
-    SIZE_MB=$(echo "scale=0; $SIZE_BYTES / 1048576" | bc)
-    sqlite3 "$DB_FILE" "UPDATE apps SET image_size_mb = $SIZE_MB WHERE docker_image = '$TAG';" 2>/dev/null || true
-    echo "  $TAG → ${SIZE_MB} MB"
-  done
-fi
-
-# ── Images to transfer: newly built + any enabled image missing on the server ──
-# Skip-build deploys used to transfer nothing, so a cold droplet or prune could leave
-# compose/activator with "no such image" even though local Docker still had the tag.
-IMAGES_TO_TRANSFER=()
-_transfer_add() {
-  local tag="$1"
-  local i
-  # Indexed loop avoids set -u + empty "${arr[@]}" on older bash (e.g. macOS 3.2).
-  for ((i = 0; i < ${#IMAGES_TO_TRANSFER[@]}; i++)); do
-    [ "${IMAGES_TO_TRANSFER[i]}" = "$tag" ] && return 0
-  done
-  IMAGES_TO_TRANSFER+=("$tag")
-}
-for ((i = 0; i < ${#BUILT_IMAGES[@]}; i++)); do
-  _transfer_add "${BUILT_IMAGES[i]}"
-done
-REMOTE_IMAGE_LIST=""
-REMOTE_LIST_OK=0
-if REMOTE_IMAGE_LIST=$(ssh_retry "List remote Docker images" _fetch_remote_docker_tags); then
-  REMOTE_LIST_OK=1
-else
-  echo "==> WARN: could not list remote images; only built images will transfer (no missing-on-server sync)." >&2
-fi
-SYNC_ONLY_COUNT=0
-if [ "$REMOTE_LIST_OK" -eq 1 ]; then
-  for TAG in "${ALL_IMAGES[@]}"; do
-    if echo "$REMOTE_IMAGE_LIST" | grep -qxF "$TAG" 2>/dev/null; then
+    ALL_IMAGES+=("$TAG")
+    CTX_HASH=$(get_context_hash "$CTX")
+    STORED=$(grep "^$TAG=" "$HASH_FILE" 2>/dev/null | head -1 | sed 's/^[^=]*=//' || true)
+    if [ "$SKIP_BUILD" = "1" ]; then
+      echo "  [skip]  $NAME (DEPLOY_SKIP_BUILD=1)"
       continue
     fi
-    if docker image inspect "$TAG" &>/dev/null 2>&1; then
-      before=${#IMAGES_TO_TRANSFER[@]}
-      _transfer_add "$TAG"
-      if [ "${#IMAGES_TO_TRANSFER[@]}" -gt "$before" ]; then
-        SYNC_ONLY_COUNT=$((SYNC_ONLY_COUNT + 1))
-        echo "  [sync]  $TAG (missing on server, present locally — pushing cached image)"
-      fi
+    if [ "$CTX_HASH" = "$STORED" ] && docker image inspect "$TAG" &>/dev/null 2>&1; then
+      echo "  [skip]  $NAME (source unchanged)"
     else
-      echo "  [warn]  $TAG enabled for deploy but no local image — build once (touch app or docker build) then redeploy."
+      echo "  [build] $NAME"
+      SERVICES_TO_BUILD+=("$svc")
     fi
   done
-fi
-if [ "$SYNC_ONLY_COUNT" -gt 0 ]; then
-  echo "==> $SYNC_ONLY_COUNT image(s) missing on $REMOTE; will transfer without rebuild."
-fi
-
-# ── Transfer images (built + server-side missing) ─────────────
-# Use zstd when available (faster than gzip). On server: apt install zstd.
-if [ ${#IMAGES_TO_TRANSFER[@]} -eq 0 ]; then
-  echo "==> All images up to date on server, skipping transfer"
 else
-  # Free disk on server before transfer. Use dangling-only image prune — NOT `prune -a`:
-  # tagged 216labs/* images must stay on disk when a container is stopped, or the next
-  # deploy has nothing to run (e.g. activator cold-start) until a full rebuild+transfer.
-  echo "==> Pruning dangling images on server (keeps tagged 216labs images)..."
-  ssh_retry "Prune dangling images on server" ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -f 2>/dev/null; echo "Prune done"' 2>/dev/null || true
-
-  USE_ZSTD=false
-  if command -v zstd &>/dev/null; then
-    if ssh "${SSH_OPTS[@]}" "$REMOTE" 'command -v zstd &>/dev/null' 2>/dev/null; then
-      USE_ZSTD=true
-    fi
-  fi
-  # One image per transfer so the droplet never needs enough free space for a multi-image
-  # tarball unpack at once (25GB disks fill up on `docker save a b c ... | load`).
-  if [ "$USE_ZSTD" = true ]; then
-    echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd, sequential)..."
-    for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
-      echo "  -> $TAG"
-      ok=0
-      for tattempt in 1 2 3 4 5 6; do
-        if docker save "$TAG" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'; then
-          ok=1
-          break
-        fi
-        echo "==> Transfer $TAG failed (attempt $tattempt/6); retrying in 5s..." >&2
-        sleep 5
-      done
-      if [ "$ok" -ne 1 ]; then
-        echo "ERROR: could not transfer $TAG after 6 attempts." >&2
-        exit 1
-      fi
-    done
-  else
-    echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (sequential)..."
-    for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
-      echo "  -> $TAG"
-      ok=0
-      for tattempt in 1 2 3 4 5 6; do
-        if docker save "$TAG" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'; then
-          ok=1
-          break
-        fi
-        echo "==> Transfer $TAG failed (attempt $tattempt/6); retrying in 5s..." >&2
-        sleep 5
-      done
-      if [ "$ok" -ne 1 ]; then
-        echo "ERROR: could not transfer $TAG after 6 attempts." >&2
-        exit 1
-      fi
-    done
-  fi
-  # Persist source hashes so next deploy can skip unchanged apps
-  for svc in "${SERVICES_TO_BUILD[@]}"; do
+  echo "==> Using GHCR — skipping local build and ssh image transfer (${#SERVICES[@]} app image(s))"
+  for svc in "${SERVICES[@]}"; do
     IFS=: read -r NAME CTX DFILE <<< "$svc"
     TAG="216labs/$NAME:latest"
-    CTX_HASH=$(get_context_hash "$CTX")
-    TMP=$(mktemp)
-    { grep -v "^$TAG=" "$HASH_FILE" 2>/dev/null || true; echo "$TAG=$CTX_HASH"; } > "$TMP"
-    mv "$TMP" "$HASH_FILE"
+    ALL_IMAGES+=("$TAG")
   done
+fi
+
+# ── Local build + ssh transfer (DEPLOY_IMAGE_SOURCE=local only) ─
+if [ "$IMAGE_SOURCE" = "local" ]; then
+  # BuildKit speeds up rebuilds via better layer caching (helps lightweight UI-only changes).
+  export DOCKER_BUILDKIT=1
+  BUILT_IMAGES=()
+  if [ "$SKIP_BUILD" = "1" ]; then
+    echo "==> DEPLOY_SKIP_BUILD=1, skipping local builds; will sync missing images from local cache"
+  elif [ ${#SERVICES_TO_BUILD[@]} -gt 0 ]; then
+    echo "==> Building ${#SERVICES_TO_BUILD[@]}/${#ALL_IMAGES[@]} images locally..."
+    for svc in "${SERVICES_TO_BUILD[@]}"; do
+      IFS=: read -r NAME CTX DFILE <<< "$svc"
+      TAG="216labs/$NAME:latest"
+      BUILD_ARGS=(-q -t "$TAG")
+      if [ "$NAME" = "cron-runner" ]; then
+        BUILD_ARGS+=(--platform linux/amd64)
+        # One-time: ensure no cached layer from better-sqlite3 build
+        [ -f "internal/ops/cron-runner/.deploy-no-cache" ] && BUILD_ARGS+=(--no-cache) && rm -f internal/ops/cron-runner/.deploy-no-cache
+      fi
+      if [ -n "${DFILE:-}" ]; then
+        BUILD_ARGS+=(-f "$CTX/$DFILE")
+      fi
+      BUILD_ARGS+=("$CTX")
+      echo "  [$NAME] building..."
+      docker build "${BUILD_ARGS[@]}"
+      BUILT_IMAGES+=("$TAG")
+    done
+  else
+    echo "==> No source changes detected, skipping all builds"
+  fi
+
+  # ── Record image sizes to DB ────────────────────────────────
+  if [ -f "$DB_FILE" ] && [ ${#BUILT_IMAGES[@]} -gt 0 ]; then
+    echo "==> Recording image sizes..."
+    for TAG in "${BUILT_IMAGES[@]}"; do
+      SIZE_BYTES=$(docker image inspect --format '{{.Size}}' "$TAG" 2>/dev/null || echo 0)
+      SIZE_MB=$(echo "scale=0; $SIZE_BYTES / 1048576" | bc)
+      sqlite3 "$DB_FILE" "UPDATE apps SET image_size_mb = $SIZE_MB WHERE docker_image = '$TAG';" 2>/dev/null || true
+      echo "  $TAG → ${SIZE_MB} MB"
+    done
+  fi
+
+  # ── Images to transfer: newly built + any enabled image missing on the server ──
+  # Skip-build deploys used to transfer nothing, so a cold droplet or prune could leave
+  # compose/activator with "no such image" even though local Docker still had the tag.
+  IMAGES_TO_TRANSFER=()
+  _transfer_add() {
+    local tag="$1"
+    local i
+    # Indexed loop avoids set -u + empty "${arr[@]}" on older bash (e.g. macOS 3.2).
+    for ((i = 0; i < ${#IMAGES_TO_TRANSFER[@]}; i++)); do
+      [ "${IMAGES_TO_TRANSFER[i]}" = "$tag" ] && return 0
+    done
+    IMAGES_TO_TRANSFER+=("$tag")
+  }
+  for ((i = 0; i < ${#BUILT_IMAGES[@]}; i++)); do
+    _transfer_add "${BUILT_IMAGES[i]}"
+  done
+  REMOTE_IMAGE_LIST=""
+  REMOTE_LIST_OK=0
+  if REMOTE_IMAGE_LIST=$(ssh_retry "List remote Docker images" _fetch_remote_docker_tags); then
+    REMOTE_LIST_OK=1
+  else
+    echo "==> WARN: could not list remote images; only built images will transfer (no missing-on-server sync)." >&2
+  fi
+  SYNC_ONLY_COUNT=0
+  if [ "$REMOTE_LIST_OK" -eq 1 ]; then
+    for TAG in "${ALL_IMAGES[@]}"; do
+      if echo "$REMOTE_IMAGE_LIST" | grep -qxF "$TAG" 2>/dev/null; then
+        continue
+      fi
+      if docker image inspect "$TAG" &>/dev/null 2>&1; then
+        before=${#IMAGES_TO_TRANSFER[@]}
+        _transfer_add "$TAG"
+        if [ "${#IMAGES_TO_TRANSFER[@]}" -gt "$before" ]; then
+          SYNC_ONLY_COUNT=$((SYNC_ONLY_COUNT + 1))
+          echo "  [sync]  $TAG (missing on server, present locally — pushing cached image)"
+        fi
+      else
+        echo "  [warn]  $TAG enabled for deploy but no local image — build once (touch app or docker build) then redeploy."
+      fi
+    done
+  fi
+  if [ "$SYNC_ONLY_COUNT" -gt 0 ]; then
+    echo "==> $SYNC_ONLY_COUNT image(s) missing on $REMOTE; will transfer without rebuild."
+  fi
+
+  # ── Transfer images (built + server-side missing) ───────────
+  # Use zstd when available (faster than gzip). On server: apt install zstd.
+  if [ ${#IMAGES_TO_TRANSFER[@]} -eq 0 ]; then
+    echo "==> All images up to date on server, skipping transfer"
+  else
+    # Free disk on server before transfer. Use dangling-only image prune — NOT `prune -a`:
+    # tagged 216labs/* images must stay on disk when a container is stopped, or the next
+    # deploy has nothing to run (e.g. activator cold-start) until a full rebuild+transfer.
+    echo "==> Pruning dangling images on server (keeps tagged 216labs images)..."
+    ssh_retry "Prune dangling images on server" ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -f 2>/dev/null; echo "Prune done"' 2>/dev/null || true
+
+    USE_ZSTD=false
+    if command -v zstd &>/dev/null; then
+      if ssh "${SSH_OPTS[@]}" "$REMOTE" 'command -v zstd &>/dev/null' 2>/dev/null; then
+        USE_ZSTD=true
+      fi
+    fi
+    # One image per transfer so the droplet never needs enough free space for a multi-image
+    # tarball unpack at once (25GB disks fill up on `docker save a b c ... | load`).
+    if [ "$USE_ZSTD" = true ]; then
+      echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd, sequential)..."
+      for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
+        echo "  -> $TAG"
+        ok=0
+        for tattempt in 1 2 3 4 5 6; do
+          if docker save "$TAG" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'; then
+            ok=1
+            break
+          fi
+          echo "==> Transfer $TAG failed (attempt $tattempt/6); retrying in 5s..." >&2
+          sleep 5
+        done
+        if [ "$ok" -ne 1 ]; then
+          echo "ERROR: could not transfer $TAG after 6 attempts." >&2
+          exit 1
+        fi
+      done
+    else
+      echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (sequential)..."
+      for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
+        echo "  -> $TAG"
+        ok=0
+        for tattempt in 1 2 3 4 5 6; do
+          if docker save "$TAG" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'; then
+            ok=1
+            break
+          fi
+          echo "==> Transfer $TAG failed (attempt $tattempt/6); retrying in 5s..." >&2
+          sleep 5
+        done
+        if [ "$ok" -ne 1 ]; then
+          echo "ERROR: could not transfer $TAG after 6 attempts." >&2
+          exit 1
+        fi
+      done
+    fi
+    # Persist source hashes so next deploy can skip unchanged apps
+    for svc in "${SERVICES_TO_BUILD[@]}"; do
+      IFS=: read -r NAME CTX DFILE <<< "$svc"
+      TAG="216labs/$NAME:latest"
+      CTX_HASH=$(get_context_hash "$CTX")
+      TMP=$(mktemp)
+      { grep -v "^$TAG=" "$HASH_FILE" 2>/dev/null || true; echo "$TAG=$CTX_HASH"; } > "$TMP"
+      mv "$TMP" "$HASH_FILE"
+    done
+  fi
+else
+  BUILT_IMAGES=()
+  echo "==> GHCR mode: server will docker pull + retag (no local Docker required on laptop)"
 fi
 
 # ── Determine which compose services to start ─────────────────
@@ -421,8 +442,17 @@ echo "    Changed (will restart): ${CHANGED_COMPOSE_SVCS:-none}"
 # Use __none__ sentinel so the empty string survives SSH argument passing
 # (SSH joins args with spaces, collapsing empty strings and shifting positions).
 CHANGED_ARG="${CHANGED_COMPOSE_SVCS:-__none__}"
-# Pass changed-services sentinel as $3, enabled app ids as $4 (single arg), then compose services ($5+)
-ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$ENABLED_APPS" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
+PULL_FROM_GHCR=0
+[ "$IMAGE_SOURCE" = "ghcr" ] && PULL_FROM_GHCR=1
+GHCR_TAGS_B64=""
+if [ "$PULL_FROM_GHCR" = "1" ] && [ ${#ALL_IMAGES[@]} -gt 0 ]; then
+  GHCR_TAGS_B64=$(printf '%s\n' "${ALL_IMAGES[@]}" | base64 | tr -d '\n')
+fi
+# Pass changed-services sentinel as $3, enabled app ids as $4 (single arg), then compose services ($5+).
+# PULL_FROM_GHCR + GHCR_TAGS_B64: droplet pulls ghcr.io/…/short:latest and retags to 216labs/short:latest.
+ssh "${SSH_OPTS[@]}" "$REMOTE" \
+  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" \
+  bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$ENABLED_APPS" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
@@ -473,6 +503,41 @@ if [ ! -f .env ]; then
   echo "    nano $APP_DIR/.env"
   echo "=========================================="
   exit 0
+fi
+
+# Pull 216labs/* app images from GHCR (tags match Publish images to GHCR workflow).
+if [ "${PULL_FROM_GHCR:-0}" = "1" ]; then
+  SAVED_TAGS_B64="${GHCR_TAGS_B64:-}"
+  if [ -z "$SAVED_TAGS_B64" ]; then
+    echo "ERROR: GHCR_TAGS_B64 empty (deploy.sh bug or no images to pull)" >&2
+    exit 1
+  fi
+  set -a
+  # shellcheck disable=SC1091
+  [ -f .env ] && . ./.env
+  set +a
+  GHCR_TAGS_B64="$SAVED_TAGS_B64"
+  REG="${ACTIVATOR_REGISTRY_PREFIX:-ghcr.io/6cubed/216labs}"
+  REG="${REG%/}"
+  if [ -z "${GHCR_TOKEN:-}" ] || [ -z "${GHCR_USERNAME:-}" ]; then
+    echo "ERROR: GHCR pull enabled but GHCR_TOKEN or GHCR_USERNAME missing in $APP_DIR/.env" >&2
+    echo "Set them (packages read token) or use DEPLOY_IMAGE_SOURCE=local when running deploy.sh." >&2
+    exit 1
+  fi
+  echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+  TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
+  while IFS= read -r tag || [ -n "$tag" ]; do
+    [ -z "$tag" ] && continue
+    short="${tag#216labs/}"
+    short="${short%%:*}"
+    src="$REG/$short:latest"
+    echo "==> GHCR pull: $src -> $tag"
+    if docker pull "$src"; then
+      docker tag "$src" "$tag"
+    else
+      echo "WARN: pull failed for $short — if the image is optional/skipped in CI, ignore; else fix GHCR publish." >&2
+    fi
+  done <<< "$TAGS_LIST"
 fi
 
 # Write env vars from running admin container — the authoritative source.
