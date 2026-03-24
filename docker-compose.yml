@@ -452,7 +452,7 @@ services:
   pocketcursor:
     image: 216labs/pocketcursor:latest
     pull_policy: never
-    build: ./products/org-platform/ai/pocketcursor
+    build: ./internal/admin/pocket-cursor-bridge
     restart: unless-stopped
     environment:
       - PORT=5000
@@ -464,7 +464,7 @@ services:
       - POCKETCURSOR_VERBOSITY=${POCKETCURSOR_VERBOSITY:-normal}
       - POCKETCURSOR_REQUIRE_WHITELIST=${POCKETCURSOR_REQUIRE_WHITELIST:-true}
     volumes:
-      - ./products/org-platform/ai/pocketcursor/data:/app/data
+      - ./internal/admin/pocket-cursor-bridge/data:/app/data
     expose:
       - "5000"
     mem_limit: 128m

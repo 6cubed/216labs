@@ -331,7 +331,6 @@ function walkManifestTree(rootName: string): string[] {
     if (!existsSync(abs)) return;
     if (existsSync(join(abs, "manifest.json"))) {
       out.push(rel);
-      return;
     }
     let entries: import("fs").Dirent[];
     try {

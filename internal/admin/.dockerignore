@@ -7,3 +7,5 @@ node_modules
 *.log
 coverage
 .turbo
+# Python bridge lives alongside the Next app; exclude from admin image.
+pocket-cursor-bridge

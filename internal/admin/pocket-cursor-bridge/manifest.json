@@ -2,17 +2,17 @@
   "id": "pocketcursor",
   "name": "PocketCursor Bridge",
   "tagline": "Bridge Telegram group chat to your Cursor workflow",
-  "description": "A self-hosted Telegram bridge service for PocketCursor with multi-user group support and a web admin UI for authorization and verbosity controls.",
+  "description": "A self-hosted Telegram bridge service with multi-user group support and a web admin UI for authorization and verbosity controls. The Python CDP bridge (pocket_cursor.py, start_cursor.py, etc.) lives in this package for local development machines; the Docker image runs the Flask admin and Telegram polling worker.",
   "category": "tool",
   "internal_port": 5000,
-  "memory_limit": "256m",
+  "memory_limit": "128m",
   "docker_service": "pocketcursor",
-  "build_context": "./products/org-platform/ai/pocketcursor",
+  "build_context": "./internal/admin/pocket-cursor-bridge",
   "stack": {
     "frontend": "Server-rendered Flask templates",
     "backend": "Python Flask + Telegram Bot API polling worker",
     "database": "JSON file persistence",
-    "other": ["Multi-user whitelist policy", "Runtime bridge config UI"]
+    "other": ["Multi-user whitelist policy", "Runtime bridge config UI", "Local Python CDP bridge sources"]
   },
   "env_vars": [
     { "key": "TELEGRAM_BOT_TOKEN", "description": "Telegram bot token used for bridge polling and replies.", "is_secret": true },
