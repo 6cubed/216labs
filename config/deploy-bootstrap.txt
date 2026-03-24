@@ -2,6 +2,8 @@
 # Used when server DB doesn't have them yet so they can be toggled in admin.
 # Add/remove lines; no code changes needed.
 activator
+hello-nextjs
+hello-flask
 happypath
 blog
 marketing
@@ -12,6 +14,7 @@ offlinellm
 1pageresearch
 facerate
 landing
+bugbounty
 crowdbulk
 cron-runner
 emailgpt

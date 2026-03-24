@@ -1,0 +1,18 @@
+{
+  "id": "hello-nextjs",
+  "name": "Hello Next.js (toolkit demo)",
+  "tagline": "Minimal Next.js app — same build and deploy path as production services.",
+  "description": "Reference implementation for App Router + Docker standalone output in this monorepo. Safe to delete or replace when you ship real products.",
+  "category": "tool",
+  "internal_port": 3000,
+  "memory_limit": "128m",
+  "docker_service": "hello-nextjs",
+  "build_context": "./products/org-platform/toolkit-demos/hello-nextjs",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": null,
+    "database": null,
+    "other": null
+  },
+  "env_vars": []
+}

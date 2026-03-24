@@ -2,6 +2,4 @@
 # Exact pins avoid pip backtracking / ResolutionImpossible across environments.
 requests==2.32.3
 websocket-client==1.8.0
-# Pin a real PyPI release (1.59.0 / 1.109.2 do not exist). Last 1.x before 2.0 is 1.109.1.
-openai==1.109.1
 Pillow==11.1.0

@@ -1,0 +1,18 @@
+{
+  "id": "hello-flask",
+  "name": "Hello Flask (toolkit demo)",
+  "tagline": "Minimal Flask + Gunicorn — same deploy path as production services.",
+  "description": "Reference implementation for Python web apps in this monorepo. Safe to delete or replace when you ship real products.",
+  "category": "tool",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "hello-flask",
+  "build_context": "./products/org-platform/toolkit-demos/hello-flask",
+  "stack": {
+    "frontend": null,
+    "backend": "Flask + Gunicorn",
+    "database": null,
+    "other": null
+  },
+  "env_vars": []
+}

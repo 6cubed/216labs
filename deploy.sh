@@ -11,8 +11,9 @@ set -euo pipefail
 # After deploy, records image sizes and startup times back to the DB.
 
 REMOTE="${1:-${DEPLOY_HOST:-}}"
-REPO="git@github.com:6cubed/216labs.git"
-APP_DIR="/opt/216labs"
+# Override for forks: DEPLOY_REPO, DEPLOY_APP_DIR (see docs/TOOLKIT.md).
+REPO="${DEPLOY_REPO:-git@github.com:6cubed/216labs.git}"
+APP_DIR="${DEPLOY_APP_DIR:-/opt/216labs}"
 DB_FILE="216labs.db"
 DB_ENV_FILE="$(mktemp)"
 
@@ -121,8 +122,14 @@ elif [ -f "$DB_FILE" ]; then
   ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1 OR id = 'admin'" | tr '\n' ' ')
   echo "==> Deploy config (from local DB): $ENABLED_APPS"
 else
-  echo "==> No DB found, deploying all apps"
-  ENABLED_APPS="ramblingradio stroll onefit hivefind admin agimemes agitshirts priors calibratedai bigleroys 1pageresearch artisinaleurope thezurichdatinggame oneroom"
+  TOOLKIT_DEFAULTS="config/toolkit-default-enabled.txt"
+  if [ -f "$TOOLKIT_DEFAULTS" ]; then
+    ENABLED_APPS=$(grep -v '^[[:space:]]*#' "$TOOLKIT_DEFAULTS" | sed '/^[[:space:]]*$/d' | tr '\n' ' ')
+    echo "==> No DB found, using $TOOLKIT_DEFAULTS: $ENABLED_APPS"
+  else
+    ENABLED_APPS="admin activator landing hello-nextjs hello-flask"
+    echo "==> No DB found, using minimal toolkit defaults: $ENABLED_APPS"
+  fi
 fi
 
 if [[ " $ENABLED_APPS " != *" admin "* ]]; then

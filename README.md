@@ -99,7 +99,7 @@ The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors
 
 The **first** run creates `.venv`, installs only the bridge dependencies (no Flask), copies `.env.example` → `internal/admin/pocket-cursor-bridge/.env`, and exits — set **`TELEGRAM_BOT_TOKEN`** there, then run the same script again.
 
-On the **second** run it starts Cursor with CDP (via `start_cursor.py`) and then runs `pocket_cursor.py` (leave the terminal open; Ctrl+C to stop). Optional: **`OPENAI_API_KEY`** in `.env` for voice-to-text.
+On the **second** run it starts Cursor with CDP (via `start_cursor.py`) and then runs `pocket_cursor.py` (leave the terminal open; Ctrl+C to stop). Voice notes from Telegram are not transcribed; use text or photos.
 
 **Phone outbox** (Markdown → PNG): in `internal/admin/pocket-cursor-bridge/`, run `npm install` for Puppeteer. **Windows:** use `restart_pocket_cursor.py` in that folder instead of bash.
 

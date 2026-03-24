@@ -36,7 +36,6 @@ from lib import command_rules
 # Third-party
 import requests
 import websocket
-from openai import OpenAI
 from PIL import Image
 
 print = ts_print
@@ -57,12 +56,6 @@ if not TOKEN:
     sys.exit(1)
 
 TG_API = f"https://api.telegram.org/bot{TOKEN}"
-
-# OpenAI API for voice transcription (optional)
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
-if not OPENAI_API_KEY:
-    print("WARNING: OPENAI_API_KEY not set. Voice messages won't be transcribed.")
 
 # Context journal: prefill annotation into chat input when context window is filling up
 CONTEXT_MONITOR = os.environ.get('CONTEXT_MONITOR', '').lower() in ('true', '1', 'yes')
@@ -312,21 +305,6 @@ def vscode_url_to_path(url):
         path = path[1:]
     # Strip query string (?t=timestamp)
     return path.split('?')[0] if '?' in path else path
-
-
-def transcribe_voice(audio_bytes, filename='voice.ogg'):
-    """Transcribe audio using OpenAI gpt-4o-transcribe. Returns text or None."""
-    if not openai_client:
-        return None
-    try:
-        result = openai_client.audio.transcriptions.create(
-            model='gpt-4o-transcribe',
-            file=(filename, audio_bytes),
-        )
-        return result.text
-    except Exception as e:
-        print(f"[transcribe] Error: {e}")
-        return None
 
 
 # ── CDP helpers ──────────────────────────────────────────────────────────────
@@ -1955,34 +1933,13 @@ def sender_thread():
                         tg_send(cid, "Failed to download photo from Telegram.")
                     continue
 
-                # Handle voice messages
+                # Handle voice messages (no transcription — text and photos only)
                 if voice:
-                    print(f"[sender] {user}: [voice] {voice.get('duration', '?')}s")
-                    tg_typing(cid)
-                    file_id = voice['file_id']
-                    file_info = tg_call('getFile', file_id=file_id)
-                    if file_info.get('ok'):
-                        file_path = file_info['result']['file_path']
-                        dl_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
-                        audio_data = requests.get(dl_url, timeout=30).content
-                        print(f"[sender] Downloaded voice: {len(audio_data)} bytes")
-
-                        # Transcribe
-                        transcription = transcribe_voice(audio_data)
-                        if transcription:
-                            print(f"[sender] Transcribed: {transcription[:80]}")
-                            # Echo transcription back to Telegram so user sees what was understood
-                            tg_send(cid, f"🎤 {transcription}")
-                            # Send to Cursor
-                            with last_sent_lock:
-                                last_sent_text = transcription
-                                last_tg_message_id = mid
-                            result = cursor_send_message(f"[Voice] {transcription}")
-                            print(f"[sender] -> Cursor: {result}")
-                        else:
-                            tg_send(cid, "Could not transcribe voice message. Is OPENAI_API_KEY set?")
-                    else:
-                        tg_send(cid, "Failed to download voice message.")
+                    print(f"[sender] {user}: [voice] ignored ({voice.get('duration', '?')}s)")
+                    tg_send(
+                        cid,
+                        "Voice notes are not supported. Send text or a photo (with optional caption).",
+                    )
                     continue
 
                 print(f"[sender] {user}: {text}")

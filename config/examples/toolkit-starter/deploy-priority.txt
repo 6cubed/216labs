@@ -1,0 +1,6 @@
+# Build / cap order for a small stack. Add your own apps below the demos.
+admin
+hello-nextjs
+hello-flask
+activator
+landing

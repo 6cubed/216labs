@@ -1,0 +1,8 @@
+# Apps to build when neither local 216labs.db nor the server admin DB is available
+# (CI, or first deploy from a clean clone before the DB exists). Edit this list
+# for greenfield / toolkit-focused workflows. See docs/TOOLKIT.md.
+admin
+activator
+landing
+hello-nextjs
+hello-flask

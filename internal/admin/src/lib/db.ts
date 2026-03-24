@@ -142,6 +142,8 @@ const KNOWN_PORTS: Record<string, number> = {
   onefitblog: 8044,
   marketing: 8045,
   pocketcursor: 8048,
+  "hello-nextjs": 8050,
+  "hello-flask": 8051,
 };
 
 let _db: Database.Database | null = null;
@@ -543,7 +545,7 @@ function syncTopLevelProjects(db: Database.Database) {
           name: toDisplayName(dir),
           tagline: AUTO_DISCOVERED_TAGLINE,
           description:
-            "Discovered from top-level directories in the 216labs workflow monorepo.",
+            "Discovered from the workflow monorepo (add manifest.json for full metadata).",
           category: isAdmin ? "admin" : "tool",
           port,
           docker_service: id,

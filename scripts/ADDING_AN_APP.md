@@ -1,5 +1,7 @@
 # Adding a New App
 
+**At 216Labs we are building the toolkit for production grade vibes.** Apps in this monorepo ship through one pipeline; the steps below wire a new service into it. For reference implementations, see **`products/org-platform/toolkit-demos/`** (`hello-nextjs`, `hello-flask`) and **`docs/TOOLKIT.md`**.
+
 Run the scaffold script to create the directory, `manifest.json`, and a starter `Dockerfile`:
 
 ```bash

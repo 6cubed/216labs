@@ -36,7 +36,7 @@ services:
       # LRU pool: 0 = off (default; safe when hopping across many subdomains). Set e.g. 10 in .env on tight RAM.
       - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-0}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
-      - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing}
+      - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing,bugbounty,hello-nextjs,hello-flask}
       # Compose services that refuse /api/start (avoid restarting edge or self).
       - ACTIVATOR_BLOCK_START_SERVICES=${ACTIVATOR_BLOCK_START_SERVICES:-caddy,activator}
       # Optional: delete 216labs/<svc>:latest on eviction to free disk (reload image via deploy).
@@ -550,6 +550,45 @@ services:
     expose:
       - "5000"
     mem_limit: 64m
+
+  # ── Toolkit demos (minimal hello-world apps; see docs/TOOLKIT.md) ─
+  hello-nextjs:
+    image: 216labs/hello-nextjs:latest
+    pull_policy: never
+    build: ./products/org-platform/toolkit-demos/hello-nextjs
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 128m
+
+  hello-flask:
+    image: 216labs/hello-flask:latest
+    pull_policy: never
+    build: ./products/org-platform/toolkit-demos/hello-flask
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+    expose:
+      - "5000"
+    mem_limit: 128m
+
+  # ── Public bug bounty policy (scope, reporting, safe harbor) ───
+  bugbounty:
+    image: 216labs/bugbounty:latest
+    pull_policy: never
+    build: ./products/org-platform/security/bugbounty
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - APP_HOST=${APP_HOST:-6cubed.app}
+      - BUGBOUNTY_SECURITY_EMAIL=${BUGBOUNTY_SECURITY_EMAIL:-security@6cubed.app}
+    expose:
+      - "3000"
+    mem_limit: 128m
 
   # ── 216labs HQ website (publications + citations) ───────────────
   labshq:
