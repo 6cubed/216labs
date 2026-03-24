@@ -516,12 +516,21 @@ if [ "${PULL_FROM_GHCR:-0}" = "1" ]; then
   # shellcheck disable=SC1091
   [ -f .env ] && . ./.env
   set +a
+  # Overlay from 216labs.db (same keys as admin → Environment); wins over .env when set.
+  if [ -f 216labs.db ] && command -v sqlite3 &>/dev/null; then
+    _v=$(sqlite3 216labs.db "SELECT value FROM env_vars WHERE key='GHCR_TOKEN' AND value != '' LIMIT 1" 2>/dev/null || true)
+    [ -n "$_v" ] && GHCR_TOKEN="$_v"
+    _v=$(sqlite3 216labs.db "SELECT value FROM env_vars WHERE key='GHCR_USERNAME' AND value != '' LIMIT 1" 2>/dev/null || true)
+    [ -n "$_v" ] && GHCR_USERNAME="$_v"
+    _v=$(sqlite3 216labs.db "SELECT value FROM env_vars WHERE key='ACTIVATOR_REGISTRY_PREFIX' AND value != '' LIMIT 1" 2>/dev/null || true)
+    [ -n "$_v" ] && ACTIVATOR_REGISTRY_PREFIX="$_v"
+  fi
   GHCR_TAGS_B64="$SAVED_TAGS_B64"
   REG="${ACTIVATOR_REGISTRY_PREFIX:-ghcr.io/6cubed/216labs}"
   REG="${REG%/}"
   if [ -z "${GHCR_TOKEN:-}" ] || [ -z "${GHCR_USERNAME:-}" ]; then
-    echo "WARN: GHCR pull skipped — GHCR_TOKEN or GHCR_USERNAME missing in $APP_DIR/.env" >&2
-    echo "      Add them (read:packages PAT + GitHub username) to pull CI-built images; see .env.example." >&2
+    echo "WARN: GHCR pull skipped — GHCR_TOKEN or GHCR_USERNAME missing (.env, 216labs.db env_vars, or admin Env page)" >&2
+    echo "      Set them in admin → Environment (stored in DB) or in $APP_DIR/.env; see .env.example." >&2
     TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
     ghcr_skip_missing=0
     total_tags=0
@@ -534,7 +543,7 @@ if [ "${PULL_FROM_GHCR:-0}" = "1" ]; then
     done <<< "$TAGS_LIST"
     if [ "$ghcr_skip_missing" -gt 0 ]; then
       echo "ERROR: $ghcr_skip_missing of $total_tags app image(s) missing on server and GHCR_TOKEN/GHCR_USERNAME unset." >&2
-      echo "      Fix: add GHCR_USERNAME + GHCR_TOKEN (read:packages) and ACTIVATOR_REGISTRY_PREFIX=ghcr.io/6cubed/216labs to $APP_DIR/.env" >&2
+      echo "      Fix: set GHCR_USERNAME, GHCR_TOKEN, ACTIVATOR_REGISTRY_PREFIX in admin Env or $APP_DIR/.env" >&2
       echo "      Or one-time: DEPLOY_IMAGE_SOURCE=local ./deploy.sh ... from a machine with Docker (build + transfer)." >&2
       exit 1
     fi

@@ -278,6 +278,39 @@ function seedInfraEnvDefaults(db: Database.Database) {
   db.prepare(
     `UPDATE env_vars SET value = 'http://cron-runner:3029' WHERE key = 'CRON_RUNNER_INTERNAL_URL' AND (value = '' OR value IS NULL)`
   ).run();
+
+  // GHCR / droplet deploy — same keys as activator manifest; ensure rows exist for admin Env UI.
+  const ghcrKeys: Array<{
+    key: string;
+    description: string;
+    is_secret: number;
+  }> = [
+    {
+      key: "ACTIVATOR_REGISTRY_PREFIX",
+      description:
+        "GHCR image prefix for deploy pull + activator (e.g. ghcr.io/6cubed/216labs)",
+      is_secret: 0,
+    },
+    {
+      key: "GHCR_USERNAME",
+      description:
+        "GitHub username for ghcr.io login; use with GHCR_TOKEN (read:packages)",
+      is_secret: 0,
+    },
+    {
+      key: "GHCR_TOKEN",
+      description:
+        "PAT with read:packages for ghcr.io — used by deploy.sh and activator",
+      is_secret: 1,
+    },
+  ];
+  const ins = db.prepare(
+    `INSERT OR IGNORE INTO env_vars (key, value, description, is_secret, updated_at)
+     VALUES (@key, '', @description, @is_secret, NULL)`
+  );
+  for (const row of ghcrKeys) {
+    ins.run(row);
+  }
 }
 
 function readManifest(manifestPath: string): AppManifest | null {

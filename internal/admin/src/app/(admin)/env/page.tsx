@@ -13,7 +13,11 @@ export default async function EnvPage() {
           Environment variables
         </h2>
         <p className="text-xs text-muted mt-0.5">
-          Secrets and config used by apps at deploy time
+          Secrets and config for apps at deploy time.{" "}
+          <span className="text-foreground/90">
+            GHCR_USERNAME, GHCR_TOKEN, and ACTIVATOR_REGISTRY_PREFIX (Activator group)
+            are read by deploy and the activator for registry pulls.
+          </span>
         </p>
       </div>
       <EnvVarEditor vars={envVars} />
