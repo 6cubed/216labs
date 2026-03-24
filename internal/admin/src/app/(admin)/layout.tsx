@@ -21,13 +21,15 @@ export default async function AdminLayout({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-foreground tracking-tight">
-                216labs
-                <span className="text-accent ml-2 font-normal text-base">
-                  Vibe Coding Workflow
-                </span>
+                216Labs
+                <span className="text-accent ml-2 font-normal text-base">Admin</span>
               </h1>
+              <p className="text-sm text-muted mt-1 max-w-2xl">
+                Monorepo registry: every app with a manifest or Dockerfile, plus deploy
+                and runtime status. Pages are rendered dynamically (no static cache).
+              </p>
               <p className="text-xs text-muted mt-0.5">
-                {rows.length} apps · {enabledCount} deployed
+                {rows.length} apps in DB · {enabledCount} deploy-enabled
               </p>
             </div>
             <div className="hidden sm:flex items-center gap-2 text-xs text-muted">
@@ -45,8 +47,8 @@ export default async function AdminLayout({
 
       <footer className="border-t border-border mt-auto">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <p className="text-xs text-muted text-center">
-            216labs Vibe Coding Workflow · SQLite ·{" "}
+          <p className="text-xs text-muted text-center max-w-3xl mx-auto">
+            At 216Labs we are building the toolkit for production grade vibes. · SQLite ·{" "}
             {new Date().toISOString().split("T")[0]}
           </p>
         </div>

@@ -5,12 +5,17 @@ import { InfraOverview } from "@/components/InfraOverview";
 import { SizeOverview } from "@/components/SizeOverview";
 import { RecentActivity } from "@/components/RecentActivity";
 import { buildRecentActivityFeed } from "@/lib/recent-activity";
+import { AppsOverviewTable } from "@/components/AppsOverviewTable";
+import { ProjectOverviewBanner } from "@/components/ProjectOverviewBanner";
+import { getRunningServices } from "@/lib/docker";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const rows = getAllApps();
   const apps = rows.map(dbRowToAppInfo);
+  const runningServices = await getRunningServices();
+  const runningList = [...runningServices];
   const recentRows = getRecentDeploymentActivity(8);
   const recentFeed = buildRecentActivityFeed(
     recentRows.map((row) => ({
@@ -27,14 +32,19 @@ export default async function DashboardPage() {
   const enabledImageSizeMB = apps
     .filter((a) => a.deployEnabled || a.id === "admin")
     .reduce((sum, a) => sum + a.imageSizeMB, 0);
+  const renderedAtIso = new Date().toISOString();
 
   return (
     <>
+      <section className="animate-fade-in mb-6">
+        <ProjectOverviewBanner appCount={apps.length} renderedAtIso={renderedAtIso} />
+      </section>
+
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-fade-in">
         <MetricCard
           label="Applications"
           value={apps.length}
-          sublabel={`${enabledCount} deployed`}
+          sublabel={`${enabledCount} deploy-enabled`}
         />
         <MetricCard
           label="Deploy Size"
@@ -55,6 +65,10 @@ export default async function DashboardPage() {
           value={totalCommits}
           sublabel="Across all apps"
         />
+      </section>
+
+      <section className="animate-fade-in mt-8">
+        <AppsOverviewTable apps={apps} runningServiceNames={runningList} />
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in mt-8">

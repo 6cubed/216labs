@@ -132,7 +132,10 @@ export function AppCard({
             <p className="text-sm text-muted">{app.tagline}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <DeployToggle appId={app.id} isRunning={isRunning} />
+            <DeployToggle
+              appId={app.id}
+              deployEnabled={app.deployEnabled || app.id === "admin"}
+            />
             <StatusBadge status={isRunning ? "running" : "stopped"} />
           </div>
         </div>

@@ -15,9 +15,10 @@ import { startContainer, stopContainer } from "@/lib/docker";
 import { revalidatePath } from "next/cache";
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { getProjectsRoot } from "@/lib/repo-paths";
+import { revalidateAdminPaths } from "@/lib/revalidate-admin";
 
-const PROJECTS_ROOT =
-  process.env.PROJECTS_ROOT || join(process.cwd(), "..");
+const PROJECTS_ROOT = getProjectsRoot();
 
 // Fallback when manifests aren't available (e.g. admin in isolation). Ordered longest-first.
 const PREFIX_TO_DIR_FALLBACK: Array<[string, string]> = [
@@ -156,18 +157,18 @@ export async function toggleAppDeploy(
       if (isNotFound && nextEnabled) {
         // Container was never deployed — revert so DB stays consistent.
         setDeployEnabled(appId, false);
-        revalidatePath("/");
+        revalidateAdminPaths();
         return { error: "No container found. Run a full deploy first." };
       }
 
       // For any other error, revert the DB flag to avoid DB/container divergence.
       setDeployEnabled(appId, !nextEnabled);
-      revalidatePath("/");
+      revalidateAdminPaths();
       return { error: `Container operation failed: ${msg}` };
     }
   }
 
-  revalidatePath("/");
+  revalidateAdminPaths();
   return { success: true };
 }
 
@@ -175,8 +176,7 @@ export async function fulfillStorybookOrder(orderId: string): Promise<ActionResu
   try {
     const { patchStorybookOrder } = await import("@/lib/storybook");
     await patchStorybookOrder(orderId, "fulfilled");
-    revalidatePath("/");
-    revalidatePath("/orders");
+    revalidateAdminPaths();
     return { success: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to update order" };
@@ -187,8 +187,7 @@ export async function fulfillValentineOrder(orderId: string): Promise<ActionResu
   try {
     const { patchValentineOrder } = await import("@/lib/valentine");
     await patchValentineOrder(orderId, "fulfilled");
-    revalidatePath("/");
-    revalidatePath("/orders");
+    revalidateAdminPaths();
     return { success: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to update order" };
@@ -199,7 +198,7 @@ export async function saveEnvVar(key: string, value: string) {
   setEnvVarValue(key, value);
   const appDir = getAppDirForKey(key);
   if (appDir) writeEnvLocal(appDir);
-  revalidatePath("/");
+  revalidateAdminPaths();
 }
 
 export async function fetchAppLogs(appId: string): Promise<string[]> {
@@ -216,7 +215,7 @@ export async function setCronJobEnabledAction(
   enabled: boolean
 ): Promise<ActionResult> {
   setCronJobEnabled(id, enabled);
-  revalidatePath("/");
+  revalidateAdminPaths();
   return { success: true };
 }
 
@@ -230,7 +229,7 @@ export async function saveAppAnalytics(
   }
 ): Promise<ActionResult> {
   upsertAppAnalytics(appId, data);
-  revalidatePath("/analytics");
+  revalidateAdminPaths();
   return { success: true };
 }
 
@@ -242,7 +241,7 @@ export async function createTodoCardAction(
   const t = title.trim();
   if (!t) return { error: "Title is required" };
   createTodoCard(columnId, t, body);
-  revalidatePath("/todos");
+  revalidateAdminPaths();
   return { success: true };
 }
 
@@ -254,13 +253,13 @@ export async function updateTodoCardAction(
     return { error: "Title cannot be empty" };
   }
   updateTodoCard(cardId, data);
-  revalidatePath("/todos");
+  revalidateAdminPaths();
   return { success: true };
 }
 
 export async function deleteTodoCardAction(cardId: string): Promise<ActionResult> {
   deleteTodoCard(cardId);
-  revalidatePath("/todos");
+  revalidateAdminPaths();
   return { success: true };
 }
 
@@ -270,7 +269,7 @@ export async function moveTodoCardAction(
   toIndex: number
 ): Promise<ActionResult> {
   moveTodoCard(cardId, toColumnId, toIndex);
-  revalidatePath("/todos");
+  revalidateAdminPaths();
   return { success: true };
 }
 
@@ -301,7 +300,7 @@ export async function runCronJobNow(jobId: string): Promise<ActionResult> {
         error: (body && body.error) || `Run failed (${res.status})`,
       };
     }
-    revalidatePath("/cron");
+    revalidateAdminPaths();
     return { success: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

@@ -1,6 +1,7 @@
 import { getAllApps } from "@/lib/db";
 import { dbRowToAppInfo } from "@/data/apps";
-import { AppCard } from "@/components/AppCard";
+import { AppsOverviewTable } from "@/components/AppsOverviewTable";
+import { ProjectOverviewBanner } from "@/components/ProjectOverviewBanner";
 import { getRunningServices } from "@/lib/docker";
 
 export const dynamic = "force-dynamic";
@@ -9,23 +10,22 @@ export default async function ApplicationsPage() {
   const rows = getAllApps();
   const apps = rows.map(dbRowToAppInfo);
   const runningServices = await getRunningServices();
+  const runningList = [...runningServices];
+  const renderedAtIso = new Date().toISOString();
 
   return (
-    <section className="animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Applications</h2>
-        <p className="text-xs text-muted">
-          Toggle deploy to control what ships (admin always on)
+    <section className="animate-fade-in space-y-6">
+      <ProjectOverviewBanner appCount={apps.length} renderedAtIso={renderedAtIso} />
+
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-1">
+          Application registry
+        </h2>
+        <p className="text-sm text-muted mb-4">
+          Deploy toggle updates SQLite and starts or stops the container when possible.
+          “Running” reflects Docker; “Deploy” is the intended shipped set.
         </p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {apps.map((app) => (
-          <AppCard
-            key={app.id}
-            app={app}
-            isRunning={runningServices.has(app.dockerService)}
-          />
-        ))}
+        <AppsOverviewTable apps={apps} runningServiceNames={runningList} />
       </div>
     </section>
   );

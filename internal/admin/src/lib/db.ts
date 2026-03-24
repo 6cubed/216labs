@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
+import { getDatabasePath, getProjectsRoot } from "./repo-paths";
 
 const BOOTSTRAP_FILE = "config/deploy-bootstrap.txt";
 
@@ -151,7 +152,7 @@ let _db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (!_db) {
-    _db = new Database(DB_PATH);
+    _db = new Database(getDatabasePath());
     _db.pragma("journal_mode = WAL");
     _db.pragma("foreign_keys = ON");
     initSchema(_db);
@@ -352,16 +353,17 @@ function walkManifestTree(rootName: string): string[] {
 }
 
 function discoverTopLevelProjects(): string[] {
-  if (!existsSync(PROJECTS_ROOT)) return [];
+  const projectsRoot = getProjectsRoot();
+  if (!existsSync(projectsRoot)) return [];
 
-  const rootDirs = readdirSync(PROJECTS_ROOT, { withFileTypes: true })
+  const rootDirs = readdirSync(projectsRoot, { withFileTypes: true })
     .filter(
       (entry) =>
         entry.isDirectory() &&
         !entry.name.startsWith(".") &&
         !NON_PROJECT_DIRS.has(entry.name) &&
-        (existsSync(join(PROJECTS_ROOT, entry.name, "Dockerfile")) ||
-          existsSync(join(PROJECTS_ROOT, entry.name, "manifest.json")))
+        (existsSync(join(projectsRoot, entry.name, "Dockerfile")) ||
+          existsSync(join(projectsRoot, entry.name, "manifest.json")))
     )
     .map((entry) => entry.name);
 
@@ -594,7 +596,7 @@ function ensureAdminAlwaysEnabled(db: Database.Database) {
 
 /** Set deploy_enabled=1 for app IDs listed in config/deploy-bootstrap.txt (one per line). Scale: edit file, not code. */
 function ensureBootstrapFromFile(db: Database.Database) {
-  const path = join(PROJECTS_ROOT, BOOTSTRAP_FILE);
+  const path = join(getProjectsRoot(), BOOTSTRAP_FILE);
   if (!existsSync(path)) return;
   const content = readFileSync(path, "utf-8");
   const update = db.prepare(

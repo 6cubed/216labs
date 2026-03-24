@@ -3,25 +3,25 @@
 import { useTransition, useState, useEffect } from "react";
 import { toggleAppDeploy } from "@/app/actions";
 
+/**
+ * Switch reflects **deploy_enabled** in SQLite (what ships / should run).
+ * Runtime (running/stopped) is shown separately — do not conflate the two.
+ */
 export function DeployToggle({
   appId,
-  isRunning,
+  deployEnabled,
 }: {
   appId: string;
-  isRunning: boolean;
+  deployEnabled: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [localEnabled, setLocalEnabled] = useState(isRunning);
+  const [localEnabled, setLocalEnabled] = useState(deployEnabled);
 
-  // When the server re-renders with fresh data (after revalidatePath),
-  // sync local state — but only when no transition is in flight to avoid
-  // flickering back to the old value mid-transition.
   useEffect(() => {
-    if (!isPending) setLocalEnabled(isRunning);
-  }, [isRunning, isPending]);
+    if (!isPending) setLocalEnabled(deployEnabled);
+  }, [deployEnabled, isPending]);
 
-  // Show optimistic inverse while pending, otherwise show confirmed local state.
   const active = isPending ? !localEnabled : localEnabled;
 
   const handleClick = () => {
@@ -31,7 +31,6 @@ export function DeployToggle({
       const result = await toggleAppDeploy(appId, next);
       if (result && "error" in result) {
         setError(result.error);
-        // Leave localEnabled alone — server revalidation will sync it via useEffect.
       } else {
         setLocalEnabled(next);
       }
@@ -41,9 +40,10 @@ export function DeployToggle({
   return (
     <div className="flex flex-col items-end gap-1">
       <button
+        type="button"
         role="switch"
         aria-checked={active}
-        aria-label={active ? "Stop container" : "Start container"}
+        aria-label={active ? "Disable deploy" : "Enable deploy"}
         disabled={isPending || appId === "admin"}
         onClick={handleClick}
         className={`
@@ -62,7 +62,7 @@ export function DeployToggle({
         />
       </button>
       {error && (
-        <p className="text-[10px] text-red-400 max-w-[120px] text-right leading-tight">
+        <p className="text-[10px] text-red-400 max-w-[140px] text-right leading-tight">
           {error}
         </p>
       )}
