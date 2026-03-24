@@ -524,14 +524,20 @@ if [ "${PULL_FROM_GHCR:-0}" = "1" ]; then
     echo "      Add them (read:packages PAT + GitHub username) to pull CI-built images; see .env.example." >&2
     TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
     ghcr_skip_missing=0
+    total_tags=0
     while IFS= read -r tag || [ -n "$tag" ]; do
       [ -z "$tag" ] && continue
+      total_tags=$((total_tags + 1))
       if ! docker image inspect "$tag" &>/dev/null; then
-        echo "ERROR: No local image $tag and no GHCR credentials — add GHCR_* to .env or run deploy with DEPLOY_IMAGE_SOURCE=local." >&2
-        ghcr_skip_missing=1
+        ghcr_skip_missing=$((ghcr_skip_missing + 1))
       fi
     done <<< "$TAGS_LIST"
-    [ "$ghcr_skip_missing" = 1 ] && exit 1
+    if [ "$ghcr_skip_missing" -gt 0 ]; then
+      echo "ERROR: $ghcr_skip_missing of $total_tags app image(s) missing on server and GHCR_TOKEN/GHCR_USERNAME unset." >&2
+      echo "      Fix: add GHCR_USERNAME + GHCR_TOKEN (read:packages) and ACTIVATOR_REGISTRY_PREFIX=ghcr.io/6cubed/216labs to $APP_DIR/.env" >&2
+      echo "      Or one-time: DEPLOY_IMAGE_SOURCE=local ./deploy.sh ... from a machine with Docker (build + transfer)." >&2
+      exit 1
+    fi
   else
     echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
     TAGS_LIST=$(printf '%s' "$GHCR_TAGS_B64" | base64 -d)
