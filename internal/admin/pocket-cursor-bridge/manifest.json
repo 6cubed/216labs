@@ -20,7 +20,8 @@
     { "key": "POCKETCURSOR_BRIDGE_CHAT_ID", "description": "Optional fixed Telegram chat/group id to listen to (blank accepts any authorized chat).", "is_secret": false },
     { "key": "POCKETCURSOR_ALLOWED_TELEGRAM_NAMES", "description": "Comma-separated allowed Telegram usernames (without @).", "is_secret": false },
     { "key": "POCKETCURSOR_ALLOWED_TELEGRAM_IDS", "description": "Comma-separated allowed Telegram user IDs for explicit whitelist.", "is_secret": false },
-    { "key": "POCKETCURSOR_VERBOSITY", "description": "Bridge logging verbosity: quiet, normal, or verbose.", "is_secret": false },
+    { "key": "POCKETCURSOR_VERBOSITY", "description": "Flask bridge admin log level (quiet/normal/verbose). For local pocket_cursor.py Cursor→Telegram thinking, prefer POCKETCURSOR_BRIDGE_VERBOSITY: quiet skips thinking, normal sends full thinking in chunks, verbose live-streams thinking via Telegram edits.", "is_secret": false },
+    { "key": "POCKETCURSOR_BRIDGE_VERBOSITY", "description": "Local CDP bridge only: quiet | normal | verbose — controls agent thinking mirrored to Telegram (verbose = live updates). Overrides POCKETCURSOR_VERBOSITY for this setting when set.", "is_secret": false },
     { "key": "POCKETCURSOR_REQUIRE_WHITELIST", "description": "If true, only whitelisted users can use the bridge in group chats.", "is_secret": false }
   ]
 }

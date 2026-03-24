@@ -79,6 +79,19 @@ def _apply_merged_env_files() -> None:
 
 _apply_merged_env_files()
 
+
+def get_bridge_verbosity() -> str:
+    """Cursor→Telegram richness: quiet (no thinking), normal, verbose (live thinking stream)."""
+    v = (
+        os.environ.get("POCKETCURSOR_BRIDGE_VERBOSITY")
+        or os.environ.get("POCKETCURSOR_VERBOSITY")
+        or "normal"
+    ).strip().lower()
+    if v not in ("quiet", "normal", "verbose"):
+        return "normal"
+    return v
+
+
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
     print(
@@ -183,29 +196,65 @@ def tg_escape_markdown_v2(text):
 
 
 def tg_send_thinking(cid, text):
-    """Send thinking text to Telegram in italic with 💭 prefix.
-    Tries MarkdownV2 italic first, falls back to plain text if formatting fails.
+    """Send thinking text to Telegram with 💭 prefix. Short messages use MarkdownV2 italic.
+    Long thinking is split into multiple messages (Telegram 4096 limit) — no silent truncation.
     """
     if not cid or not text:
         return
-    # Truncate if very long (thinking can be verbose)
-    if len(text) > 3500:
-        cut = text[:3500].rfind('\n')
-        if cut < 1000:
-            cut = 3500
-        text = text[:cut] + '...'
-    # Try MarkdownV2 italic first
-    try:
-        escaped = tg_escape_markdown_v2(text)
-        msg = f'_💭 {escaped}_'
-        result = tg_call('sendMessage', chat_id=cid, text=msg, parse_mode='MarkdownV2')
-        if result.get('ok'):
-            return result
-        print(f"[telegram] MarkdownV2 failed: {result.get('description', '?')}, falling back to plain text")
-    except Exception as e:
-        print(f"[telegram] MarkdownV2 error: {e}, falling back to plain text")
-    # Fallback: plain text with prefix
-    return tg_call('sendMessage', chat_id=cid, text=f"💭 {text}")
+    # Short: try styled italic
+    if len(text) <= 3500:
+        try:
+            escaped = tg_escape_markdown_v2(text)
+            msg = f'_💭 {escaped}_'
+            result = tg_call('sendMessage', chat_id=cid, text=msg, parse_mode='MarkdownV2')
+            if result.get('ok'):
+                return result
+            print(f"[telegram] MarkdownV2 failed: {result.get('description', '?')}, falling back to plain text")
+        except Exception as e:
+            print(f"[telegram] MarkdownV2 error: {e}, falling back to plain text")
+        return tg_call('sendMessage', chat_id=cid, text=f"💭 {text}")
+
+    # Long: chunk like tg_send (max ~4000 per message; leave room for prefix)
+    remaining = text
+    first = True
+    while remaining:
+        split_at = 3900
+        if len(remaining) > split_at:
+            cut = remaining.rfind("\n", 0, split_at)
+            if cut < 1500:
+                cut = split_at
+        else:
+            cut = len(remaining)
+        chunk = remaining[:cut]
+        remaining = remaining[cut:].lstrip("\n")
+        prefix = "💭 " if first else "💭 … "
+        tg_call("sendMessage", chat_id=cid, text=prefix + chunk)
+        first = False
+        time.sleep(0.25)
+
+
+def tg_thinking_stream_update(cid, sec_key, text, state: dict):
+    """Live-update one Telegram message while Cursor thinking text grows (verbose mode)."""
+    if not cid or not text or not sec_key:
+        return
+    display = f"💭 {text}"
+    if len(display) > 4096:
+        display = display[:4090] + "…"
+    entry = state.get(sec_key)
+    mid = entry.get("msg_id") if isinstance(entry, dict) else None
+    if mid:
+        r = tg_call("editMessageText", chat_id=cid, message_id=mid, text=display)
+        if r.get("ok"):
+            if isinstance(entry, dict):
+                entry["last_text"] = text
+            return
+        print(f"[telegram] editMessageText failed: {r.get('description', '?')}, sending new message")
+    r = tg_call("sendMessage", chat_id=cid, text=display)
+    if r.get("ok") and r.get("result", {}).get("message_id"):
+        state[sec_key] = {
+            "msg_id": r["result"]["message_id"],
+            "last_text": text,
+        }
 
 
 def tg_send_photo(cid, photo_path, caption=None):
@@ -2122,6 +2171,7 @@ def monitor_thread():
     prev_by_id = {}             # {section_id: text} from previous tick (for stability)
     section_stable = {}         # {section_id: consecutive_stable_ticks}
     STABLE_THRESHOLD = 2        # Forward section after 2s of no change
+    thinking_stream_state = {}  # sec_key -> {msg_id, last_text} for verbose live thinking
     initialized = False
     marked_done = False         # Whether we've sent ✅ for this turn
 
@@ -2170,6 +2220,7 @@ def monitor_thread():
                 prev_by_id = {sec.get('id', ''): sec.get('text', '')
                               for sec in turn['sections'] if isinstance(sec, dict) and sec.get('id')}
                 section_stable = {}
+                thinking_stream_state.clear()
                 sent_this_turn = False
                 marked_done = False
                 continue
@@ -2328,6 +2379,7 @@ def monitor_thread():
                                 tg_send_photo(cid, local_path, caption="[PC] attached image")
 
                 forwarded_ids = set()
+                thinking_stream_state.clear()
                 sent_this_turn = False
                 prev_by_id = {}
                 section_stable = {}
@@ -2368,6 +2420,8 @@ def monitor_thread():
             if not turn_silent:
                 monitor_thread._silent_logged = False
 
+            bridge_verbosity = get_bridge_verbosity()
+
             # Walk sections in DOM order. Skip already-forwarded IDs.
             # Stop at the first un-forwarded section that isn't stable yet
             # (preserves sequential ordering for Telegram).
@@ -2388,8 +2442,23 @@ def monitor_thread():
                 else:
                     section_stable[sec_key] = 0
 
+                # Verbose: live-update Telegram while Cursor thinking text grows (before stability gate)
+                if (
+                    sec_type == 'thinking'
+                    and bridge_verbosity == 'verbose'
+                    and not muted
+                    and sec_key
+                    and sec_key not in forwarded_ids
+                    and text.strip()
+                ):
+                    tg_thinking_stream_update(cid, sec_key, text, thinking_stream_state)
+
+                stable_need = STABLE_THRESHOLD
+                if sec_type == 'thinking' and bridge_verbosity == 'verbose':
+                    stable_need = 1  # finalize sooner after streaming edits
+
                 # Not stable yet — stop here (sequential ordering)
-                if section_stable.get(sec_key, 0) < STABLE_THRESHOLD:
+                if section_stable.get(sec_key, 0) < stable_need:
                     break
 
                 # Don't forward empty thinking — wait for content to load
@@ -2508,8 +2577,16 @@ def monitor_thread():
                             display_text = (file_path or text) if sec_type == 'file_edit' else text
                             tg_send(cid, f"{prefix}{display_text}")
                     elif sec_type == 'thinking':
-                        print(f"[monitor] Forwarding THINKING ({len(text)} chars)")
-                        tg_send_thinking(cid, text)
+                        if bridge_verbosity == 'quiet':
+                            print(f"[monitor] THINKING suppressed ({len(text)} chars, quiet verbosity)")
+                        elif bridge_verbosity == 'verbose':
+                            print(
+                                f"[monitor] THINKING done ({len(text)} chars; "
+                                f"live-streamed to Telegram)"
+                            )
+                        else:
+                            print(f"[monitor] Forwarding THINKING ({len(text)} chars)")
+                            tg_send_thinking(cid, text)
                     else:
                         # Check for [PHONE_OUTBOX:filename] marker
                         outbox_match = OUTBOX_MARKER_RE.search(text)
@@ -2535,6 +2612,8 @@ def monitor_thread():
                 # Always advance tracking — muted sections are "silently consumed"
                 if sec_key:
                     forwarded_ids.add(sec_key)
+                    if sec_type == 'thinking':
+                        thinking_stream_state.pop(sec_key, None)
                 sent_this_turn = True
                 print(f"[monitor]   → [{i}] {sec_type:12s}  id={short_id(sec_key)}  ids={len(forwarded_ids)}")
                 section_stable.pop(sec_key, None)
