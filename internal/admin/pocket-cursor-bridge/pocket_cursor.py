@@ -1808,7 +1808,9 @@ def cursor_get_turn_info(composer_prefix='', conn=None):
             // Walks all message bubbles (AI text, tables, code blocks, tool/file-edit blocks)
             // using data-flat-index for correct ordering.
             const sections = [];
-            const allBubbles = last.querySelectorAll('[data-message-role="ai"], [data-message-kind="tool"]');
+            const allBubbles = last.querySelectorAll(
+                '[data-message-role="ai"], [data-message-kind="tool"], [data-message-kind="thinking"]'
+            );
             allBubbles.forEach(msg => {
                 const msgId = msg.getAttribute('data-message-id') || '';
                 const bubbleSuffix = msgId.split('-').pop();
@@ -1941,8 +1943,24 @@ def cursor_get_turn_info(composer_prefix='', conn=None):
                 }
 
                 // --- AI text messages (markdown sections, code blocks + tables) ---
-                const root = msg.querySelector('.anysphere-markdown-container-root');
-                if (!root) return;
+                let root = msg.querySelector('.anysphere-markdown-container-root');
+                if (!root) {
+                    root = msg.querySelector('[class*="markdown-container-root"]')
+                        || msg.querySelector('[class*="MarkdownMessage"]');
+                }
+                if (!root) {
+                    // Newer Cursor builds may omit the markdown root; still mirror the reply text.
+                    const fallbackText = (msg.innerText || '').trim();
+                    if (fallbackText.length > 0) {
+                        sections.push({
+                            text: fallbackText,
+                            type: 'text',
+                            id: msgId || ('gen:fallback:' + subIdx),
+                            selector: null
+                        });
+                    }
+                    return;
+                }
                 let tableIndex = 0;
 
                 let codeBlockIndex = 0;
