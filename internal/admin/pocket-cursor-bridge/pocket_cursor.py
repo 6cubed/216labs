@@ -895,6 +895,23 @@ def active_conn():
     return ws
 
 
+def _cdp_conn_for_telegram_send():
+    """Prefer mirrored chat's Cursor instance for Telegram → Cursor injection.
+
+    cursor_get_turn_info uses mirrored_chat's WebSocket; if we inject using active_conn()
+    while another window is focused, the message lands in the wrong instance and replies
+    never mirror back to Telegram.
+    """
+    try:
+        if mirrored_chat:
+            info = instance_registry.get(mirrored_chat[0])
+            if info and info.get('ws'):
+                return info['ws']
+    except Exception:
+        pass
+    return active_conn()
+
+
 def cdp_eval(expression):
     """Evaluate JS on the active instance. Thread-safe via cdp_lock."""
     return cdp_eval_on(active_conn(), expression)
@@ -1289,9 +1306,10 @@ def cdp_screenshot_element(selector):
 def cursor_paste_image(image_bytes, mime='image/png', filename='image.png'):
     """Paste an image into Cursor's editor via simulated ClipboardEvent."""
     b64 = base64.b64encode(image_bytes).decode('ascii')
+    conn = _cdp_conn_for_telegram_send()
 
     # Focus editor first
-    focus_result = cdp_eval("""
+    focus_result = cdp_eval_on(conn, """
         (function() {
             let editor = document.querySelector('.aislash-editor-input');
             if (!editor) {
@@ -1312,7 +1330,7 @@ def cursor_paste_image(image_bytes, mime='image/png', filename='image.png'):
     time.sleep(0.3)
 
     # Inject image via paste event
-    result = cdp_eval(f"""
+    result = cdp_eval_on(conn, f"""
         (function() {{
             const b64 = "{b64}";
             const mime = "{mime}";
@@ -1356,7 +1374,8 @@ def cursor_paste_image(image_bytes, mime='image/png', filename='image.png'):
 
 def cursor_click_send():
     """Click the send button in Cursor's editor. Used after image paste with no text."""
-    return cdp_eval("""
+    conn = _cdp_conn_for_telegram_send()
+    return cdp_eval_on(conn, """
         (function() {
             const selectors = [
                 '.send-with-mode .anysphere-icon-button',
@@ -1519,7 +1538,7 @@ def cursor_send_message(text, raw=False):
         mention_typing = '@' in incoming
 
     global msg_id_counter
-    conn = active_conn()
+    conn = _cdp_conn_for_telegram_send()
     t0 = time.time()
 
     with cdp_lock:
