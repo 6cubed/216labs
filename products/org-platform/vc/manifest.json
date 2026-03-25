@@ -1,0 +1,29 @@
+{
+  "id": "vc",
+  "name": "216 Labs Ventures",
+  "tagline": "Venture capital for teams that ship production-grade product.",
+  "description": "Public presence for the 216 Labs venture arm: thesis, portfolio orientation, and how founders can reach the team.",
+  "category": "tool",
+  "internal_port": 3000,
+  "memory_limit": "128m",
+  "docker_service": "vc",
+  "build_context": "./products/org-platform/vc",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": null,
+    "database": null,
+    "other": null
+  },
+  "env_vars": [
+    {
+      "key": "NEXT_PUBLIC_APP_HOST",
+      "description": "Hostname for absolute links (default: 6cubed.app)",
+      "is_secret": false
+    },
+    {
+      "key": "VC_CONTACT_EMAIL",
+      "description": "Inbound email for founders (e.g. vc@6cubed.app)",
+      "is_secret": false
+    }
+  ]
+}

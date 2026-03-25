@@ -146,6 +146,7 @@ const KNOWN_PORTS: Record<string, number> = {
   "hello-nextjs": 8050,
   "hello-flask": 8051,
   bugbounty: 8052,
+  vc: 8053,
 };
 
 let _db: Database.Database | null = null;

@@ -591,6 +591,21 @@ services:
       - "3000"
     mem_limit: 128m
 
+  # ── 216 Labs Ventures (VC arm) ──────────────────────────────────
+  vc:
+    image: 216labs/vc:latest
+    pull_policy: never
+    build: ./products/org-platform/vc
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_HOST=${APP_HOST:-6cubed.app}
+      - VC_CONTACT_EMAIL=${VC_CONTACT_EMAIL:-vc@6cubed.app}
+    expose:
+      - "3000"
+    mem_limit: 128m
+
   # ── 216labs HQ website (publications + citations) ───────────────
   labshq:
     image: 216labs/labshq:latest

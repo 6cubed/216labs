@@ -737,6 +737,21 @@ valentine.6cubed.app {
 	}
 }
 
+vc.6cubed.app {
+	reverse_proxy vc:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=vc&dest=https%3A%2F%2Fvc.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=vc&dest=https%3A%2F%2Fvc.6cubed.app" 302
+		}
+	}
+}
+
 worldphoto.6cubed.app {
 	reverse_proxy worldphoto:3000 {
 		@cold status 502 503 504
