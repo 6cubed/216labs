@@ -1999,6 +1999,22 @@ def telegram_command_base(text: str) -> str:
     return first
 
 
+def strip_leading_bot_mention(text: str, bot_username: str | None) -> str:
+    """Remove a leading @botusername (groups often use this when privacy mode is on).
+
+    Without this, '@MyBot /status' does not start with '/', so commands never match and
+    the raw string is forwarded to Cursor instead of handling /status in Telegram.
+    """
+    if not text or not bot_username:
+        return (text or "").strip()
+    u = bot_username.lstrip("@")
+    t = text.strip()
+    m = re.match(rf"@{re.escape(u)}\b\s*", t, re.IGNORECASE)
+    if m:
+        return t[m.end() :].strip()
+    return t
+
+
 def sender_thread():
     global chat_id, allowed_user_ids, last_sent_text, last_tg_message_id, muted, active_instance_id, mirrored_chat
     print("[sender] Starting Telegram poller...")
@@ -2238,13 +2254,17 @@ def sender_thread():
                         paste_result = cursor_paste_image(img_data, mime, f"telegram_photo.{ext}")
                         print(f"[sender] Paste result: {paste_result}")
 
-                        # If there's a caption, also insert it as text
+                        # If there's a caption, also insert it as text (strip @bot prefix like text messages)
+                        time.sleep(0.5)
                         if caption:
-                            time.sleep(0.5)
-                            cursor_send_message(caption)
+                            cap = strip_leading_bot_mention(
+                                caption, bot.get('username') if bot else None
+                            )
+                            if cap:
+                                cursor_send_message(cap)
+                            else:
+                                cursor_click_send()
                         else:
-                            # Just click send after the image
-                            time.sleep(0.5)
                             cursor_click_send()
                     else:
                         tg_send(cid, "Failed to download photo from Telegram.")
@@ -2259,7 +2279,21 @@ def sender_thread():
                     )
                     continue
 
-                print(f"[sender] {user}: {text}")
+                raw_text = text
+                bu = bot.get('username') if bot else None
+                text = strip_leading_bot_mention(text, bu)
+                # Message was only "@Bot" (common in groups with privacy on) — nothing to forward
+                if not text and not photo and not voice:
+                    if bu and raw_text.strip() and re.fullmatch(
+                        rf'@{re.escape(bu.lstrip("@"))}\s*', raw_text.strip(), re.IGNORECASE
+                    ):
+                        tg_send(
+                            cid,
+                            "👋 Ready. Send your message after the mention, or use /status.",
+                        )
+                    continue
+
+                print(f"[sender] {user}: {raw_text}")
                 cmd = telegram_command_base(text)
 
                 # Handle commands (cmd strips /foo@BotName → /foo for group chats)
