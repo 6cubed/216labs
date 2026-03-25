@@ -16,7 +16,7 @@ services:
     # Caddy's basicauth expects standard base64 for the password value.
     # Older deployments stored base64-ish strings using '.' instead of '+'
     # and without the required '=' padding; normalize at runtime.
-    command: sh -c "if [ -n \"\$ADMIN_PASSWORD_HASH\" ]; then ADMIN_PASSWORD_HASH=\"\$(printf %s \"\$ADMIN_PASSWORD_HASH\" | tr . +)\"; LEN=\"\$(printf %s \"\$ADMIN_PASSWORD_HASH\" | wc -c | tr -d ' ' )\"; MOD=\"\$((LEN % 4))\"; if [ \"\$MOD\" -eq 2 ]; then ADMIN_PASSWORD_HASH=\"\$ADMIN_PASSWORD_HASH==\"; elif [ \"\$MOD\" -eq 3 ]; then ADMIN_PASSWORD_HASH=\"\$ADMIN_PASSWORD_HASH=\"; fi; export ADMIN_PASSWORD_HASH; fi; exec caddy run --config /etc/caddy/Caddyfile"
+    command: sh -c 'if [ -n "$$ADMIN_PASSWORD_HASH" ]; then ADMIN_PASSWORD_HASH="$(printf %s "$$ADMIN_PASSWORD_HASH" | tr . +)"; LEN="$(printf %s "$$ADMIN_PASSWORD_HASH" | wc -c | tr -d " ")"; if [ $((LEN % 4)) -eq 2 ]; then ADMIN_PASSWORD_HASH="$$ADMIN_PASSWORD_HASH=="; elif [ $((LEN % 4)) -eq 3 ]; then ADMIN_PASSWORD_HASH="$$ADMIN_PASSWORD_HASH="; fi; export ADMIN_PASSWORD_HASH; fi; exec caddy run --config /etc/caddy/Caddyfile'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
