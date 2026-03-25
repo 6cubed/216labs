@@ -10,6 +10,10 @@ services:
     environment:
       - ADMIN_USER=${ADMIN_USER:-admin}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+    # Some older deploys stored ADMIN_PASSWORD_HASH using bcrypt's base64 alphabet
+    # where '.' should be '+' for standard base64 decoding.
+    # Fix it at runtime so caddy can always start, regardless of how the hash was generated.
+    command: sh -c "if [ -n \"\$ADMIN_PASSWORD_HASH\" ]; then export ADMIN_PASSWORD_HASH=\"\$(echo \"\$ADMIN_PASSWORD_HASH\" | tr . +)\"; fi; exec caddy run --config /etc/caddy/Caddyfile"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
