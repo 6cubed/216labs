@@ -1009,19 +1009,30 @@ def cdp_bring_to_front(conn, target_id=None):
         print(f"[cdp] bring_to_front: OS fallback exception: {e}")
 
 
-def cdp_insert_text(text):
-    """Insert text via CDP Input.insertText. Thread-safe."""
-    global ws, msg_id_counter
+def _cdp_insert_text_unlocked(conn, text):
+    """Input.insertText on an open CDP connection. Caller must hold cdp_lock."""
+    global msg_id_counter
     with msg_id_lock:
         msg_id_counter += 1
         mid = msg_id_counter
+    conn.send(json.dumps({
+        'id': mid,
+        'method': 'Input.insertText',
+        'params': {'text': text}
+    }))
+    json.loads(conn.recv())
+
+
+# Lexical (Cursor chat) only runs @-mention handlers on real typing; one bulk insertText
+# leaves @foo as plain text. Per-character insertText after the [Telegram] prefix fixes it.
+_MENTION_TYPING_CHAR_DELAY = 0.006
+
+
+def cdp_insert_text(text):
+    """Insert text via CDP Input.insertText. Thread-safe."""
+    global ws
     with cdp_lock:
-        ws.send(json.dumps({
-            'id': mid,
-            'method': 'Input.insertText',
-            'params': {'text': text}
-        }))
-        json.loads(ws.recv())
+        _cdp_insert_text_unlocked(ws, text)
 
 
 def cdp_screenshot_on(conn):
@@ -1478,9 +1489,17 @@ def cursor_send_message(text, raw=False):
     Holds the CDP lock for the entire sequence to avoid monitor thread contention.
     Auto-prepends [Telegram] and a timestamp unless raw=True.
     """
+    incoming = text
     if not raw:
         timestamp = datetime.now().strftime('%a %Y-%m-%d %H:%M')
-        text = f"[{timestamp}] [Telegram] {text}"
+        prefix = f"[{timestamp}] [Telegram] "
+        full_text = prefix + incoming
+        # Only the user-authored part needs mention-typing; our prefix has no @.
+        mention_typing = '@' in incoming
+    else:
+        prefix = ''
+        full_text = incoming
+        mention_typing = '@' in incoming
 
     global msg_id_counter
     conn = active_conn()
@@ -1523,15 +1542,17 @@ def cursor_send_message(text, raw=False):
         t1 = time.time()
 
         # 2. Insert text at end (still holding lock)
-        with msg_id_lock:
-            msg_id_counter += 1
-            mid = msg_id_counter
-        conn.send(json.dumps({
-            'id': mid,
-            'method': 'Input.insertText',
-            'params': {'text': text}
-        }))
-        json.loads(conn.recv())
+        if mention_typing:
+            if prefix:
+                _cdp_insert_text_unlocked(conn, prefix)
+            at = incoming.find('@')
+            if at > 0:
+                _cdp_insert_text_unlocked(conn, incoming[:at])
+            for ch in incoming[at:]:
+                _cdp_insert_text_unlocked(conn, ch)
+                time.sleep(_MENTION_TYPING_CHAR_DELAY)
+        else:
+            _cdp_insert_text_unlocked(conn, full_text)
         t2 = time.time()
 
         # 3. Verify + click send (still holding lock)
