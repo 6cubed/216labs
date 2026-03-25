@@ -149,7 +149,9 @@ if [ -f "$BOOTSTRAP_FILE" ]; then
       echo "==> Force-including $force (from $BOOTSTRAP_FILE)"
     fi
   done < "$BOOTSTRAP_FILE"
-else
+elif [ "${DEPLOY_SHOWROOM:-0}" != "1" ]; then
+  # Legacy: widen the enabled set when the server DB has not been backfilled yet.
+  # Skip in showroom mode — the droplet should stay a small hot pool + cold activator demos.
   for force in happypath blog worldphoto offlinellm 1pageresearch facerate landing; do
     if [[ " $ENABLED_APPS " != *" $force "* ]]; then
       ENABLED_APPS="$ENABLED_APPS $force"
@@ -158,8 +160,13 @@ else
   done
 fi
 
-# Cap total apps to avoid filling droplet disk (default 100). Set DEPLOY_MAX_APPS lower on small disks.
-MAX_APPS="${DEPLOY_MAX_APPS:-100}"
+# Cap catalogue size (deploy_enabled apps considered after bootstrap). Showroom defaults higher so many
+# demos can stay "available" in the DB while only DEPLOY_RUNTIME_APPS stay running (see below).
+if [ "${DEPLOY_SHOWROOM:-0}" = "1" ]; then
+  MAX_APPS="${DEPLOY_MAX_APPS:-500}"
+else
+  MAX_APPS="${DEPLOY_MAX_APPS:-100}"
+fi
 # Priority order from config (scale: edit config/deploy-priority.txt, not this script)
 PRIORITY_FILE="config/deploy-priority.txt"
 if [ -f "$PRIORITY_FILE" ]; then
@@ -193,9 +200,44 @@ if [ -n "$CAPPED" ]; then
   echo "==> Capped to $MAX_APPS apps: $ENABLED_APPS"
 fi
 
+# ── Runtime subset (showroom / hotswap) ───────────────────────
+# Default deploy starts every enabled app (RAM + GHCR pull). For on-demand showroom, set
+# DEPLOY_SHOWROOM=1 and optionally DEPLOY_RUNTIME_APPS="admin landing …" so only that pool
+# is pulled and kept running; other deploy_enabled apps cold-start via activator (GHCR pull there).
+SHOWROOM="${DEPLOY_SHOWROOM:-0}"
+RUNTIME_RAW="${DEPLOY_RUNTIME_APPS:-}"
+if [ "$SHOWROOM" = "1" ] && [ -z "$RUNTIME_RAW" ]; then
+  RUNTIME_RAW="admin landing"
+fi
+RUNTIME_APPS=""
+if [ -n "$RUNTIME_RAW" ]; then
+  for wanted in $RUNTIME_RAW; do
+    wanted=$(echo "$wanted" | sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//')
+    [ -z "$wanted" ] && continue
+    if [[ " $ENABLED_APPS " == *" $wanted "* ]]; then
+      RUNTIME_APPS="$RUNTIME_APPS $wanted"
+    else
+      echo "==> WARN: runtime list includes '$wanted' but it is not in the enabled/capped set; skipping." >&2
+    fi
+  done
+  RUNTIME_APPS=$(echo "$RUNTIME_APPS" | tr -s ' ')
+  if [[ " $ENABLED_APPS " == *" admin "* ]] && [[ " $RUNTIME_APPS " != *" admin "* ]]; then
+    RUNTIME_APPS="admin $RUNTIME_APPS"
+    RUNTIME_APPS=$(echo "$RUNTIME_APPS" | tr -s ' ')
+  fi
+  if [ -z "$RUNTIME_APPS" ]; then
+    echo "ERROR: DEPLOY_RUNTIME_APPS / showroom hot list resolved to empty (no overlap with enabled apps)." >&2
+    exit 1
+  fi
+  echo "==> Runtime pool (compose + GHCR this run): $RUNTIME_APPS"
+  echo "==> Catalogue (deploy_enabled, capped): $ENABLED_APPS"
+else
+  RUNTIME_APPS="$ENABLED_APPS"
+fi
+
 # ── Filter to enabled services ────────────────────────────────
 SERVICES=()
-for app in $ENABLED_APPS; do
+for app in $RUNTIME_APPS; do
   SPEC=$(service_spec "$app")
   if [ -n "$SPEC" ]; then
     SERVICES+=("$app:$SPEC")
@@ -415,7 +457,7 @@ fi
 
 # ── Determine which compose services to start ─────────────────
 COMPOSE_SERVICES="caddy"
-for app in $ENABLED_APPS; do
+for app in $RUNTIME_APPS; do
   COMPOSE_SERVICES="$COMPOSE_SERVICES $(compose_svc_name "$app")"
   DEPS=$(service_deps "$app")
   if [ -n "$DEPS" ]; then
@@ -448,16 +490,16 @@ GHCR_TAGS_B64=""
 if [ "$PULL_FROM_GHCR" = "1" ] && [ ${#ALL_IMAGES[@]} -gt 0 ]; then
   GHCR_TAGS_B64=$(printf '%s\n' "${ALL_IMAGES[@]}" | base64 | tr -d '\n')
 fi
-# Pass changed-services sentinel as $3, enabled app ids as $4 (single arg), then compose services ($5+).
+# Pass changed-services sentinel as $3, runtime app ids as $4 (single arg), then compose services ($5+).
 # PULL_FROM_GHCR + GHCR_TAGS_B64: droplet pulls ghcr.io/…/short:latest and retags to 216labs/short:latest.
 ssh "${SSH_OPTS[@]}" "$REMOTE" \
   env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" \
-  bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$ENABLED_APPS" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
+  bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$RUNTIME_APPS" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
 APP_DIR="$2"
 CHANGED_SERVICES="$3"   # "__none__" when nothing changed, else space-separated names
-ENABLED_APPS="$4"       # space-separated app ids (matches local deploy.sh / DB primary key)
+RUNTIME_APPS="$4"     # app ids that are pulled + compose-up this deploy (full catalogue may be larger)
 [ "$CHANGED_SERVICES" = "__none__" ] && CHANGED_SERVICES=""
 shift 4
 COMPOSE_SERVICES="$*"   # all compose service names as individual args
@@ -677,7 +719,7 @@ if [ -f 216labs.db ]; then
   done
   # last_deployed_at: update by app id (deploy cap list) and by compose service name (covers id≠service).
   # Use host sqlite3 on the droplet — same DB file as admin; avoids relying on docker exec + Node.
-  for id in $ENABLED_APPS; do
+  for id in $RUNTIME_APPS; do
     sqlite3 216labs.db "UPDATE apps SET last_deployed_at = '$NOW' WHERE id = '$id';" 2>/dev/null || true
   done
   for svc in $COMPOSE_SERVICES; do
@@ -717,7 +759,7 @@ if [ -f "$DB_FILE" ]; then
   done <<< "$STARTUP_DATA"
 
   # Local dev copy of DB only (*.db is gitignored). Server authoritative timestamps are set in REMOTE_SCRIPT above.
-  for app in $ENABLED_APPS; do
+  for app in $RUNTIME_APPS; do
     sqlite3 "$DB_FILE" "UPDATE apps SET last_deployed_at = '$NOW' WHERE id = '$app';" 2>/dev/null || true
   done
 

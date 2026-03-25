@@ -14,6 +14,7 @@ This doc describes the foundations for scaling to hundreds or thousands of apps 
 | Concern | Current mechanism | Scale behavior |
 |--------|-------------------|----------------|
 | **Which apps deploy** | Admin DB `deploy_enabled` + optional cap | DB stays source of truth; cap via `DEPLOY_MAX_APPS` |
+| **Showroom / hotswap** | `DEPLOY_SHOWROOM=1` + `DEPLOY_RUNTIME_APPS` (or default `admin landing`) | Keeps a **small hot pool** running and pulls only those images from GHCR; larger `deploy_enabled` catalogue cold-starts via activator (optional GHCR pull on wake). Set `ACTIVATOR_MAX_CONCURRENT_APPS` + optional `ACTIVATOR_REMOVE_IMAGE_ON_EVICT` on the droplet to cap RAM/disk. |
 | **Force-include / bootstrap** | `config/deploy-bootstrap.txt` (one app ID per line) | Edit file; no code change. Admin ensures these apps get `deploy_enabled=1` on sync. |
 | **Deploy order / priority** | `config/deploy-priority.txt` (one app ID per line) | Edit file; deploy.sh reads it and caps to `DEPLOY_MAX_APPS` from this order. |
 | **Port assignment** | `KNOWN_PORTS` in db.ts for legacy; new apps get `getNextPort(db)` | At scale, new apps don’t need entries in KNOWN_PORTS. |
