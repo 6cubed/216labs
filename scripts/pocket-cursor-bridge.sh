@@ -2,9 +2,10 @@
 # Single entry: venv, deps, Cursor+CDP, then pocket_cursor.py. Run from repo root:
 #   ./scripts/pocket-cursor-bridge.sh
 #
-# Telegram: if no TELEGRAM_BOT_TOKEN (env / .env.admin-sync / .env), an interactive wizard runs.
-#   POCKET_SKIP_WIZARD=1  — skip wizard; fail fast like the old behavior (for CI / no TTY).
-#   POCKET_WIZARD=1       — force the wizard even when a token is already configured.
+# Telegram: interactive wizard (bridge_wizard.py --ensure) runs before the bridge starts.
+#   With no token (env / .env.admin-sync / .env), it runs first-time setup.
+#   With a token already set, it prints a summary and asks whether to reconfigure.
+#   POCKET_SKIP_WIZARD=1  — skip wizard; fail fast (for CI / no TTY).
 #
 # Needs Python 3.10+ (default `python3` on older Macs may be 3.7 and WILL fail to
 # install deps). Install: brew install python@3.12  OR set POCKETCURSOR_PYTHON to a 3.10+ binary.

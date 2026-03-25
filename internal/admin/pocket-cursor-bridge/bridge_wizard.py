@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Interactive Telegram setup for PocketCursor. Used by scripts/pocket-cursor-bridge.sh when
-no bot token is available from the environment or merged .env files.
+Interactive Telegram setup for PocketCursor. Used by scripts/pocket-cursor-bridge.sh.
+
+If a token is already set (env or merged .env files), the wizard prints a short summary
+and asks before changing token, pinned .chat_id (DM vs group), and allowlist.
 
 Precedence matches pocket_cursor.py: process env wins; then .env.admin-sync; then .env.
 """
@@ -41,14 +43,66 @@ def _parse_env_file(path: Path) -> dict[str, str]:
     return out
 
 
-def effective_telegram_token() -> str:
+def _merged_env_files() -> dict[str, str]:
     merged: dict[str, str] = {}
     merged.update(_parse_env_file(BRIDGE / ".env.admin-sync"))
     merged.update(_parse_env_file(BRIDGE / ".env"))
+    return merged
+
+
+def effective_telegram_token() -> str:
+    merged = _merged_env_files()
     t = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     if t:
         return t
     return merged.get("TELEGRAM_BOT_TOKEN", "").strip()
+
+
+def read_chat_id_file() -> int | None:
+    path = BRIDGE / ".chat_id"
+    if not path.is_file():
+        return None
+    try:
+        s = path.read_text(encoding="utf-8", errors="replace").strip()
+        if s.lstrip("-").isdigit():
+            return int(s)
+    except OSError:
+        pass
+    return None
+
+
+def _mask_token(t: str) -> str:
+    t = t.strip()
+    if len(t) <= 8:
+        return "(set)"
+    return f"{t[:4]}…{t[-4:]}"
+
+
+def print_config_summary() -> None:
+    tok = effective_telegram_token()
+    merged = _merged_env_files()
+    owner = merged.get("TELEGRAM_OWNER_ID", "").strip()
+    allow = merged.get("TELEGRAM_ALLOWED_USER_IDS", "").strip()
+    chat_id = read_chat_id_file()
+    print("\n── Current bridge config (from env + .env files) ──")
+    if tok:
+        print(f"  Bot token: {_mask_token(tok)} (from env or .env)")
+    else:
+        print("  Bot token: (not set)")
+    if allow:
+        print(f"  TELEGRAM_ALLOWED_USER_IDS: {allow}")
+    else:
+        print("  TELEGRAM_ALLOWED_USER_IDS: (unset)")
+    if owner:
+        print(f"  TELEGRAM_OWNER_ID: {owner}")
+    else:
+        print("  TELEGRAM_OWNER_ID: (unset)")
+    if chat_id is not None:
+        kind = "group/supergroup" if chat_id < 0 else "DM / other"
+        print(f"  Pinned .chat_id: {chat_id} ({kind})")
+    else:
+        print("  Pinned .chat_id: (none — next message can bind the chat)")
+    print()
 
 
 def tg_api(token: str, method: str, **params) -> dict:
@@ -128,7 +182,8 @@ def listen_for_user_ids(token: str, seconds: float = 90.0) -> set[int]:
         print("Could not reach Telegram (getMe failed).", file=sys.stderr)
         return set()
     un = me.get("result", {}).get("username", "?")
-    print(f"\nOpen https://t.me/{un} in Telegram and send any message (e.g. /start).")
+    print(f"\nOpen https://t.me/{un} in Telegram and send any message (e.g. /start),")
+    print("  or post in your group if the bot is a member — user ids are collected from senders.")
     print(f"Listening for up to {int(seconds)} seconds… (Ctrl+C to stop)\n")
     offset = _drain_updates(token)
     found: set[int] = set()
@@ -165,14 +220,26 @@ def _prompt_yes(prompt: str, default_no: bool = True) -> bool:
     return raw in ("y", "yes", "1", "true")
 
 
-def run_wizard() -> bool:
+def run_wizard(*, reconfigure: bool) -> bool:
     print("\n── PocketCursor — Telegram setup ──\n")
-    print("Create a bot with @BotFather if you do not have one yet, then paste the token.\n")
+    token = ""
+    existing = effective_telegram_token()
 
-    token = getpass.getpass("Telegram bot token: ").strip()
-    if not token:
-        print("No token entered.", file=sys.stderr)
-        return False
+    if reconfigure and existing:
+        print("Keep your existing bot token, or replace it with a new one from @BotFather.\n")
+        if not _prompt_yes("Keep the current bot token?", default_no=False):
+            token = getpass.getpass("New Telegram bot token: ").strip()
+            if not token:
+                print("No token entered.", file=sys.stderr)
+                return False
+        else:
+            token = existing
+    else:
+        print("Create a bot with @BotFather if you do not have one yet, then paste the token.\n")
+        token = getpass.getpass("Telegram bot token: ").strip()
+        if not token:
+            print("No token entered.", file=sys.stderr)
+            return False
 
     ok, info = validate_token(token)
     if not ok:
@@ -180,10 +247,50 @@ def run_wizard() -> bool:
         return False
     print(f"OK — connected as @{info}\n")
 
+    print("── Where should the bridge talk? ──")
+    print(
+        "  1) Direct messages — chat id is chosen from incoming messages (or an existing DM pin).\n"
+        "  2) Fixed group / supergroup — pin a negative chat id so the bridge uses that group.\n"
+    )
+    mode = input("Choice [1]: ").strip() or "1"
+    chat_id_path = BRIDGE / ".chat_id"
+    cur_chat = read_chat_id_file()
+
+    if mode.strip() == "2":
+        raw = input(
+            "Telegram group/supergroup chat id (e.g. -1001234567890; get it from @RawDataBot or similar):\n> "
+        ).strip()
+        if not raw or not raw.lstrip("-").isdigit():
+            print("Invalid chat id (expected an integer, groups are usually negative).", file=sys.stderr)
+            return False
+        gid = int(raw)
+        try:
+            chat_id_path.write_text(str(gid), encoding="utf-8")
+        except OSError as e:
+            print(f"Could not write .chat_id: {e}", file=sys.stderr)
+            return False
+        print(f"\nPinned {chat_id_path.name} = {gid} (restart the bridge to apply if it is running.)\n")
+    else:
+        if cur_chat is not None:
+            if cur_chat < 0:
+                q = "Remove pinned group chat id and go back to DMs / next message?"
+            else:
+                q = "Remove pinned chat id so the next message picks the chat again?"
+            if _prompt_yes(q, default_no=True):
+                try:
+                    chat_id_path.unlink()
+                except OSError:
+                    pass
+                print("Removed .chat_id.\n")
+            else:
+                print(f"Leaving .chat_id as {cur_chat}.\n")
+        else:
+            print("(No .chat_id file — incoming messages will bind the chat as before.)\n")
+
     allow: set[int] = set()
     line = input(
         "Allowed Telegram user ids (comma-separated), or Enter to skip:\n"
-        "  (skip = first person to message the bot is paired automatically)\n> "
+        "  (skip = first sender to the bot auto-pairs; in a group, set ids explicitly)\n> "
     ).strip()
     if line:
         for part in line.split(","):
@@ -198,7 +305,9 @@ def run_wizard() -> bool:
     updates: dict[str, str | None] = {"TELEGRAM_BOT_TOKEN": token}
     if allow:
         updates["TELEGRAM_ALLOWED_USER_IDS"] = ",".join(str(x) for x in sorted(allow))
-        print(f"\nAllowlist saved: {sorted(allow)}")
+        updates["TELEGRAM_OWNER_ID"] = None
+        print(f"\nAllowlist saved in .env: {sorted(allow)}")
+        print("(Removed TELEGRAM_OWNER_ID from .env if it was there — admin-sync may still set it.)\n")
     else:
         updates["TELEGRAM_ALLOWED_USER_IDS"] = None
         print("\nNo allowlist in .env — first sender will auto-pair (see pocket_cursor.py).")
@@ -214,24 +323,23 @@ def main() -> int:
     parser.add_argument(
         "--ensure",
         action="store_true",
-        help="Exit 0 if token already configured; else run wizard",
+        help="Used by pocket-cursor-bridge.sh: first-time setup, or prompt to reconfigure if already set",
     )
-    args = parser.parse_args()
+    parser.parse_args()
 
-    force = os.environ.get("POCKET_WIZARD", "").strip().lower() in ("1", "true", "yes", "on")
-
-    if args.ensure:
-        tok = effective_telegram_token()
-        if tok and not force:
+    tok = effective_telegram_token()
+    if tok:
+        print_config_summary()
+        if not _prompt_yes(
+            "Reconfigure Telegram bridge settings (token, chat, allowlist)?",
+            default_no=True,
+        ):
             return 0
-        if tok and force:
-            if not _prompt_yes("Replace existing Telegram bridge configuration?", default_no=True):
-                return 0
-        ok = run_wizard()
+        ok = run_wizard(reconfigure=True)
         return 0 if ok and effective_telegram_token() else 1
 
-    ok = run_wizard()
-    return 0 if ok else 1
+    ok = run_wizard(reconfigure=False)
+    return 0 if ok and effective_telegram_token() else 1
 
 
 if __name__ == "__main__":
