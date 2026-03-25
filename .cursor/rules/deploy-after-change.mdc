@@ -1,5 +1,5 @@
 ---
-description: Ship changes via git + CI; do not run droplet deploy from the agent unless asked
+description: Ship changes via git + CI; SSH/deploy when the user explicitly asks
 alwaysApply: true
 ---
 
@@ -9,10 +9,12 @@ After any change to an app or infrastructure in this repo:
 
 1. **Commit and push** to `main` so **GitHub Actions** can publish images to **GHCR** (`.github/workflows/ghcr-publish.yml`).
 
-2. **Do not run `./deploy.sh`** (or any SSH-based rollout to the droplet) from this Cursor agent session **unless the user explicitly asks** to deploy or run deploy in that message.
+2. **Droplet / SSH:** Do **not** run `./deploy.sh`, ad-hoc `ssh` to the VPS, or remote `docker compose` from the agent **by default** for routine edits.
 
-3. **Task complete** when changes are committed and pushed. Droplet `docker compose` updates are **out of band**: run `./deploy.sh user@host` yourself from your own terminal, a CI job, or another approved runner when you want the VPS to pull and restart—not from the assistant by default.
+3. **When the user explicitly asks** in that message for a droplet rollout, `./deploy.sh`, SSH to the server, or operational changes on the VPS (env vars, restarts, admin/Caddy credentials, `docker compose` up, etc.): **run the commands** from the agent session. Request `network` / `all` permissions and long timeouts as needed. Do not refuse solely because the work happens on the remote host—the user has authorized it for that request.
 
-4. **Legacy:** `DEPLOY_IMAGE_SOURCE=local` build+transfer is discouraged for routine work; prefer GHCR.
+4. **Task complete** for routine code work: committed and pushed. If the user also asked to deploy or SSH, complete those steps too (or report the exact error if keys/network fail).
+
+5. **Legacy:** `DEPLOY_IMAGE_SOURCE=local` build+transfer is discouraged for routine work; prefer GHCR.
 
 See **docs/SCALING.md** and the Digital Ocean checklist for what a full droplet rollout does when you choose to run it.
