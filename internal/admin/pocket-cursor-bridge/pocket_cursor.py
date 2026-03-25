@@ -100,7 +100,7 @@ def set_bridge_verbosity(mode: str) -> str:
     """Persist Cursor→Telegram verbosity (quiet | normal | verbose). Returns normalized mode."""
     m = mode.strip().lower()
     if m not in ("quiet", "normal", "verbose"):
-        m = "normal"
+        m = "verbose"
     try:
         BRIDGE_VERBOSITY_FILE.write_text(m + "\n", encoding="utf-8")
     except OSError as e:
@@ -111,7 +111,7 @@ def set_bridge_verbosity(mode: str) -> str:
 
 def get_bridge_verbosity() -> str:
     """Cursor→Telegram richness: quiet (no thinking), normal, verbose (live thinking stream).
-    Order: .bridge_verbosity file → POCKETCURSOR_BRIDGE_VERBOSITY → POCKETCURSOR_VERBOSITY → normal.
+    Order: .bridge_verbosity file → POCKETCURSOR_BRIDGE_VERBOSITY → POCKETCURSOR_VERBOSITY → verbose (default).
     """
     f = _read_bridge_verbosity_file()
     if f:
@@ -119,10 +119,10 @@ def get_bridge_verbosity() -> str:
     v = (
         os.environ.get("POCKETCURSOR_BRIDGE_VERBOSITY")
         or os.environ.get("POCKETCURSOR_VERBOSITY")
-        or "normal"
+        or "verbose"
     ).strip().lower()
     if v not in ("quiet", "normal", "verbose"):
-        return "normal"
+        return "verbose"
     return v
 
 
@@ -362,7 +362,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'play', 'description': 'Resume forwarding'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
     {'command': 'verbose', 'description': 'Mirror agent thinking live (Telegram edits)'},
-    {'command': 'normal', 'description': 'Full thinking in messages (default)'},
+    {'command': 'normal', 'description': 'Full thinking in chunked messages'},
     {'command': 'quiet', 'description': 'Skip thinking; answers only'},
     {'command': 'unpair', 'description': 'Disconnect this device'},
 ]

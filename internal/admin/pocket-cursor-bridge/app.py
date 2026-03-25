@@ -30,7 +30,7 @@ DEFAULT_CONFIG = {
         for x in os.environ.get("POCKETCURSOR_ALLOWED_TELEGRAM_IDS", "").split(",")
         if x.strip().isdigit()
     ],
-    "verbosity": (os.environ.get("POCKETCURSOR_VERBOSITY", "normal").strip().lower() or "normal"),
+    "verbosity": (os.environ.get("POCKETCURSOR_VERBOSITY", "verbose").strip().lower() or "verbose"),
 }
 
 state_lock = threading.Lock()
@@ -91,7 +91,7 @@ def tg_call(method: str, **kwargs: Any) -> dict[str, Any] | None:
 
 def log_event(text: str, level: str = "normal") -> None:
     cfg = load_config()
-    verbosity = cfg.get("verbosity", "normal")
+    verbosity = cfg.get("verbosity", "verbose")
     if verbosity == "quiet" and level == "verbose":
         return
     if verbosity == "normal" and level == "verbose":
@@ -302,8 +302,8 @@ def save_admin():
         for x in request.form.get("allowed_user_ids", "").split(",")
         if x.strip().isdigit()
     ]
-    verb = (request.form.get("verbosity", "normal") or "normal").strip().lower()
-    cfg["verbosity"] = verb if verb in ("quiet", "normal", "verbose") else "normal"
+    verb = (request.form.get("verbosity", "verbose") or "verbose").strip().lower()
+    cfg["verbosity"] = verb if verb in ("quiet", "normal", "verbose") else "verbose"
     save_config(cfg)
     log_event("Admin updated bridge configuration.", "normal")
     return redirect(url_for("admin_home", saved="1"))
