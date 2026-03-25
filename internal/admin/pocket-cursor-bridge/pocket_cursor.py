@@ -485,6 +485,7 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
 POCKET_CURSOR_COMMANDS = [
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
     {'command': 'chats', 'description': 'Show all chats across instances'},
+    {'command': 'commands', 'description': 'List all Pocket Cursor commands'},
     {'command': 'status', 'description': 'Show bridge status (pause, workspaces, verbosity)'},
     {'command': 'pause', 'description': 'Pause Cursor to Telegram forwarding'},
     {'command': 'play', 'description': 'Resume forwarding'},
@@ -1948,13 +1949,22 @@ def tg_bridge_status_text():
     if conv_name:
         lines.append(f"💬 {conv_name}")
     lines.append(
-        "\n/newchat /chats /status /pause /play /screenshot "
+        "\n/newchat /chats /commands /status /pause /play /screenshot "
         "/verbose /normal /quiet /unpair"
     )
     lines.append(f"Verbosity: {get_bridge_verbosity()}")
     lines.append(
         "\nMessages to Cursor are prefixed: [weekday date time] [Telegram] your text."
     )
+    return "\n".join(lines)
+
+
+def tg_pocket_commands_help_text():
+    """Full command list for /commands (includes /start, which is not in POCKET_CURSOR_COMMANDS)."""
+    lines = ["Pocket Cursor commands:", "/start — Show bridge status and shortcuts"]
+    for c in POCKET_CURSOR_COMMANDS:
+        lines.append(f"/{c['command']} — {c['description']}")
+    lines.append("\nTip: open the menu (/) in Telegram for the same list.")
     return "\n".join(lines)
 
 
@@ -2238,6 +2248,10 @@ def sender_thread():
 
                 if cmd == '/status':
                     tg_send(cid, tg_bridge_status_text())
+                    continue
+
+                if cmd == '/commands':
+                    tg_send(cid, tg_pocket_commands_help_text())
                     continue
 
                 if cmd == '/verbose':
