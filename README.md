@@ -91,7 +91,7 @@ The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors
 
 **Prerequisites:** **Python 3.10+** (many Macs still default to `python3` **3.7** — run `python3 --version`; if needed install `brew install python@3.12` and use it, or set `POCKETCURSOR_PYTHON` to that binary). Cursor at `/Applications/Cursor.app`, and a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
-**Config:** export **`TELEGRAM_BOT_TOKEN`** (and optionally **`TELEGRAM_OWNER_ID`**) in your environment, **or** set them in **[admin Env](https://admin.6cubed.app/env)** (keys `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_ID` under the PocketCursor app) and sync to your Mac:
+**Config:** export **`TELEGRAM_BOT_TOKEN`** and optionally **`TELEGRAM_OWNER_ID`** and/or **`TELEGRAM_ALLOWED_USER_IDS`** (comma-separated user ids for multiple people in a group), **or** set them in **[admin Env](https://admin.6cubed.app/env)** (PocketCursor app keys) and sync to your Mac:
 
 ```bash
 ./scripts/sync-pocket-bridge-env.sh   # writes .env.admin-sync from the droplet SQLite DB (SSH)
@@ -99,7 +99,7 @@ The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors
 POCKET_SYNC_FROM_ADMIN=1 ./scripts/pocket-cursor-bridge.sh
 ```
 
-Merge order: **exported env vars** win; then **`.env.admin-sync`** (from admin); then **`.env`** (local overrides). `TELEGRAM_OWNER_ID` locks the bridge to your Telegram user id so the first stranger does not auto-pair.
+Merge order: **exported env vars** win; then **`.env.admin-sync`** (from admin); then **`.env`** (local overrides). Set **`TELEGRAM_ALLOWED_USER_IDS`** (and/or **`TELEGRAM_OWNER_ID`**) so only those Telegram users can use the bridge; if unset and no saved `.allowed_user_ids`, the first sender auto-pairs (same as before).
 
 **One command** from the repo root (after `git clone` and `cd 216labs`):
 

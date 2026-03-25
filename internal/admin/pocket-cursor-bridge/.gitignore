@@ -4,6 +4,8 @@ __pycache__
 .env
 .env.admin-sync
 .bridge_verbosity
+.allowed_user_ids
+.owner_id
 node_modules
 data/*
 !data/.gitkeep

@@ -16,7 +16,8 @@
   },
   "env_vars": [
     { "key": "TELEGRAM_BOT_TOKEN", "description": "Telegram bot token used for bridge polling and replies.", "is_secret": true },
-    { "key": "TELEGRAM_OWNER_ID", "description": "Your Telegram user id (numeric). Local pocket_cursor.py locks the bridge to this user; set here once and sync to your Mac with scripts/sync-pocket-bridge-env.sh or POCKET_SYNC_FROM_ADMIN=1.", "is_secret": false },
+    { "key": "TELEGRAM_OWNER_ID", "description": "Your Telegram user id (numeric). With TELEGRAM_ALLOWED_USER_IDS, both are merged. Local pocket_cursor.py uses this allowlist; sync to your Mac with scripts/sync-pocket-bridge-env.sh or POCKET_SYNC_FROM_ADMIN=1.", "is_secret": false },
+    { "key": "TELEGRAM_ALLOWED_USER_IDS", "description": "Comma-separated Telegram user ids allowed to use the local CDP bridge (group chats, multiple phones). Merged with TELEGRAM_OWNER_ID. Optional if you rely on auto-pair or a single TELEGRAM_OWNER_ID.", "is_secret": false },
     { "key": "POCKETCURSOR_BRIDGE_CHAT_ID", "description": "Optional fixed Telegram chat/group id to listen to (blank accepts any authorized chat).", "is_secret": false },
     { "key": "POCKETCURSOR_ALLOWED_TELEGRAM_NAMES", "description": "Comma-separated allowed Telegram usernames (without @).", "is_secret": false },
     { "key": "POCKETCURSOR_ALLOWED_TELEGRAM_IDS", "description": "Comma-separated allowed Telegram user IDs for explicit whitelist.", "is_secret": false },

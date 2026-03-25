@@ -81,6 +81,61 @@ _apply_merged_env_files()
 
 BRIDGE_DIR = Path(__file__).resolve().parent
 BRIDGE_VERBOSITY_FILE = BRIDGE_DIR / ".bridge_verbosity"
+allowed_ids_file = BRIDGE_DIR / ".allowed_user_ids"
+owner_file = BRIDGE_DIR / ".owner_id"  # legacy single id; migrated to .allowed_user_ids
+
+
+def _parse_allowed_user_ids_from_env() -> set[int]:
+    """IDs from TELEGRAM_ALLOWED_USER_IDS (comma-separated) and/or TELEGRAM_OWNER_ID."""
+    s: set[int] = set()
+    raw = os.environ.get("TELEGRAM_ALLOWED_USER_IDS", "").strip()
+    if raw:
+        for part in raw.split(","):
+            part = part.strip()
+            if part.isdigit():
+                s.add(int(part))
+    one = os.environ.get("TELEGRAM_OWNER_ID", "").strip()
+    if one.isdigit():
+        s.add(int(one))
+    return s
+
+
+def _load_allowed_user_ids_from_disk() -> set[int]:
+    s: set[int] = set()
+    if allowed_ids_file.is_file():
+        try:
+            data = json.loads(allowed_ids_file.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                for x in data:
+                    if isinstance(x, int):
+                        s.add(x)
+                    elif isinstance(x, str) and x.strip().isdigit():
+                        s.add(int(x.strip()))
+        except (json.JSONDecodeError, OSError):
+            pass
+    elif owner_file.is_file():
+        try:
+            line = owner_file.read_text(encoding="utf-8").strip()
+            if line.isdigit():
+                s.add(int(line))
+        except OSError:
+            pass
+    return s
+
+
+def _migrate_legacy_owner_file() -> None:
+    """If only .owner_id exists, write .allowed_user_ids and remove .owner_id."""
+    if allowed_ids_file.is_file() or not owner_file.is_file():
+        return
+    try:
+        line = owner_file.read_text(encoding="utf-8").strip()
+        if line.isdigit():
+            uid = int(line)
+            allowed_ids_file.write_text(json.dumps([uid]), encoding="utf-8")
+            owner_file.unlink()
+            print(f"[owner] Migrated {owner_file.name} -> {allowed_ids_file.name}")
+    except OSError as e:
+        print(f"[owner] Could not migrate legacy owner file: {e}")
 
 
 def _read_bridge_verbosity_file() -> str | None:
@@ -142,13 +197,30 @@ CONTEXT_MONITOR = os.environ.get('CONTEXT_MONITOR', '').lower() in ('true', '1',
 # Command rules: auto-accept/deny Cursor tool confirmations based on allow/deny patterns
 COMMAND_RULES = os.environ.get('COMMAND_RULES', '').lower() in ('true', '1', 'yes')
 
-# Owner lock: only respond to this Telegram user ID
-# Set in .env (TELEGRAM_OWNER_ID) or auto-captured on first /start command
-_owner_id_env = os.environ.get('TELEGRAM_OWNER_ID')
-OWNER_ID = int(_owner_id_env) if _owner_id_env else None
-OWNER_ID_FROM_ENV = OWNER_ID is not None  # If True, /unpair does not allow a different user to pair
-owner_file = Path(__file__).parent / '.owner_id'
-chat_id_file = Path(__file__).parent / '.chat_id'
+# Allowlist: TELEGRAM_ALLOWED_USER_IDS (comma-separated) and/or TELEGRAM_OWNER_ID (single).
+# If unset and no .allowed_user_ids / legacy .owner_id, the first Telegram sender is paired.
+# ALLOWED_FROM_ENV: allowlist came from env → /unpair clears chat only, not the allowlist.
+ALLOWED_FROM_ENV = bool(
+    os.environ.get("TELEGRAM_OWNER_ID", "").strip()
+    or os.environ.get("TELEGRAM_ALLOWED_USER_IDS", "").strip()
+)
+_migrate_legacy_owner_file()
+allowed_user_ids: set[int] = _parse_allowed_user_ids_from_env()
+allowed_user_ids |= _load_allowed_user_ids_from_disk()
+
+
+def _save_allowed_user_ids() -> None:
+    try:
+        allowed_ids_file.write_text(
+            json.dumps(sorted(allowed_user_ids)), encoding="utf-8"
+        )
+        if owner_file.exists():
+            owner_file.unlink()
+    except OSError as e:
+        print(f"[owner] Could not save {allowed_ids_file}: {e}")
+
+
+chat_id_file = BRIDGE_DIR / ".chat_id"
 
 # Shared state
 cdp_lock = threading.Lock()
@@ -1798,23 +1870,14 @@ def cursor_get_turn_info(composer_prefix='', conn=None):
 # ── Thread 1: Telegram → Cursor (sender) ────────────────────────────────────
 
 def check_owner(user_id, cid):
-    """Check if user_id is the owner. Auto-pair on first /start."""
-    global OWNER_ID
-
-    # Load saved owner if not set
-    if OWNER_ID is None and owner_file.exists():
-        OWNER_ID = int(owner_file.read_text().strip())
-        print(f"[owner] Loaded owner ID: {OWNER_ID}")
-
-    # No owner yet - accept first /start
-    if OWNER_ID is None:
+    """Check if user_id is on the allowlist. Empty allowlist → needs_pairing (first /start)."""
+    if not allowed_user_ids:
         return 'needs_pairing'
-
-    return 'ok' if user_id == OWNER_ID else 'rejected'
+    return 'ok' if user_id in allowed_user_ids else 'rejected'
 
 
 def sender_thread():
-    global chat_id, OWNER_ID, last_sent_text, last_tg_message_id, muted, active_instance_id, mirrored_chat
+    global chat_id, allowed_user_ids, last_sent_text, last_tg_message_id, muted, active_instance_id, mirrored_chat
     print("[sender] Starting Telegram poller...")
 
     # Drain any pending updates from before this restart
@@ -1844,9 +1907,9 @@ def sender_thread():
 
                     print(f"[sender] Callback: data={cb_data!r} user={cb_user_id}")
 
-                    # Only owner can press buttons
-                    if OWNER_ID and cb_user_id != OWNER_ID:
-                        print(f"[sender] Callback ignored: not owner ({cb_user_id} != {OWNER_ID})")
+                    # Only allowlisted users can press buttons
+                    if not allowed_user_ids or cb_user_id not in allowed_user_ids:
+                        print(f"[sender] Callback ignored: not in allowlist ({cb_user_id})")
                         continue
 
                     action, _, tool_id = cb_data.partition(':')
@@ -1991,8 +2054,8 @@ def sender_thread():
 
                 if status == 'needs_pairing':
                     # First message from anyone -> auto-pair
-                    OWNER_ID = user_id
-                    owner_file.write_text(str(user_id))
+                    allowed_user_ids.add(user_id)
+                    _save_allowed_user_ids()
                     with chat_id_lock:
                         chat_id = cid
                     chat_id_file.write_text(str(cid))
@@ -2004,7 +2067,13 @@ def sender_thread():
 
                 if status == 'rejected':
                     print(f"[sender] Rejected message from {user} (ID: {user_id})")
-                    tg_send(cid, "Already paired with someone else.\nIf that's you on another device, send /unpair there first.\n\nWant your own? github.com/qmHecker/pocket-cursor")
+                    tg_send(
+                        cid,
+                        "Not on this bridge's allowlist.\n"
+                        "Ask the owner to add your Telegram user id to TELEGRAM_ALLOWED_USER_IDS "
+                        "(or TELEGRAM_OWNER_ID), or use /unpair on a paired account first.\n\n"
+                        "github.com/qmHecker/pocket-cursor",
+                    )
                     continue
 
                 # Store chat_id for the monitor thread (and persist for restarts)
@@ -2104,18 +2173,24 @@ def sender_thread():
                     continue
 
                 if text == '/unpair':
-                    if not OWNER_ID_FROM_ENV:
-                        OWNER_ID = None
+                    if not ALLOWED_FROM_ENV:
+                        allowed_user_ids.clear()
+                        if allowed_ids_file.exists():
+                            allowed_ids_file.unlink()
                         if owner_file.exists():
                             owner_file.unlink()
                         tg_send(cid, "👋 Unpaired. Next message from anyone will pair them.")
                     else:
-                        # Owner locked via env: only disconnect this chat, same user can reconnect
+                        # Allowlist locked via env: only disconnect this chat
                         with chat_id_lock:
                             chat_id = None
                         if chat_id_file.exists():
                             chat_id_file.unlink()
-                        tg_send(cid, "👋 Disconnected. Send a message to reconnect (only you can use this bridge).")
+                        tg_send(
+                            cid,
+                            "👋 Disconnected. Send a message to reconnect "
+                            "(only users in TELEGRAM_ALLOWED_USER_IDS / TELEGRAM_OWNER_ID can use this bridge).",
+                        )
                     print(f"[owner] Unpaired")
                     continue
 
@@ -3095,8 +3170,8 @@ print("Connected.")
 
 print(f"\nPocketCursor Bridge v2 running!")
 print(f"Send a message to @{bot['username']} on Telegram.")
-if OWNER_ID:
-    print(f"Owner: {OWNER_ID}")
+if allowed_user_ids:
+    print(f"Allowed Telegram users: {sorted(allowed_user_ids)}")
 if chat_id:
     print(f"Chat ID: {chat_id} (restored from previous session)")
 if muted:
