@@ -1,15 +1,18 @@
 ---
-description: Deploy is expected after every change — do not wait for the user to ask
+description: Ship changes via git + CI; do not run droplet deploy from the agent unless asked
 alwaysApply: true
 ---
 
-# Deploy after every change
+# Ship after every change
 
-**Everything should always be deployed.** After any change to an app or infrastructure in this repo:
+After any change to an app or infrastructure in this repo:
 
-1. Commit and push.
-2. Run `./deploy.sh root@46.101.88.197` yourself (with a long timeout, e.g. 300000ms).
+1. **Commit and push** to `main` so **GitHub Actions** can publish images to **GHCR** (`.github/workflows/ghcr-publish.yml`).
 
-Do not wait for the user to ask. Consider the task incomplete until deploy has been run. Exception: if someone explicitly uses **local** image deploy (`DEPLOY_IMAGE_SOURCE=local`) and Docker is not running on the laptop, commit and push anyway and note that local builds still need Docker. Default **GHCR** deploy does not require local Docker.
+2. **Do not run `./deploy.sh`** (or any SSH-based rollout to the droplet) from this Cursor agent session **unless the user explicitly asks** to deploy or run deploy in that message.
 
-See the Digital Ocean droplet rule for the full checklist (verify admin, containers, etc.).
+3. **Task complete** when changes are committed and pushed. Droplet `docker compose` updates are **out of band**: run `./deploy.sh user@host` yourself from your own terminal, a CI job, or another approved runner when you want the VPS to pull and restart—not from the assistant by default.
+
+4. **Legacy:** `DEPLOY_IMAGE_SOURCE=local` build+transfer is discouraged for routine work; prefer GHCR.
+
+See **docs/SCALING.md** and the Digital Ocean checklist for what a full droplet rollout does when you choose to run it.

@@ -56,20 +56,21 @@ Images are built locally on your dev machine and transferred to the droplet via 
 
 ```bash
 ssh root@46.101.88.197 "nano /opt/216labs/.env"
+# Then roll the droplet from your machine (not required for every commit if you only need CI images):
 ./deploy.sh root@46.101.88.197
 ```
 
 ### Deploy
 
-```bash
-./deploy.sh root@46.101.88.197
-```
+**Images:** GitHub Actions builds and pushes `216labs/*` tags to **GHCR** on pushes to `main`.
 
-The script:
-- Reads `216labs.db` to determine which apps are enabled (toggle via [admin.6cubed.app](https://admin.6cubed.app))
-- Builds only enabled app images locally
-- Skips transfer for images that haven't changed
-- SSHs to the droplet, `git pull`s the latest config, and restarts the stack
+**VPS:** When you want the droplet to pull those images and restart Compose, run `./deploy.sh root@46.101.88.197` from **your own environment** (or another runner)—not something the Cursor agent runs by default. The script:
+
+- Reads enabled apps from `216labs.db` (toggle via [admin.6cubed.app](https://admin.6cubed.app))
+- By default pulls from GHCR on the server and retags to `216labs/*:latest`
+- `git pull` on the server, then `docker compose up` for the enabled set
+
+Legacy `DEPLOY_IMAGE_SOURCE=local` builds on the machine that runs the script and streams images over SSH; use only when GHCR is not an option.
 
 ### Telegram cron jobs
 

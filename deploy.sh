@@ -7,7 +7,8 @@ set -euo pipefail
 # Reads 216labs.db (SQLite) to decide which apps to deploy.
 #
 # Images (default): pulled from GHCR after GitHub Actions "Publish images to GHCR" (main / workflow_dispatch).
-# Set DEPLOY_IMAGE_SOURCE=local to restore local docker build + ssh transfer (legacy).
+# Set DEPLOY_IMAGE_SOURCE=local to restore local docker build + ssh transfer (legacy; prefer CI + GHCR).
+# Operational note: run this script from your own shell or CI when rolling the droplet—agents default to push-only.
 # 216labs.db holds app state and env_vars (secrets); it is never overwritten by
 # this script. A timestamped backup is made on the server before each deploy.
 # Toggle apps on/off via the admin dashboard at https://admin.6cubed.app

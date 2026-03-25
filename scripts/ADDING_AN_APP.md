@@ -38,14 +38,15 @@ If the app has a critical user flow (e.g. model load, chat, form submit), add a 
 
 Without this, basic failures (e.g. model load error, broken button) can ship until someone manually tests.
 
-## 5. Build your app, commit, and deploy
+## 5. Build your app, commit, and ship
 
 ```bash
 git add .
 git commit -m "feat: add <app-id>"
 git push origin main
-./deploy.sh root@46.101.88.197
 ```
+
+CI publishes images to GHCR. When you want the droplet to pull and restart, run `./deploy.sh root@46.101.88.197` from your own environment (not required for every commit).
 
 The admin dashboard auto-picks up the new app on next startup (reads `manifest.json`).
 Env vars defined in `manifest.json` are seeded into the admin DB (empty values, fill them in the UI).
