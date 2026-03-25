@@ -5,7 +5,7 @@ This doc describes the foundations for scaling to hundreds or thousands of apps 
 ## Design principles
 
 1. **Manifest-first** — Adding an app = add `apps/<id>/` + `manifest.json` (+ Dockerfile). No edits to deploy.sh, db.ts, or docker-compose.yml required for the common case.
-2. **Config over code** — Deploy priority, force-included apps, and bootstrap deploy state live in config files so scaling doesn’t require code changes.
+2. **Config over code** — Deploy priority and optional bootstrap snippets live in config files; **admin `deploy_enabled` + CI (GHCR)** are the normal path.
 3. **Discovery over registration** — Apps are discovered from the filesystem and manifests; the admin DB is synced from that. No central hand-maintained app list in code.
 4. **Generated over hand-written** — Caddyfile and (at scale) compose app blocks are generated from manifests so new apps don’t require editing big static files.
 
@@ -15,7 +15,7 @@ This doc describes the foundations for scaling to hundreds or thousands of apps 
 |--------|-------------------|----------------|
 | **Which apps deploy** | Admin DB `deploy_enabled` + optional cap | DB stays source of truth; cap via `DEPLOY_MAX_APPS` |
 | **Showroom / hotswap** | `DEPLOY_SHOWROOM=1` + `DEPLOY_RUNTIME_APPS` (or default `admin landing`) | Keeps a **small hot pool** running and pulls only those images from GHCR; larger `deploy_enabled` catalogue cold-starts via activator (optional GHCR pull on wake). Set `ACTIVATOR_MAX_CONCURRENT_APPS` + optional `ACTIVATOR_REMOVE_IMAGE_ON_EVICT` on the droplet to cap RAM/disk. |
-| **Force-include / bootstrap** | `config/deploy-bootstrap.txt` (one app ID per line) | Edit file; no code change. Admin ensures these apps get `deploy_enabled=1` on sync. |
+| **Optional bootstrap** | `config/deploy-bootstrap.txt` (comments or a few IDs) | Rare: pre-`deploy_enabled` on admin sync for greenfield forks. Production: use admin UI. |
 | **Deploy order / priority** | `config/deploy-priority.txt` (one app ID per line) | Edit file; deploy.sh reads it and caps to `DEPLOY_MAX_APPS` from this order. |
 | **Port assignment** | `KNOWN_PORTS` in db.ts for legacy; new apps get `getNextPort(db)` | At scale, new apps don’t need entries in KNOWN_PORTS. |
 | **Env → app dir (admin)** | Derived from manifests: `env_prefix` or first segment of env key | New apps get correct `.env.local` write without editing PREFIX_TO_DIR in code. |
@@ -26,7 +26,7 @@ This doc describes the foundations for scaling to hundreds or thousands of apps 
 
 1. Create `apps/<id>/` with `manifest.json` (and Dockerfile). Optionally set `env_prefix` in manifest if env vars don’t follow `<ID>_*`.
 2. Add `<id>` to `config/deploy-priority.txt` if you want it in the deploy order.
-3. Optionally add `<id>` to `config/deploy-bootstrap.txt` if it should always be force-included and enabled in admin.
+3. Optionally add `<id>` to `config/deploy-bootstrap.txt` only for starter forks; otherwise use the admin deploy toggle.
 4. Run `python3 scripts/generate-caddyfile.py`. If using generated compose, run `python3 scripts/generate-compose.py --output docker-compose.apps.yml`.
 5. Deploy. Admin will discover the app from the filesystem and sync it; env vars from the manifest are seeded.
 
@@ -36,7 +36,7 @@ No edits to `deploy.sh`, `216labs_admin/src/lib/db.ts`, or `216labs_admin/src/ap
 
 - **Single deploy at a time** — Deploy touches the server and DB; run one deploy per branch/commit. For many agents, coordinate deploys (e.g. queue or single “deploy runner”) or deploy only from a single canonical branch.
 - **App-scoped edits** — Prefer changes under `apps/<id>/` (and that app’s manifest). Reduces merge conflicts and keeps each agent’s blast radius small.
-- **Shared config files** — `config/deploy-bootstrap.txt` and `config/deploy-priority.txt` are shared. When many agents add apps, use append/merge conventions or a single “registry” agent that updates these files.
+- **Shared config files** — `config/deploy-priority.txt` caps order; bootstrap is optional. Prefer manifest + admin DB over growing `deploy-bootstrap.txt`.
 - **Discovery race** — Admin sync runs on startup and on `getAllApps()`. Multiple agents adding apps in parallel is fine; sync is idempotent. Env vars are `INSERT OR IGNORE` so duplicate keys from manifests are safe.
 
 ## Optional: full generated compose at scale

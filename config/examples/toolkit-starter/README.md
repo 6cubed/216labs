@@ -17,11 +17,11 @@ cp config/examples/toolkit-starter/deploy-bootstrap.txt config/deploy-bootstrap.
 cp config/examples/toolkit-starter/deploy-priority.txt config/deploy-priority.txt
 ```
 
-Review the contents, adjust app IDs, then redeploy or restart admin so the DB picks up bootstrap rules.
+Review the contents, adjust app IDs, then redeploy or restart admin so the DB picks up bootstrap rules (optional — you can leave bootstrap empty and use the admin UI only).
 
 ## What changes
 
-- **`deploy-bootstrap.txt`** — app IDs that should be **deploy_enabled** when synced from the admin (subset of your monorepo).
+- **`deploy-bootstrap.txt`** — optional few IDs for `deploy_enabled` on admin sync; production normally uses dashboard toggles + CI.
 - **`deploy-priority.txt`** — order used when capping how many images deploy in one run (`DEPLOY_MAX_APPS`).
 
-The **production** 216Labs repo keeps a larger set in `config/`; this folder is the **minimal template** only.
+The **production** repo keeps `deploy-bootstrap.txt` mostly empty; this folder is a **minimal template** for forks.

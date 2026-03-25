@@ -24,7 +24,7 @@ They exist to prove the pipeline on a fresh machine. You can delete them once yo
    docker compose up -d caddy activator admin landing hello-nextjs hello-flask
    ```
 
-5. Open the admin UI and enable/disable apps as needed; **bootstrap** (`config/deploy-bootstrap.txt`) pre-enables IDs listed there when the admin process syncs the DB.
+5. Open the admin UI and enable/disable apps as needed. Optional `config/deploy-bootstrap.txt` can pre-enable a few IDs on admin sync (leave empty in production; use toggles + CI).
 
 Deploy without a local DB (e.g. CI) uses `config/toolkit-default-enabled.txt` — edit that file to change the default app set for no-DB runs.
 
@@ -34,7 +34,7 @@ A follow-up workflow is: **fork or clone**, then **remove portfolio apps** you d
 
 To approximate a **minimal deploy surface** before that split:
 
-- Copy the example configs (see `config/examples/toolkit-starter/README.md`) over `config/deploy-bootstrap.txt` and `config/deploy-priority.txt`, then trim `docker-compose.yml` to only the services you keep (or leave unused services and leave them disabled in the admin DB).
+- Copy the example configs (see `config/examples/toolkit-starter/README.md`) over `config/deploy-priority.txt` (and optionally a minimal `deploy-bootstrap.txt`), then trim `docker-compose.yml` or rely on admin toggles + GHCR.
 
 - Point `deploy.sh` at **your** Git remote and server checkout path without editing the script: `DEPLOY_REPO` and `DEPLOY_APP_DIR` (defaults remain `git@github.com:6cubed/216labs.git` and `/opt/216labs`).
 

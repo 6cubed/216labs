@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Scaling and multi-agent app changes
 
-- **Adding an app:** Prefer **manifest-first**. Create a product directory under `products/<org>/<vertical>/<id>/` (or `./scripts/new-app.sh <id>` which scaffolds under `products/org-platform/local/<id>/`) with `manifest.json` (and Dockerfile). Add `<id>` to `config/deploy-priority.txt` and optionally `config/deploy-bootstrap.txt`. Do **not** add new hardcoded app IDs to `deploy.sh` or `internal/admin/src/lib/db.ts` — use the config files instead.
+- **Adding an app:** Prefer **manifest-first**. Create a product directory under `products/<org>/<vertical>/<id>/` (or `./scripts/new-app.sh <id>` which scaffolds under `products/org-platform/local/<id>/`) with `manifest.json` (and Dockerfile). Add `<id>` to `config/deploy-priority.txt` if you need cap order; **admin deploy toggle + CI (GHCR)** replace large bootstrap lists. Do **not** add new hardcoded app IDs to `deploy.sh` or `internal/admin/src/lib/db.ts`.
 - **Env vars / admin:** New apps are grouped by manifest `env_prefix` or by the first segment of env key. No edits to `PREFIX_TO_DIR` or `EnvVarEditor` group names needed.
 - **Deploy:** One deploy at a time; coordinate if many agents are merging. See **docs/SCALING.md** for full scaling and agent-concurrency guidance.
 - **Compose at scale:** Use `scripts/generate-compose.py` for app service blocks instead of editing `docker-compose.yml` by hand when the repo grows large.

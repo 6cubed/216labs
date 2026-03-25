@@ -1,7 +1,5 @@
-# Minimal bootstrap for a toolkit-focused fork (one ID per line).
-# Admin enables these apps when syncing from manifest + this file.
-admin
-activator
+# Toolkit starter — optional IDs for a small default-enabled set on admin sync.
+# Remove lines or leave comments-only to rely on the admin UI only.
 landing
 hello-nextjs
 hello-flask

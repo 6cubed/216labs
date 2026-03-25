@@ -1,38 +1,4 @@
-# App IDs that are always force-included in deploy (one per line).
-# Used when server DB doesn't have them yet so they can be toggled in admin.
-# Add/remove lines; no code changes needed.
-activator
-hello-nextjs
-hello-flask
-happypath
-blog
-marketing
-onefitblog
-tigertank
-worldphoto
-offlinellm
-1pageresearch
-facerate
-landing
-bugbounty
-crowdbulk
-cron-runner
-emailgpt
-tldrtech
-germandaily
-russiandaily
-mysteryshopper
-llminternals
-maxlearn
-npcworld
-labshq
-impulse
-mediate
-avatar
-valentine
-explore
-angelwatcher
-shannonairport
-agimemes
-pocketcursor
-vc
+# Optional: app IDs (one per line) to set deploy_enabled=1 when the admin syncs the DB and those rows exist.
+# Production: use the admin dashboard (deploy toggles) and CI (.github/workflows/ghcr-publish.yml) for images.
+# deploy.sh reads the server admin DB first; this file is not required for GHCR deploys.
+# Greenfield / forks: uncomment or add IDs here if you want a few demos pre-enabled before first UI visit.

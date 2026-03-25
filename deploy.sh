@@ -138,7 +138,8 @@ fi
 if [[ " $ENABLED_APPS " != *" admin "* ]]; then
   ENABLED_APPS="$ENABLED_APPS admin"
 fi
-# Force-include apps from config (scale: edit config file, not this script)
+# Optional: merge app IDs from config/deploy-bootstrap.txt into the deploy list (same IDs admin may
+# pre-enable on sync). Empty or comments-only = no effect. Source of truth is the server admin DB.
 BOOTSTRAP_FILE="config/deploy-bootstrap.txt"
 if [ -f "$BOOTSTRAP_FILE" ]; then
   while IFS= read -r force || [ -n "$force" ]; do
@@ -146,18 +147,9 @@ if [ -f "$BOOTSTRAP_FILE" ]; then
     [ -z "$force" ] && continue
     if [[ " $ENABLED_APPS " != *" $force "* ]]; then
       ENABLED_APPS="$ENABLED_APPS $force"
-      echo "==> Force-including $force (from $BOOTSTRAP_FILE)"
+      echo "==> Adding $force from $BOOTSTRAP_FILE (not in enabled list yet)"
     fi
   done < "$BOOTSTRAP_FILE"
-elif [ "${DEPLOY_SHOWROOM:-0}" != "1" ]; then
-  # Legacy: widen the enabled set when the server DB has not been backfilled yet.
-  # Skip in showroom mode — the droplet should stay a small hot pool + cold activator demos.
-  for force in happypath blog worldphoto offlinellm 1pageresearch facerate landing; do
-    if [[ " $ENABLED_APPS " != *" $force "* ]]; then
-      ENABLED_APPS="$ENABLED_APPS $force"
-      echo "==> Force-including $force (not yet in server DB)"
-    fi
-  done
 fi
 
 # Cap catalogue size (deploy_enabled apps considered after bootstrap). Showroom defaults higher so many

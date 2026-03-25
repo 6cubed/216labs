@@ -628,7 +628,7 @@ function ensureAdminAlwaysEnabled(db: Database.Database) {
   db.prepare("UPDATE apps SET deploy_enabled = 1 WHERE id = 'admin'").run();
 }
 
-/** Set deploy_enabled=1 for app IDs listed in config/deploy-bootstrap.txt (one per line). Scale: edit file, not code. */
+/** Optional: set deploy_enabled=1 for IDs listed in config/deploy-bootstrap.txt. Empty file is fine — prefer admin toggles; CI ships images via GHCR. */
 function ensureBootstrapFromFile(db: Database.Database) {
   const path = join(getProjectsRoot(), BOOTSTRAP_FILE);
   if (!existsSync(path)) return;

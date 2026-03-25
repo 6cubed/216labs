@@ -11,7 +11,7 @@ The repo is designed to stay **client-agnostic**: manifests, one admin DB, one d
 - **`products/`** — Customer-facing products grouped by **org** and **vertical** (for example `org-shopping`, `org-growth/ads`, `org-media`, `org-platform/ai`). New scaffolds default to `products/org-platform/local/<id>` via `./scripts/new-app.sh <app-id>`. Reference demos live in **`products/org-platform/toolkit-demos/`**.
 - **`internal/`** — Internal-only services: **admin** (workflow dashboard), **quality/happypath** (clickthrough tests), **security/pipesecure** (security pipeline), **ops/cron-runner**, **platform/activator**, and similar.
 - **`packages/`** — Reserved for shared libraries and design-system style code reused across products (empty until extracted).
-- **`config/`** — Deploy caps, bootstrap lists, and other repo-level configuration.
+- **`config/`** — Deploy caps, optional bootstrap snippet, priority order, and other repo-level configuration.
 
 ## Projects
 

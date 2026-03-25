@@ -52,16 +52,16 @@ Env vars defined in `manifest.json` are seeded into the admin DB (empty values, 
 
 ---
 
-## Production droplet: don’t pull `216labs/*` from Docker Hub
+## Production droplet: images from CI (GHCR), not Docker Hub
 
-Images are built on your machine and transferred with `deploy.sh`. On the droplet, `deploy.sh` sets `COMPOSE_PULL_POLICY=never` and runs `docker compose up ... --pull never` so Compose never tries to pull `216labs/*` from Docker Hub (which would fail). Use local `docker compose` with the same flags if you bring stacks up by hand.
+Default `./deploy.sh` pulls `216labs/*` from **GHCR** after `.github/workflows/ghcr-publish.yml` publishes `latest`. Legacy: `DEPLOY_IMAGE_SOURCE=local` builds on your machine and streams images over SSH. On the droplet, `COMPOSE_PULL_POLICY=never` and `docker compose up ... --pull never` so Compose does not pull private tags unexpectedly.
 
 ## How the pieces fit together
 
 | File | Purpose |
 |---|---|
 | `<app>/manifest.json` | Source of truth: metadata, ports, env vars. Optional `env_prefix` for admin env grouping. |
-| `config/deploy-bootstrap.txt` | App IDs always force-included and enabled (one per line). Edit this instead of code. |
+| `config/deploy-bootstrap.txt` | Optional: a few IDs to pre-`deploy_enabled` on admin sync (greenfield). Prefer admin toggles in production. |
 | `config/deploy-priority.txt` | Deploy order; we cap to `DEPLOY_MAX_APPS` from this list. Edit this instead of code. |
 | `docker-compose.yml` | Service definitions (manual today; at scale use `scripts/generate-compose.py` for app blocks) |
 | `Caddyfile` | Auto-generated from manifests via `scripts/generate-caddyfile.py` |

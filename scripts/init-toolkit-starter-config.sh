@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copy minimal deploy-bootstrap + deploy-priority from config/examples/toolkit-starter.
+# Copy minimal deploy-bootstrap (optional) + deploy-priority from config/examples/toolkit-starter.
 # Use when preparing a greenfield or community starter fork. Review before commit.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
