@@ -900,6 +900,23 @@ def cdp_eval(expression):
     return cdp_eval_on(active_conn(), expression)
 
 
+# Monitor: must run on the same CDP session as cursor_get_turn_info (mirrored chat), not
+# necessarily the focused window — otherwise Telegram shows "typing" while another
+# Cursor window is generating and nothing is forwarded from the mirrored composer.
+_CURSOR_STOP_BUTTON_JS = (
+    '(function(){return !!document.querySelector(\'[data-stop-button="true"]\');})();'
+)
+
+
+def _monitor_cursor_is_generating(mc_conn):
+    """True if Stop is visible on the mirrored instance (fallback: active_conn)."""
+    c = mc_conn or active_conn()
+    try:
+        return bool(cdp_eval_on(c, _CURSOR_STOP_BUTTON_JS))
+    except Exception:
+        return False
+
+
 def _cdp_cmd(conn, method, params=None):
     """Send a CDP command and return the result. Thread-safe."""
     global msg_id_counter
@@ -2693,10 +2710,8 @@ def monitor_thread():
             if not initialized:
                 continue
 
-            # Keep typing indicator alive while AI is generating
-            is_generating = cdp_eval("""
-                (function() { return !!document.querySelector('[data-stop-button="true"]'); })();
-            """)
+            # Keep typing indicator alive while AI is generating (scoped to mirrored chat window)
+            is_generating = _monitor_cursor_is_generating(mc_conn)
             if is_generating and not muted:
                 tg_typing(cid)
 
@@ -2934,9 +2949,7 @@ def monitor_thread():
 
             # Mark turn as done when AI finishes (for tracking)
             if sent_this_turn and not marked_done:
-                is_gen = cdp_eval("""
-                    (function() { return !!document.querySelector('[data-stop-button="true"]'); })();
-                """)
+                is_gen = _monitor_cursor_is_generating(mc_conn)
                 if not is_gen:
                     print(f"[monitor] AI done — {len(forwarded_ids)} sections forwarded")
                     marked_done = True
