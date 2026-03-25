@@ -2046,8 +2046,12 @@ def sender_thread():
 
                 cid = msg['chat']['id']
                 mid = msg['message_id']
-                user_id = msg['from']['id']
-                user = msg['from'].get('first_name', '?')
+                user_from = msg.get("from")
+                if not user_from:
+                    print(f"[sender] Skipping message with no sender (chat {cid})")
+                    continue
+                user_id = user_from["id"]
+                user = user_from.get("first_name", "?")
 
                 # Owner check
                 status = check_owner(user_id, cid)
@@ -3174,6 +3178,14 @@ if allowed_user_ids:
     print(f"Allowed Telegram users: {sorted(allowed_user_ids)}")
 if chat_id:
     print(f"Chat ID: {chat_id} (restored from previous session)")
+    if chat_id < 0:
+        print(
+            "[telegram] Group/supergroup: with default Bot Privacy ON, Telegram does NOT send "
+            "plain messages to bots. Open @BotFather → your bot → Bot Settings → Group Privacy → "
+            "Turn OFF, or mention @"
+            + (bot.get("username") or "YourBot")
+            + " in each message."
+        )
 if muted:
     print("Status: PAUSED (restored from previous session)")
 

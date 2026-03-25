@@ -269,7 +269,11 @@ def run_wizard(*, reconfigure: bool) -> bool:
         except OSError as e:
             print(f"Could not write .chat_id: {e}", file=sys.stderr)
             return False
-        print(f"\nPinned {chat_id_path.name} = {gid} (restart the bridge to apply if it is running.)\n")
+        print(f"\nPinned {chat_id_path.name} = {gid} (restart the bridge to apply if it is running.)")
+        print(
+            "Tip: In @BotFather → Bot Settings → Group Privacy → turn OFF so the bot receives "
+            "all group messages (otherwise only /commands and @mentions reach the bot).\n"
+        )
     else:
         if cur_chat is not None:
             if cur_chat < 0:
