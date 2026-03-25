@@ -3,6 +3,7 @@ __pycache__
 *.pyc
 .env
 .env.admin-sync
+.bridge_verbosity
 node_modules
 data/*
 !data/.gitkeep

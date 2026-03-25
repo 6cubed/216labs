@@ -79,9 +79,43 @@ def _apply_merged_env_files() -> None:
 
 _apply_merged_env_files()
 
+BRIDGE_DIR = Path(__file__).resolve().parent
+BRIDGE_VERBOSITY_FILE = BRIDGE_DIR / ".bridge_verbosity"
+
+
+def _read_bridge_verbosity_file() -> str | None:
+    try:
+        if not BRIDGE_VERBOSITY_FILE.is_file():
+            return None
+        line = BRIDGE_VERBOSITY_FILE.read_text(encoding="utf-8", errors="replace").strip().splitlines()
+        if not line:
+            return None
+        v = line[0].strip().lower()
+        return v if v in ("quiet", "normal", "verbose") else None
+    except OSError:
+        return None
+
+
+def set_bridge_verbosity(mode: str) -> str:
+    """Persist Cursor→Telegram verbosity (quiet | normal | verbose). Returns normalized mode."""
+    m = mode.strip().lower()
+    if m not in ("quiet", "normal", "verbose"):
+        m = "normal"
+    try:
+        BRIDGE_VERBOSITY_FILE.write_text(m + "\n", encoding="utf-8")
+    except OSError as e:
+        print(f"[bridge] Could not write {BRIDGE_VERBOSITY_FILE}: {e}")
+    os.environ["POCKETCURSOR_BRIDGE_VERBOSITY"] = m
+    return m
+
 
 def get_bridge_verbosity() -> str:
-    """Cursor→Telegram richness: quiet (no thinking), normal, verbose (live thinking stream)."""
+    """Cursor→Telegram richness: quiet (no thinking), normal, verbose (live thinking stream).
+    Order: .bridge_verbosity file → POCKETCURSOR_BRIDGE_VERBOSITY → POCKETCURSOR_VERBOSITY → normal.
+    """
+    f = _read_bridge_verbosity_file()
+    if f:
+        return f
     v = (
         os.environ.get("POCKETCURSOR_BRIDGE_VERBOSITY")
         or os.environ.get("POCKETCURSOR_VERBOSITY")
@@ -327,6 +361,9 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'pause', 'description': 'Pause Cursor to Telegram forwarding'},
     {'command': 'play', 'description': 'Resume forwarding'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
+    {'command': 'verbose', 'description': 'Mirror agent thinking live (Telegram edits)'},
+    {'command': 'normal', 'description': 'Full thinking in messages (default)'},
+    {'command': 'quiet', 'description': 'Skip thinking; answers only'},
     {'command': 'unpair', 'description': 'Disconnect this device'},
 ]
 
@@ -2036,8 +2073,34 @@ def sender_thread():
                     ]
                     if conv_name:
                         lines.append(f"💬 {conv_name}")
-                    lines.append("\n/newchat /chats /pause /play /screenshot /unpair")
+                    lines.append(
+                        "\n/newchat /chats /pause /play /screenshot "
+                        "/verbose /normal /quiet /unpair"
+                    )
+                    lines.append(f"Verbosity: {get_bridge_verbosity()}")
                     tg_send(cid, '\n'.join(lines))
+                    continue
+
+                if text == '/verbose':
+                    m = set_bridge_verbosity("verbose")
+                    tg_send(
+                        cid,
+                        "Verbose on: agent thinking streams to Telegram (live edits).\n"
+                        "/normal for full thinking in chat chunks; /quiet to hide thinking.",
+                    )
+                    print(f"[sender] Bridge verbosity -> {m}")
+                    continue
+
+                if text == '/normal':
+                    m = set_bridge_verbosity("normal")
+                    tg_send(cid, "Normal: full thinking mirrored (chunked messages).")
+                    print(f"[sender] Bridge verbosity -> {m}")
+                    continue
+
+                if text == '/quiet':
+                    m = set_bridge_verbosity("quiet")
+                    tg_send(cid, "Quiet: thinking hidden; only assistant answers are sent.")
+                    print(f"[sender] Bridge verbosity -> {m}")
                     continue
 
                 if text == '/unpair':
