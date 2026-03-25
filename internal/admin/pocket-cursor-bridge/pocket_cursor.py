@@ -485,6 +485,7 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
 POCKET_CURSOR_COMMANDS = [
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
     {'command': 'chats', 'description': 'Show all chats across instances'},
+    {'command': 'status', 'description': 'Show bridge status (pause, workspaces, verbosity)'},
     {'command': 'pause', 'description': 'Pause Cursor to Telegram forwarding'},
     {'command': 'play', 'description': 'Resume forwarding'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
@@ -1935,6 +1936,28 @@ def check_owner(user_id, cid):
     return 'ok' if user_id in allowed_user_ids else 'rejected'
 
 
+def tg_bridge_status_text():
+    """Human-readable bridge status for /start and /status."""
+    conv_name = cursor_get_active_conv()
+    status_line = "⏸ Paused" if muted else "▶ Active"
+    instances = len(instance_registry)
+    lines = [
+        f"PocketCursor is running. {status_line}",
+        f"{instances} workspace{'s' if instances != 1 else ''} connected.",
+    ]
+    if conv_name:
+        lines.append(f"💬 {conv_name}")
+    lines.append(
+        "\n/newchat /chats /status /pause /play /screenshot "
+        "/verbose /normal /quiet /unpair"
+    )
+    lines.append(f"Verbosity: {get_bridge_verbosity()}")
+    lines.append(
+        "\nMessages to Cursor are prefixed: [weekday date time] [Telegram] your text."
+    )
+    return "\n".join(lines)
+
+
 def telegram_command_base(text: str) -> str:
     """Telegram groups send /cmd@BotUsername; strip @suffix so routing matches /cmd."""
     if not text or not text.strip().startswith("/"):
@@ -2210,24 +2233,11 @@ def sender_thread():
 
                 # Handle commands (cmd strips /foo@BotName → /foo for group chats)
                 if cmd == '/start':
-                    conv_name = cursor_get_active_conv()
-                    status_line = "⏸ Paused" if muted else "▶ Active"
-                    instances = len(instance_registry)
-                    lines = [
-                        f"PocketCursor is running. {status_line}",
-                        f"{instances} workspace{'s' if instances != 1 else ''} connected.",
-                    ]
-                    if conv_name:
-                        lines.append(f"💬 {conv_name}")
-                    lines.append(
-                        "\n/newchat /chats /pause /play /screenshot "
-                        "/verbose /normal /quiet /unpair"
-                    )
-                    lines.append(f"Verbosity: {get_bridge_verbosity()}")
-                    lines.append(
-                        "\nMessages to Cursor are prefixed: [weekday date time] [Telegram] your text."
-                    )
-                    tg_send(cid, '\n'.join(lines))
+                    tg_send(cid, tg_bridge_status_text())
+                    continue
+
+                if cmd == '/status':
+                    tg_send(cid, tg_bridge_status_text())
                     continue
 
                 if cmd == '/verbose':
