@@ -491,6 +491,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'play', 'description': 'Resume forwarding'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
     {'command': 'verbose', 'description': 'Mirror agent thinking live (Telegram edits)'},
+    {'command': 'reasoning', 'description': 'Alias: mirror agent thinking live (same as /verbose)'},
     {'command': 'normal', 'description': 'Full thinking in chunked messages'},
     {'command': 'quiet', 'description': 'Skip thinking; answers only'},
     {'command': 'unpair', 'description': 'Disconnect this device'},
@@ -2072,7 +2073,7 @@ def tg_bridge_status_text():
         lines.append(f"💬 {conv_name}")
     lines.append(
         "\n/newchat /chats /commands /status /pause /play /screenshot "
-        "/verbose /normal /quiet /unpair"
+        "/verbose /reasoning /normal /quiet /unpair"
     )
     lines.append(f"Verbosity: {get_bridge_verbosity()}")
     lines.append(
@@ -2410,7 +2411,7 @@ def sender_thread():
                     tg_send(cid, tg_pocket_commands_help_text())
                     continue
 
-                if cmd == '/verbose':
+                if cmd in ('/verbose', '/reasoning'):
                     m = set_bridge_verbosity("verbose")
                     tg_send(
                         cid,
