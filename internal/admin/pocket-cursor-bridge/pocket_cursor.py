@@ -1415,11 +1415,11 @@ def cursor_clear_input(conn=None):
 def cursor_send_message(text, raw=False):
     """Focus the input editor, insert text, click send.
     Holds the CDP lock for the entire sequence to avoid monitor thread contention.
-    Auto-prepends [Phone] [Day YYYY-MM-DD HH:MM] unless raw=True.
+    Auto-prepends [Telegram] and a timestamp unless raw=True.
     """
     if not raw:
         timestamp = datetime.now().strftime('%a %Y-%m-%d %H:%M')
-        text = f"[{timestamp}] [Phone] {text}"
+        text = f"[{timestamp}] [Telegram] {text}"
 
     global msg_id_counter
     conn = active_conn()
@@ -1876,6 +1876,16 @@ def check_owner(user_id, cid):
     return 'ok' if user_id in allowed_user_ids else 'rejected'
 
 
+def telegram_command_base(text: str) -> str:
+    """Telegram groups send /cmd@BotUsername; strip @suffix so routing matches /cmd."""
+    if not text or not text.strip().startswith("/"):
+        return text.strip() if text else ""
+    first = text.strip().split(None, 1)[0]
+    if "@" in first:
+        return first.split("@", 1)[0]
+    return first
+
+
 def sender_thread():
     global chat_id, allowed_user_ids, last_sent_text, last_tg_message_id, muted, active_instance_id, mirrored_chat
     print("[sender] Starting Telegram poller...")
@@ -2134,9 +2144,10 @@ def sender_thread():
                     continue
 
                 print(f"[sender] {user}: {text}")
+                cmd = telegram_command_base(text)
 
-                # Handle commands
-                if text == '/start':
+                # Handle commands (cmd strips /foo@BotName → /foo for group chats)
+                if cmd == '/start':
                     conv_name = cursor_get_active_conv()
                     status_line = "⏸ Paused" if muted else "▶ Active"
                     instances = len(instance_registry)
@@ -2151,10 +2162,13 @@ def sender_thread():
                         "/verbose /normal /quiet /unpair"
                     )
                     lines.append(f"Verbosity: {get_bridge_verbosity()}")
+                    lines.append(
+                        "\nMessages to Cursor are prefixed: [weekday date time] [Telegram] your text."
+                    )
                     tg_send(cid, '\n'.join(lines))
                     continue
 
-                if text == '/verbose':
+                if cmd == '/verbose':
                     m = set_bridge_verbosity("verbose")
                     tg_send(
                         cid,
@@ -2164,19 +2178,19 @@ def sender_thread():
                     print(f"[sender] Bridge verbosity -> {m}")
                     continue
 
-                if text == '/normal':
+                if cmd == '/normal':
                     m = set_bridge_verbosity("normal")
                     tg_send(cid, "Normal: full thinking mirrored (chunked messages).")
                     print(f"[sender] Bridge verbosity -> {m}")
                     continue
 
-                if text == '/quiet':
+                if cmd == '/quiet':
                     m = set_bridge_verbosity("quiet")
                     tg_send(cid, "Quiet: thinking hidden; only assistant answers are sent.")
                     print(f"[sender] Bridge verbosity -> {m}")
                     continue
 
-                if text == '/unpair':
+                if cmd == '/unpair':
                     if not ALLOWED_FROM_ENV:
                         allowed_user_ids.clear()
                         if allowed_ids_file.exists():
@@ -2198,14 +2212,14 @@ def sender_thread():
                     print(f"[owner] Unpaired")
                     continue
 
-                if text == '/pause':
+                if cmd == '/pause':
                     muted = True
                     muted_file.touch()
                     tg_send(cid, "⏸ Paused. Nothing will be forwarded.\nSend /play when you're ready.")
                     print("[sender] Paused")
                     continue
 
-                if text == '/play':
+                if cmd == '/play':
                     muted = False
                     muted_file.unlink(missing_ok=True)
                     # Include active conversation name in resume message
@@ -2217,7 +2231,7 @@ def sender_thread():
                     print("[sender] Resumed")
                     continue
 
-                if text == '/screenshot':
+                if cmd == '/screenshot':
                     print(f"[sender] Taking screenshot of {active_instance_id and active_instance_id[:8]}...")
                     try:
                         cdp_bring_to_front(active_conn(), active_instance_id)
@@ -2232,7 +2246,7 @@ def sender_thread():
                         tg_send(cid, "Failed to capture screenshot.")
                     continue
 
-                if text == '/newchat':
+                if cmd == '/newchat':
                     print("[sender] Creating new chat...")
                     result = cursor_new_chat()
                     if not result or not result.startswith('OK'):
@@ -2240,7 +2254,7 @@ def sender_thread():
                     print(f"[sender] New chat: {result}")
                     continue
 
-                if text in ('/chats', '/agents', '/agent'):
+                if cmd in ('/chats', '/agents', '/agent'):
                     grouped = {}
                     for iid, info in instance_registry.items():
                         convs = info.get('convs', {})
@@ -2266,7 +2280,7 @@ def sender_thread():
                     last_sent_text = text
                     last_tg_message_id = mid
 
-                # Send to Cursor with [Phone] prefix + timestamp (day name helps resolve relative dates)
+                # Send to Cursor with [Telegram] prefix + timestamp (day name helps resolve relative dates)
                 tg_typing(cid)
                 result = cursor_send_message(text)
                 print(f"[sender] -> Cursor: {result}")
