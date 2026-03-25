@@ -1,10 +1,10 @@
-import { getAllApps, getRecentDeploymentActivity } from "@/lib/db";
+import { getAllApps } from "@/lib/db";
 import { dbRowToAppInfo, infrastructure } from "@/data/apps";
 import { MetricCard } from "@/components/MetricCard";
 import { InfraOverview } from "@/components/InfraOverview";
 import { SizeOverview } from "@/components/SizeOverview";
 import { RecentActivity } from "@/components/RecentActivity";
-import { buildRecentActivityFeed } from "@/lib/recent-activity";
+import { getUnifiedDeploymentFeed } from "@/lib/deployment-feed";
 import { AppsOverviewTable } from "@/components/AppsOverviewTable";
 import { ProjectOverviewBanner } from "@/components/ProjectOverviewBanner";
 import { getRunningServices } from "@/lib/docker";
@@ -16,14 +16,7 @@ export default async function DashboardPage() {
   const apps = rows.map(dbRowToAppInfo);
   const runningServices = await getRunningServices();
   const runningList = [...runningServices];
-  const recentRows = getRecentDeploymentActivity(8);
-  const recentFeed = buildRecentActivityFeed(
-    recentRows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      lastDeployedAt: row.last_deployed_at,
-    })),
-  );
+  const recentFeed = await getUnifiedDeploymentFeed(12);
   const enabledApps = new Set(
     apps.filter((a) => a.deployEnabled || a.id === "admin").map((a) => a.id)
   );

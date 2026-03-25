@@ -726,6 +726,33 @@ if [ -f 216labs.db ]; then
     COMMITS=$(git log --oneline -- "$repo_path" 2>/dev/null | wc -l | tr -d ' ')
     [ -n "$COMMITS" ] && sqlite3 216labs.db "UPDATE apps SET total_commits = $COMMITS WHERE id = '$id';" 2>/dev/null || true
   done <<< "$(sqlite3 216labs.db 'SELECT id, repo_path FROM apps' 2>/dev/null || true)"
+  # Append-only deployment activity log (admin Activity page + public feed merge with GitHub CI).
+  if command -v sqlite3 &>/dev/null; then
+    NOW_ISO=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    BATCH_ID="droplet-$(date -u +%Y%m%d%H%M%S)-$$"
+    esc_sql() { printf '%s' "$1" | sed "s/'/''/g"; }
+    sqlite3 216labs.db "CREATE TABLE IF NOT EXISTS deployment_events (
+      id TEXT PRIMARY KEY,
+      occurred_at TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT,
+      app_id TEXT,
+      ref_url TEXT,
+      meta_json TEXT
+    );" 2>/dev/null || true
+    sqlite3 216labs.db "CREATE INDEX IF NOT EXISTS idx_deployment_events_occurred ON deployment_events(occurred_at);" 2>/dev/null || true
+    BODY=$(esc_sql "compose services: ${COMPOSE_SERVICES}")
+    sqlite3 216labs.db "INSERT INTO deployment_events (id, occurred_at, event_type, title, body, app_id, ref_url, meta_json) VALUES ('$(esc_sql "$BATCH_ID")', '$NOW_ISO', 'droplet', 'VPS deploy completed', '$BODY', NULL, NULL, NULL);" 2>/dev/null || true
+    for aid in $RUNTIME_APPS; do
+      sub_id="${BATCH_ID}-${aid}"
+      APP_TITLE=$(sqlite3 216labs.db "SELECT name FROM apps WHERE id='$(esc_sql "$aid")' LIMIT 1" 2>/dev/null || echo "")
+      [ -z "$APP_TITLE" ] && APP_TITLE="$aid"
+      title_line=$(esc_sql "${APP_TITLE} — rolled out on VPS")
+      sqlite3 216labs.db "INSERT INTO deployment_events (id, occurred_at, event_type, title, body, app_id, ref_url, meta_json) VALUES ('$(esc_sql "$sub_id")', '$NOW_ISO', 'app_rollout', '$title_line', 'compose / GHCR pull', '$(esc_sql "$aid")', NULL, NULL);" 2>/dev/null || true
+    done
+    echo "==> Logged deployment_events for unified activity feed"
+  fi
   set -o pipefail
 fi
 

@@ -1,31 +1,30 @@
 import { NextResponse } from "next/server";
-import { getRecentDeploymentActivity } from "@/lib/db";
-import { buildRecentActivityFeed } from "@/lib/recent-activity";
+import { getUnifiedDeploymentFeed } from "@/lib/deployment-feed";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Public read-only feed of recent app deployments (no secrets).
- * Used by the www landing page; excludes admin dashboard deploys.
+ * Public read-only feed: VPS + CI + app rollouts (no secrets).
+ * Landing pages can show recent shipping activity without basic auth.
  */
 export async function GET() {
-  const rows = getRecentDeploymentActivity(40).filter((row) => row.id !== "admin");
-  const items = buildRecentActivityFeed(
-    rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      lastDeployedAt: row.last_deployed_at,
-    })),
-  ).slice(0, 20);
+  const all = await getUnifiedDeploymentFeed(24);
+  const items = all.filter(
+    (i) =>
+      i.channel !== "snapshot" ||
+      (i.appId && i.appId !== "admin"),
+  );
 
   return NextResponse.json(
     {
       items: items.map((item) => ({
-        id: item.appId,
-        name: item.appName,
-        lastDeployedAt: item.deployedAtRaw,
-        host: item.host,
-        url: item.url,
+        id: item.id,
+        channel: item.channel,
+        headline: item.headline,
+        detail: item.detail,
+        occurredAt: new Date(item.occurredAtMs).toISOString(),
+        appId: item.appId ?? null,
+        url: item.href ?? null,
       })),
     },
     {

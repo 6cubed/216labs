@@ -232,6 +232,9 @@ function initSchema(db: Database.Database) {
   `);
   seedDefaultCronJobs(db);
 
+  ensureDeploymentEventsTable(db);
+  backfillDeploymentEventsFromApps(db);
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS app_analytics (
       app_id TEXT PRIMARY KEY REFERENCES apps(id) ON DELETE CASCADE,
@@ -302,6 +305,12 @@ function seedInfraEnvDefaults(db: Database.Database) {
       key: "GHCR_TOKEN",
       description:
         "PAT with read:packages for ghcr.io — used by deploy.sh and activator",
+      is_secret: 1,
+    },
+    {
+      key: "ADMIN_GITHUB_TOKEN",
+      description:
+        "Optional GitHub PAT for deployment feed (Actions API). Public repo works without; token raises rate limits.",
       is_secret: 1,
     },
   ];
@@ -681,6 +690,21 @@ export function getEnabledApps(): DbApp[] {
     .all() as DbApp[];
 }
 
+/** Enabled apps for public listing (e.g. www landing); excludes dashboard and this page's service. */
+export function getPublicLiveApps(): DbApp[] {
+  const db = getDb();
+  syncTopLevelProjects(db);
+  ensureAdminAlwaysEnabled(db);
+  ensureBootstrapFromFile(db);
+  return db
+    .prepare(
+      `SELECT * FROM apps
+       WHERE deploy_enabled = 1 AND id NOT IN ('admin', 'landing')
+       ORDER BY name COLLATE NOCASE`,
+    )
+    .all() as DbApp[];
+}
+
 export function setDeployEnabled(appId: string, enabled: boolean): void {
   // Keep admin dashboard always deployable so deployment controls never disappear.
   const nextEnabled = appId === "admin" ? 1 : enabled ? 1 : 0;
@@ -740,6 +764,95 @@ function seedDefaultCronJobs(db: Database.Database): void {
     ('telegram-security-summary', 'Security scan summary', 'PipeSecure/Semgrep findings summary posted to Telegram.', '0 10 * * *', 0),
     ('telegram-happypath-summary', 'Happy Path run summary', 'Last Happy Path results per app posted to Telegram.', '0 8 * * *', 0);
   `);
+}
+
+/** Append-only log: VPS deploys (deploy.sh), per-app rollouts, optional CI rows. */
+export interface DbDeploymentEvent {
+  id: string;
+  occurred_at: string;
+  event_type: string;
+  title: string;
+  body: string | null;
+  app_id: string | null;
+  ref_url: string | null;
+  meta_json: string | null;
+}
+
+function ensureDeploymentEventsTable(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS deployment_events (
+      id TEXT PRIMARY KEY,
+      occurred_at TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT,
+      app_id TEXT,
+      ref_url TEXT,
+      meta_json TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_deployment_events_occurred ON deployment_events(occurred_at);
+  `);
+}
+
+/** Seed missing rows from apps.last_deployed_at (INSERT OR IGNORE — idempotent). */
+function backfillDeploymentEventsFromApps(db: Database.Database): void {
+  const rows = db
+    .prepare(
+      `SELECT id, name, last_deployed_at FROM apps
+       WHERE last_deployed_at IS NOT NULL AND TRIM(last_deployed_at) != ''`,
+    )
+    .all() as Array<{
+      id: string;
+      name: string;
+      last_deployed_at: string;
+    }>;
+
+  const ins = db.prepare(
+    `INSERT OR IGNORE INTO deployment_events
+     (id, occurred_at, event_type, title, body, app_id, ref_url, meta_json)
+     VALUES (@id, @occurred_at, 'legacy_snapshot', @title, @body, @app_id, NULL, NULL)`,
+  );
+
+  for (const r of rows) {
+    const safeTs = r.last_deployed_at.trim().replace(/\s+/g, " ");
+    const id = `legacy:${r.id}:${safeTs}`;
+    ins.run({
+      id,
+      occurred_at: safeTs,
+      title: `${r.name} — last deploy (recorded in Apps)`,
+      body: "Backfilled from apps.last_deployed_at before the deployment activity log existed.",
+      app_id: r.id,
+    });
+  }
+}
+
+export function parseOccurredAtMs(raw: string): number {
+  const t = raw.trim();
+  if (!t) return Number.NaN;
+  const sqliteLike = t.includes(" ") && !t.includes("T");
+  const normalized = sqliteLike ? `${t.replace(" ", "T")}Z` : t;
+  return Date.parse(normalized);
+}
+
+export function getDeploymentEventsFromDb(limit = 120): DbDeploymentEvent[] {
+  const db = getDb();
+  syncTopLevelProjects(db);
+  ensureDeploymentEventsTable(db);
+  const rows = db.prepare(`SELECT * FROM deployment_events`).all() as DbDeploymentEvent[];
+  return rows
+    .map((r) => ({ r, ms: parseOccurredAtMs(r.occurred_at) }))
+    .filter((x) => Number.isFinite(x.ms))
+    .sort((a, b) => b.ms - a.ms)
+    .slice(0, limit)
+    .map((x) => x.r);
+}
+
+export function getEnvVarValue(key: string): string | null {
+  const row = getDb()
+    .prepare("SELECT value FROM env_vars WHERE key = ?")
+    .get(key) as { value: string } | undefined;
+  const v = row?.value?.trim();
+  return v && v.length > 0 ? v : null;
 }
 
 export interface DbAppAnalytics {
