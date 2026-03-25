@@ -37,9 +37,42 @@ class ActivatorTests(unittest.TestCase):
             activator, "get_app_row", return_value={"docker_service": "pocket"}
         ), patch.object(activator, "set_runtime_state"), patch.object(
             activator, "compose_running", return_value=True
+        ), patch.object(activator, "http_upstream_ready", return_value=True), patch.object(
+            activator, "try_registry_pull"
+        ) as mock_pull:
+            out = activator.start_app("pocket")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["status"]["phase"], "ready")
+        mock_pull.assert_not_called()
+
+    def test_cold_start_pulls_registry_before_compose(self):
+        running_state = [False]
+
+        def fake_running(_svc):
+            return running_state[0]
+
+        def fake_run(*_a):
+            running_state[0] = True
+            return DummyProc(returncode=0)
+
+        pulls = []
+
+        def capture_pull(svc):
+            pulls.append(svc)
+            return True
+
+        with patch.object(
+            activator, "get_app_row", return_value={"docker_service": "pocket"}
+        ), patch.object(activator, "set_runtime_state"), patch.object(
+            activator, "try_registry_pull", side_effect=capture_pull
+        ), patch.object(
+            activator, "run_compose", side_effect=fake_run
+        ), patch.object(
+            activator, "compose_running", side_effect=fake_running
         ), patch.object(activator, "http_upstream_ready", return_value=True):
             out = activator.start_app("pocket")
         self.assertTrue(out["ok"])
+        self.assertEqual(pulls, ["pocket"])
         self.assertEqual(out["status"]["phase"], "ready")
 
     def test_missing_image_attempts_pull_then_succeeds(self):
@@ -47,13 +80,13 @@ class ActivatorTests(unittest.TestCase):
             DummyProc(returncode=1, stderr="missing image"),
             DummyProc(returncode=0),
         ]
-        running_results = [False, True]
+        running_results = [False] + [True] * 30
 
         def fake_run_compose(*_args):
             return run_results.pop(0)
 
         def fake_running(_svc):
-            return running_results.pop(0)
+            return running_results.pop(0) if running_results else True
 
         with patch.object(
             activator, "get_app_row", return_value={"docker_service": "pocket"}
@@ -63,6 +96,8 @@ class ActivatorTests(unittest.TestCase):
             activator, "run_compose", side_effect=fake_run_compose
         ), patch.object(
             activator, "try_pull_image", return_value=DummyProc(returncode=0)
+        ), patch.object(
+            activator, "try_registry_pull", return_value=True
         ), patch.object(
             activator, "compose_running", side_effect=fake_running
         ), patch.object(activator, "http_upstream_ready", return_value=True):

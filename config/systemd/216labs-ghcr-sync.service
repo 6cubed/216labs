@@ -1,0 +1,14 @@
+[Unit]
+Description=216labs — pull GHCR images for running compose services and recreate
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=SYNC_PROJECT_ROOT=/opt/216labs
+# Optional: SYNC_EXCLUDE_SERVICES=caddy,activator,postgres
+ExecStart=/opt/216labs/scripts/droplet-ghcr-sync.sh
+WorkingDirectory=/opt/216labs
+
+[Install]
+WantedBy=multi-user.target

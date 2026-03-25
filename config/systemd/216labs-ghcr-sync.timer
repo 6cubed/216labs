@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer — 216labs GHCR sync for running containers (every 20 minutes)
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=20min
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -43,6 +43,9 @@ TRY_DOCKER_PULL = os.environ.get("ACTIVATOR_TRY_DOCKER_PULL", "").strip().lower(
 REGISTRY_PREFIX = os.environ.get("ACTIVATOR_REGISTRY_PREFIX", "ghcr.io/6cubed/216labs").strip()
 GHCR_TOKEN = os.environ.get("GHCR_TOKEN", "").strip()
 GHCR_USERNAME = os.environ.get("GHCR_USERNAME", "token").strip() or "token"
+# Before first compose up on a cold service, pull GHCR :latest so CI is not behind stale local tags.
+_pbc_raw = os.environ.get("ACTIVATOR_PULL_BEFORE_COLD_START", "true").strip().lower()
+PULL_BEFORE_COLD_START = _pbc_raw not in ("0", "false", "no", "off")
 
 
 def _parse_protected_services() -> Set[str]:
@@ -516,6 +519,9 @@ def start_app(app_id: str) -> Dict[str, object]:
             )
             return {"ok": True, "status": status}
 
+        if PULL_BEFORE_COLD_START:
+            try_registry_pull(docker_service)
+
         up = run_compose("up", "-d", "--no-build", docker_service)
         if up.returncode != 0 and try_registry_pull(docker_service):
             up = run_compose("up", "-d", "--no-build", docker_service)
@@ -591,6 +597,7 @@ def healthz():
             "manifest_fallback": True,
             "registry_prefix": REGISTRY_PREFIX or None,
             "ghcr_auth_configured": bool(GHCR_TOKEN),
+            "pull_before_cold_start": PULL_BEFORE_COLD_START,
             "block_start_services": sorted(BLOCK_START_DOCKER_SERVICES),
         }
     )
