@@ -2,6 +2,10 @@
 # Single entry: venv, deps, Cursor+CDP, then pocket_cursor.py. Run from repo root:
 #   ./scripts/pocket-cursor-bridge.sh
 #
+# Telegram: if no TELEGRAM_BOT_TOKEN (env / .env.admin-sync / .env), an interactive wizard runs.
+#   POCKET_SKIP_WIZARD=1  — skip wizard; fail fast like the old behavior (for CI / no TTY).
+#   POCKET_WIZARD=1       — force the wizard even when a token is already configured.
+#
 # Needs Python 3.10+ (default `python3` on older Macs may be 3.7 and WILL fail to
 # install deps). Install: brew install python@3.12  OR set POCKETCURSOR_PYTHON to a 3.10+ binary.
 set -euo pipefail
@@ -62,13 +66,19 @@ fi
 "$PY" -m pip install -q --upgrade pip setuptools wheel
 "$PIP" install -q -r requirements.txt
 
-# Token: exported env, or .env.admin-sync / .env (merged in Python; export wins).
-if [[ -z "${TELEGRAM_BOT_TOKEN:-}" && ! -f .env && ! -f .env.admin-sync ]]; then
-  echo "TELEGRAM_BOT_TOKEN not set. Either:"
-  echo "  export TELEGRAM_BOT_TOKEN='…'"
-  echo "  or run: POCKET_SYNC_FROM_ADMIN=1 $0   (after setting token in admin + SSH to droplet)"
-  echo "  or create .env / .env.admin-sync (see .env.example)"
-  exit 1
+# Token: exported env, or .env.admin-sync / .env (merged in pocket_cursor.py; export wins).
+# Interactive wizard writes .env when nothing provides a token (unless POCKET_SKIP_WIZARD=1).
+if [[ "${POCKET_SKIP_WIZARD:-}" == "1" ]]; then
+  if [[ -z "${TELEGRAM_BOT_TOKEN:-}" && ! -f .env && ! -f .env.admin-sync ]]; then
+    echo "TELEGRAM_BOT_TOKEN not set. Either:"
+    echo "  export TELEGRAM_BOT_TOKEN='…'"
+    echo "  or run: POCKET_SYNC_FROM_ADMIN=1 $0   (after setting token in admin + SSH to droplet)"
+    echo "  or create .env / .env.admin-sync (see .env.example)"
+    echo "  or omit POCKET_SKIP_WIZARD to run the setup wizard."
+    exit 1
+  fi
+else
+  "$PY" -X utf8 bridge_wizard.py --ensure || exit 1
 fi
 
 pkill -f 'pocket_cursor\.py' 2>/dev/null || true

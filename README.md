@@ -91,6 +91,8 @@ The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors
 
 **Prerequisites:** **Python 3.10+** (many Macs still default to `python3` **3.7** — run `python3 --version`; if needed install `brew install python@3.12` and use it, or set `POCKETCURSOR_PYTHON` to that binary). Cursor at `/Applications/Cursor.app`, and a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
+**First-time setup:** if you run **`./scripts/pocket-cursor-bridge.sh`** with no token in the environment and no `.env` / `.env.admin-sync`, an **interactive wizard** asks for the bot token (hidden input), optional allowlist ids, and optional “listen on Telegram” discovery. Use **`POCKET_SKIP_WIZARD=1`** to disable the wizard (fail fast, e.g. CI). Use **`POCKET_WIZARD=1`** to run the wizard even when a token is already configured.
+
 **Config:** export **`TELEGRAM_BOT_TOKEN`** and optionally **`TELEGRAM_OWNER_ID`** and/or **`TELEGRAM_ALLOWED_USER_IDS`** (comma-separated user ids for multiple people in a group), **or** set them in **[admin Env](https://admin.6cubed.app/env)** (PocketCursor app keys) and sync to your Mac:
 
 ```bash

@@ -5,7 +5,7 @@ alwaysApply: true
 
 ## PocketCursor bridge ("restart", "restart bridge", "restart pocket cursor")
 
-- **Config:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_ID`, optional `TELEGRAM_ALLOWED_USER_IDS` (comma-separated ids for multiple people / group chats) — set in **admin Env** (admin.6cubed.app), then `./scripts/sync-pocket-bridge-env.sh` or `POCKET_SYNC_FROM_ADMIN=1` with `./scripts/pocket-cursor-bridge.sh`. Process env wins; then `.env.admin-sync`; then `.env`.
+- **Config:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_ID`, optional `TELEGRAM_ALLOWED_USER_IDS` — set in **admin Env** (admin.6cubed.app), then `./scripts/sync-pocket-bridge-env.sh` or `POCKET_SYNC_FROM_ADMIN=1` with `./scripts/pocket-cursor-bridge.sh`. Process env wins; then `.env.admin-sync`; then `.env`. With no token in those places, `./scripts/pocket-cursor-bridge.sh` runs an interactive wizard (`bridge_wizard.py`) that writes `.env`. `POCKET_SKIP_WIZARD=1` skips it; `POCKET_WIZARD=1` forces reconfiguration.
 - **macOS / Linux:** `./scripts/pocket-cursor-bridge.sh` from repo root (one script: venv, deps, CDP, bridge).
 - **Windows:** `internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` — `python internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` with `block_until_ms: 0` (long-running process).
 - **Auto-restart:** When editing any file under `internal/admin/pocket-cursor-bridge/`, always restart the bridge after changes that affect runtime behavior (bug fixes, features, refactors). Do not wait for the user to ask.
