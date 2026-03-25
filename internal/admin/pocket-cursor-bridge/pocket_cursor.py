@@ -245,6 +245,56 @@ last_tg_message_id = None  # Message ID of the last Telegram message (for reacti
 pending_confirms = {}  # {tool_call_id: {buttons_selector, buttons: [{label, index}]}} for inline keyboards
 pending_confirms_lock = threading.Lock()
 
+# Forum supergroups (topics): outgoing sends must include message_thread_id or replies go to General / wrong topic.
+_thread_path = BRIDGE_DIR / ".chat_thread_id"
+tg_reply_thread_id: int | None = None
+if _thread_path.is_file():
+    try:
+        _ts = _thread_path.read_text(encoding="utf-8", errors="replace").strip()
+        if _ts.lstrip("-").isdigit():
+            tg_reply_thread_id = int(_ts)
+    except (OSError, ValueError):
+        pass
+
+
+def _persist_tg_reply_thread() -> None:
+    try:
+        if tg_reply_thread_id is None:
+            if _thread_path.exists():
+                _thread_path.unlink()
+        else:
+            _thread_path.write_text(str(tg_reply_thread_id), encoding="utf-8")
+    except OSError as e:
+        print(f"[telegram] Could not persist .chat_thread_id: {e}")
+
+
+def _tg_thread_kw() -> dict:
+    if tg_reply_thread_id is not None:
+        return {"message_thread_id": tg_reply_thread_id}
+    return {}
+
+
+def _set_tg_reply_thread_from_message(msg: dict | None) -> None:
+    global tg_reply_thread_id
+    tid = msg.get("message_thread_id") if msg else None
+    tg_reply_thread_id = tid
+    _persist_tg_reply_thread()
+
+
+def _set_tg_reply_thread_from_callback(callback: dict | None) -> None:
+    global tg_reply_thread_id
+    m = (callback or {}).get("message") or {}
+    if not m:
+        return
+    tg_reply_thread_id = m.get("message_thread_id")
+    _persist_tg_reply_thread()
+
+
+def _clear_tg_reply_thread() -> None:
+    global tg_reply_thread_id
+    tg_reply_thread_id = None
+    _persist_tg_reply_thread()
+
 
 def _save_active_chat(workspace, chat_name, pc_id):
     """Persist active chat state."""
@@ -272,14 +322,15 @@ def tg_call(method, **params):
 
 def tg_typing(cid):
     """Show 'typing...' indicator."""
-    return tg_call('sendChatAction', chat_id=cid, action='typing')
+    return tg_call('sendChatAction', chat_id=cid, action='typing', **_tg_thread_kw())
 
 
 def tg_send(cid, text):
     if not cid:
         return
+    tw = _tg_thread_kw()
     if len(text) <= 4000:
-        return tg_call('sendMessage', chat_id=cid, text=text)
+        return tg_call('sendMessage', chat_id=cid, text=text, **tw)
     # Split long messages at line breaks
     chunks = []
     while len(text) > 4000:
@@ -291,7 +342,7 @@ def tg_send(cid, text):
     if text:
         chunks.append(text)
     for chunk in chunks:
-        tg_call('sendMessage', chat_id=cid, text=chunk)
+        tg_call('sendMessage', chat_id=cid, text=chunk, **tw)
         time.sleep(0.3)
 
 
@@ -312,17 +363,18 @@ def tg_send_thinking(cid, text):
         try:
             escaped = tg_escape_markdown_v2(text)
             msg = f'_💭 {escaped}_'
-            result = tg_call('sendMessage', chat_id=cid, text=msg, parse_mode='MarkdownV2')
+            result = tg_call('sendMessage', chat_id=cid, text=msg, parse_mode='MarkdownV2', **_tg_thread_kw())
             if result.get('ok'):
                 return result
             print(f"[telegram] MarkdownV2 failed: {result.get('description', '?')}, falling back to plain text")
         except Exception as e:
             print(f"[telegram] MarkdownV2 error: {e}, falling back to plain text")
-        return tg_call('sendMessage', chat_id=cid, text=f"💭 {text}")
+        return tg_call('sendMessage', chat_id=cid, text=f"💭 {text}", **_tg_thread_kw())
 
     # Long: chunk like tg_send (max ~4000 per message; leave room for prefix)
     remaining = text
     first = True
+    tw = _tg_thread_kw()
     while remaining:
         split_at = 3900
         if len(remaining) > split_at:
@@ -334,7 +386,7 @@ def tg_send_thinking(cid, text):
         chunk = remaining[:cut]
         remaining = remaining[cut:].lstrip("\n")
         prefix = "💭 " if first else "💭 … "
-        tg_call("sendMessage", chat_id=cid, text=prefix + chunk)
+        tg_call("sendMessage", chat_id=cid, text=prefix + chunk, **tw)
         first = False
         time.sleep(0.25)
 
@@ -355,7 +407,7 @@ def tg_thinking_stream_update(cid, sec_key, text, state: dict):
                 entry["last_text"] = text
             return
         print(f"[telegram] editMessageText failed: {r.get('description', '?')}, sending new message")
-    r = tg_call("sendMessage", chat_id=cid, text=display)
+    r = tg_call("sendMessage", chat_id=cid, text=display, **_tg_thread_kw())
     if r.get("ok") and r.get("result", {}).get("message_id"):
         state[sec_key] = {
             "msg_id": r["result"]["message_id"],
@@ -370,6 +422,7 @@ def tg_send_photo(cid, photo_path, caption=None):
     try:
         with open(photo_path, 'rb') as f:
             data = {'chat_id': cid}
+            data.update(_tg_thread_kw())
             if caption:
                 data['caption'] = caption[:1024]  # Telegram caption limit
             resp = requests.post(f"{TG_API}/sendPhoto", data=data, files={'photo': f}, timeout=30)
@@ -390,6 +443,7 @@ def tg_send_photo_bytes(cid, photo_bytes, filename='screenshot.png', caption=Non
         return
     try:
         data = {'chat_id': cid}
+        data.update(_tg_thread_kw())
         if caption:
             data['caption'] = caption[:1024]
         resp = requests.post(f"{TG_API}/sendPhoto", data=data,
@@ -411,6 +465,7 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
         return None
     try:
         data = {'chat_id': cid}
+        data.update(_tg_thread_kw())
         if caption:
             data['caption'] = caption[:1024]
         data['reply_markup'] = json.dumps({'inline_keyboard': keyboard})
@@ -475,12 +530,16 @@ def tg_register_commands():
 
 def tg_ask_command_update(cid):
     """Send an inline keyboard asking the user to update bot commands."""
-    tg_call('sendMessage', chat_id=cid,
-            text="New commands available. Want me to update your Telegram bot menu?",
-            reply_markup={'inline_keyboard': [
-                [{'text': '✅ Yes, update', 'callback_data': 'setup_commands:yes'},
-                 {'text': 'Skip', 'callback_data': 'setup_commands:no'}]
-            ]})
+    tg_call(
+        'sendMessage',
+        chat_id=cid,
+        text="New commands available. Want me to update your Telegram bot menu?",
+        reply_markup={'inline_keyboard': [
+            [{'text': '✅ Yes, update', 'callback_data': 'setup_commands:yes'},
+             {'text': 'Skip', 'callback_data': 'setup_commands:no'}]
+        ]},
+        **_tg_thread_kw(),
+    )
 
 
 def vscode_url_to_path(url):
@@ -1911,6 +1970,7 @@ def sender_thread():
                 # Handle inline keyboard callbacks (Accept/Reject)
                 callback = update.get('callback_query')
                 if callback:
+                    _set_tg_reply_thread_from_callback(callback)
                     cb_data = callback.get('data', '')
                     cb_id = callback.get('id')
                     cb_user_id = callback.get('from', {}).get('id')
@@ -2044,6 +2104,8 @@ def sender_thread():
                 msg = update.get('message')
                 if not msg:
                     continue
+
+                _set_tg_reply_thread_from_message(msg)
 
                 text = msg.get('text', '')
                 photo = msg.get('photo')  # List of PhotoSize objects
@@ -2191,6 +2253,7 @@ def sender_thread():
                     continue
 
                 if cmd == '/unpair':
+                    _clear_tg_reply_thread()
                     if not ALLOWED_FROM_ENV:
                         allowed_user_ids.clear()
                         if allowed_ids_file.exists():
@@ -2269,8 +2332,13 @@ def sender_thread():
                             grouped[ws_name].append([{'text': f"{prefix}{conv['name']}", 'callback_data': f"chat:{iid}:{pc_id}"}])
                     if grouped:
                         for ws_name, keyboard in grouped.items():
-                            tg_call('sendMessage', chat_id=cid, text=f'📂 {ws_name}',
-                                    reply_markup={'inline_keyboard': keyboard})
+                            tg_call(
+                                'sendMessage',
+                                chat_id=cid,
+                                text=f'📂 {ws_name}',
+                                reply_markup={'inline_keyboard': keyboard},
+                                **_tg_thread_kw(),
+                            )
                     else:
                         tg_send(cid, "No open chats right now.")
                     continue
@@ -2690,8 +2758,13 @@ def monitor_thread():
                                 filename='confirmation.png', caption=f"⚡ {text}")
                         else:
                             print(f"[monitor] Forwarding CONFIRMATION as text: {text}")
-                            tg_call('sendMessage', chat_id=cid, text=f"⚡ {text}",
-                                    reply_markup={'inline_keyboard': keyboard})
+                            tg_call(
+                                'sendMessage',
+                                chat_id=cid,
+                                text=f"⚡ {text}",
+                                reply_markup={'inline_keyboard': keyboard},
+                                **_tg_thread_kw(),
+                            )
 
                 elif not muted:
                     # Only send to Telegram when not muted
@@ -3202,6 +3275,11 @@ if chat_id:
         )
 if muted:
     print("Status: PAUSED (restored from previous session)")
+if tg_reply_thread_id is not None:
+    print(
+        f"[telegram] Forum topic id {tg_reply_thread_id}: replies go to this topic "
+        "(from your last Telegram message in that topic)."
+    )
 
 # Check if bot commands need updating and ask the user
 if chat_id and tg_commands_need_update():
