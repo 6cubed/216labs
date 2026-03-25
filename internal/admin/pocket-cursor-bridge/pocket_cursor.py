@@ -2546,7 +2546,11 @@ def _composer_prefix_from_pcid(pc_id):
 
 def monitor_thread():
     global mirrored_chat
-    print("[monitor] Starting Cursor monitor...")
+    print("[monitor] Starting Cursor monitor...", flush=True)
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except Exception:
+        pass
     last_turn_id = None         # Track conversation turns (DOM message id)
     last_conv = None            # Track active conversation name (for logging)
     mc = mirrored_chat          # Snapshot of mirrored_chat at init
@@ -2837,17 +2841,24 @@ def monitor_thread():
                 ):
                     tg_thinking_stream_update(cid, sec_key, text, thinking_stream_state)
 
+                # Thinking must not block final text: empty thinking used to `break` and
+                # never reached markdown; quiet used to wait 2 ticks on thinking before text.
                 stable_need = STABLE_THRESHOLD
-                if sec_type == 'thinking' and bridge_verbosity == 'verbose':
-                    stable_need = 1  # finalize sooner after streaming edits
+                if sec_type == 'thinking':
+                    if bridge_verbosity == 'verbose':
+                        stable_need = 1
+                    elif bridge_verbosity == 'quiet':
+                        stable_need = 0
+                    else:
+                        stable_need = 1  # normal: one tick — don't block answer behind 2s thinking gate
 
                 # Not stable yet — stop here (sequential ordering)
                 if section_stable.get(sec_key, 0) < stable_need:
                     break
 
-                # Don't forward empty thinking — wait for content to load
+                # Empty thinking placeholder: skip without blocking later sections (e.g. answer text)
                 if sec_type == 'thinking' and not text.strip():
-                    break
+                    continue
 
                 sec_selector = sec.get('selector') if isinstance(sec, dict) else None
 
@@ -3021,7 +3032,7 @@ def monitor_thread():
                     marked_done = True
 
         except Exception as e:
-            print(f"[monitor] Error: {e}")
+            print(f"[monitor] Error: {e}", flush=True)
             time.sleep(2)
 
 
