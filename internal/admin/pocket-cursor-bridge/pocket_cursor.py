@@ -912,6 +912,35 @@ def _cdp_conn_for_telegram_send():
     return active_conn()
 
 
+def _cdp_activate_mirrored_tab(conn, pc_id: str | None) -> str:
+    """Click the agent tab with data-pc-id=pc_id so input targets the same composer as the monitor.
+
+    cursor_get_turn_info scopes by composer id from mirrored_chat; querySelector('.aislash-editor-input')
+    alone uses whichever tab is focused — often the wrong chat in a multi-tab window.
+    """
+    if not pc_id or not conn:
+        return 'OK'
+    pid_js = json.dumps(pc_id)
+    js = f"""
+    (function() {{
+        const pid = {pid_js};
+        const candidates = document.querySelectorAll('[data-pc-id="' + pid + '"]');
+        let el = null;
+        for (const c of candidates) {{
+            if (c.querySelector('a[aria-id="chat-horizontal-tab"]')) {{ el = c; break; }}
+            if (c.querySelector('.composer-tab-label')) {{ el = c; break; }}
+        }}
+        if (!el) return 'ERROR: tab not found (pc_id=' + pid + ', n=' + candidates.length + ')';
+        const a = el.querySelector('a[aria-id="chat-horizontal-tab"]');
+        if (a) {{ a.click(); return 'OK'; }}
+        el.dispatchEvent(new MouseEvent('mousedown', {{bubbles: true, cancelable: true, button: 0}}));
+        return 'OK';
+    }})();
+    """
+    out = cdp_eval_on(conn, js)
+    return out if isinstance(out, str) else 'OK'
+
+
 def cdp_eval(expression):
     """Evaluate JS on the active instance. Thread-safe via cdp_lock."""
     return cdp_eval_on(active_conn(), expression)
@@ -1308,6 +1337,12 @@ def cursor_paste_image(image_bytes, mime='image/png', filename='image.png'):
     b64 = base64.b64encode(image_bytes).decode('ascii')
     conn = _cdp_conn_for_telegram_send()
 
+    if mirrored_chat and mirrored_chat[1]:
+        tab_res = _cdp_activate_mirrored_tab(conn, mirrored_chat[1])
+        if isinstance(tab_res, str) and tab_res.startswith('ERROR'):
+            return tab_res
+        time.sleep(0.2)
+
     # Focus editor first
     focus_result = cdp_eval_on(conn, """
         (function() {
@@ -1375,6 +1410,11 @@ def cursor_paste_image(image_bytes, mime='image/png', filename='image.png'):
 def cursor_click_send():
     """Click the send button in Cursor's editor. Used after image paste with no text."""
     conn = _cdp_conn_for_telegram_send()
+    if mirrored_chat and mirrored_chat[1]:
+        tab_res = _cdp_activate_mirrored_tab(conn, mirrored_chat[1])
+        if isinstance(tab_res, str) and tab_res.startswith('ERROR'):
+            return tab_res
+        time.sleep(0.15)
     return cdp_eval_on(conn, """
         (function() {
             const selectors = [
@@ -1540,6 +1580,13 @@ def cursor_send_message(text, raw=False):
     global msg_id_counter
     conn = _cdp_conn_for_telegram_send()
     t0 = time.time()
+
+    # 0. Activate mirrored agent tab before cdp_lock (tab click uses cdp_eval_on → same lock)
+    if mirrored_chat and mirrored_chat[1]:
+        tab_res = _cdp_activate_mirrored_tab(conn, mirrored_chat[1])
+        if isinstance(tab_res, str) and tab_res.startswith('ERROR'):
+            return tab_res
+        time.sleep(0.2)
 
     with cdp_lock:
         # 1. Focus editor
