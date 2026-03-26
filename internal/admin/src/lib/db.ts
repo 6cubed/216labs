@@ -237,6 +237,7 @@ function initSchema(db: Database.Database) {
     );
   `);
   seedDefaultCronJobs(db);
+  ensureTelegramGroupHourlyCronJob(db);
 
   ensureDeploymentEventsTable(db);
   backfillDeploymentEventsFromApps(db);
@@ -350,6 +351,12 @@ function seedInfraEnvDefaults(db: Database.Database) {
       description:
         "OpenAI API key for hourly group replies. Falls back to OPENAI_API_KEY on cron-runner if unset.",
       is_secret: 1,
+    },
+    {
+      key: "TELEGRAM_GROUP_HOURLY_OPENAI_MODEL",
+      description:
+        "Optional chat model for the hourly group reply (default gpt-4o-mini).",
+      is_secret: 0,
     },
   ];
   for (const row of telegramGroupCronKeys) {
@@ -796,8 +803,23 @@ function seedDefaultCronJobs(db: Database.Database): void {
     ('telegram-daily-digest', 'Daily codebase digest', 'Summarise repo activity and open PRs/issues; post to Telegram.', '0 9 * * *', 0),
     ('telegram-weekly-lint', 'Weekly lint & quality report', 'Run lint/formatter checks and report findings to Telegram.', '0 9 * * 1', 0),
     ('telegram-security-summary', 'Security scan summary', 'PipeSecure/Semgrep findings summary posted to Telegram.', '0 10 * * *', 0),
-    ('telegram-happypath-summary', 'Happy Path run summary', 'Last Happy Path results per app posted to Telegram.', '0 8 * * *', 0);
+    ('telegram-happypath-summary', 'Happy Path run summary', 'Last Happy Path results per app posted to Telegram.', '0 8 * * *', 0),
+    ('telegram-group-hourly-reply', 'Group hourly AI reply', 'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.', '0 * * * *', 0);
   `);
+}
+
+/** INSERT OR IGNORE for cron jobs added after initial DB seed. */
+function ensureTelegramGroupHourlyCronJob(db: Database.Database): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+     VALUES (
+       'telegram-group-hourly-reply',
+       'Group hourly AI reply',
+       'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.',
+       '0 * * * *',
+       0
+     )`
+  ).run();
 }
 
 /** Append-only log: VPS deploys (deploy.sh), per-app rollouts, optional CI rows. */

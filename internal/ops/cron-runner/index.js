@@ -61,6 +61,10 @@ async function getDb() {
   let dirty = false;
 
   const wrapper = {
+    exec(sql) {
+      db.run(sql);
+      dirty = true;
+    },
     prepare(sql) {
       return {
         get(...params) {
@@ -132,17 +136,48 @@ function isDue(schedule, date) {
   }
 }
 
-async function sendToTelegram(text) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.warn("[cron-runner] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set; skipping send");
+/** Idempotent schema for cron-runner state and new job rows (runs before tick / run-now). */
+function ensureCronRunnerMigrations(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cron_runner_state (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+  const tableExists = db
+    .prepare(
+      "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'cron_jobs'"
+    )
+    .get();
+  if (!tableExists) return false;
+  db.exec(`
+    INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+    VALUES (
+      'telegram-group-hourly-reply',
+      'Group hourly AI reply',
+      'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.',
+      '0 * * * *',
+      0
+    );
+  `);
+  return true;
+}
+
+async function sendToTelegram(text, chatIdOverride, tokenOverride) {
+  const chatId = chatIdOverride || TELEGRAM_CHAT_ID;
+  const token = tokenOverride || TELEGRAM_BOT_TOKEN;
+  if (!token || !chatId) {
+    console.warn(
+      "[cron-runner] Telegram token or chat id not set; skipping send"
+    );
     return;
   }
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      chat_id: TELEGRAM_CHAT_ID,
+      chat_id: chatId,
       text,
       disable_web_page_preview: true,
     }),
@@ -158,14 +193,25 @@ async function runJob(db, job) {
   const handler = handlers.HANDLERS[id];
   const fn = handler || (async () => `Unknown job: ${id}`);
   let text;
+  /** @type {string|undefined} */
+  let overrideChatId;
+  /** @type {string|undefined} */
+  let sendTokenOverride;
   try {
-    text = await fn(db, { HAPPYPATH_INTERNAL_URL });
+    const out = await fn(db, { HAPPYPATH_INTERNAL_URL });
+    if (out && typeof out === "object" && "text" in out) {
+      text = out.text;
+      overrideChatId = out.chatId;
+      sendTokenOverride = out.sendToken;
+    } else {
+      text = out;
+    }
   } catch (err) {
     console.error("[cron-runner] Handler error for", id, err);
     text = `${name}: error — ${err.message}`;
   }
   if (text && text.length > 0) {
-    await sendToTelegram(text);
+    await sendToTelegram(text, overrideChatId, sendTokenOverride);
   }
   db.prepare("UPDATE cron_jobs SET last_run_at = datetime('now') WHERE id = ?").run(id);
 }
@@ -173,12 +219,7 @@ async function runJob(db, job) {
 async function tick() {
   const db = await getDb();
   try {
-    const tableExists = db
-      .prepare(
-        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'cron_jobs'"
-      )
-      .get();
-    if (!tableExists) {
+    if (!ensureCronRunnerMigrations(db)) {
       console.warn("[cron-runner] Table cron_jobs not found; run admin once to init schema.");
       return;
     }
@@ -219,6 +260,16 @@ if (CRON_RUNNER_SECRET) {
       }
       const db = await getDb();
       try {
+        if (!ensureCronRunnerMigrations(db)) {
+          res.writeHead(503, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              ok: false,
+              error: "cron_jobs not initialized; start admin once.",
+            })
+          );
+          return;
+        }
         const job = db
           .prepare("SELECT id, name, schedule FROM cron_jobs WHERE id = ?")
           .get(jobId);
