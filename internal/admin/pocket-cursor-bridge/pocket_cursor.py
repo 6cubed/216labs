@@ -502,6 +502,7 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
 POCKET_CURSOR_COMMANDS = [
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
     {'command': 'chats', 'description': 'Show all chats across instances'},
+    {'command': 'deleteoldchats', 'description': 'Close non-active chat tabs'},
     {'command': 'commands', 'description': 'List all Pocket Cursor commands'},
     {'command': 'logs', 'description': 'Tail of bridge log file (recent console lines)'},
     {'command': 'logevents', 'description': 'Recent structured JSON events from the bridge'},
@@ -1755,6 +1756,55 @@ def cursor_switch_conv(index):
     """)
 
 
+def cursor_delete_old_chats(conn=None):
+    """Close all non-active chat tabs in one Cursor window. Returns {closed, kept, total}."""
+    eval_fn = (lambda js: cdp_eval_on(conn, js)) if conn else cdp_eval
+    result = eval_fn("""
+        (function() {
+            function clickClose(li) {
+                const candidates = [
+                    'button[aria-label*="Close"]',
+                    '[role="button"][aria-label*="Close"]',
+                    'a[aria-label*="Close"]',
+                    '.codicon-close'
+                ];
+                for (const sel of candidates) {
+                    const el = li.querySelector(sel);
+                    if (!el) continue;
+                    const clickable = el.closest('button,[role="button"],a,li,div') || el;
+                    try { clickable.click(); return true; } catch (_) {}
+                    try {
+                        clickable.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                        return true;
+                    } catch (_) {}
+                }
+                return false;
+            }
+
+            const all = Array.from(document.querySelectorAll(
+                '[class*="agent-tabs"] li[class*="action-item"]'
+            )).filter(li => li.querySelector('a[aria-id="chat-horizontal-tab"]'));
+
+            // Close from right-to-left so DOM index shifts don't skip tabs.
+            let closed = 0;
+            let kept = 0;
+            for (let i = all.length - 1; i >= 0; i--) {
+                const li = all[i];
+                if (li.classList.contains('checked')) {
+                    kept += 1;
+                    continue;
+                }
+                if (clickClose(li)) closed += 1;
+            }
+            return JSON.stringify({ closed: closed, kept: kept, total: all.length });
+        })();
+    """)
+    try:
+        return json.loads(result) if result else {'closed': 0, 'kept': 0, 'total': 0}
+    except json.JSONDecodeError:
+        return {'closed': 0, 'kept': 0, 'total': 0}
+
+
 def cursor_get_turn_info(composer_prefix='', conn=None):
     """Get the last turn's user message and all AI response sections.
     
@@ -2091,7 +2141,7 @@ def tg_bridge_status_text():
     if conv_name:
         lines.append(f"💬 {conv_name}")
     lines.append(
-        "\n/newchat /chats /commands /logs /logevents /status /pause /play /screenshot "
+        "\n/newchat /chats /deleteoldchats /commands /logs /logevents /status /pause /play /screenshot "
         "/verbose /reasoning /normal /quiet /unpair"
     )
     lines.append(f"Verbosity: {get_bridge_verbosity()}")
@@ -2523,6 +2573,31 @@ def sender_thread():
                     if not result or not result.startswith('OK'):
                         tg_send(cid, f"Failed: {result}")
                     print(f"[sender] New chat: {result}")
+                    continue
+
+                if cmd == '/deleteoldchats':
+                    per_instance = []
+                    total_closed = 0
+                    for iid, info in instance_registry.items():
+                        conn = info.get('ws')
+                        if not conn:
+                            continue
+                        stats = cursor_delete_old_chats(conn=conn)
+                        total_closed += int(stats.get('closed', 0) or 0)
+                        workspace = (info.get('workspace') or '(no workspace)').removesuffix(' (Workspace)')
+                        per_instance.append(
+                            f"• {workspace}: closed {stats.get('closed', 0)} (kept {stats.get('kept', 0)})"
+                        )
+                    if per_instance:
+                        tg_send(
+                            cid,
+                            "🧹 Old chats cleaned.\n"
+                            + "\n".join(per_instance)
+                            + f"\n\nTotal closed: {total_closed}",
+                        )
+                    else:
+                        tg_send(cid, "No active Cursor instances found.")
+                    print(f"[sender] Deleted old chats across instances: {total_closed}")
                     continue
 
                 if cmd in ('/chats', '/agents', '/agent'):
