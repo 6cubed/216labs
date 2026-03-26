@@ -12,6 +12,10 @@
 </p>
 
 <p align="center">
+  <a href="https://6cubed.app">6cubed.app</a>
+  &nbsp;·&nbsp;
+  <a href="https://admin.6cubed.app">admin</a>
+  &nbsp;·&nbsp;
   <a href="docs/REPOSITORY.md">handbook</a>
   &nbsp;·&nbsp;
   <a href="docs/TOOLKIT.md">toolkit</a>
@@ -19,7 +23,9 @@
 
 ---
 
-A client-agnostic layout: one database, one admin surface, one deploy path, HTTPS at the edge, optional on-demand container wake. Reference apps live under `products/org-platform/toolkit-demos/`; everything else in `products/` is yours to keep, rename, or remove.
+**Vibe coding** with AI is a superpower: you can spin up surfaces, APIs, and experiments at a pace that used to be unthinkable. The catch is entropy—without a shell around it, the repo turns into noise and nobody knows what shipped.
+
+216labs is that shell: a production layout—one SQLite source of truth, one admin surface, one deploy path, HTTPS at the edge, optional cold-starts when a service has been asleep—so AI-assisted work stays accountable, reversible, and shippable. Reference apps live in `products/org-platform/toolkit-demos/`; the rest of `products/` is where your own ideas land. Trim, fork, or replace; keep the spine.
 
 | If you want… | Open |
 |--------------|------|
