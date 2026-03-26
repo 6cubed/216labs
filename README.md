@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/readme-banner.jpg" alt="" width="100%" />
+  <img src="docs/assets/readme-logo.svg" alt="6cubed cube logo" width="180" />
 </div>
 
 <br />

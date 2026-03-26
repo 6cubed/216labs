@@ -1,0 +1,40 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">6cubed logo</title>
+  <desc id="desc">A cube-inspired number six mark for 216labs.</desc>
+  <defs>
+    <linearGradient id="topFace" x1="256" y1="56" x2="256" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8BD3FF"/>
+      <stop offset="1" stop-color="#53A9FF"/>
+    </linearGradient>
+    <linearGradient id="leftFace" x1="72" y1="178" x2="216" y2="406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D7DFF"/>
+      <stop offset="1" stop-color="#1E5ED1"/>
+    </linearGradient>
+    <linearGradient id="rightFace" x1="440" y1="178" x2="296" y2="406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1162DE"/>
+      <stop offset="1" stop-color="#0A47AA"/>
+    </linearGradient>
+    <linearGradient id="sixStroke" x1="188" y1="160" x2="338" y2="356" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DDEBFF"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M256 56L440 162L256 268L72 162L256 56Z" fill="url(#topFace)"/>
+  <path d="M72 162L256 268V456L72 350V162Z" fill="url(#leftFace)"/>
+  <path d="M440 162L256 268V456L440 350V162Z" fill="url(#rightFace)"/>
+
+  <path
+    d="M324 176H236C198.445 176 168 206.445 168 244V270C168 307.555 198.445 338 236 338H282C295.255 338 306 348.745 306 362C306 375.255 295.255 386 282 386H180"
+    stroke="url(#sixStroke)"
+    stroke-width="34"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M236 270H304"
+    stroke="url(#sixStroke)"
+    stroke-width="34"
+    stroke-linecap="round"
+  />
+</svg>
