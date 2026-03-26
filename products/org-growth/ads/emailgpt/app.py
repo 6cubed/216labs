@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 import flask
-from resend import Resend
+import resend
 
 app = flask.Flask(__name__)
 
@@ -132,7 +132,7 @@ def send_daily():
         return flask.jsonify({"error": "EMAILGPT_RESEND_API_KEY not set"}), 500
 
     from_email = os.environ.get("EMAILGPT_FROM_EMAIL", "EmailGPT <nudge@emailgpt.6cubed.app>")
-    resend = Resend(api_key)
+    resend.api_key = api_key
     date_str = datetime.utcnow().strftime("%A, %B %d")
     nudge = get_nudge()
     html = build_email_html(nudge, date_str)
@@ -147,11 +147,13 @@ def send_daily():
     results = []
     for email in subscribers:
         try:
-            resend.emails.send(
-                from_=from_email,
-                to=email,
-                subject=f"Your nudge for {date_str}",
-                html=html,
+            resend.Emails.send(
+                {
+                    "from": from_email,
+                    "to": [email],
+                    "subject": f"Your nudge for {date_str}",
+                    "html": html,
+                }
             )
             results.append({"email": email, "success": True})
         except Exception as e:
