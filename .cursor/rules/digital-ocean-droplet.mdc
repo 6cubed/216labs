@@ -1,0 +1,32 @@
+---
+description: Digital Ocean droplet IP and deployment details
+alwaysApply: true
+---
+
+# Digital Ocean Droplet
+
+**Ship changes:** commit and push so **CI** publishes images to **GHCR**.
+
+**SSH / deploy from the agent:** When the user **explicitly asks** in that message for `./deploy.sh`, SSH to the droplet, or remote ops (env, restarts, Caddy/admin credentials), **run it** from the Cursor agent (network/long timeout as needed). Do not defer to “use your own terminal only” after an explicit request.
+
+- IP: 46.101.88.197
+- Deploy user: root
+- Stack: Docker Compose + Caddy on the droplet
+- **Rollout command:** `./deploy.sh root@46.101.88.197` from the 216labs repo (default: server pulls from GHCR; no local Docker required)
+- Apps are exposed through Caddy (e.g. ports 8001–8005 internally as configured)
+
+## Build policy
+
+**Never build Docker images on the server.** The droplet is resource-limited.
+
+- **Default:** GitHub Actions builds and pushes to GHCR. `deploy.sh` (when run) pulls on the server and retags—no laptop build.
+- **Single-app iteration:** When deploying from a laptop with `DEPLOY_IMAGE_SOURCE=local`, set `DEPLOY_RUNTIME_APPS="<app_id>"` so only that app’s image is built and transferred (not every enabled app). Default shipping path remains CI + GHCR.
+- **Legacy / fallback:** Full local build+transfer of many images is heavier; prefer GHCR unless you need an immediate single-container rollout.
+- On the server: do **not** run `docker compose build` or `docker build`. Only `git pull`, image pull/load, `docker compose up -d`, and read-only ops.
+
+## After a change — checklist
+
+1. **Commit** and **push** to `main`.
+2. **Deploy / SSH:** By default, task is complete after push. If the user **explicitly asked** to deploy or SSH in that message, run `./deploy.sh` or the requested remote commands with a long timeout; then optionally **verify** admin/env (see `216labs_admin` backfill, `sqlite3` on `216labs.db`, `docker compose ps`).
+
+Never leave changes uncommitted or unpushed.
