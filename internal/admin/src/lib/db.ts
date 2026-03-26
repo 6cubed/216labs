@@ -282,10 +282,17 @@ function initSchema(db: Database.Database) {
 
 /** Default admin logging channel and cron-runner URL. Only sets when value is empty. */
 function seedInfraEnvDefaults(db: Database.Database) {
-  const ADMIN_LOGGING_CHAT_ID = "-1002253649080";
-  db.prepare(
-    `UPDATE env_vars SET value = ? WHERE key = 'TELEGRAM_CHAT_ID' AND (value = '' OR value IS NULL)`
-  ).run(ADMIN_LOGGING_CHAT_ID);
+  // Optional: set ADMIN_DEFAULT_TELEGRAM_LOGGING_CHAT_ID on the admin container (compose / droplet .env).
+  // Never hardcode real chat IDs in the repo.
+  const chatIdFromEnv =
+    typeof process.env.ADMIN_DEFAULT_TELEGRAM_LOGGING_CHAT_ID === "string"
+      ? process.env.ADMIN_DEFAULT_TELEGRAM_LOGGING_CHAT_ID.trim()
+      : "";
+  if (chatIdFromEnv) {
+    db.prepare(
+      `UPDATE env_vars SET value = ? WHERE key = 'TELEGRAM_CHAT_ID' AND (value = '' OR value IS NULL)`
+    ).run(chatIdFromEnv);
+  }
   db.prepare(
     `UPDATE env_vars SET value = 'http://cron-runner:3029' WHERE key = 'CRON_RUNNER_INTERNAL_URL' AND (value = '' OR value IS NULL)`
   ).run();

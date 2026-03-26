@@ -16,7 +16,7 @@
   },
   "env_vars": [
     { "key": "TELEGRAM_BOT_TOKEN", "description": "Cxc bot token for admin logging channel (get from server if not set)", "is_secret": true },
-    { "key": "TELEGRAM_CHAT_ID", "description": "Admin logging channel ID (default -1002253649080)", "is_secret": false },
+    { "key": "TELEGRAM_CHAT_ID", "description": "Admin logging channel / supergroup ID (set in admin Env; optional seed via ADMIN_DEFAULT_TELEGRAM_LOGGING_CHAT_ID on admin)", "is_secret": false },
     { "key": "CRON_RUNNER_SECRET", "description": "Secret for admin 'Run now' trigger; set to a random string", "is_secret": true },
     { "key": "CRON_RUNNER_INTERNAL_URL", "description": "cron-runner base URL for Run now (default http://cron-runner:3029)", "is_secret": false }
   ]
