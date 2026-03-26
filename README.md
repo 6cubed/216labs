@@ -1,151 +1,39 @@
-# 216Labs
+<div align="center">
+  <img src="docs/assets/readme-banner.jpg" alt="" width="100%" />
+</div>
 
-**At 216Labs we are building the toolkit for production grade vibes.** In practice: a monorepo factory that makes debugging and accountability tractable when building with AI — one source of truth (SQLite), a single pipeline dashboard, and explicit control over what ships. All apps run on a single VPS via Docker Compose behind Caddy with automatic HTTPS.
+<br />
 
-## Toolkit vs portfolio
+<h3 align="center">216labs</h3>
 
-The repo is designed to stay **client-agnostic**: manifests, one admin DB, one deploy path, Caddy, and optional activator cold-starts. **`products/org-platform/toolkit-demos/`** holds tiny **hello-world** apps (Next.js + Flask) that demonstrate that pipeline on a fresh install. A larger set of apps under `products/` is the live portfolio; you can trim or fork for your own stack. See **`docs/TOOLKIT.md`** for greenfield setup, `config/toolkit-default-enabled.txt` for no-DB deploy defaults, and **`config/examples/toolkit-starter/`** for minimal deploy config you can copy when publishing a community starter repo.
+<p align="center">
+  One tree. Many apps. One spine.<br />
+  <em>SQLite · Caddy · Docker Compose · manifest-driven shipping</em>
+</p>
 
-## Layout
+<p align="center">
+  <a href="https://6cubed.app">6cubed.app</a>
+  &nbsp;·&nbsp;
+  <a href="https://admin.6cubed.app">admin</a>
+  &nbsp;·&nbsp;
+  <a href="docs/REPOSITORY.md">handbook</a>
+  &nbsp;·&nbsp;
+  <a href="docs/TOOLKIT.md">toolkit</a>
+</p>
 
-- **`products/`** — Customer-facing products grouped by **org** and **vertical** (for example `org-shopping`, `org-growth/ads`, `org-media`, `org-platform/ai`). New scaffolds default to `products/org-platform/local/<id>` via `./scripts/new-app.sh <app-id>`. Reference demos live in **`products/org-platform/toolkit-demos/`**.
-- **`internal/`** — Internal-only services: **admin** (workflow dashboard), **quality/happypath** (clickthrough tests), **security/pipesecure** (security pipeline), **ops/cron-runner**, **platform/activator**, and similar.
-- **`packages/`** — Reserved for shared libraries and design-system style code reused across products (empty until extracted).
-- **`config/`** — Deploy caps, optional bootstrap snippet, priority order, and other repo-level configuration.
+---
 
-## Projects
+This monorepo is a production host and a reusable pattern: one SQLite source of truth, one admin surface, one deploy path, HTTPS at the edge, optional cold-starts via the activator. `products/org-platform/toolkit-demos/` proves the pipeline; the rest of `products/` is the live fleet—fork it, delete what you don’t need, keep the spine.
 
-| App | Stack | URL |
-|-----|-------|-----|
-| **RamblingRadio** | Express + React + Vite, PostgreSQL | [ramblingradio.6cubed.app](https://ramblingradio.6cubed.app) |
-| **Stroll.live** | Express + React + Vite, SQLite | [stroll.6cubed.app](https://stroll.6cubed.app) |
-| **OneFit** | Next.js, SQLite | [onefit.6cubed.app](https://onefit.6cubed.app) |
-| **HiveFind** | Next.js | [hivefind.6cubed.app](https://hivefind.6cubed.app) |
-| **PipeSecure** | Next.js, PostgreSQL, Redis, BullMQ | [pipesecure.6cubed.app](https://pipesecure.6cubed.app) |
-| **AGI Memes** | Flask | [agimemes.6cubed.app](https://agimemes.6cubed.app) |
-| **AgitShirts** | Flask, daily AI generation | [agitshirts.6cubed.app](https://agitshirts.6cubed.app) |
-| **Priors** | Flask, Google OAuth, Gemini | [priors.6cubed.app](https://priors.6cubed.app) |
-| **CalibratedAI** | Next.js, SQLite | [calibratedai.6cubed.app](https://calibratedai.6cubed.app) |
-| **Big Leroy's** | Flask, Google OAuth, SQLite | [bigleroys.6cubed.app](https://bigleroys.6cubed.app) |
-| **Anchor** | FastAPI + React | [anchor.6cubed.app](https://anchor.6cubed.app) |
-| **1PageResearch** | Flask, SQLite | [1pageresearch.6cubed.app](https://1pageresearch.6cubed.app) |
-| **Artisanal Europe** | Next.js | [artisinaleurope.6cubed.app](https://artisinaleurope.6cubed.app) |
-| **Zurich Dating Game** | Next.js, SQLite | [thezurichdatinggame.6cubed.app](https://thezurichdatinggame.6cubed.app) |
-| **OneRoom** | Next.js | [oneroom.6cubed.app](https://oneroom.6cubed.app) |
-| **Audio AI Checkup** | Next.js, SQLite | [audioaicheckup.6cubed.app](https://audioaicheckup.6cubed.app) |
-| **Múinteoir** | Next.js, SQLite, OpenAI | [muinteoir.6cubed.app](https://muinteoir.6cubed.app) |
-| **Pocket** | Next.js, WebGPU, WebSocket relay | [pocket.6cubed.app](https://pocket.6cubed.app) |
-| **StoryMagic** | Next.js, SQLite, OpenAI, Stripe | [storybook.6cubed.app](https://storybook.6cubed.app) |
-| **216Labs Admin** | Next.js (workflow & pipeline dashboard) | [admin.6cubed.app](https://admin.6cubed.app) |
+| If you want… | Open |
+|--------------|------|
+| Greenfield / first deploy | [`docs/TOOLKIT.md`](docs/TOOLKIT.md), [`config/examples/toolkit-starter/`](config/examples/toolkit-starter/) |
+| New app scaffold | `./scripts/new-app.sh` |
+| Deploy, layout, architecture, cron, Pocket bridge | [`docs/REPOSITORY.md`](docs/REPOSITORY.md) |
+| Showroom / caps / GHCR sync | [`docs/SCALING.md`](docs/SCALING.md), [`docs/DROPLET_SYNC.md`](docs/DROPLET_SYNC.md) |
 
-## Deploy
+---
 
-Images are built locally on your dev machine and transferred to the droplet via SSH — no registry, no building on the server.
-
-### One-time setup
-
-1. **Create a DigitalOcean droplet** — $6/mo (1 vCPU, 1GB) is enough since it only runs containers, not builds. Choose the **Docker** marketplace image.
-
-2. **Point DNS** — add a wildcard A record (already done on Namecheap):
-
-```
-*.6cubed.app  →  46.101.88.197
-```
-
-3. **Configure secrets** — on first deploy the script creates `.env` from `.env.example` on the droplet. SSH in, fill in secrets, then re-deploy:
-
-```bash
-ssh root@46.101.88.197 "nano /opt/216labs/.env"
-# Then roll the droplet from your machine (not required for every commit if you only need CI images):
-./deploy.sh root@46.101.88.197
-```
-
-### Deploy
-
-**Images:** GitHub Actions builds and pushes `216labs/*` tags to **GHCR** on pushes to `main`.
-
-**VPS:** When you want the droplet to pull those images and restart Compose, run `./deploy.sh root@46.101.88.197` from **your own environment** (or another runner)—not something the Cursor agent runs by default. The script:
-
-- Reads enabled apps from `216labs.db` (toggle via [admin.6cubed.app](https://admin.6cubed.app))
-- By default pulls from GHCR on the server and retags to `216labs/*:latest`
-- `git pull` on the server, then `docker compose up` for the enabled set
-
-Legacy `DEPLOY_IMAGE_SOURCE=local` builds on the machine that runs the script and streams images over SSH; use only when GHCR is not an option.
-
-### Telegram cron jobs
-
-The **cron-runner** service runs scheduled jobs (daily digest, Happy Path summary, etc.) and posts to a Telegram chat. Enable jobs in the admin under **Cron**. Set **TELEGRAM_BOT_TOKEN** and **TELEGRAM_CHAT_ID** in the admin **Env** so the runner can send messages (deploy loads these into the cron-runner container).
-
-## Local development
-
-```bash
-cp .env.example .env
-# Set APP_HOST=localhost (HTTP only, no certs)
-docker compose up --build
-```
-
-To run a single app without Docker, `cd` into its directory and follow its own README.
-
-### PocketCursor bridge (Telegram ↔ Cursor on your Mac)
-
-The **local** bridge lives at `internal/admin/pocket-cursor-bridge/`. It mirrors Cursor’s chat with Telegram on your phone; it does **not** run the whole monorepo in Docker.
-
-**Prerequisites:** **Python 3.10+** (many Macs still default to `python3` **3.7** — run `python3 --version`; if needed install `brew install python@3.12` and use it, or set `POCKETCURSOR_PYTHON` to that binary). Cursor at `/Applications/Cursor.app`, and a Telegram bot token from [@BotFather](https://t.me/BotFather).
-
-**First-time setup:** **`./scripts/pocket-cursor-bridge.sh`** runs an **interactive wizard** before the bridge: with no token it asks for the bot token (hidden input), where to bind (DM vs pinned group `.chat_id`), optional allowlist ids, and optional “listen on Telegram” discovery. If a token is **already** configured, the wizard shows a short summary and asks whether to reconfigure. Use **`POCKET_SKIP_WIZARD=1`** to disable the wizard (fail fast, e.g. CI).
-
-**Config:** export **`TELEGRAM_BOT_TOKEN`** and optionally **`TELEGRAM_OWNER_ID`** and/or **`TELEGRAM_ALLOWED_USER_IDS`** (comma-separated user ids for multiple people in a group), **or** set them in **[admin Env](https://admin.6cubed.app/env)** (PocketCursor app keys) and sync to your Mac:
-
-```bash
-./scripts/sync-pocket-bridge-env.sh   # writes .env.admin-sync from the droplet SQLite DB (SSH)
-# or plug-and-play in one step:
-POCKET_SYNC_FROM_ADMIN=1 ./scripts/pocket-cursor-bridge.sh
-```
-
-Merge order: **exported env vars** win; then **`.env.admin-sync`** (from admin); then **`.env`** (local overrides). Set **`TELEGRAM_ALLOWED_USER_IDS`** (and/or **`TELEGRAM_OWNER_ID`**) so only those Telegram users can use the bridge; if unset and no saved `.allowed_user_ids`, the first sender auto-pairs (same as before).
-
-**One command** from the repo root (after `git clone` and `cd 216labs`):
-
-```bash
-export TELEGRAM_BOT_TOKEN='…'   # unless you sync from admin (see above)
-./scripts/pocket-cursor-bridge.sh
-```
-
-The **first** run creates `.venv` and installs bridge dependencies. It then starts Cursor with CDP (`start_cursor.py`) and runs `pocket_cursor.py` (leave the terminal open; Ctrl+C to stop). Voice notes from Telegram are not transcribed; use text or photos.
-
-**Phone outbox** (Markdown → PNG): in `internal/admin/pocket-cursor-bridge/`, run `npm install` for Puppeteer. **Windows:** use `restart_pocket_cursor.py` in that folder instead of bash.
-
-The **Flask** service on the VPS (`pocketcursor` in `docker-compose.yml`) is separate; it is for group policy and `pocketcursor.6cubed.app`, not a substitute for local `pocket_cursor.py`.
-
-## Architecture
-
-```
-                  ┌─────────────────────────┐
-                  │   DNS: *.6cubed.app   │
-                  │   → 46.101.88.197       │
-                  └───────────┬─────────────┘
-                              │
-                  ┌───────────▼─────────────┐
-                  │   Caddy :80 / :443      │
-                  │   (auto HTTPS via ACME) │
-                  └──┬──┬──┬──┬──┬──┬──┬───┘
-                     │  │  │  │  │  │  │
-          ┌──────────┘  │  │  │  │  │  └────────────┐
-          ▼             ▼  ▼  ▼  ▼  ▼               ▼
-   ┌────────────┐  ┌──────┐ ... ┌───────┐  ┌──────────────┐
-   │ramblingradio│  │stroll│     │ admin │  │  (20+ apps)  │
-   │   :5000    │  │:5001 │     │ :3000 │  │  :3000 each  │
-   └──────┬─────┘  └──────┘     └───────┘  └──────────────┘
-          │
-   ┌──────▼─────┐   ┌───────────┐   ┌──────────────────┐
-   │ PostgreSQL │   │  Redis    │   │ SQLite (embedded) │
-   │   :5432    │   │  :6379    │   │  (per-app files)  │
-   └────────────┘   └───────────┘   └──────────────────┘
-```
-
-## Cost
-
-| Setup | Monthly |
-|-------|---------|
-| DO App Platform (5 services + managed DB) | ~$32+ |
-| **Single droplet (this setup)** | **$6-12** |
+<p align="center">
+  <sub>Main tells the story. Branches are experiments. Tags are releases.<br />Everything else is commentary.</sub>
+</p>
