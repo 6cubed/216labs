@@ -1,0 +1,13 @@
+[Unit]
+Description=216labs — LRU stop + image prune when disk low or evictable cap exceeded
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=SYNC_PROJECT_ROOT=/opt/216labs
+ExecStart=/opt/216labs/scripts/droplet-resource-pressure.sh
+WorkingDirectory=/opt/216labs
+
+[Install]
+WantedBy=multi-user.target

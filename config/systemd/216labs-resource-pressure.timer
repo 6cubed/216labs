@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer — 216labs resource pressure (every 10 minutes)
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

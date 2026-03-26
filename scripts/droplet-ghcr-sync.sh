@@ -25,6 +25,11 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
+# Free disk / enforce evictable cap before pulling layers (same SYNC_PROJECT_ROOT).
+if [ -f "$ROOT/scripts/droplet-resource-pressure.sh" ]; then
+  SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/droplet-resource-pressure.sh" || true
+fi
+
 set -a
 # shellcheck disable=SC1091
 . ./.env
