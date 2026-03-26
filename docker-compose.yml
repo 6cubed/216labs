@@ -39,8 +39,8 @@ services:
       - ACTIVATOR_PULL_BEFORE_COLD_START=${ACTIVATOR_PULL_BEFORE_COLD_START:-true}
       - GHCR_TOKEN=${GHCR_TOKEN:-}
       - GHCR_USERNAME=${GHCR_USERNAME:-token}
-      # LRU pool: max evictable app containers (non-protected); 0 = unlimited. Default 12 keeps disk/RAM sane on small VPS.
-      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-12}
+      # LRU pool: max evictable app containers (non-protected); 0 = unlimited. Default 10 keeps disk/RAM sane on small VPS.
+      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-10}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
       - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing,bugbounty,hello-nextjs,hello-flask}
       # Compose services that refuse /api/start (avoid restarting edge or self).

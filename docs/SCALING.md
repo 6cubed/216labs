@@ -13,7 +13,7 @@ This doc describes the foundations for scaling to hundreds or thousands of apps 
 
 | Concern | Current mechanism | Scale behavior |
 |--------|-------------------|----------------|
-| **Which apps deploy** | Admin DB `deploy_enabled` + optional cap | DB stays source of truth; cap via `DEPLOY_MAX_APPS` (defaults **32**, **200** when `DEPLOY_SHOWROOM=1`; override in env) |
+| **Which apps deploy** | Admin DB `deploy_enabled` + optional cap | DB stays source of truth; cap via `DEPLOY_MAX_APPS` (default **10**; override in env) |
 | **Showroom / hotswap** | `DEPLOY_SHOWROOM=1` + `DEPLOY_RUNTIME_APPS` (or default `admin landing`) | Keeps a **small hot pool** running and pulls only those images from GHCR; larger `deploy_enabled` catalogue cold-starts via activator (optional GHCR pull on wake). Set `ACTIVATOR_MAX_CONCURRENT_APPS` + optional `ACTIVATOR_REMOVE_IMAGE_ON_EVICT` on the droplet to cap RAM/disk. |
 | **GHCR sync on VPS** | [`scripts/droplet-ghcr-sync.sh`](../scripts/droplet-ghcr-sync.sh), [`config/systemd/`](../config/systemd/) timer example | Periodically pulls CI `latest` for **running** `216labs/*` services and recreates them. Activator cold-start uses `ACTIVATOR_PULL_BEFORE_COLD_START`. See [DROPLET_SYNC.md](DROPLET_SYNC.md). |
 | **Optional bootstrap** | `config/deploy-bootstrap.txt` (comments or a few IDs) | Rare: pre-`deploy_enabled` on admin sync for greenfield forks. Production: use admin UI. |
