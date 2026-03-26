@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">6cubed logo classic</title>
+  <desc id="desc">Classic cube mark with a stylized six.</desc>
+  <defs>
+    <linearGradient id="cTop" x1="256" y1="58" x2="256" y2="204" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A7DBFF"/>
+      <stop offset="1" stop-color="#62B0FF"/>
+    </linearGradient>
+    <linearGradient id="cLeft" x1="82" y1="178" x2="218" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A7FFF"/>
+      <stop offset="1" stop-color="#1C58C9"/>
+    </linearGradient>
+    <linearGradient id="cRight" x1="430" y1="178" x2="294" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1057CE"/>
+      <stop offset="1" stop-color="#083E99"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M256 58L430 158L256 258L82 158L256 58Z" fill="url(#cTop)"/>
+  <path d="M82 158L256 258V454L82 354V158Z" fill="url(#cLeft)"/>
+  <path d="M430 158L256 258V454L430 354V158Z" fill="url(#cRight)"/>
+
+  <path d="M334 178H236C198 178 168 208 168 246V270C168 308 198 338 236 338H282C295 338 306 349 306 362C306 375 295 386 282 386H178" stroke="#EAF3FF" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M238 272H304" stroke="#EAF3FF" stroke-width="30" stroke-linecap="round"/>
+</svg>

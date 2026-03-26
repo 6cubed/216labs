@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">6cubed logo minimal</title>
+  <desc id="desc">Minimal geometric cube with a cutout six.</desc>
+  <rect width="512" height="512" rx="96" fill="#0C1328"/>
+  <path d="M256 90L396 172V338L256 420L116 338V172L256 90Z" fill="#2E6BFF"/>
+  <path d="M256 124L367 188V322L256 386L145 322V188L256 124Z" fill="#15357A"/>
+  <path d="M256 124V386L145 322V188L256 124Z" fill="#2552BE"/>
+  <path d="M256 124L367 188L256 252L145 188L256 124Z" fill="#6FB0FF"/>
+  <path d="M308 188H230C200 188 176 212 176 242V266C176 296 200 320 230 320H266C279 320 290 331 290 344C290 357 279 368 266 368H188V392H266C292 392 314 370 314 344C314 318 292 296 266 296H230C214 296 200 282 200 266V242C200 226 214 212 230 212H308V188Z" fill="#F4F8FF"/>
+  <rect x="228" y="252" width="84" height="24" rx="12" fill="#F4F8FF"/>
+</svg>
