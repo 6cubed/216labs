@@ -48,7 +48,28 @@
     .tagline {
       color: var(--muted);
       font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .repo-link {
       margin-bottom: 2.5rem;
+    }
+
+    .repo-link a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent2);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .repo-link a:hover {
+      border-bottom-color: var(--accent2);
+      color: #c4b5fd;
     }
 
     .section {
@@ -90,6 +111,11 @@
     .links .name { font-size: 1rem; }
     .links .desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
 
+    .empty-hint {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
     footer {
       margin-top: 3rem;
       padding-top: 1.5rem;
@@ -100,44 +126,6 @@
 
     footer a { color: var(--accent2); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
-
-    .feed-intro {
-      font-size: 0.9rem;
-      color: var(--muted);
-      margin-bottom: 1rem;
-    }
-
-    .feed-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .feed-list li {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.35rem 0.75rem;
-      padding: 0.65rem 0.85rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 0.9rem;
-    }
-
-    .feed-list .name { font-weight: 600; color: var(--text); }
-    .feed-list .host {
-      font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 0.8rem;
-      color: var(--accent2);
-    }
-    .feed-list .when { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
-    .feed-list a.host-link {
-      color: var(--accent2);
-      text-decoration: none;
-    }
-    .feed-list a.host-link:hover { text-decoration: underline; }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -147,67 +135,29 @@
   <div class="wrap">
     <h1>216Labs</h1>
     <p class="tagline">At 216Labs we are building the toolkit for production grade vibes. One monorepo, one deploy, a growing set of apps and tools.</p>
-
-    {% if recent_activity %}
-    <section class="section">
-      <h2>Recent activity</h2>
-      <p class="feed-intro">Latest app deployments (admin dashboard updates are not listed).</p>
-      <ul class="feed-list">
-        {% for item in recent_activity %}
-        <li>
-          <span class="name">{{ item.name }}</span>
-          {% if item.url %}
-          <a class="host-link host" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.host }}</a>
-          {% else %}
-          <span class="host">{{ item.host }}</span>
-          {% endif %}
-          <span class="when" title="{{ item.absolute }}">{{ item.relative }}</span>
-        </li>
-        {% endfor %}
-      </ul>
-    </section>
-    {% endif %}
+    <p class="repo-link"><a href="https://github.com/6cubed/216labs" target="_blank" rel="noopener noreferrer">216labs on GitHub</a></p>
 
     <section class="section">
-      <h2>Popular projects</h2>
+      <h2>Live apps</h2>
+      {% if live_apps %}
       <div class="links">
-        <a href="https://blog.6cubed.app" target="_blank" rel="noopener">
-          <span class="name">Blog</span>
-          <span class="desc">Writing on dev, AI, and the stack</span>
+        {% for item in live_apps %}
+        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+          <span class="name">{{ item.name }}</span>
+          {% if item.tagline %}
+          <span class="desc">{{ item.tagline }}</span>
+          {% endif %}
         </a>
-        <a href="https://1pageresearch.6cubed.app" target="_blank" rel="noopener">
-          <span class="name">1PageResearch</span>
-          <span class="desc">AI-generated one-page research reports on any topic</span>
-        </a>
-        <a href="https://pocket.6cubed.app" target="_blank" rel="noopener">
-          <span class="name">Pocket</span>
-          <span class="desc">On-device AI agent with WebSocket relay</span>
-        </a>
-        <a href="https://facerate.6cubed.app" target="_blank" rel="noopener">
-          <span class="name">FaceRate</span>
-          <span class="desc">Vote on AI-generated faces, Elo leaderboard</span>
-        </a>
-        <a href="https://ramblingradio.6cubed.app" target="_blank" rel="noopener">
-          <span class="name">RamblingRadio</span>
-          <span class="desc">Community radio and playlists</span>
-        </a>
-        <a href="https://priors.6cubed.app" target="_blank" rel="noopener">
-          <span class="name">Priors</span>
-          <span class="desc">Gemini-powered prior art and ideas</span>
-        </a>
-        <a href="https://pipesecure.6cubed.app" target="_blank" rel="noopener">
-          <span class="name">PipeSecure</span>
-          <span class="desc">Security scanner and findings dashboard</span>
-        </a>
-        <a href="https://agimemes.6cubed.app" target="_blank" rel="noopener">
-          <span class="name">AGI Memes</span>
-          <span class="desc">AI-generated AGI news memes</span>
-        </a>
+        {% endfor %}
       </div>
+      {% else %}
+      <p class="empty-hint">App list loads from the workflow dashboard when the admin service is reachable.</p>
+      {% endif %}
     </section>
 
     <footer>
-      <a href="https://bugbounty.6cubed.app">Bug bounty program</a> · Workflow dashboard (deploy, env, toggles): <a href="https://admin.6cubed.app">admin.6cubed.app</a> · All apps at <code>*.6cubed.app</code>
+      <a href="https://bugbounty.6cubed.app">Bug bounty program</a>
+      · All apps at <code>*.6cubed.app</code>
     </footer>
   </div>
 </body>
