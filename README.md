@@ -8,14 +8,10 @@
 
 <p align="center">
   One tree. Many apps. One spine.<br />
-  <em>SQLite · Caddy · Docker Compose · manifest-driven shipping</em>
+  <em>SQLite · Caddy · Docker Compose · manifests</em>
 </p>
 
 <p align="center">
-  <a href="https://6cubed.app">6cubed.app</a>
-  &nbsp;·&nbsp;
-  <a href="https://admin.6cubed.app">admin</a>
-  &nbsp;·&nbsp;
   <a href="docs/REPOSITORY.md">handbook</a>
   &nbsp;·&nbsp;
   <a href="docs/TOOLKIT.md">toolkit</a>
@@ -23,14 +19,14 @@
 
 ---
 
-This monorepo is a production host and a reusable pattern: one SQLite source of truth, one admin surface, one deploy path, HTTPS at the edge, optional cold-starts via the activator. `products/org-platform/toolkit-demos/` proves the pipeline; the rest of `products/` is the live fleet—fork it, delete what you don’t need, keep the spine.
+A client-agnostic layout: one database, one admin surface, one deploy path, HTTPS at the edge, optional on-demand container wake. Reference apps live under `products/org-platform/toolkit-demos/`; everything else in `products/` is yours to keep, rename, or remove.
 
 | If you want… | Open |
 |--------------|------|
-| Greenfield / first deploy | [`docs/TOOLKIT.md`](docs/TOOLKIT.md), [`config/examples/toolkit-starter/`](config/examples/toolkit-starter/) |
+| First run / greenfield | [`docs/TOOLKIT.md`](docs/TOOLKIT.md), [`config/examples/toolkit-starter/`](config/examples/toolkit-starter/) |
 | New app scaffold | `./scripts/new-app.sh` |
-| Deploy, layout, architecture, cron, Pocket bridge | [`docs/REPOSITORY.md`](docs/REPOSITORY.md) |
-| Showroom / caps / GHCR sync | [`docs/SCALING.md`](docs/SCALING.md), [`docs/DROPLET_SYNC.md`](docs/DROPLET_SYNC.md) |
+| Layout, deploy, ops, architecture | [`docs/REPOSITORY.md`](docs/REPOSITORY.md) |
+| Pools, caps, registry sync | [`docs/SCALING.md`](docs/SCALING.md), [`docs/DROPLET_SYNC.md`](docs/DROPLET_SYNC.md) |
 
 ---
 

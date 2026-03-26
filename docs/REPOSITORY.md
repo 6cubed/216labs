@@ -2,9 +2,9 @@
 
 Long-form reference for layout, deploy, and day-two ops. The root [`README.md`](../README.md) stays minimal on purpose.
 
-## Toolkit vs portfolio
+## Design
 
-The repo stays **client-agnostic**: manifests, one admin DB, one deploy path, Caddy, optional activator cold-starts. **`products/org-platform/toolkit-demos/`** holds tiny hello-world apps (Next.js + Flask) that demonstrate the pipeline on a fresh install. A larger set under **`products/`** is the live portfolio; trim or fork. See **`docs/TOOLKIT.md`**, **`config/toolkit-default-enabled.txt`**, and **`config/examples/toolkit-starter/`** for greenfield / community starter publishing.
+The layout stays **client-agnostic**: manifests, one admin DB, one deploy path, Caddy, optional activator cold-starts. **`products/org-platform/toolkit-demos/`** holds minimal hello-world apps (Next.js + Flask) that exercise the pipeline on a fresh install. Add your own apps under **`products/`** (or trim what ships by default). See **`docs/TOOLKIT.md`**, **`config/toolkit-default-enabled.txt`**, and **`config/examples/toolkit-starter/`** for greenfield and starter publishing.
 
 ## Layout
 
