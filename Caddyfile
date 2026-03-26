@@ -452,6 +452,21 @@ mediate.6cubed.app {
 	}
 }
 
+merch.6cubed.app {
+	reverse_proxy merch:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=merch&dest=https%3A%2F%2Fmerch.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=merch&dest=https%3A%2F%2Fmerch.6cubed.app" 302
+		}
+	}
+}
+
 muinteoir.6cubed.app {
 	reverse_proxy muinteoir:3000 {
 		@cold status 502 503 504

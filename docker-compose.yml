@@ -508,6 +508,21 @@ services:
       - "3000"
     mem_limit: 128m
 
+  # ── Merch (6cubed × 216Labs storefront) ──────────────────────
+  merch:
+    image: 216labs/merch:latest
+    pull_policy: never
+    build: ./products/org-growth/ads/merch
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - NEXT_PUBLIC_MERCH_STORE_URL=${NEXT_PUBLIC_MERCH_STORE_URL:-}
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://merch.6cubed.app}
+    expose:
+      - "3000"
+    mem_limit: 128m
+
   # ── OneFit Fashion Journal (blog) ────────────────────────────
   onefitblog:
     image: 216labs/onefitblog:latest

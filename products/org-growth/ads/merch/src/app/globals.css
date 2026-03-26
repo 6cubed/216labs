@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #070708;
+  --surface: #121214;
+  --surface-2: #1a1a1e;
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+  --accent: #22d3ee;
+  --accent-2: #e879f9;
+  --border: #27272a;
+  --cube: linear-gradient(135deg, #22d3ee 0%, #a855f7 50%, #f472b6 100%);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.mesh-bg {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 211, 238, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232, 121, 249, 0.08), transparent),
+    radial-gradient(ellipse 50% 30% at 0% 100%, rgba(244, 114, 182, 0.06), transparent);
+}
