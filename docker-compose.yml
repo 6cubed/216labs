@@ -211,6 +211,22 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── Workforce (digital employee admin) ───────────────────────
+  workforce:
+    image: 216labs/workforce:latest
+    pull_policy: never
+    build: ./internal/admin/workforce
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - WORKFORCE_STORE_PATH=/app/data/workforce-employees.json
+    volumes:
+      - ./internal/admin/workforce/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 128m
+
   # ── Cron runner (Telegram cron jobs from admin DB) ───────────
   cron-runner:
     image: 216labs/cron-runner:latest

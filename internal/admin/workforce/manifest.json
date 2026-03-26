@@ -1,0 +1,18 @@
+{
+  "id": "workforce",
+  "name": "216Labs Workforce",
+  "tagline": "Create and manage agentic digital employees from a dedicated admin UI.",
+  "description": "Internal control plane for creating digital employees with unique Telegram bot tokens, preparing team structures and reporting lines.",
+  "category": "admin",
+  "internal_port": 3000,
+  "memory_limit": "128m",
+  "docker_service": "workforce",
+  "build_context": "./internal/admin/workforce",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": null,
+    "database": "JSON file (volume-backed)",
+    "other": null
+  },
+  "env_vars": []
+}
