@@ -1,8 +1,21 @@
 import Dockerode from "dockerode";
+import { spawn } from "child_process";
+import { existsSync } from "fs";
+import { join } from "path";
+import { isGhcrSyncExcludedService } from "@/lib/ghcr-pull";
 
 // Docker Compose names containers as: <project>-<service>-<replica>
 const COMPOSE_PROJECT = process.env.COMPOSE_PROJECT_NAME || "216labs";
 const SOCKET_PATH = "/var/run/docker.sock";
+
+/** Compose project root on the VPS (admin container: /workspace). */
+function syncProjectRoot(): string {
+  return (
+    process.env.SYNC_PROJECT_ROOT ||
+    process.env.ADMIN_PROJECT_ROOT ||
+    "/workspace"
+  ).replace(/\/$/, "");
+}
 
 function containerName(dockerService: string): string {
   return `${COMPOSE_PROJECT}-${dockerService}-1`;
@@ -165,6 +178,77 @@ export async function getContainerLogs(
  * Returns the set of docker_service names that are currently running,
  * identified by matching the compose project label.
  */
+/**
+ * Pull GHCR :latest for one compose service, retag to 216labs/*:latest, recreate container.
+ * Same logic as scripts/droplet-ghcr-sync.sh (requires docker socket + compose project on disk).
+ */
+export async function pullLatestGhcrForService(
+  dockerService: string
+): Promise<void> {
+  const svc = dockerService.trim().toLowerCase();
+  if (!svc) {
+    throw new Error("Missing docker service name");
+  }
+  if (isGhcrSyncExcludedService(svc)) {
+    throw new Error(
+      `${dockerService} is infrastructure — use a full deploy to change it`
+    );
+  }
+  if (!existsSync(SOCKET_PATH)) {
+    throw new Error(
+      "Docker socket not available (run admin on the host stack with /var/run/docker.sock mounted)"
+    );
+  }
+  const root = syncProjectRoot();
+  const script = join(root, "scripts/droplet-ghcr-sync.sh");
+  if (!existsSync(script)) {
+    throw new Error(`GHCR sync script not found at ${script}`);
+  }
+  await new Promise<void>((resolve, reject) => {
+    let stdout = "";
+    let stderr = "";
+    const child = spawn("/bin/bash", [script], {
+      cwd: root,
+      env: {
+        ...process.env,
+        SYNC_PROJECT_ROOT: root,
+        SYNC_SERVICE: dockerService,
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const t = setTimeout(() => {
+      child.kill("SIGTERM");
+      reject(new Error("GHCR pull timed out after 7m"));
+    }, 420_000);
+    child.stdout?.on("data", (d: Buffer) => {
+      stdout += d.toString();
+    });
+    child.stderr?.on("data", (d: Buffer) => {
+      stderr += d.toString();
+    });
+    child.on("error", (e) => {
+      clearTimeout(t);
+      reject(e);
+    });
+    child.on("close", (code) => {
+      clearTimeout(t);
+      const tail = (stderr || stdout).trim().slice(-1500);
+      if (code === 0) {
+        if (tail && process.env.NODE_ENV !== "production") {
+          console.log("[pullLatestGhcrForService]", tail);
+        }
+        resolve();
+      } else {
+        reject(
+          new Error(
+            tail || `droplet-ghcr-sync exited with code ${code ?? "unknown"}`
+          )
+        );
+      }
+    });
+  });
+}
+
 export async function getRunningServices(): Promise<Set<string>> {
   const docker = getClient();
   if (!docker) return new Set();

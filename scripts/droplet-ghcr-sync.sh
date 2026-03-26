@@ -6,11 +6,17 @@
 # Env:
 #   SYNC_PROJECT_ROOT — default /opt/216labs
 #   SYNC_EXCLUDE_SERVICES — comma-separated compose service names to never touch (default: caddy,activator)
+#   SYNC_SERVICE — optional: only sync this compose service (must be running; case-insensitive)
 
 set -euo pipefail
 
 ROOT="${SYNC_PROJECT_ROOT:-/opt/216labs}"
 EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator}"
+SYNC_SERVICE_RAW="${SYNC_SERVICE:-}"
+SYNC_SERVICE_LOWER=""
+if [ -n "$SYNC_SERVICE_RAW" ]; then
+  SYNC_SERVICE_LOWER=$(echo "$SYNC_SERVICE_RAW" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+fi
 
 cd "$ROOT"
 
@@ -114,6 +120,15 @@ while IFS='|' read -r svc img; do
   fi
 
   docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate "$svc"
+  MATCHED=1
+  if [ -n "$SYNC_SERVICE_LOWER" ]; then
+    break
+  fi
 done <<< "$PS_OUT"
+
+if [ -n "$SYNC_SERVICE_LOWER" ] && [ "$MATCHED" != "1" ]; then
+  echo "ERROR: SYNC_SERVICE=$SYNC_SERVICE_RAW — not running or not a 216labs/GHCR image (see: docker compose ps)" >&2
+  exit 1
+fi
 
 echo "==> droplet-ghcr-sync done."

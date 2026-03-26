@@ -6,6 +6,8 @@ GitHub Actions (`.github/workflows/ghcr-publish.yml`) pushes `ghcr.io/<org>/216l
 
 2. **Periodic sync (this doc)** — [`scripts/droplet-ghcr-sync.sh`](../scripts/droplet-ghcr-sync.sh) walks **running** Compose services whose image is `216labs/*` (or the GHCR form), pulls the matching GHCR tag, retags to `216labs/<service>:latest`, and runs `docker compose up -d --force-recreate` for that service. Infra such as **caddy** and **activator** are skipped by default (`SYNC_EXCLUDE_SERVICES`).
 
+3. **Admin “Pull latest”** — On the workflow dashboard, each app row has a **Pull latest** control (GHCR column). It runs the same script with `SYNC_SERVICE=<compose service>` so you can refresh one image immediately after CI without waiting for the 20-minute timer or running `./deploy.sh` from a laptop. Requires the service to be **running** and uses the same GHCR credentials as periodic sync.
+
 ## One-time install (systemd)
 
 From the repo on the droplet (paths assume `/opt/216labs`):

@@ -11,7 +11,8 @@ import {
   deleteTodoCard,
   moveTodoCard,
 } from "@/lib/db";
-import { startContainer, stopContainer } from "@/lib/docker";
+import { startContainer, stopContainer, pullLatestGhcrForService } from "@/lib/docker";
+import { canPullGhcrFromAdmin } from "@/lib/ghcr-pull";
 import { revalidatePath } from "next/cache";
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
@@ -129,6 +130,34 @@ function writeEnvLocal(appDir: string): void {
 }
 
 type ActionResult = { error: string } | { success: true } | undefined;
+
+export async function pullLatestImageAction(
+  appId: string
+): Promise<ActionResult> {
+  const row = getDb()
+    .prepare("SELECT docker_service FROM apps WHERE id = ?")
+    .get(appId) as { docker_service: string } | undefined;
+  if (!row?.docker_service) {
+    return { error: "Unknown application" };
+  }
+  if (!canPullGhcrFromAdmin(row.docker_service)) {
+    return {
+      error: "This service is updated via full deploy only (edge infrastructure).",
+    };
+  }
+  try {
+    await pullLatestGhcrForService(row.docker_service);
+    revalidateAdminPaths();
+    return { success: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      error: msg.includes("not among running")
+        ? "Start the app first (deploy on), then pull — or run a full deploy."
+        : msg.slice(0, 500),
+    };
+  }
+}
 
 export async function toggleAppDeploy(
   appId: string,

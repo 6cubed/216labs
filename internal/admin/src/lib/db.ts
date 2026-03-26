@@ -230,6 +230,12 @@ function initSchema(db: Database.Database) {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cron_runner_state (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
   seedDefaultCronJobs(db);
 
   ensureDeploymentEventsTable(db);
@@ -319,6 +325,34 @@ function seedInfraEnvDefaults(db: Database.Database) {
      VALUES (@key, '', @description, @is_secret, NULL)`
   );
   for (const row of ghcrKeys) {
+    ins.run(row);
+  }
+
+  const telegramGroupCronKeys: Array<{
+    key: string;
+    description: string;
+    is_secret: number;
+  }> = [
+    {
+      key: "TELEGRAM_GROUP_HOURLY_CHAT_ID",
+      description:
+        "Telegram supergroup/channel id (e.g. -100…) for the hourly AI reply job. Add the bot to this group.",
+      is_secret: 0,
+    },
+    {
+      key: "TELEGRAM_GROUP_HOURLY_LISTENER_TOKEN",
+      description:
+        "Optional bot token used only for getUpdates for the group job. Use a dedicated bot if PocketCursor already polls TELEGRAM_BOT_TOKEN (only one client may call getUpdates per bot).",
+      is_secret: 1,
+    },
+    {
+      key: "TELEGRAM_GROUP_HOURLY_OPENAI_API_KEY",
+      description:
+        "OpenAI API key for hourly group replies. Falls back to OPENAI_API_KEY on cron-runner if unset.",
+      is_secret: 1,
+    },
+  ];
+  for (const row of telegramGroupCronKeys) {
     ins.run(row);
   }
 }

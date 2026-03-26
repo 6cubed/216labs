@@ -3,7 +3,8 @@
 import { categoryLabels, type AppInfo } from "@/data/apps";
 import { useMemo, useState, useTransition, useEffect } from "react";
 import { DeployToggle } from "./DeployToggle";
-import { fetchAppLogs } from "@/app/actions";
+import { fetchAppLogs, pullLatestImageAction } from "@/app/actions";
+import { canPullGhcrFromAdmin } from "@/lib/ghcr-pull";
 
 const APP_HOST = process.env.NEXT_PUBLIC_APP_HOST || "";
 
@@ -86,6 +87,72 @@ function LogsCell({ appId }: { appId: string }) {
   );
 }
 
+function PullLatestCell({
+  appId,
+  dockerService,
+  deployOn,
+  isRunning,
+}: {
+  appId: string;
+  dockerService: string;
+  deployOn: boolean;
+  isRunning: boolean;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [msg, setMsg] = useState<string | null>(null);
+  const allowed = canPullGhcrFromAdmin(dockerService);
+
+  if (!allowed) {
+    return (
+      <span className="text-[11px] text-muted" title="Edge services use full deploy">
+        —
+      </span>
+    );
+  }
+
+  const run = () => {
+    setMsg(null);
+    startTransition(async () => {
+      const r = await pullLatestImageAction(appId);
+      if (r && "error" in r && r.error) {
+        setMsg(r.error);
+      } else {
+        setMsg("Updated from GHCR.");
+        setTimeout(() => setMsg(null), 4000);
+      }
+    });
+  };
+
+  const disabled = !deployOn || !isRunning || isPending;
+
+  return (
+    <div className="text-left min-w-[7rem]">
+      <button
+        type="button"
+        onClick={run}
+        disabled={disabled}
+        title={
+          !deployOn
+            ? "Turn deploy on first"
+            : !isRunning
+              ? "Start the container first"
+              : "Pull ghcr.io …:latest, retag, recreate this service"
+        }
+        className="text-[11px] font-mono rounded-md border border-white/15 bg-white/5 px-2 py-1 text-foreground hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {isPending ? "…" : "Pull latest"}
+      </button>
+      {msg && (
+        <p
+          className={`mt-1 text-[10px] font-mono ${msg.startsWith("Updated") ? "text-emerald-400/90" : "text-amber-400/90"}`}
+        >
+          {msg.length > 120 ? `${msg.slice(0, 120)}…` : msg}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function AppsOverviewTable({
   apps,
   runningServiceNames,
@@ -137,7 +204,7 @@ export function AppsOverviewTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm border-collapse min-w-[900px]">
+        <table className="w-full text-left text-sm border-collapse min-w-[980px]">
           <thead>
             <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted">
               <th className="px-4 py-3 font-medium">Application</th>
@@ -182,6 +249,14 @@ export function AppsOverviewTable({
                   </td>
                   <td className="px-4 py-3">
                     <DeployToggle appId={app.id} deployEnabled={deployOn} />
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <PullLatestCell
+                      appId={app.id}
+                      dockerService={app.dockerService}
+                      deployOn={deployOn}
+                      isRunning={isRunning}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <span
