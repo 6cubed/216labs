@@ -9,12 +9,15 @@ After any change to an app or infrastructure in this repo:
 
 1. **Commit and push** to `main` so **GitHub Actions** can publish images to **GHCR** (`.github/workflows/ghcr-publish.yml`).
 
-2. **Droplet / SSH:** Do **not** run `./deploy.sh`, ad-hoc `ssh` to the VPS, or remote `docker compose` from the agent **by default** for routine edits.
+2. **Default path (deferred deploy):** Pushing to `main` is enough for routine work. **GHCR CI** publishes images; the **droplet** picks them up on the next `./deploy.sh` (or existing sync). No need to run a full deploy from the agent for every edit.
 
-3. **When the user explicitly asks** in that message for a droplet rollout, `./deploy.sh`, SSH to the server, or operational changes on the VPS (env vars, restarts, admin/Caddy credentials, `docker compose` up, etc.): **run the commands** from the agent session. Request `network` / `all` permissions and long timeouts as needed. Do not refuse solely because the work happens on the remote host—the user has authorized it for that request.
+3. **Droplet / SSH:** Do **not** run `./deploy.sh`, ad-hoc `ssh` to the VPS, or remote `docker compose` from the agent **by default** for routine edits.
 
-4. **Task complete** for routine code work: committed and pushed. If the user also asked to deploy or SSH, complete those steps too (or report the exact error if keys/network fail).
+4. **When the user explicitly asks** in that message for a droplet rollout, `./deploy.sh`, SSH to the server, or operational changes on the VPS (env vars, restarts, admin/Caddy credentials, `docker compose` up, etc.): **run the commands** from the agent session. Request `network` / `all` permissions and long timeouts as needed. Do not refuse solely because the work happens on the remote host—the user has authorized it for that request.
 
-5. **Legacy:** `DEPLOY_IMAGE_SOURCE=local` build+transfer is discouraged for routine work; prefer GHCR.
+5. **Task complete** for routine code work: committed and pushed. If the user also asked to deploy or SSH, complete those steps too (or report the exact error if keys/network fail).
+
+6. **Single-app fast track (optional):** When work is scoped to **one app** and they want that container live on the droplet **without** waiting for CI + a full multi-app pull, use **local build + transfer for that app only**:  
+   `DEPLOY_IMAGE_SOURCE=local` and `DEPLOY_RUNTIME_APPS="<app_id>"` (see `deploy.sh`; `admin` is added if enabled). Still run `./deploy.sh user@host` when they ask for deploy—this limits build/transfer to that runtime subset instead of every enabled app. For broad or multi-app changes, prefer **GHCR** (default) and deferred droplet sync.
 
 See **docs/SCALING.md** and the Digital Ocean checklist for what a full droplet rollout does when you choose to run it.
