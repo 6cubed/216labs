@@ -7,6 +7,10 @@ __pycache__
 .allowed_user_ids
 .owner_id
 .chat_thread_id
+.chat_id
+.active_chat
+.bridge.lock
+bridge.log
 node_modules
 data/*
 !data/.gitkeep

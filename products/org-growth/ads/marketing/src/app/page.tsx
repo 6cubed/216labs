@@ -74,8 +74,11 @@ export default function MarketingHubPage() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
       <header className="mb-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">216labs</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">216Labs</p>
         <h1 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">Marketing campaigns</h1>
+        <p className="mt-2 text-[var(--muted)] text-sm max-w-2xl leading-relaxed">
+          At 216Labs we are building the toolkit for production grade vibes.
+        </p>
         <p className="mt-3 text-[var(--muted)] text-sm max-w-2xl leading-relaxed">
           Central overview of channels we run per app. A <strong className="text-zinc-300">dedicated blog</strong> is
           one campaign type — usually a separate deploy (e.g. <code className="text-xs text-cyan-400/90">onefitblog</code>{' '}

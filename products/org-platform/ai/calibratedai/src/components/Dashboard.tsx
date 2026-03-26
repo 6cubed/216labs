@@ -327,7 +327,7 @@ export default function Dashboard({ initialStats }: { initialStats: Stats }) {
             <span className="text-slate-500">Polymarket Gamma API</span> ·
             Models via{" "}
             <span className="text-slate-500">OpenRouter</span> · Part of the{" "}
-            <span className="text-slate-500">216labs</span> portfolio
+            <span className="text-slate-500">216Labs</span> portfolio
           </div>
           {stats.lastFetched && (
             <div className="text-slate-600">

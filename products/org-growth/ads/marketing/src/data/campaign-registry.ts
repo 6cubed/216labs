@@ -1,5 +1,5 @@
 /**
- * Central catalog of marketing campaigns across 216labs apps.
+ * Central catalog of marketing campaigns across 216Labs apps.
  *
  * Convention: a **dedicated blog** for an app is one campaign row with kind
  * `dedicated_blog`, `parentAppId` = the product app (e.g. onefit), and the

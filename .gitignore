@@ -8,6 +8,8 @@ node_modules/
 .next/
 .env
 .env.local
+# Deploy env overlay (may contain secrets); generated on droplet / from admin
+.env.admin
 __pycache__/
 *.pyc
 *.pem

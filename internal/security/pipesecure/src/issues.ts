@@ -1,8 +1,25 @@
 import { Octokit } from "@octokit/rest";
-import { config, GITHUB_OWNER, GITHUB_REPO_NAME } from "./config";
+import {
+  githubBranch,
+  githubRepo,
+  githubToken,
+  GITHUB_OWNER,
+  GITHUB_REPO_NAME,
+} from "./config";
 import type { Finding } from "./scanner";
 
-const octokit = new Octokit({ auth: config.github.token });
+let _octokit: Octokit | null = null;
+
+function octokit(): Octokit {
+  const token = githubToken();
+  if (!token) {
+    throw new Error("GITHUB_TOKEN required");
+  }
+  if (!_octokit) {
+    _octokit = new Octokit({ auth: token });
+  }
+  return _octokit;
+}
 
 const SEVERITY_EMOJI: Record<string, string> = {
   critical: "🔴",
@@ -24,7 +41,7 @@ const LABEL_COLORS: Record<string, string> = {
 export async function ensureLabels(): Promise<void> {
   for (const [name, color] of Object.entries(LABEL_COLORS)) {
     try {
-      await octokit.issues.createLabel({
+      await octokit().issues.createLabel({
         owner: GITHUB_OWNER,
         repo: GITHUB_REPO_NAME,
         name,
@@ -44,7 +61,7 @@ export async function createIssue(finding: Finding, commitSha?: string): Promise
   const emoji = SEVERITY_EMOJI[finding.severity] ?? "⚪";
   const title = `[Security] ${emoji} ${capitalize(finding.severity)}: ${finding.title} in \`${finding.filePath}\``;
 
-  const response = await octokit.issues.create({
+  const response = await octokit().issues.create({
     owner: GITHUB_OWNER,
     repo: GITHUB_REPO_NAME,
     title,
@@ -57,13 +74,13 @@ export async function createIssue(finding: Finding, commitSha?: string): Promise
 
 export async function closeIssue(issueNumber: number, commitSha?: string): Promise<void> {
   const sha = commitSha ? ` (commit \`${commitSha.slice(0, 7)}\`)` : "";
-  await octokit.issues.createComment({
+  await octokit().issues.createComment({
     owner: GITHUB_OWNER,
     repo: GITHUB_REPO_NAME,
     issue_number: issueNumber,
     body: `✅ **Resolved** — PipeSecure did not detect this vulnerability in the latest scan${sha}. Closing automatically.`,
   });
-  await octokit.issues.update({
+  await octokit().issues.update({
     owner: GITHUB_OWNER,
     repo: GITHUB_REPO_NAME,
     issue_number: issueNumber,
@@ -74,9 +91,9 @@ export async function closeIssue(issueNumber: number, commitSha?: string): Promi
 
 function buildBody(finding: Finding, commitSha?: string): string {
   const emoji = SEVERITY_EMOJI[finding.severity] ?? "⚪";
-  const fileUrl = `https://github.com/${config.github.repo}/blob/${commitSha || config.github.branch}/${finding.filePath}#L${finding.startLine}`;
+  const fileUrl = `https://github.com/${githubRepo}/blob/${commitSha || githubBranch}/${finding.filePath}#L${finding.startLine}`;
   const scanRef = commitSha
-    ? `Commit [\`${commitSha.slice(0, 7)}\`](https://github.com/${config.github.repo}/commit/${commitSha})`
+    ? `Commit [\`${commitSha.slice(0, 7)}\`](https://github.com/${githubRepo}/commit/${commitSha})`
     : "Manual scan";
   const cweSection = finding.cweIds.length
     ? `**CWE**: ${finding.cweIds.join(", ")}  \n`

@@ -2,7 +2,7 @@
   "id": "labshq",
   "name": "216labs HQ",
   "tagline": "Frontier AI lab website for reactive ambient world models",
-  "description": "Official 216labs website for mission, research focus, and publication-style posts with citable references.",
+  "description": "At 216Labs we are building the toolkit for production grade vibes. Official site for mission, research focus, and publication-style posts with citable references.",
   "category": "ai",
   "internal_port": 5000,
   "memory_limit": "128m",

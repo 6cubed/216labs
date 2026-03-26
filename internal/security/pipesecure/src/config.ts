@@ -1,19 +1,24 @@
 import "dotenv/config";
 
-function required(key: string): string {
-  const val = process.env[key];
-  if (!val) throw new Error(`Missing required env var: ${key}`);
-  return val;
+/** Data directory — safe without GitHub credentials */
+export const dataDir = process.env.DATA_DIR || "/app/data";
+
+export const githubRepo = process.env.GITHUB_REPO || "6cubed/216labs";
+export const githubBranch = process.env.GITHUB_BRANCH || "main";
+
+/** Returns null if scans / GitHub API should be disabled (UI still serves). */
+export function githubToken(): string | null {
+  const t = process.env.GITHUB_TOKEN?.trim();
+  return t || null;
 }
 
-export const config = {
-  github: {
-    token: required("GITHUB_TOKEN"),
-    repo: process.env.GITHUB_REPO || "6cubed/216labs",
-    branch: process.env.GITHUB_BRANCH || "main",
-  },
-  dataDir: process.env.DATA_DIR || "/app/data",
-  port: parseInt(process.env.PORT || "3000", 10),
-};
+export const [GITHUB_OWNER, GITHUB_REPO_NAME] = githubRepo.split("/");
 
-export const [GITHUB_OWNER, GITHUB_REPO_NAME] = config.github.repo.split("/");
+/** Narrow object for templates that only need repo metadata */
+export const config = {
+  dataDir,
+  github: {
+    repo: githubRepo,
+    branch: githubBranch,
+  },
+};

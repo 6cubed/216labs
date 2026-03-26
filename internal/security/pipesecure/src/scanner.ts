@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, readdirSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import crypto from "crypto";
-import { config } from "./config";
+import { githubBranch, githubRepo, githubToken } from "./config";
 
 export interface Finding {
   fingerprint: string;
@@ -40,14 +40,20 @@ export function makeFingerprint(ruleId: string, filePath: string, startLine: num
 }
 
 export async function scanRepo(commitSha?: string): Promise<Finding[]> {
-  const cloneUrl = `https://x-access-token:${config.github.token}@github.com/${config.github.repo}.git`;
+  const token = githubToken();
+  if (!token) {
+    console.warn("[scanner] GITHUB_TOKEN not set; skipping clone and scan");
+    return [];
+  }
+
+  const cloneUrl = `https://x-access-token:${token}@github.com/${githubRepo}.git`;
   const tmpDir = mkdtempSync(join(tmpdir(), "pipesecure-"));
 
-  console.log(`[scanner] Cloning ${config.github.repo}...`);
+  console.log(`[scanner] Cloning ${githubRepo}...`);
 
   try {
     execSync(
-      `git clone --depth 1 --branch ${config.github.branch} ${cloneUrl} ${tmpDir}`,
+      `git clone --depth 1 --branch ${githubBranch} ${cloneUrl} ${tmpDir}`,
       { stdio: "pipe", timeout: 120_000 }
     );
 

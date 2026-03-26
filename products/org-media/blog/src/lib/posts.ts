@@ -631,7 +631,7 @@ When the AI suggests a new dependency or a new route, you need to know that it w
 
 **What we’re building**
 
-216labs is that ecosystem for our own vibe coding workflow: one monorepo, one deploy path, one admin surface for all apps. Manifests define each app; the same script builds and deploys everything; Caddy and env vars are generated from a single source of truth. When we spin up a new app from a prompt, it doesn’t land in a random folder with a random port — it lands in the same grid, with the same rules. That’s how vibe coding scales from “fun experiment” to “thing that actually runs.”
+At 216Labs we are building the toolkit for production grade vibes. That toolkit is the ecosystem for our own vibe coding workflow: one monorepo, one deploy path, one admin surface for all apps. Manifests define each app; the same script builds and deploys everything; Caddy and env vars are generated from a single source of truth. When we spin up a new app from a prompt, it doesn’t land in a random folder with a random port — it lands in the same grid, with the same rules. That’s how vibe coding scales from “fun experiment” to “thing that actually runs.”
 
 So: vibe coding gives you speed. The ecosystem gives you a place for that speed to land. Both are necessary.
     `.trim(),

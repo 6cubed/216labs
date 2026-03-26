@@ -25,7 +25,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     <div className="max-w-2xl mx-auto px-6 py-12">
       <header className="mb-10">
         <Link href="/" className="text-sm text-[var(--accent)] hover:underline">
-          ← 216labs blog
+          ← 216Labs blog
         </Link>
         <time className="block text-xs text-[var(--muted)] mt-2" dateTime={post.date}>
           {new Date(post.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}

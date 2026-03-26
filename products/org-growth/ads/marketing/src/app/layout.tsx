@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Marketing hub — 216labs',
+  title: 'Marketing hub — 216Labs',
   description:
-    'Overview of marketing campaigns across apps: dedicated blogs, newsletters, landings, and more.',
+    'At 216Labs we are building the toolkit for production grade vibes. Overview of marketing campaigns across apps: dedicated blogs, newsletters, landings, and more.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,8 +1,8 @@
 {
   "id": "admin",
-  "name": "216labs Admin",
-  "tagline": "Vibe coding workflow & pipeline",
-  "description": "Enterprise-grade control plane for vibe coding: toggle deployments, manage env vars, and keep accountability across the monorepo.",
+  "name": "216Labs Admin",
+  "tagline": "At 216Labs we are building the toolkit for production grade vibes.",
+  "description": "At 216Labs we are building the toolkit for production grade vibes. Control plane: toggle deployments, manage env vars, and keep accountability across the monorepo.",
   "category": "admin",
   "internal_port": 3000,
   "memory_limit": "256m",

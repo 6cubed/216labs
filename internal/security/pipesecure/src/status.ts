@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import { getStatusData } from "./db";
-import { config } from "./config";
+import { config, githubToken } from "./config";
 
 const SEVERITY_COLOR: Record<string, string> = {
   critical: "#dc2626",
@@ -32,6 +32,7 @@ function formatDate(iso: string | null | undefined): string {
 }
 
 function renderPage(): string {
+  const tokenMissing = !githubToken();
   const { openIssues, bySeverity, lastScan } = getStatusData();
   const repo = config.github.repo;
   const repoUrl = `https://github.com/${repo}`;
@@ -89,6 +90,10 @@ function renderPage(): string {
   </style>
 </head>
 <body>
+${tokenMissing ? `
+  <div style="background:#fef3c7;border-bottom:1px solid #f59e0b;color:#92400e;padding:12px 20px;text-align:center;font-size:14px;">
+    <strong>GitHub token not configured.</strong> The status page is live, but automated scans are disabled until <code style="background:#fffbeb;padding:2px 6px;border-radius:4px;">PIPESECURE_GITHUB_TOKEN</code> / <code style="background:#fffbeb;padding:2px 6px;border-radius:4px;">GITHUB_TOKEN</code> is set on the host.
+  </div>` : ""}
 <div style="max-width:900px;margin:0 auto;padding:32px 20px;">
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;">

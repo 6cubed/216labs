@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "216labs — Vibe Coding Workflow",
+  title: "216Labs — Admin",
   description:
-    "Enterprise-grade pipeline for vibe coding: one dashboard for deployments, env vars, and accountability across all apps.",
+    "At 216Labs we are building the toolkit for production grade vibes. Pipeline dashboard for deployments, env vars, and accountability across all apps.",
 };
 
 export default function RootLayout({

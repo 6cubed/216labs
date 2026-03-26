@@ -1,8 +1,8 @@
 {
   "id": "marketing",
   "name": "Marketing hub",
-  "tagline": "Campaign overview across 216labs apps",
-  "description": "Dashboard of marketing campaigns: dedicated per-app blogs, newsletters, landings, and future channels. The registry lives in src/data/campaign-registry.ts; add a row when you ship a new blog or campaign.",
+  "tagline": "At 216Labs we are building the toolkit for production grade vibes.",
+  "description": "Campaign overview across apps. Dedicated per-app blogs, newsletters, landings, and future channels. The registry lives in src/data/campaign-registry.ts; add a row when you ship a new blog or campaign.",
   "category": "tool",
   "internal_port": 3000,
   "memory_limit": "256m",

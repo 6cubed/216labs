@@ -6,10 +6,10 @@ export default function HomePage() {
     <div className="max-w-2xl mx-auto px-6 py-12">
       <header className="mb-12">
         <Link href="/" className="text-xl font-semibold text-[var(--accent)] hover:underline">
-          216labs blog
+          216Labs blog
         </Link>
         <p className="text-[var(--muted)] text-sm mt-1">
-          The blog of the 216labs project
+          At 216Labs we are building the toolkit for production grade vibes.
         </p>
       </header>
 

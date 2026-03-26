@@ -1,12 +1,17 @@
 import { scanRepo } from "./scanner";
 import { issueStore, scanLog } from "./db";
 import { createIssue, closeIssue, ensureLabels } from "./issues";
+import { githubToken } from "./config";
 
 let scanning = false;
 
 export async function runScan(commitSha?: string): Promise<void> {
   if (scanning) {
     console.log("[scan] Already scanning, skipping");
+    return;
+  }
+  if (!githubToken()) {
+    console.warn("[pipesecure] GITHUB_TOKEN not set; automated scans disabled.");
     return;
   }
   scanning = true;
