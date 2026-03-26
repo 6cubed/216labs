@@ -14,8 +14,6 @@
 <p align="center">
   <a href="https://6cubed.app">6cubed.app</a>
   &nbsp;·&nbsp;
-  <a href="https://admin.6cubed.app">admin</a>
-  &nbsp;·&nbsp;
   <a href="docs/REPOSITORY.md">handbook</a>
   &nbsp;·&nbsp;
   <a href="docs/TOOLKIT.md">toolkit</a>
@@ -33,9 +31,3 @@
 | New app scaffold | `./scripts/new-app.sh` |
 | Layout, deploy, ops, architecture | [`docs/REPOSITORY.md`](docs/REPOSITORY.md) |
 | Pools, caps, registry sync | [`docs/SCALING.md`](docs/SCALING.md), [`docs/DROPLET_SYNC.md`](docs/DROPLET_SYNC.md) |
-
----
-
-<p align="center">
-  <sub>Main tells the story. Branches are experiments. Tags are releases.<br />Everything else is commentary.</sub>
-</p>
