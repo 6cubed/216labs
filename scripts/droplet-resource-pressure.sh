@@ -6,7 +6,7 @@
 # Usage: SYNC_PROJECT_ROOT=/opt/216labs ./scripts/droplet-resource-pressure.sh
 # Env (optional; .env / .env.admin):
 #   DROPLET_MIN_FREE_MB           — minimum free MB on / (default: 2048)
-#   DROPLET_MAX_EVICTABLE_RUNNING — max concurrently running evictable app containers; 0 = no cap
+#   DROPLET_MAX_EVICTABLE_RUNNING — max concurrently running evictable app containers (default 12; 0 = no count cap, disk rule only)
 #   ACTIVATOR_PROTECTED_SERVICES  — same comma list as activator
 #   DROPLET_PRUNE_IMAGE_ON_EVICTION — 1 = docker rmi 216labs/<svc>:latest after stop
 #   DROPLET_PRESSURE_MAX_STOPS    — max evictions per run (default: 30)
@@ -32,7 +32,8 @@ fi
 set +a
 
 MIN_FREE_MB="${DROPLET_MIN_FREE_MB:-2048}"
-MAX_EVICTABLE="${DROPLET_MAX_EVICTABLE_RUNNING:-0}"
+# Align with activator LRU: trim evictable running count when disk is tight (0 = only free-space target).
+MAX_EVICTABLE="${DROPLET_MAX_EVICTABLE_RUNNING:-12}"
 PRUNE_IMG="${DROPLET_PRUNE_IMAGE_ON_EVICTION:-0}"
 MAX_STOPS="${DROPLET_PRESSURE_MAX_STOPS:-30}"
 PROT_RAW="${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing,bugbounty,hello-nextjs,hello-flask}"

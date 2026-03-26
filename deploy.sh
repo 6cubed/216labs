@@ -156,9 +156,9 @@ fi
 # Cap catalogue size (deploy_enabled apps considered after bootstrap). Showroom defaults higher so many
 # demos can stay "available" in the DB while only DEPLOY_RUNTIME_APPS stay running (see below).
 if [ "${DEPLOY_SHOWROOM:-0}" = "1" ]; then
-  MAX_APPS="${DEPLOY_MAX_APPS:-500}"
+  MAX_APPS="${DEPLOY_MAX_APPS:-200}"
 else
-  MAX_APPS="${DEPLOY_MAX_APPS:-100}"
+  MAX_APPS="${DEPLOY_MAX_APPS:-32}"
 fi
 # Priority order from config (scale: edit config/deploy-priority.txt, not this script)
 PRIORITY_FILE="config/deploy-priority.txt"
