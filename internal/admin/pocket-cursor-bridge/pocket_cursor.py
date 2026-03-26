@@ -28,17 +28,35 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+# Centralized file logging (logs/pocket-bridge.log) — before chat_detection so we can wrap ts_print
+BRIDGE_DIR = Path(__file__).resolve().parent
+from lib.bridge_log import (
+    init_bridge_logging,
+    log_event,
+    log_file_path,
+    tail_events_jsonl,
+    tail_log_lines,
+    wrap_ts_print,
+)
+
+init_bridge_logging(BRIDGE_DIR)
+
 # Sibling modules
 from start_cursor import get_used_ports
-from chat_detection import install_chat_listener, start_chat_listener, list_chats, ts_print
+import chat_detection as _cd
 from lib import command_rules
+
+_cd.ts_print = wrap_ts_print(_cd.ts_print)
+_cd.print = _cd.ts_print
+from chat_detection import install_chat_listener, start_chat_listener, list_chats
+
+ts_print = _cd.ts_print
+print = ts_print
 
 # Third-party
 import requests
 import websocket
 from PIL import Image
-
-print = ts_print
 
 
 # ── Config ───────────────────────────────────────────────────────────────────
@@ -79,7 +97,6 @@ def _apply_merged_env_files() -> None:
 
 _apply_merged_env_files()
 
-BRIDGE_DIR = Path(__file__).resolve().parent
 BRIDGE_VERBOSITY_FILE = BRIDGE_DIR / ".bridge_verbosity"
 allowed_ids_file = BRIDGE_DIR / ".allowed_user_ids"
 owner_file = BRIDGE_DIR / ".owner_id"  # legacy single id; migrated to .allowed_user_ids
@@ -486,6 +503,8 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
     {'command': 'chats', 'description': 'Show all chats across instances'},
     {'command': 'commands', 'description': 'List all Pocket Cursor commands'},
+    {'command': 'logs', 'description': 'Tail of bridge log file (recent console lines)'},
+    {'command': 'logevents', 'description': 'Recent structured JSON events from the bridge'},
     {'command': 'status', 'description': 'Show bridge status (pause, workspaces, verbosity)'},
     {'command': 'pause', 'description': 'Pause Cursor to Telegram forwarding'},
     {'command': 'play', 'description': 'Resume forwarding'},
@@ -2072,7 +2091,7 @@ def tg_bridge_status_text():
     if conv_name:
         lines.append(f"💬 {conv_name}")
     lines.append(
-        "\n/newchat /chats /commands /status /pause /play /screenshot "
+        "\n/newchat /chats /commands /logs /logevents /status /pause /play /screenshot "
         "/verbose /reasoning /normal /quiet /unpair"
     )
     lines.append(f"Verbosity: {get_bridge_verbosity()}")
@@ -2409,6 +2428,14 @@ def sender_thread():
 
                 if cmd == '/commands':
                     tg_send(cid, tg_pocket_commands_help_text())
+                    continue
+
+                if cmd == '/logs':
+                    tg_send(cid, tail_log_lines())
+                    continue
+
+                if cmd == '/logevents':
+                    tg_send(cid, tail_events_jsonl())
                     continue
 
                 if cmd in ('/verbose', '/reasoning'):
@@ -3432,6 +3459,12 @@ if not me.get('ok'):
     sys.exit(1)
 bot = me['result']
 print(f"Bot: @{bot['username']} ({bot['first_name']})")
+log_event(
+    "bridge_ready",
+    bot_username=bot.get("username"),
+    bot_name=bot.get("first_name"),
+    log_file=str(log_file_path()),
+)
 
 # Set bot description if not already configured (shown to new users above the START button)
 _desc = tg_call('getMyDescription')

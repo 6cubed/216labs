@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/analytics", label: "Analytics" },
   { href: "/env", label: "Env" },
   { href: "/cron", label: "Cron" },
+  { href: "/bridge-logs", label: "Bridge logs" },
   { href: "/todos", label: "Todos" },
   { href: "/orders", label: "Orders" },
   { href: "/architecture", label: "Architecture" },
