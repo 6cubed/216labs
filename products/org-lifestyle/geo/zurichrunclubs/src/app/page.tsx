@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 type RunClub = {
   club: string;
   day: "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
@@ -205,6 +207,9 @@ export default function Page() {
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1rem 3rem" }}>
       <h1 style={{ marginTop: 0, fontSize: "2rem" }}>Zurich Run Clubs</h1>
+      <p style={{ color: "#9eb4e8", fontSize: "0.95rem", marginTop: "-0.25rem" }}>
+        {sorted.length} sessions listed — scroll the table for full week coverage.
+      </p>
       <p style={{ color: "#c8d6ff", maxWidth: 880 }}>
         A concise weekly timetable of run clubs in Zurich. Every row links to the source of truth (website, WhatsApp,
         Telegram, or social page) so you can confirm latest time and location updates directly.
