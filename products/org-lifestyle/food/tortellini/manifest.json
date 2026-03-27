@@ -1,0 +1,18 @@
+{
+  "id": "tortellini",
+  "name": "Tortellini Studio",
+  "tagline": "Warm tortellini-inspired palette and folded-corner UI",
+  "description": "Single-page experience using the user's tortellini photo as hero art: tomato-cream tones, parmesan cream, parsley green, and a comfort dial — no backend.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "128m",
+  "docker_service": "tortellini",
+  "build_context": "./products/org-lifestyle/food/tortellini",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": null,
+    "database": null,
+    "other": null
+  },
+  "env_vars": []
+}

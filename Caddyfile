@@ -782,6 +782,21 @@ tldrtech.6cubed.app {
 	}
 }
 
+tortellini.6cubed.app {
+	reverse_proxy tortellini:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=tortellini&dest=https%3A%2F%2Ftortellini.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=tortellini&dest=https%3A%2F%2Ftortellini.6cubed.app" 302
+		}
+	}
+}
+
 valentine.6cubed.app {
 	reverse_proxy valentine:3000 {
 		@cold status 502 503 504

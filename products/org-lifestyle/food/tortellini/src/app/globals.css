@@ -1,0 +1,36 @@
+:root {
+  --bg-deep: #121014;
+  --bg-marble: linear-gradient(135deg, #1f1412 0%, #2a1815 40%, #1a1210 100%);
+  --tray: #0e0e10;
+  --sauce: #e08f78;
+  --sauce-deep: #c96b52;
+  --cream: #fff8f0;
+  --cream-muted: #f5e6d8;
+  --herb: #2f9d5c;
+  --herb-glow: rgba(47, 157, 92, 0.35);
+  --text: #fff5eb;
+  --text-soft: rgba(255, 245, 235, 0.72);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg-marble);
+  color: var(--text);
+}
+
+a {
+  color: var(--sauce);
+}
+
+a:hover {
+  color: var(--cream);
+}

@@ -625,6 +625,19 @@ services:
       - "3000"
     mem_limit: 128m
 
+  # ── Tortellini Studio (food-inspired UI) ────────────────────────
+  tortellini:
+    image: 216labs/tortellini:latest
+    pull_policy: never
+    build: ./products/org-lifestyle/food/tortellini
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 128m
+
   # ── 216labs Landing (6cubed.app + www) ──────────────────────────
   landing:
     image: 216labs/landing:latest
