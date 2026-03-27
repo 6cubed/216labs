@@ -842,3 +842,18 @@ worldphoto.6cubed.app {
 	}
 }
 
+zurichrunclubs.6cubed.app {
+	reverse_proxy zurichrunclubs:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=zurichrunclubs&dest=https%3A%2F%2Fzurichrunclubs.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=zurichrunclubs&dest=https%3A%2F%2Fzurichrunclubs.6cubed.app" 302
+		}
+	}
+}
+

@@ -612,6 +612,19 @@ services:
       - "3000"
     mem_limit: 128m
 
+  # ── Zurich Run Clubs ────────────────────────────────────────
+  zurichrunclubs:
+    image: 216labs/zurichrunclubs:latest
+    pull_policy: never
+    build: ./products/org-lifestyle/geo/zurichrunclubs
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    mem_limit: 128m
+
   # ── 216labs Landing (6cubed.app + www) ──────────────────────────
   landing:
     image: 216labs/landing:latest

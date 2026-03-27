@@ -1,0 +1,18 @@
+{
+  "id": "zurichrunclubs",
+  "name": "Zurich Run Clubs",
+  "tagline": "Concise weekly timetable for Zurich running clubs",
+  "description": "Simple one-page timetable view of Zurich run clubs with direct source-of-truth links for signup, updates, and location details.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "128m",
+  "docker_service": "zurichrunclubs",
+  "build_context": "./products/org-lifestyle/geo/zurichrunclubs",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": null,
+    "database": null,
+    "other": null
+  },
+  "env_vars": []
+}
