@@ -1,0 +1,18 @@
+{
+  "id": "groundtruth",
+  "name": "216Labs Groundtruth",
+  "tagline": "Requester and labeller workflows for image dataset annotation.",
+  "description": "Groundtruth provides separate flows for requesters and labellers, with dataset setup, task publication, and human label collection for image datasets.",
+  "category": "admin",
+  "internal_port": 3000,
+  "memory_limit": "192m",
+  "docker_service": "groundtruth",
+  "build_context": "./internal/admin/groundtruth",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": null,
+    "database": "JSON file (volume-backed)",
+    "other": "Human-in-the-loop labeling workflow"
+  },
+  "env_vars": []
+}

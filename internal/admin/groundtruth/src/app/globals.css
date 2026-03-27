@@ -1,0 +1,133 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: #09090b;
+  color: #e4e4e7;
+}
+
+main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+.muted {
+  color: #a1a1aa;
+}
+
+.section {
+  margin-top: 1rem;
+  background: #111114;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.grid.two {
+  grid-template-columns: 1fr 1fr;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+input,
+textarea,
+button,
+select {
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
+  background: #18181b;
+  color: inherit;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border-color: #52525b;
+}
+
+button:hover {
+  border-color: #71717a;
+}
+
+.linkCard {
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 0.9rem;
+  text-decoration: none;
+  background: #0f0f12;
+}
+
+.linkCard:hover {
+  border-color: #3f3f46;
+}
+
+.card {
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 0.8rem;
+  background: #0f0f12;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  border: 1px solid #3f3f46;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  color: #d4d4d8;
+}
+
+.ok {
+  color: #86efac;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #fca5a5;
+  font-size: 0.9rem;
+}
+
+.imagesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.imagesGrid img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #27272a;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}

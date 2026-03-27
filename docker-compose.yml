@@ -229,6 +229,22 @@ services:
       - "3000"
     mem_limit: 128m
 
+  # ── Groundtruth (data labeling workflows) ───────────────────────
+  groundtruth:
+    image: 216labs/groundtruth:latest
+    pull_policy: never
+    build: ./internal/admin/groundtruth
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - GROUNDTRUTH_STORE_PATH=/app/data/groundtruth.json
+    volumes:
+      - ./internal/admin/groundtruth/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 192m
+
   # ── Cron runner (Telegram cron jobs from admin DB) ───────────
   cron-runner:
     image: 216labs/cron-runner:latest
