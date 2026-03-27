@@ -1,16 +1,17 @@
-FROM node:20-alpine AS builder
-# better-sqlite3 compiles a native addon; needs a toolchain on Alpine/musl (CI amd64 often compiles).
-RUN apk add --no-cache python3 make g++ sqlite-dev
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci --no-audit --no-fund
+
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NODE_OPTIONS=--max-old-space-size=6144
 RUN npm run build
 
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 WORKDIR /app
-RUN apk add --no-cache sqlite
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
