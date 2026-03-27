@@ -1,0 +1,86 @@
+name: quality-factory
+
+on:
+  pull_request:
+    paths:
+      - "products/**"
+      - "internal/**"
+      - "scripts/quality-factory.py"
+      - "docker-compose.yml"
+      - "Caddyfile"
+      - ".github/workflows/quality-factory.yml"
+  push:
+    branches: [main]
+    paths:
+      - "products/**"
+      - "internal/**"
+      - "scripts/quality-factory.py"
+      - "docker-compose.yml"
+      - "Caddyfile"
+      - ".github/workflows/quality-factory.yml"
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changed-app-gate:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Ensure env files for compose config
+        run: |
+          test -f .env || cp .env.example .env
+          touch .env.admin
+      - name: Quality checks (changed apps + offline container smoke)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          BASE="${BASE_SHA:-}"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="HEAD~1"
+          fi
+          python3 scripts/quality-factory.py \
+            --mode changed \
+            --base-ref "$BASE" \
+            --head-ref "${GITHUB_SHA}" \
+            --checks manifest,compose,offline \
+            --max-apps 20 \
+            --timeout-seconds 12 \
+            --boot-wait-seconds 3
+
+  live-sweep:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard_index: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Live quality sweep (sharded)
+        run: |
+          set -euo pipefail
+          python3 scripts/quality-factory.py \
+            --mode all \
+            --checks manifest,live \
+            --domain 6cubed.app \
+            --shard-index "${{ matrix.shard_index }}" \
+            --shard-count 8 \
+            --timeout-seconds 10

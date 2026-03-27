@@ -40,6 +40,19 @@ No edits to `deploy.sh`, `216labs_admin/src/lib/db.ts`, or `216labs_admin/src/ap
 - **Shared config files** — `config/deploy-priority.txt` caps order; bootstrap is optional. Prefer manifest + admin DB over growing `deploy-bootstrap.txt`.
 - **Discovery race** — Admin sync runs on startup and on `getAllApps()`. Multiple agents adding apps in parallel is fine; sync is idempotent. Env vars are `INSERT OR IGNORE` so duplicate keys from manifests are safe.
 
+## Automated quality factory (no human ownership required)
+
+At 1000+ apps, quality must be machine-enforced:
+
+- **Changed-app gate (PR/push):** CI runs `scripts/quality-factory.py` with `--mode changed --checks manifest,compose,offline`.
+  - Validates manifest structure.
+  - Verifies each changed app exists in Compose config.
+  - Builds and boots changed app containers offline, then probes HTTP readiness.
+- **Live sweep (scheduled + sharded):** CI runs `--mode all --checks manifest,live` in shards, probing deployed subdomains for non-5xx responses and activator unknown-app failures.
+- **Manifest-driven contracts:** each app can define optional `health_path` in `manifest.json` (default `/health`) so probes stay app-specific without custom code.
+
+This model scales linearly by sharding and changed-app selection, while still continuously checking both offline and live quality.
+
 ## Optional: full generated compose at scale
 
 When the number of app services makes hand-editing `docker-compose.yml` impractical:

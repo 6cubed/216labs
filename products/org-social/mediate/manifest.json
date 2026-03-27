@@ -8,6 +8,7 @@
   "memory_limit": "128m",
   "docker_service": "mediate",
   "build_context": "./products/org-social/mediate",
+  "health_path": "/health",
   "stack": {
     "frontend": "Flask + Jinja2 + vanilla JS",
     "backend": "Flask + Gunicorn",
