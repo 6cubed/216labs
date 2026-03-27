@@ -1,3 +1,6 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
 import { euromaxxerScore, euromaxxers } from "@/lib/euromaxxers";
 
 const cardStyle: React.CSSProperties = {
@@ -33,6 +36,46 @@ function networkEdges() {
 export default function Page() {
   const ranked = [...euromaxxers].sort((a, b) => euromaxxerScore(b) - euromaxxerScore(a));
   const network = networkEdges();
+  const knownWikiTitles = useMemo(
+    () =>
+      new Set(
+        euromaxxers
+          .map((person) => person.wikipediaUrl.split("/wiki/")[1] ?? "")
+          .map((title) => decodeURIComponent(title).replace(/_/g, " "))
+      ),
+    []
+  );
+  const [seedUrl, setSeedUrl] = useState("https://en.wikipedia.org/wiki/Tony_Ryan");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<{
+    seedTitle: string;
+    links: Array<{ title: string; url: string; snippet?: string }>;
+  } | null>(null);
+
+  async function onSuggest(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/wikipedia/suggest?seed=${encodeURIComponent(seedUrl)}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Failed to fetch suggestions");
+      }
+      const payload = (await res.json()) as {
+        seedTitle: string;
+        links: Array<{ title: string; url: string; snippet?: string }>;
+      };
+      setResult(payload);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setError(message);
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main style={{ padding: "2rem", maxWidth: 1120, margin: "0 auto" }}>
@@ -71,6 +114,77 @@ export default function Page() {
             </g>
           ))}
         </svg>
+      </section>
+
+      <section style={{ marginTop: "1rem", ...cardStyle }}>
+        <h2 style={{ marginTop: 0 }}>Auto-suggest from Wikipedia links</h2>
+        <p style={{ color: "#c7d3f8", marginTop: 0 }}>
+          Paste a seed Wikipedia URL and fetch likely connected euromaxxers from that page's outgoing links.
+        </p>
+        <form onSubmit={onSuggest} style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+          <input
+            value={seedUrl}
+            onChange={(e) => setSeedUrl(e.target.value)}
+            placeholder="https://en.wikipedia.org/wiki/Tony_Ryan"
+            style={{
+              flex: "1 1 420px",
+              padding: "0.6rem 0.75rem",
+              borderRadius: 8,
+              border: "1px solid #4c6199",
+              background: "#0f1831",
+              color: "#eaf0ff",
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: "0.6rem 0.9rem",
+              borderRadius: 8,
+              border: "1px solid #7390db",
+              color: "#eaf0ff",
+              background: loading ? "#243661" : "#2e4d90",
+              cursor: loading ? "default" : "pointer",
+            }}
+          >
+            {loading ? "Loading..." : "Suggest Links"}
+          </button>
+        </form>
+        {error ? (
+          <p style={{ color: "#ffb2b2" }}>{error}</p>
+        ) : null}
+        {result ? (
+          <div style={{ marginTop: "0.8rem" }}>
+            <p style={{ color: "#b9c8ef" }}>
+              Seed page: <strong>{result.seedTitle}</strong>
+            </p>
+            <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))" }}>
+              {result.links.map((item) => {
+                const isKnown = knownWikiTitles.has(item.title);
+                return (
+                  <article
+                    key={item.url}
+                    style={{
+                      background: "#101b37",
+                      border: isKnown ? "1px solid #84c98f" : "1px solid #3f5387",
+                      borderRadius: 10,
+                      padding: "0.8rem",
+                    }}
+                  >
+                    <p style={{ margin: "0 0 0.45rem", fontWeight: 700 }}>{item.title}</p>
+                    <p style={{ margin: "0 0 0.5rem", color: "#b6c3ea", fontSize: "0.9rem" }}>
+                      {item.snippet || "Wikipedia-linked profile candidate."}
+                    </p>
+                    <a href={item.url} target="_blank" rel="noreferrer" style={{ color: "#a9c8ff" }}>
+                      Open profile
+                    </a>
+                    {isKnown ? <p style={{ margin: "0.45rem 0 0", color: "#9ee2a8" }}>Already in current dataset</p> : null}
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section style={{ marginTop: "1rem", display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))" }}>
