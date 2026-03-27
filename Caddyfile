@@ -857,3 +857,7 @@ zurichrunclubs.6cubed.app {
 	}
 }
 
+zurichrunningclubs.6cubed.app {
+	redir https://zurichrunclubs.6cubed.app 302
+}
+

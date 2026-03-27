@@ -150,6 +150,18 @@ for app_id, docker_svc, port in entries:
             "",
         ]
 
+# Alias domains for common app-name typos. Keep minimal and explicit.
+alias_redirects = {
+    f"zurichrunningclubs.{domain}": f"https://zurichrunclubs.{domain}",
+}
+for alias_host, canonical_url in alias_redirects.items():
+    lines += [
+        f"{alias_host} {{",
+        f"\tredir {canonical_url} 302",
+        "}",
+        "",
+    ]
+
 with open(output, "w") as f:
     f.write("\n".join(lines) + "\n")
 
