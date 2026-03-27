@@ -11,7 +11,8 @@
 set -euo pipefail
 
 ROOT="${SYNC_PROJECT_ROOT:-/opt/216labs}"
-EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator}"
+# zurichrunclubs: GHCR :latest can lag CI; periodic pull was recreating containers with stale images over laptop deploys.
+EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator,zurichrunclubs}"
 SYNC_SERVICE_RAW="${SYNC_SERVICE:-}"
 SYNC_SERVICE_LOWER=""
 if [ -n "$SYNC_SERVICE_RAW" ]; then

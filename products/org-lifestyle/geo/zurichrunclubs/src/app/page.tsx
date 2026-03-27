@@ -1,3 +1,5 @@
+import { unstable_noStore as noStore } from "next/cache";
+
 export const dynamic = "force-dynamic";
 
 type RunClub = {
@@ -250,6 +252,7 @@ function SessionBlock({ item }: { item: RunClub }) {
 }
 
 export default function Page() {
+  noStore();
   const rows = buildTimetableRows();
   const stickyTimeBg = "#142447";
   const cellBorder = "1px solid #2f4478";
