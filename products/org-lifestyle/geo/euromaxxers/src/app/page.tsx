@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { Euromaxxer, euromaxxerScore, euromaxxers } from "@/lib/euromaxxers";
 
 const cardStyle: React.CSSProperties = {
@@ -40,6 +40,25 @@ function extractCountryHints(snippet?: string): string[] {
   return candidates.filter((country) => snippet.includes(country));
 }
 
+function isEuromaxxerRecord(value: unknown): value is Euromaxxer {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<Euromaxxer>;
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.wikipediaUrl === "string" &&
+    typeof candidate.shortBio === "string" &&
+    Array.isArray(candidate.countriesStrongTie) &&
+    typeof candidate.activeDecades === "number" &&
+    Array.isArray(candidate.crossLinkedTo) &&
+    (candidate.originCountryAttachment === "low" ||
+      candidate.originCountryAttachment === "medium" ||
+      candidate.originCountryAttachment === "high") &&
+    typeof candidate.mobilityCommitment === "number" &&
+    typeof candidate.institutionalImpact === "number"
+  );
+}
+
 function networkEdges(people: Euromaxxer[]) {
   const nodes = people.map((x, index) => ({
     id: x.id,
@@ -65,20 +84,36 @@ function networkEdges(people: Euromaxxer[]) {
 
 export default function Page() {
   const [addedProfiles, setAddedProfiles] = useState<Euromaxxer[]>([]);
+  const [search, setSearch] = useState("");
+  const [minimumScore, setMinimumScore] = useState(1);
+  const [showOnlyAdded, setShowOnlyAdded] = useState(false);
+  const [importExportStatus, setImportExportStatus] = useState("");
   const allProfiles = useMemo(() => [...euromaxxers, ...addedProfiles], [addedProfiles]);
-  const ranked = useMemo(
-    () => [...allProfiles].sort((a, b) => euromaxxerScore(b) - euromaxxerScore(a)),
-    [allProfiles]
-  );
+  const ranked = useMemo(() => {
+    const searchLower = search.toLowerCase().trim();
+    const filtered = allProfiles.filter((profile) => {
+      if (showOnlyAdded && !addedProfiles.some((p) => p.id === profile.id)) return false;
+      const score = euromaxxerScore(profile);
+      if (score < minimumScore) return false;
+      if (!searchLower) return true;
+      return (
+        profile.name.toLowerCase().includes(searchLower) ||
+        profile.shortBio.toLowerCase().includes(searchLower) ||
+        profile.countriesStrongTie.join(" ").toLowerCase().includes(searchLower)
+      );
+    });
+    return filtered.sort((a, b) => euromaxxerScore(b) - euromaxxerScore(a));
+  }, [allProfiles, showOnlyAdded, minimumScore, search, addedProfiles]);
   const network = useMemo(() => networkEdges(allProfiles), [allProfiles]);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as Euromaxxer[];
+      const parsed = JSON.parse(raw) as unknown;
       if (Array.isArray(parsed)) {
-        setAddedProfiles(parsed);
+        const sanitized = parsed.filter(isEuromaxxerRecord);
+        setAddedProfiles(sanitized);
       }
     } catch {
       // Ignore malformed local cache and continue with base dataset.
@@ -151,6 +186,43 @@ export default function Page() {
     setAddedProfiles((current) => [...current, profile]);
   }
 
+  function onExportDataset() {
+    const payload = JSON.stringify({ exportedAt: new Date().toISOString(), profiles: addedProfiles }, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "euromaxxers-custom-profiles.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setImportExportStatus("Exported custom profiles.");
+  }
+
+  function onResetCustomProfiles() {
+    setAddedProfiles([]);
+    setImportExportStatus("Reset custom profiles.");
+  }
+
+  async function onImportDataset(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as { profiles?: unknown[] };
+      const incoming = (parsed.profiles ?? []).filter(isEuromaxxerRecord);
+      const existing = new Set(allProfiles.map((profile) => profile.id));
+      const deduped = incoming.filter((profile) => !existing.has(profile.id));
+      setAddedProfiles((current) => [...current, ...deduped]);
+      setImportExportStatus(`Imported ${deduped.length} profile(s).`);
+    } catch {
+      setImportExportStatus("Import failed: invalid JSON format.");
+    } finally {
+      e.target.value = "";
+    }
+  }
+
   return (
     <main style={{ padding: "2rem", maxWidth: 1120, margin: "0 auto" }}>
       <h1 style={{ marginTop: 0, fontSize: "2rem" }}>Euromaxxers</h1>
@@ -188,6 +260,98 @@ export default function Page() {
             </g>
           ))}
         </svg>
+      </section>
+
+      <section style={{ marginTop: "1rem", ...cardStyle }}>
+        <h2 style={{ marginTop: 0 }}>Browse controls</h2>
+        <div
+          style={{
+            display: "grid",
+            gap: "0.7rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            alignItems: "center",
+          }}
+        >
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, bio, country..."
+            aria-label="Search profiles"
+            style={{
+              padding: "0.6rem 0.75rem",
+              borderRadius: 8,
+              border: "1px solid #4c6199",
+              background: "#0f1831",
+              color: "#eaf0ff",
+            }}
+          />
+          <label style={{ color: "#c7d3f8", fontSize: "0.92rem" }}>
+            Minimum score: {minimumScore}
+            <input
+              type="range"
+              min={1}
+              max={100}
+              value={minimumScore}
+              onChange={(e) => setMinimumScore(Number(e.target.value))}
+              style={{ display: "block", width: "100%" }}
+            />
+          </label>
+          <label style={{ color: "#c7d3f8", fontSize: "0.92rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <input type="checkbox" checked={showOnlyAdded} onChange={(e) => setShowOnlyAdded(e.target.checked)} />
+            Show only custom-added profiles
+          </label>
+        </div>
+      </section>
+
+      <section style={{ marginTop: "1rem", ...cardStyle }}>
+        <h2 style={{ marginTop: 0 }}>Data portability</h2>
+        <p style={{ color: "#c7d3f8", marginTop: 0 }}>
+          Export/import your custom profiles to move this dataset across devices before investor demos.
+        </p>
+        <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={onExportDataset}
+            style={{
+              padding: "0.5rem 0.75rem",
+              borderRadius: 8,
+              border: "1px solid #7595e4",
+              background: "#203a73",
+              color: "#ecf2ff",
+              cursor: "pointer",
+            }}
+          >
+            Export custom JSON
+          </button>
+          <label
+            style={{
+              padding: "0.5rem 0.75rem",
+              borderRadius: 8,
+              border: "1px solid #7595e4",
+              background: "#203a73",
+              color: "#ecf2ff",
+              cursor: "pointer",
+            }}
+          >
+            Import custom JSON
+            <input type="file" accept="application/json" onChange={onImportDataset} style={{ display: "none" }} />
+          </label>
+          <button
+            type="button"
+            onClick={onResetCustomProfiles}
+            style={{
+              padding: "0.5rem 0.75rem",
+              borderRadius: 8,
+              border: "1px solid #6f4f66",
+              background: "#35203a",
+              color: "#f9ddee",
+              cursor: "pointer",
+            }}
+          >
+            Reset custom profiles
+          </button>
+        </div>
+        {importExportStatus ? <p style={{ color: "#b9c8ef", marginBottom: 0 }}>{importExportStatus}</p> : null}
       </section>
 
       <section style={{ marginTop: "1rem", ...cardStyle }}>
@@ -279,6 +443,12 @@ export default function Page() {
       </section>
 
       <section style={{ marginTop: "1rem", display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))" }}>
+        {ranked.length === 0 ? (
+          <article style={cardStyle}>
+            <h3 style={{ marginTop: 0 }}>No profiles match current filters</h3>
+            <p style={{ color: "#c7d3f8", marginBottom: 0 }}>Try lowering minimum score or clearing your search term.</p>
+          </article>
+        ) : null}
         {ranked.map((person) => (
           <article key={person.id} style={cardStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "center" }}>
@@ -301,9 +471,7 @@ export default function Page() {
             </p>
             <p style={{ marginTop: 0, color: "#9fb0de", fontSize: "0.9rem" }}>
               Linked euromaxxers:{" "}
-              {person.crossLinkedTo
-                .map((id) => euromaxxers.find((x) => x.id === id)?.name ?? id)
-                .join(", ") || "None yet"}
+              {person.crossLinkedTo.map((id) => allProfiles.find((x) => x.id === id)?.name ?? id).join(", ") || "None yet"}
             </p>
             <a href={person.wikipediaUrl} target="_blank" rel="noreferrer" style={{ color: "#a9c8ff" }}>
               Open Wikipedia profile

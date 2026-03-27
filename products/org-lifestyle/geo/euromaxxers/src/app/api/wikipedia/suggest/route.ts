@@ -47,8 +47,25 @@ function wikipediaUrlFromTitle(title: string): string {
   return `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/\s/g, "_"))}`;
 }
 
+async function fetchWithTimeout(input: string, timeoutMs = 9000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, {
+      signal: controller.signal,
+      headers: { "user-agent": "216labs-euromaxxers/1.0 (network explorer)" },
+      next: { revalidate: 3600 },
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function GET(req: NextRequest) {
   const seed = req.nextUrl.searchParams.get("seed") ?? "";
+  const limitRaw = req.nextUrl.searchParams.get("limit") ?? "18";
+  const parsedLimit = Number(limitRaw);
+  const limit = Number.isFinite(parsedLimit) ? Math.max(3, Math.min(24, Math.floor(parsedLimit))) : 18;
   let seedTitle = "";
   try {
     seedTitle = titleFromInput(seed);
@@ -61,10 +78,12 @@ export async function GET(req: NextRequest) {
     "https://en.wikipedia.org/w/api.php?action=query&prop=links&pllimit=max&format=json" +
     `&titles=${encodeURIComponent(seedTitle)}&origin=*`;
 
-  const linksResponse = await fetch(queryUrl, {
-    headers: { "user-agent": "216labs-euromaxxers/1.0 (network explorer)" },
-    next: { revalidate: 3600 },
-  });
+  let linksResponse: Response;
+  try {
+    linksResponse = await fetchWithTimeout(queryUrl, 10000);
+  } catch {
+    return new NextResponse("Wikipedia API timeout. Please retry.", { status: 504 });
+  }
 
   if (!linksResponse.ok) {
     return new NextResponse("Wikipedia API request failed.", { status: 502 });
@@ -83,7 +102,7 @@ export async function GET(req: NextRequest) {
     .filter((link) => link.ns === 0)
     .map((link) => link.title)
     .filter(likelyPersonTitle)
-    .slice(0, 18);
+    .slice(0, limit);
 
   const summaryResults = await Promise.all(
     linkTitles.map(async (title) => {
@@ -91,10 +110,7 @@ export async function GET(req: NextRequest) {
         title.replace(/\s/g, "_")
       )}`;
       try {
-        const response = await fetch(summaryUrl, {
-          headers: { "user-agent": "216labs-euromaxxers/1.0 (network explorer)" },
-          next: { revalidate: 3600 },
-        });
+        const response = await fetchWithTimeout(summaryUrl, 8000);
         if (!response.ok) {
           return null;
         }

@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Euromaxxers",
+  title: "Euromaxxers | Wikipedia Network Explorer",
   description:
-    "A curated explorer of world-class euromaxxers with Wikipedia links, cross-page relationships, and a transparent score.",
+    "Investor-ready explorer of euromaxxer profiles with Wikipedia-powered relationship discovery, transparent scoring, and browseable network views.",
+  metadataBase: new URL("https://euromaxxers.6cubed.app"),
+  openGraph: {
+    title: "Euromaxxers",
+    description:
+      "Browse euromaxxer profiles, discover Wikipedia-connected candidates, and map relationship networks.",
+    url: "https://euromaxxers.6cubed.app",
+    siteName: "Euromaxxers",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
