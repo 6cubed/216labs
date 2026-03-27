@@ -190,14 +190,19 @@ def _manifest_files_index() -> Tuple[str, ...]:
 
 def load_manifest_for_app(app_id: str) -> Optional[dict]:
     """Load manifest.json for app_id from the repo (no admin DB row required)."""
-    for mp in _manifest_files_index():
-        try:
-            with open(mp, encoding="utf-8") as f:
-                m = json.load(f)
-            if m.get("id") == app_id:
-                return m
-        except (OSError, json.JSONDecodeError):
-            continue
+    # If new app manifests are added after activator boot, the cached index can
+    # be stale. Refresh once on miss so warmup works without requiring restart.
+    for refresh in (False, True):
+        if refresh:
+            _manifest_files_index.cache_clear()
+        for mp in _manifest_files_index():
+            try:
+                with open(mp, encoding="utf-8") as f:
+                    m = json.load(f)
+                if m.get("id") == app_id:
+                    return m
+            except (OSError, json.JSONDecodeError):
+                continue
     return None
 
 
