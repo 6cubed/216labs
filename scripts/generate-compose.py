@@ -48,8 +48,9 @@ def manifest_dirs():
                     continue
                 if os.path.isfile(os.path.join(sub, "manifest.json")):
                     yield rel_sub.replace("\\", "/"), sub
-                else:
-                    stack.append((sub, rel_sub))
+                # Keep traversing so nested apps under manifest-bearing parents
+                # are still discovered for generated compose blocks.
+                stack.append((sub, rel_sub))
 
 
 def discover_apps(app_ids_filter=None):

@@ -73,8 +73,9 @@ def manifest_dirs():
                     continue
                 if os.path.isfile(os.path.join(sub, "manifest.json")):
                     yield sub
-                else:
-                    stack.append(sub)
+                # Keep traversing so nested apps (e.g. internal/admin/groundtruth)
+                # are not skipped when a parent directory also has a manifest.
+                stack.append(sub)
 
 
 for dir_path in manifest_dirs():
