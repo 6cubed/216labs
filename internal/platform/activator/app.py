@@ -7,6 +7,7 @@ import subprocess
 import threading
 import time
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import Dict, List, Optional, Set, Tuple
 import urllib.error
 from urllib.parse import urlparse
@@ -148,37 +149,48 @@ def get_app_row(app_id: str):
 
 
 def _manifest_search_dirs() -> List[str]:
-    """Directories that may contain manifest.json (aligned with scripts/app-lookup.py)."""
+    """Root directories to scan recursively for manifest.json files."""
     dirs: List[str] = []
     try:
         for entry in os.listdir(PROJECT_ROOT):
-            if entry.startswith(".") or entry in ("scripts", "apps"):
+            if entry.startswith(".") or entry == "scripts":
                 continue
             path = os.path.join(PROJECT_ROOT, entry)
             if os.path.isdir(path):
                 dirs.append(path)
     except OSError:
         pass
-    apps_dir = os.path.join(PROJECT_ROOT, "apps")
-    try:
-        if os.path.isdir(apps_dir):
-            for entry in os.listdir(apps_dir):
-                if entry.startswith("."):
-                    continue
-                path = os.path.join(apps_dir, entry)
-                if os.path.isdir(path):
-                    dirs.append(path)
-    except OSError:
-        pass
     return dirs
+
+
+@lru_cache(maxsize=1)
+def _manifest_files_index() -> Tuple[str, ...]:
+    """Index manifest paths under the repo, skipping heavy/irrelevant directories."""
+    manifests: List[str] = []
+    skip = {
+        ".git",
+        ".cursor",
+        "node_modules",
+        ".next",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        "dist",
+        "build",
+    }
+    for root in _manifest_search_dirs():
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames if not d.startswith(".") and d not in skip]
+            if "manifest.json" in filenames:
+                manifests.append(os.path.join(dirpath, "manifest.json"))
+    return tuple(manifests)
 
 
 def load_manifest_for_app(app_id: str) -> Optional[dict]:
     """Load manifest.json for app_id from the repo (no admin DB row required)."""
-    for d in _manifest_search_dirs():
-        mp = os.path.join(d, "manifest.json")
-        if not os.path.isfile(mp):
-            continue
+    for mp in _manifest_files_index():
         try:
             with open(mp, encoding="utf-8") as f:
                 m = json.load(f)
