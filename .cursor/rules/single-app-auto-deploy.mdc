@@ -1,0 +1,17 @@
+---
+description: Auto-deploy single-app changes by default
+alwaysApply: true
+---
+
+# Single-App Auto Deploy
+
+When a task primarily changes one app (for example one folder under `products/` or `internal/` for a single service):
+
+1. Commit and push to `main` as usual.
+2. Automatically run a targeted droplet rollout for that app in the same task, without waiting for a separate user prompt to deploy.
+3. Prefer fast single-app rollout settings:
+   - `DEPLOY_RUNTIME_APPS="<app_id>"`
+   - Use `DEPLOY_IMAGE_SOURCE=local` for immediate availability when needed.
+4. Verify the public URL responds (`200` or expected redirect) and report the exact link.
+
+Do not apply this auto-deploy behavior to clearly multi-app or infra-wide changes unless explicitly requested.
