@@ -17,7 +17,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import subprocess
 import sys
@@ -51,6 +50,12 @@ class AppManifest:
     build_context: str
     build_dockerfile: str
     health_path: str
+
+
+@dataclass
+class CheckReport:
+    status: str
+    detail: str = ""
 
 
 def _run(cmd: list[str], *, cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -236,21 +241,39 @@ def _http_probe(url: str, timeout_s: float) -> tuple[int | None, str]:
         return None, str(e)
 
 
-def check_live(selected: list[AppManifest], domain: str, timeout_s: float) -> list[str]:
-    errs: list[str] = []
-    for app in selected:
+def _check_live_one(app: AppManifest, domain: str, timeout_s: float, retries: int) -> CheckReport:
+    attempts = max(1, retries + 1)
+    last_detail = ""
+    for i in range(attempts):
         url = f"https://{app.app_id}.{domain}"
         code, body = _http_probe(url, timeout_s)
         if code is None:
-            errs.append(f"{app.app_id}: live probe failed ({body})")
-            continue
-        if code >= 500:
-            errs.append(f"{app.app_id}: live probe returned {code}")
-            continue
-        lowered = body.lower()
-        if "unknown app" in lowered and "not in admin db" in lowered:
-            errs.append(f"{app.app_id}: live probe shows activator unknown-app page")
-    return errs
+            last_detail = f"probe failed ({body})"
+        elif code >= 500:
+            last_detail = f"live probe returned {code}"
+        elif "unknown app" in body.lower() and "not in admin db" in body.lower():
+            last_detail = "live probe shows activator unknown-app page"
+        else:
+            return CheckReport(status="pass", detail=f"ok ({code})")
+        if i < attempts - 1:
+            time.sleep(0.7 * (i + 1))
+    return CheckReport(status="fail", detail=last_detail)
+
+
+def check_live(
+    selected: list[AppManifest],
+    domain: str,
+    timeout_s: float,
+    retries: int,
+) -> tuple[list[str], dict[str, CheckReport]]:
+    errs: list[str] = []
+    reports: dict[str, CheckReport] = {}
+    for app in selected:
+        rep = _check_live_one(app, domain, timeout_s, retries)
+        reports[app.app_id] = rep
+        if rep.status == "fail":
+            errs.append(f"{app.app_id}: {rep.detail}")
+    return errs, reports
 
 
 def _docker_build_tag(app: AppManifest) -> str:
@@ -262,8 +285,14 @@ def _docker_run_name(app: AppManifest) -> str:
     return f"qf-{app.app_id}-{suffix}"
 
 
-def check_offline(selected: list[AppManifest], timeout_s: float, boot_wait_s: float) -> list[str]:
+def check_offline(
+    selected: list[AppManifest],
+    timeout_s: float,
+    boot_wait_s: float,
+    retries: int,
+) -> tuple[list[str], dict[str, CheckReport]]:
     errs: list[str] = []
+    reports: dict[str, CheckReport] = {}
     for app in selected:
         tag = _docker_build_tag(app)
         ctx = app.build_context
@@ -300,22 +329,102 @@ def check_offline(selected: list[AppManifest], timeout_s: float, boot_wait_s: fl
             host_port = mapped.rsplit(":", 1)[1]
             urls = [f"http://127.0.0.1:{host_port}{app.health_path}", f"http://127.0.0.1:{host_port}/", f"http://127.0.0.1:{host_port}/healthz"]
             ok = False
-            for url in urls:
-                code, body = _http_probe(url, timeout_s)
-                if code is not None and code < 500:
-                    ok = True
+            attempts = max(1, retries + 1)
+            for i in range(attempts):
+                for url in urls:
+                    code, body = _http_probe(url, timeout_s)
+                    if code is not None and code < 500:
+                        ok = True
+                        reports[app.app_id] = CheckReport(status="pass", detail=f"ok ({code})")
+                        break
+                    if code is None and "Connection refused" in body:
+                        time.sleep(0.4)
+                if ok:
                     break
-                if code is None and "Connection refused" in body:
-                    time.sleep(0.6)
+                if i < attempts - 1:
+                    time.sleep(0.8 * (i + 1))
             if not ok:
                 logs = _run(["docker", "logs", run_name], check=False).stdout[-2000:]
-                errs.append(f"{app.app_id}: offline probe failed ({urls[0]}). logs tail:\n{logs}")
+                detail = f"offline probe failed ({urls[0]}). logs tail:\n{logs}"
+                reports[app.app_id] = CheckReport(status="fail", detail=detail)
+                errs.append(f"{app.app_id}: {detail}")
         except subprocess.CalledProcessError as e:
             snippet = (e.stderr or e.stdout or "").strip()[-2000:]
-            errs.append(f"{app.app_id}: docker build/run failed: {snippet}")
+            detail = f"docker build/run failed: {snippet}"
+            reports[app.app_id] = CheckReport(status="fail", detail=detail)
+            errs.append(f"{app.app_id}: {detail}")
         finally:
             _run(["docker", "rm", "-f", run_name], check=False)
-    return errs
+    return errs, reports
+
+
+def load_quarantine(path: Path | None) -> dict[str, set[str]]:
+    out = {"offline": set(), "live": set()}
+    if path is None or not path.exists():
+        return out
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return out
+    for key in ("offline", "live"):
+        values = data.get(f"{key}_skip", [])
+        if isinstance(values, list):
+            out[key] = {str(v).strip() for v in values if str(v).strip()}
+    return out
+
+
+def write_reports(
+    *,
+    path_json: Path | None,
+    path_md: Path | None,
+    checks: set[str],
+    selected: list[AppManifest],
+    errors: list[str],
+    check_reports: dict[str, dict[str, CheckReport]],
+    quarantined: dict[str, set[str]],
+) -> None:
+    rows: list[dict[str, str]] = []
+    for app in selected:
+        row = {"app_id": app.app_id, "rel_dir": app.rel_dir}
+        for check in ("manifest", "compose", "offline", "live"):
+            if check not in checks:
+                row[check] = "not_run"
+                continue
+            if app.app_id in quarantined.get(check, set()):
+                row[check] = "quarantined"
+                continue
+            rep = check_reports.get(check, {}).get(app.app_id)
+            row[check] = rep.status if rep else "not_run"
+        rows.append(row)
+    payload = {
+        "generated_at_epoch": int(time.time()),
+        "total_apps": len(selected),
+        "total_failures": len(errors),
+        "errors": errors,
+        "rows": rows,
+    }
+    if path_json:
+        path_json.parent.mkdir(parents=True, exist_ok=True)
+        path_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    if path_md:
+        path_md.parent.mkdir(parents=True, exist_ok=True)
+        lines = [
+            "# Quality Scorecard",
+            "",
+            f"- Total apps: {len(selected)}",
+            f"- Total failures: {len(errors)}",
+            "",
+            "| app_id | manifest | compose | offline | live |",
+            "|---|---:|---:|---:|---:|",
+        ]
+        for row in rows:
+            lines.append(
+                f"| {row['app_id']} | {row['manifest']} | {row['compose']} | {row['offline']} | {row['live']} |"
+            )
+        if errors:
+            lines.extend(["", "## Failures"])
+            lines.extend([f"- {e}" for e in errors[:200]])
+        path_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def parse_args() -> argparse.Namespace:
@@ -330,6 +439,10 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--max-apps", type=int, default=0, help="0 = no cap")
     ap.add_argument("--timeout-seconds", type=float, default=10.0)
     ap.add_argument("--boot-wait-seconds", type=float, default=2.0)
+    ap.add_argument("--retries", type=int, default=1, help="Retries per app probe after initial attempt")
+    ap.add_argument("--quarantine-file", default="config/quality-quarantine.json")
+    ap.add_argument("--report-json", default="")
+    ap.add_argument("--report-md", default="")
     return ap.parse_args()
 
 
@@ -343,6 +456,12 @@ def main() -> int:
     apps = discover_manifests()
     print(f"discovered apps: {len(apps)}")
     errors: list[str] = []
+    check_reports: dict[str, dict[str, CheckReport]] = {
+        "manifest": {},
+        "compose": {},
+        "offline": {},
+        "live": {},
+    }
 
     if "manifest" in checks:
         errors.extend(validate_manifests(apps))
@@ -359,19 +478,73 @@ def main() -> int:
     print(f"selected apps: {len(selected)} (mode={args.mode}, shard={args.shard_index}/{args.shard_count})")
     if selected:
         print("sample:", ", ".join(a.app_id for a in selected[:12]))
+    quarantined = load_quarantine((REPO_ROOT / args.quarantine_file) if args.quarantine_file else None)
+    for check_name, ids in quarantined.items():
+        if ids:
+            print(f"quarantine {check_name}: {len(ids)} app(s)")
 
     if "compose" in checks:
         try:
             service_names = load_compose_service_names()
-            errors.extend(check_compose(selected, service_names))
+            compose_errors = check_compose(selected, service_names)
+            errors.extend(compose_errors)
+            missing = {e.split(":", 1)[0] for e in compose_errors}
+            for app in selected:
+                check_reports["compose"][app.app_id] = (
+                    CheckReport(status="fail", detail="missing docker_service")
+                    if app.app_id in missing
+                    else CheckReport(status="pass", detail="service present")
+                )
         except Exception as exc:
             errors.append(f"compose check setup failed: {exc}")
 
     if "offline" in checks and selected:
-        errors.extend(check_offline(selected, args.timeout_seconds, args.boot_wait_seconds))
+        offline_targets = [a for a in selected if a.app_id not in quarantined.get("offline", set())]
+        for app in selected:
+            if app.app_id in quarantined.get("offline", set()):
+                check_reports["offline"][app.app_id] = CheckReport(status="quarantined", detail="skipped by quarantine file")
+        off_errors, off_reports = check_offline(
+            offline_targets,
+            args.timeout_seconds,
+            args.boot_wait_seconds,
+            args.retries,
+        )
+        errors.extend(off_errors)
+        check_reports["offline"].update(off_reports)
 
     if "live" in checks and selected:
-        errors.extend(check_live(selected, args.domain, args.timeout_seconds))
+        live_targets = [a for a in selected if a.app_id not in quarantined.get("live", set())]
+        for app in selected:
+            if app.app_id in quarantined.get("live", set()):
+                check_reports["live"][app.app_id] = CheckReport(status="quarantined", detail="skipped by quarantine file")
+        live_errors, live_reports = check_live(live_targets, args.domain, args.timeout_seconds, args.retries)
+        errors.extend(live_errors)
+        check_reports["live"].update(live_reports)
+
+    # Manifest check applies to all selected apps from discovered set.
+    if "manifest" in checks:
+        bad_ids: set[str] = set()
+        for e in errors:
+            if ": invalid app id " in e or ": duplicate app id " in e or ": invalid docker_service " in e or ": invalid internal_port " in e:
+                bad_ids.add(e.split(":", 1)[0].split("/")[-1])
+        for app in selected:
+            check_reports["manifest"][app.app_id] = (
+                CheckReport(status="fail", detail="manifest validation error")
+                if app.app_id in bad_ids
+                else CheckReport(status="pass", detail="ok")
+            )
+
+    report_json = Path(args.report_json) if args.report_json else None
+    report_md = Path(args.report_md) if args.report_md else None
+    write_reports(
+        path_json=report_json,
+        path_md=report_md,
+        checks=checks,
+        selected=selected,
+        errors=errors,
+        check_reports=check_reports,
+        quarantined=quarantined,
+    )
 
     if errors:
         print("\nQUALITY FAILURES:")

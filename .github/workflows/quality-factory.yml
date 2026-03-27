@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   changed-app-gate:
@@ -57,7 +58,17 @@ jobs:
             --checks manifest,compose,offline \
             --max-apps 20 \
             --timeout-seconds 12 \
-            --boot-wait-seconds 3
+            --boot-wait-seconds 3 \
+            --retries 2 \
+            --report-json quality-reports/changed.json \
+            --report-md quality-reports/changed.md
+      - name: Upload changed-app scorecard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-changed-${{ github.run_id }}
+          path: quality-reports/
+          if-no-files-found: ignore
 
   live-sweep:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -75,6 +86,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Live quality sweep (sharded)
+        id: live_check
+        continue-on-error: true
         run: |
           set -euo pipefail
           python3 scripts/quality-factory.py \
@@ -83,4 +96,97 @@ jobs:
             --domain 6cubed.app \
             --shard-index "${{ matrix.shard_index }}" \
             --shard-count 8 \
-            --timeout-seconds 10
+            --timeout-seconds 10 \
+            --retries 2 \
+            --report-json quality-reports/live-shard-${{ matrix.shard_index }}.json \
+            --report-md quality-reports/live-shard-${{ matrix.shard_index }}.md
+      - name: Upload shard scorecard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-live-shard-${{ matrix.shard_index }}-${{ github.run_id }}
+          path: quality-reports/
+          if-no-files-found: ignore
+      - name: Enforce shard failure
+        if: steps.live_check.outcome == 'failure'
+        run: exit 1
+
+  live-sweep-report:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: [live-sweep]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download shard reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: quality-live-shard-*-${{ github.run_id }}
+          merge-multiple: true
+          path: quality-reports
+      - name: Build aggregate report
+        id: aggregate
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import glob, json
+          paths = sorted(glob.glob("quality-reports/live-shard-*.json"))
+          total_apps = 0
+          total_failures = 0
+          failed_apps = []
+          for p in paths:
+              data = json.load(open(p))
+              total_apps += int(data.get("total_apps", 0))
+              total_failures += int(data.get("total_failures", 0))
+              for err in data.get("errors", []):
+                  app = str(err).split(":", 1)[0]
+                  failed_apps.append(app)
+          failed_apps = sorted(set(failed_apps))
+          md = [
+              "# Live Sweep Aggregate",
+              "",
+              f"- Shards: {len(paths)}",
+              f"- Apps checked: {total_apps}",
+              f"- Failures: {total_failures}",
+              "",
+          ]
+          if failed_apps:
+              md.append("## Failing Apps")
+              md.extend([f"- {a}" for a in failed_apps[:300]])
+          open("quality-reports/live-aggregate.md", "w").write("\n".join(md) + "\n")
+          open("quality-reports/live-aggregate.json", "w").write(json.dumps({
+              "shards": len(paths),
+              "total_apps": total_apps,
+              "total_failures": total_failures,
+              "failed_apps": failed_apps
+          }, indent=2))
+          print(f"total_failures={total_failures}")
+          with open(__import__("os").environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"total_failures={total_failures}\n")
+          PY
+      - name: Upload aggregate scorecard
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-live-aggregate-${{ github.run_id }}
+          path: quality-reports/live-aggregate.*
+      - name: Upsert quality incident issue
+        if: steps.aggregate.outputs.total_failures != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const body = fs.readFileSync("quality-reports/live-aggregate.md", "utf8");
+            const title = "Quality factory live sweep failures";
+            const { owner, repo } = context.repo;
+            const existing = await github.rest.issues.listForRepo({
+              owner, repo, state: "open", labels: "quality-factory", per_page: 100
+            });
+            const match = existing.data.find(i => i.title === title);
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const fullBody = `${body}\n\nRun: ${runUrl}\n`;
+            if (match) {
+              await github.rest.issues.update({ owner, repo, issue_number: match.number, body: fullBody });
+            } else {
+              await github.rest.issues.create({
+                owner, repo, title, body: fullBody, labels: ["quality-factory", "bug", "ci"]
+              });
+            }

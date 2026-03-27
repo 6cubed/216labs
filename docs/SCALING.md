@@ -49,6 +49,9 @@ At 1000+ apps, quality must be machine-enforced:
   - Verifies each changed app exists in Compose config.
   - Builds and boots changed app containers offline, then probes HTTP readiness.
 - **Live sweep (scheduled + sharded):** CI runs `--mode all --checks manifest,live` in shards, probing deployed subdomains for non-5xx responses and activator unknown-app failures.
+- **Flake control:** probes retry automatically (`--retries`) and temporary noisy apps can be quarantined via `config/quality-quarantine.json` (`offline_skip`, `live_skip`) without disabling checks globally.
+- **Automated incident management:** scheduled live-sweep failures upsert a GitHub issue labeled `quality-factory` with failing app IDs and run link.
+- **Scorecards as artifacts:** every run publishes per-app scorecards (`.json` + `.md`) for machine and human consumption.
 - **Manifest-driven contracts:** each app can define optional `health_path` in `manifest.json` (default `/health`) so probes stay app-specific without custom code.
 
 This model scales linearly by sharding and changed-app selection, while still continuously checking both offline and live quality.
