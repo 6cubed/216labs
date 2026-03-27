@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { euromaxxerScore, euromaxxers } from "@/lib/euromaxxers";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Euromaxxer, euromaxxerScore, euromaxxers } from "@/lib/euromaxxers";
 
 const cardStyle: React.CSSProperties = {
   background: "linear-gradient(180deg, #16203f 0%, #101a35 100%)",
@@ -10,8 +10,38 @@ const cardStyle: React.CSSProperties = {
   padding: "1rem",
 };
 
-function networkEdges() {
-  const nodes = euromaxxers.map((x, index) => ({
+const LOCAL_STORAGE_KEY = "euromaxxers.custom-profiles.v1";
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+function extractCountryHints(snippet?: string): string[] {
+  if (!snippet) return [];
+  const candidates = [
+    "Ireland",
+    "United Kingdom",
+    "France",
+    "Germany",
+    "Italy",
+    "Spain",
+    "Netherlands",
+    "Belgium",
+    "Portugal",
+    "Sweden",
+    "Austria",
+    "Poland",
+  ];
+  return candidates.filter((country) => snippet.includes(country));
+}
+
+function networkEdges(people: Euromaxxer[]) {
+  const nodes = people.map((x, index) => ({
     id: x.id,
     label: x.name,
     x: 130 + index * 210,
@@ -19,9 +49,9 @@ function networkEdges() {
   }));
 
   const edges: Array<{ from: string; to: string }> = [];
-  for (const person of euromaxxers) {
+  for (const person of people) {
     for (const target of person.crossLinkedTo) {
-      const hasInverse = euromaxxers
+      const hasInverse = people
         .find((candidate) => candidate.id === target)
         ?.crossLinkedTo.includes(person.id);
       if (hasInverse || person.id < target) {
@@ -34,16 +64,39 @@ function networkEdges() {
 }
 
 export default function Page() {
-  const ranked = [...euromaxxers].sort((a, b) => euromaxxerScore(b) - euromaxxerScore(a));
-  const network = networkEdges();
+  const [addedProfiles, setAddedProfiles] = useState<Euromaxxer[]>([]);
+  const allProfiles = useMemo(() => [...euromaxxers, ...addedProfiles], [addedProfiles]);
+  const ranked = useMemo(
+    () => [...allProfiles].sort((a, b) => euromaxxerScore(b) - euromaxxerScore(a)),
+    [allProfiles]
+  );
+  const network = useMemo(() => networkEdges(allProfiles), [allProfiles]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Euromaxxer[];
+      if (Array.isArray(parsed)) {
+        setAddedProfiles(parsed);
+      }
+    } catch {
+      // Ignore malformed local cache and continue with base dataset.
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(addedProfiles));
+  }, [addedProfiles]);
+
   const knownWikiTitles = useMemo(
     () =>
       new Set(
-        euromaxxers
+        allProfiles
           .map((person) => person.wikipediaUrl.split("/wiki/")[1] ?? "")
           .map((title) => decodeURIComponent(title).replace(/_/g, " "))
       ),
-    []
+    [allProfiles]
   );
   const [seedUrl, setSeedUrl] = useState("https://en.wikipedia.org/wiki/Tony_Ryan");
   const [loading, setLoading] = useState(false);
@@ -75,6 +128,27 @@ export default function Page() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function addCandidateToDataset(item: { title: string; url: string; snippet?: string }) {
+    const id = slugify(item.title);
+    const exists = allProfiles.some((profile) => profile.id === id || profile.wikipediaUrl === item.url);
+    if (exists) return;
+
+    const countryHints = extractCountryHints(item.snippet);
+    const profile: Euromaxxer = {
+      id,
+      name: item.title,
+      wikipediaUrl: item.url,
+      shortBio: item.snippet || "Wikipedia-linked profile candidate.",
+      countriesStrongTie: countryHints.length > 0 ? countryHints : ["Europe"],
+      activeDecades: 3,
+      crossLinkedTo: [],
+      originCountryAttachment: "medium",
+      mobilityCommitment: 7,
+      institutionalImpact: 6,
+    };
+    setAddedProfiles((current) => [...current, profile]);
   }
 
   return (
@@ -179,6 +253,23 @@ export default function Page() {
                       Open profile
                     </a>
                     {isKnown ? <p style={{ margin: "0.45rem 0 0", color: "#9ee2a8" }}>Already in current dataset</p> : null}
+                    {!isKnown ? (
+                      <button
+                        type="button"
+                        onClick={() => addCandidateToDataset(item)}
+                        style={{
+                          marginTop: "0.6rem",
+                          padding: "0.4rem 0.65rem",
+                          borderRadius: 8,
+                          border: "1px solid #7595e4",
+                          background: "#203a73",
+                          color: "#ecf2ff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Add to dataset
+                      </button>
+                    ) : null}
                   </article>
                 );
               })}
