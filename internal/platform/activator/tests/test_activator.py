@@ -22,6 +22,7 @@ class ActivatorTests(unittest.TestCase):
     def setUp(self):
         activator._status.clear()
         activator._locks.clear()
+        activator._compose_service_images.cache_clear()
 
     def test_single_flight_returns_queued(self):
         lock = threading.Lock()
@@ -153,6 +154,17 @@ class ActivatorTests(unittest.TestCase):
             c = activator.get_evictable_running_candidates()
         self.assertEqual(c, [])
 
+    def test_ghcr_short_from_compose_image(self):
+        self.assertEqual(activator.ghcr_short_from_compose_image("216labs/foo:latest"), "foo")
+        self.assertEqual(
+            activator.ghcr_short_from_compose_image("ghcr.io/6cubed/216labs/bar:latest"),
+            "bar",
+        )
+
+    def test_registry_image_short_falls_back_to_service_name(self):
+        with patch.object(activator, "_compose_service_images", return_value={}):
+            self.assertEqual(activator.registry_image_short_for_service("pocket"), "pocket")
+
     def test_ghcr_auth_reads_token_from_db_when_env_empty(self):
         fd, path = tempfile.mkstemp(suffix=".db")
         os.close(fd)
@@ -176,6 +188,30 @@ class ActivatorTests(unittest.TestCase):
             self.assertEqual(t, "tok-from-db")
             self.assertEqual(u, "u-db")
             self.assertIn("ghcr.io", p)
+        finally:
+            os.unlink(path)
+
+    def test_ghcr_auth_db_prefix_used_when_env_prefix_empty(self):
+        fd, path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        conn = sqlite3.connect(path)
+        conn.execute(
+            "CREATE TABLE env_vars (key TEXT NOT NULL, value TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO env_vars (key, value) VALUES ('ACTIVATOR_REGISTRY_PREFIX', 'ghcr.io/custom/prefix')"
+        )
+        conn.commit()
+        conn.close()
+        with patch.object(activator, "DB_PATH", path), patch.dict(
+            os.environ,
+            {"GHCR_TOKEN": "env-tok", "ACTIVATOR_REGISTRY_PREFIX": ""},
+            clear=False,
+        ):
+            t, _u, p = activator.get_effective_ghcr_auth()
+        try:
+            self.assertEqual(t, "env-tok")
+            self.assertEqual(p, "ghcr.io/custom/prefix")
         finally:
             os.unlink(path)
 

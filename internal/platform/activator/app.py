@@ -290,6 +290,15 @@ def touch_last_accessed_only(app_id: str) -> None:
         pass
 
 
+def _compose_subprocess_env() -> Dict[str, str]:
+    env = os.environ.copy()
+    # Compose defaults project name to the cwd basename; ACTIVATOR_PROJECT_ROOT is /workspace in production,
+    # which would create a separate "workspace_*" stack invisible to Caddy on the 216labs network.
+    if env.get("ACTIVATOR_PROJECT_ROOT", "").rstrip("/") == "/workspace":
+        env.setdefault("COMPOSE_PROJECT_NAME", "216labs")
+    return env
+
+
 def run_compose(*args: str) -> subprocess.CompletedProcess:
     cmd = [
         "docker",
@@ -300,19 +309,124 @@ def run_compose(*args: str) -> subprocess.CompletedProcess:
         ".env.admin",
         *args,
     ]
-    env = os.environ.copy()
-    # Compose defaults project name to the cwd basename; ACTIVATOR_PROJECT_ROOT is /workspace in production,
-    # which would create a separate "workspace_*" stack invisible to Caddy on the 216labs network.
-    if env.get("ACTIVATOR_PROJECT_ROOT", "").rstrip("/") == "/workspace":
-        env.setdefault("COMPOSE_PROJECT_NAME", "216labs")
     return subprocess.run(
         cmd,
         cwd=PROJECT_ROOT,
         text=True,
         capture_output=True,
         check=False,
-        env=env,
+        env=_compose_subprocess_env(),
     )
+
+
+@lru_cache(maxsize=1)
+def _compose_service_images() -> Dict[str, str]:
+    """Compose service name -> image ref (e.g. 216labs/foo:latest). Cached for cold-start speed."""
+    env = _compose_subprocess_env()
+    p = subprocess.run(
+        [
+            "docker",
+            "compose",
+            "--env-file",
+            ".env",
+            "--env-file",
+            ".env.admin",
+            "config",
+            "--format",
+            "json",
+        ],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+        timeout=120,
+    )
+    if p.returncode != 0:
+        return {}
+    try:
+        data = json.loads(p.stdout)
+    except json.JSONDecodeError:
+        return {}
+    services = data.get("services") or {}
+    out: Dict[str, str] = {}
+    for name, spec in services.items():
+        if not isinstance(spec, dict):
+            continue
+        img = spec.get("image")
+        if isinstance(img, str) and img.strip():
+            out[name] = img.strip()
+    return out
+
+
+def ghcr_short_from_compose_image(image: str) -> str:
+    """Short name used in ghcr.io/<org>/216labs/<short>:latest (matches CI publish)."""
+    s = (image or "").strip().split("@", 1)[0]
+    repo = s.rsplit(":", 1)[0] if ":" in s else s
+    if "216labs/" in repo:
+        return repo.split("216labs/", 1)[1].split("/")[0]
+    parts = [x for x in repo.split("/") if x]
+    if len(parts) >= 2 and parts[-2] == "216labs":
+        return parts[-1]
+    return parts[-1] if parts else ""
+
+
+def registry_image_short_for_service(docker_service: str) -> str:
+    """Prefer image repo from compose so service name can differ from 216labs/<short>."""
+    mapping = _compose_service_images()
+    img = mapping.get(docker_service)
+    if img:
+        short = ghcr_short_from_compose_image(img)
+        if short:
+            return short
+    return docker_service
+
+
+def docker_daemon_ok() -> bool:
+    try:
+        p = subprocess.run(
+            ["docker", "info"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            env=os.environ.copy(),
+            timeout=8,
+        )
+        return p.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def _compose_error_needs_registry_pull(stderr_stdout: str) -> bool:
+    low = (stderr_stdout or "").lower()
+    return any(
+        x in low
+        for x in (
+            "no such image",
+            "could not find image",
+            "missing image",
+            "pull access denied",
+            "manifest unknown",
+            "denied",
+        )
+    )
+
+
+def run_compose_up_with_retries(docker_service: str) -> subprocess.CompletedProcess:
+    """Retry compose up for transient failures; stop early when the error clearly needs a registry pull."""
+    last = run_compose("up", "-d", "--no-build", docker_service)
+    if last.returncode == 0:
+        return last
+    for attempt in range(3):
+        combined = (last.stderr or "") + (last.stdout or "")
+        if _compose_error_needs_registry_pull(combined):
+            return last
+        time.sleep(1.0 + attempt * 0.5)
+        last = run_compose("up", "-d", "--no-build", docker_service)
+        if last.returncode == 0:
+            return last
+    return last
 
 
 def compose_running(docker_service: str) -> bool:
@@ -395,8 +509,9 @@ def evict_docker_service(docker_service: str) -> None:
     if app_id:
         set_runtime_state(app_id, "cold", "LRU eviction", touch_accessed=False)
     if REMOVE_IMAGE_ON_EVICT:
+        short = registry_image_short_for_service(docker_service)
         subprocess.run(
-            ["docker", "rmi", "-f", f"216labs/{docker_service}:latest"],
+            ["docker", "rmi", "-f", f"216labs/{short}:latest"],
             cwd=PROJECT_ROOT,
             text=True,
             capture_output=True,
@@ -439,31 +554,39 @@ def reaper_loop() -> None:
 
 
 def get_effective_ghcr_auth() -> Tuple[str, str, str]:
-    """Return (token, username, registry_prefix) from process env, else 216labs.db (same as droplet-ghcr-sync)."""
-    token = (os.environ.get("GHCR_TOKEN") or "").strip()
-    username = (os.environ.get("GHCR_USERNAME") or "token").strip() or "token"
-    prefix = (os.environ.get("ACTIVATOR_REGISTRY_PREFIX") or "").strip() or REGISTRY_PREFIX
-    if token:
-        return token, username, prefix
+    """Return (token, username, registry_prefix). Env wins per key; DB fills missing keys."""
+
+    env_token = (os.environ.get("GHCR_TOKEN") or "").strip()
+    env_user = (os.environ.get("GHCR_USERNAME") or "").strip()
+    env_prefix = (os.environ.get("ACTIVATOR_REGISTRY_PREFIX") or "").strip()
+
+    token = env_token
+    username = env_user if env_user else "token"
+    prefix = env_prefix if env_prefix else REGISTRY_PREFIX
+
     try:
         with db_connection() as conn:
             rows = conn.execute(
                 "SELECT key, value FROM env_vars WHERE key IN ('GHCR_TOKEN', 'GHCR_USERNAME', 'ACTIVATOR_REGISTRY_PREFIX') AND value != ''"
             ).fetchall()
-        for key, val in rows:
-            v = str(val).strip()
+        for row in rows:
+            k = row["key"]
+            v = str(row["value"]).strip()
             if not v:
                 continue
-            if key == "GHCR_TOKEN":
+            if k == "GHCR_TOKEN" and not token:
                 token = v
-            elif key == "GHCR_USERNAME":
-                username = v
-            elif key == "ACTIVATOR_REGISTRY_PREFIX":
+            elif k == "GHCR_USERNAME" and not env_user:
+                username = v or "token"
+            elif k == "ACTIVATOR_REGISTRY_PREFIX" and not env_prefix:
                 prefix = v
     except (sqlite3.OperationalError, OSError, TypeError):
         pass
+
     if not prefix:
         prefix = REGISTRY_PREFIX or "ghcr.io/6cubed/216labs"
+    if not username:
+        username = "token"
     return token, username, prefix
 
 
@@ -480,16 +603,43 @@ def _docker_cmd_env_for_ghcr(token: Optional[str] = None, username: Optional[str
     return env
 
 
-def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
-    """Pull ACTIVATOR_REGISTRY_PREFIX/<service>:latest and retag to 216labs/<service>:latest.
+def _merge_cmd_output(*parts: Optional[str]) -> str:
+    return " ".join(x for x in parts if (x or "").strip())
 
+
+def _try_docker_login_ghcr(token: str, username: str) -> Tuple[bool, str]:
+    """Fallback when DOCKER_AUTH_CONFIG is ignored; stores creds in container ~/.docker (ephemeral)."""
+    if not (token or "").strip():
+        return False, ""
+    try:
+        proc = subprocess.run(
+            ["docker", "login", "ghcr.io", "-u", username or "token", "--password-stdin"],
+            input=(token or "").strip(),
+            text=True,
+            capture_output=True,
+            check=False,
+            cwd=PROJECT_ROOT,
+            env=os.environ.copy(),
+            timeout=45,
+        )
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return False, str(e)
+    detail = _merge_cmd_output(proc.stderr, proc.stdout)
+    return proc.returncode == 0, detail[:800]
+
+
+def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
+    """Pull ACTIVATOR_REGISTRY_PREFIX/<short>:latest and retag to 216labs/<short>:latest.
+
+    Short name comes from compose image when possible (service name may differ from image repo).
     Returns (ok, diagnostic). On failure, diagnostic includes docker output and auth hints when needed.
     """
     _token, _user, registry_prefix = get_effective_ghcr_auth()
     if not registry_prefix:
         return False, "ACTIVATOR_REGISTRY_PREFIX is empty; cannot pull from GHCR."
-    remote = f"{registry_prefix.rstrip('/')}/{docker_service}:latest"
-    local = f"216labs/{docker_service}:latest"
+    image_short = registry_image_short_for_service(docker_service)
+    remote = f"{registry_prefix.rstrip('/')}/{image_short}:latest"
+    local = f"216labs/{image_short}:latest"
     env = _docker_cmd_env_for_ghcr(_token, _user)
     auth_hint = ""
     if not (_token or "").strip():
@@ -497,9 +647,13 @@ def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
             "GHCR_TOKEN is not set in container env or admin env_vars (216labs.db). "
             "Private GHCR images need a PAT with read:packages. "
         )
+    hint_extra = ""
+    if image_short != docker_service:
+        hint_extra = f"(compose image short={image_short!r}, service={docker_service!r}) "
 
+    login_tried = False
     last_detail = ""
-    for attempt in range(3):
+    for attempt in range(5):
         pull = subprocess.run(
             ["docker", "pull", remote],
             cwd=PROJECT_ROOT,
@@ -507,7 +661,43 @@ def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
             capture_output=True,
             check=False,
             env=env,
+            timeout=600,
         )
+        if pull.returncode != 0:
+            chunk = _merge_cmd_output(pull.stderr, pull.stdout)
+            last_detail = (chunk or "docker pull failed with no output")[:1800]
+            low = last_detail.lower()
+            if (
+                (_token or "").strip()
+                and not login_tried
+                and attempt < 3
+                and any(
+                    x in low
+                    for x in (
+                        "denied",
+                        "unauthorized",
+                        "authentication required",
+                        "unauthorized:",
+                    )
+                )
+            ):
+                login_tried = True
+                ok_login, login_msg = _try_docker_login_ghcr(_token, _user)
+                if ok_login:
+                    continue
+                if login_msg:
+                    last_detail = f"{last_detail} docker_login_fallback: {login_msg}"
+            if auth_hint and (
+                "denied" in low
+                or "unauthorized" in low
+                or "authentication required" in low
+                or "no such image" in low
+            ):
+                last_detail = auth_hint + last_detail
+            if attempt < 4:
+                time.sleep(1.2 + attempt * 0.6)
+            continue
+
         tag = subprocess.run(
             ["docker", "tag", remote, local],
             cwd=PROJECT_ROOT,
@@ -515,19 +705,30 @@ def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
             capture_output=True,
             check=False,
             env=env,
+            timeout=60,
         )
-        if pull.returncode == 0 and tag.returncode == 0:
-            return True, ""
-        chunk = " ".join(
-            x
-            for x in (pull.stderr, pull.stdout, tag.stderr, tag.stdout)
-            if (x or "").strip()
-        )
-        last_detail = (chunk or "docker pull/tag failed with no output")[:1800]
-        if attempt < 2:
-            time.sleep(1.5)
+        if tag.returncode != 0:
+            last_detail = _merge_cmd_output(tag.stderr, tag.stdout)[:1800] or "docker tag failed"
+            if attempt < 4:
+                time.sleep(1.0)
+            continue
 
-    out = last_detail
+        inspect = subprocess.run(
+            ["docker", "image", "inspect", local],
+            cwd=PROJECT_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+            env=env,
+            timeout=30,
+        )
+        if inspect.returncode == 0:
+            return True, ""
+        last_detail = _merge_cmd_output(inspect.stderr, inspect.stdout)[:1800] or "docker image inspect failed"
+        if attempt < 4:
+            time.sleep(0.8)
+
+    out = hint_extra + last_detail if hint_extra else last_detail
     low = out.lower()
     if auth_hint and (
         "denied" in low
@@ -540,8 +741,9 @@ def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
 
 
 def try_pull_image(docker_service: str) -> subprocess.CompletedProcess:
+    short = registry_image_short_for_service(docker_service)
     return subprocess.run(
-        ["docker", "pull", f"216labs/{docker_service}:latest"],
+        ["docker", "pull", f"216labs/{short}:latest"],
         cwd=PROJECT_ROOT,
         text=True,
         capture_output=True,
@@ -638,7 +840,7 @@ def start_app(app_id: str) -> Dict[str, object]:
             if (_diag or "").strip():
                 registry_pull_notes = _diag.strip()
 
-        up = run_compose("up", "-d", "--no-build", docker_service)
+        up = run_compose_up_with_retries(docker_service)
         if up.returncode != 0:
             pull_ok, pull_diag = try_registry_pull(docker_service)
             if (pull_diag or "").strip():
@@ -648,11 +850,11 @@ def start_app(app_id: str) -> Dict[str, object]:
                     else pull_diag.strip()
                 )
             if pull_ok:
-                up = run_compose("up", "-d", "--no-build", docker_service)
+                up = run_compose_up_with_retries(docker_service)
         if up.returncode != 0 and TRY_DOCKER_PULL:
             pull = try_pull_image(docker_service)
             if pull.returncode == 0:
-                up = run_compose("up", "-d", "--no-build", docker_service)
+                up = run_compose_up_with_retries(docker_service)
 
         if up.returncode != 0:
             deployed = trigger_remote_deploy(app_id, docker_service)
@@ -667,9 +869,10 @@ def start_app(app_id: str) -> Dict[str, object]:
                 return {"ok": False, "status": status}
             err = up.stderr.strip() or up.stdout.strip() or "Container start failed."
             low = err.lower()
+            img_short = registry_image_short_for_service(docker_service)
             if "no such image" in low or "pull access denied" in low or "pulling" in low:
                 err = (
-                    f"{err} — Image 216labs/{docker_service}:latest must exist on the droplet. "
+                    f"{err} — Image 216labs/{img_short}:latest must exist on the droplet (or GHCR). "
                     f"Run ./deploy.sh from a machine that has the image locally (deploy syncs missing tags); "
                     f"do not build on the server."
                 )
@@ -726,16 +929,18 @@ def start_app(app_id: str) -> Dict[str, object]:
 @app.get("/healthz")
 def healthz():
     tok, _u, reg = get_effective_ghcr_auth()
+    env_tok = bool(os.environ.get("GHCR_TOKEN", "").strip())
     return jsonify(
         {
             "ok": True,
             "service": "activator",
+            "docker_ok": docker_daemon_ok(),
             "max_concurrent_apps": MAX_CONCURRENT_APPS,
             "lru_enabled": MAX_CONCURRENT_APPS > 0,
             "manifest_fallback": True,
             "registry_prefix": reg or None,
             "ghcr_auth_configured": bool(tok),
-            "ghcr_auth_source": "env" if os.environ.get("GHCR_TOKEN", "").strip() else ("db" if tok else "none"),
+            "ghcr_auth_source": "env" if env_tok else ("db" if tok else "none"),
             "pull_before_cold_start": PULL_BEFORE_COLD_START,
             "block_start_services": sorted(BLOCK_START_DOCKER_SERVICES),
         }
