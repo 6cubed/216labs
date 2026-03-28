@@ -116,7 +116,8 @@ services:
       - GEMINI_API_KEY=${ONEROOM_GEMINI_API_KEY:-}
     expose:
       - "3000"
-    mem_limit: 256m
+    # Next standalone + vision routes can spike RAM; 256m OOM-kills during cold start on small VPS.
+    mem_limit: 512m
 
   # ── OneFit ────────────────────────────────────────────────────
   onefit:

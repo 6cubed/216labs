@@ -36,7 +36,7 @@ www.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=1pageresearch&dest=https%3A%2F%2F1pageresearch.6cubed.app" 302
 		}
@@ -55,7 +55,7 @@ agimemes.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=agimemes&dest=https%3A%2F%2Fagimemes.6cubed.app" 302
 		}
@@ -70,7 +70,7 @@ agitshirts.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=agitshirts&dest=https%3A%2F%2Fagitshirts.6cubed.app" 302
 		}
@@ -85,7 +85,7 @@ angelwatcher.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=angelwatcher&dest=https%3A%2F%2Fangelwatcher.6cubed.app" 302
 		}
@@ -100,7 +100,7 @@ artisinaleurope.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=artisinaleurope&dest=https%3A%2F%2Fartisinaleurope.6cubed.app" 302
 		}
@@ -115,7 +115,7 @@ audioaicheckup.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=audioaicheckup&dest=https%3A%2F%2Faudioaicheckup.6cubed.app" 302
 		}
@@ -130,7 +130,7 @@ avatar.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=avatar&dest=https%3A%2F%2Favatar.6cubed.app" 302
 		}
@@ -145,7 +145,7 @@ bigleroys.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=bigleroys&dest=https%3A%2F%2Fbigleroys.6cubed.app" 302
 		}
@@ -160,7 +160,7 @@ blog.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=blog&dest=https%3A%2F%2Fblog.6cubed.app" 302
 		}
@@ -175,7 +175,7 @@ bugbounty.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=bugbounty&dest=https%3A%2F%2Fbugbounty.6cubed.app" 302
 		}
@@ -190,7 +190,7 @@ calibratedai.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=calibratedai&dest=https%3A%2F%2Fcalibratedai.6cubed.app" 302
 		}
@@ -205,7 +205,7 @@ cron-runner.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=cron-runner&dest=https%3A%2F%2Fcron-runner.6cubed.app" 302
 		}
@@ -220,7 +220,7 @@ crowdbulk.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=crowdbulk&dest=https%3A%2F%2Fcrowdbulk.6cubed.app" 302
 		}
@@ -235,7 +235,7 @@ emailgpt.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=emailgpt&dest=https%3A%2F%2Femailgpt.6cubed.app" 302
 		}
@@ -250,7 +250,7 @@ euromaxxers.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=euromaxxers&dest=https%3A%2F%2Feuromaxxers.6cubed.app" 302
 		}
@@ -265,7 +265,7 @@ explore.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=explore&dest=https%3A%2F%2Fexplore.6cubed.app" 302
 		}
@@ -280,7 +280,7 @@ facerate.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=facerate&dest=https%3A%2F%2Ffacerate.6cubed.app" 302
 		}
@@ -295,7 +295,7 @@ germandaily.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=germandaily&dest=https%3A%2F%2Fgermandaily.6cubed.app" 302
 		}
@@ -310,7 +310,7 @@ groundtruth.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=groundtruth&dest=https%3A%2F%2Fgroundtruth.6cubed.app" 302
 		}
@@ -325,7 +325,7 @@ happypath.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=happypath&dest=https%3A%2F%2Fhappypath.6cubed.app" 302
 		}
@@ -340,7 +340,7 @@ hello-flask.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=hello-flask&dest=https%3A%2F%2Fhello-flask.6cubed.app" 302
 		}
@@ -355,7 +355,7 @@ hello-nextjs.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=hello-nextjs&dest=https%3A%2F%2Fhello-nextjs.6cubed.app" 302
 		}
@@ -370,7 +370,7 @@ hivefind.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=hivefind&dest=https%3A%2F%2Fhivefind.6cubed.app" 302
 		}
@@ -385,7 +385,7 @@ impulse.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=impulse&dest=https%3A%2F%2Fimpulse.6cubed.app" 302
 		}
@@ -400,7 +400,7 @@ labshq.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=labshq&dest=https%3A%2F%2Flabshq.6cubed.app" 302
 		}
@@ -415,7 +415,7 @@ landing.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=landing&dest=https%3A%2F%2Flanding.6cubed.app" 302
 		}
@@ -430,7 +430,7 @@ llminternals.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=llminternals&dest=https%3A%2F%2Fllminternals.6cubed.app" 302
 		}
@@ -445,7 +445,7 @@ marketing.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=marketing&dest=https%3A%2F%2Fmarketing.6cubed.app" 302
 		}
@@ -460,7 +460,7 @@ maxlearn.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=maxlearn&dest=https%3A%2F%2Fmaxlearn.6cubed.app" 302
 		}
@@ -475,7 +475,7 @@ mediate.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=mediate&dest=https%3A%2F%2Fmediate.6cubed.app" 302
 		}
@@ -490,7 +490,7 @@ merch.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=merch&dest=https%3A%2F%2Fmerch.6cubed.app" 302
 		}
@@ -505,7 +505,7 @@ muinteoir.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=muinteoir&dest=https%3A%2F%2Fmuinteoir.6cubed.app" 302
 		}
@@ -520,7 +520,7 @@ mysteryshopper.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=mysteryshopper&dest=https%3A%2F%2Fmysteryshopper.6cubed.app" 302
 		}
@@ -535,7 +535,7 @@ npcworld.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=npcworld&dest=https%3A%2F%2Fnpcworld.6cubed.app" 302
 		}
@@ -550,7 +550,7 @@ offlinellm.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=offlinellm&dest=https%3A%2F%2Fofflinellm.6cubed.app" 302
 		}
@@ -565,7 +565,7 @@ onefit.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=onefit&dest=https%3A%2F%2Fonefit.6cubed.app" 302
 		}
@@ -580,7 +580,7 @@ onefitblog.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=onefitblog&dest=https%3A%2F%2Fonefitblog.6cubed.app" 302
 		}
@@ -595,7 +595,7 @@ oneroom.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=oneroom&dest=https%3A%2F%2Foneroom.6cubed.app" 302
 		}
@@ -610,7 +610,7 @@ pipesecure.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=pipesecure&dest=https%3A%2F%2Fpipesecure.6cubed.app" 302
 		}
@@ -625,7 +625,7 @@ pocket.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=pocket&dest=https%3A%2F%2Fpocket.6cubed.app" 302
 		}
@@ -640,7 +640,7 @@ pocketcursor.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=pocketcursor&dest=https%3A%2F%2Fpocketcursor.6cubed.app" 302
 		}
@@ -655,7 +655,7 @@ priors.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=priors&dest=https%3A%2F%2Fpriors.6cubed.app" 302
 		}
@@ -670,7 +670,7 @@ ramblingradio.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=ramblingradio&dest=https%3A%2F%2Framblingradio.6cubed.app" 302
 		}
@@ -685,7 +685,7 @@ russiandaily.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=russiandaily&dest=https%3A%2F%2Frussiandaily.6cubed.app" 302
 		}
@@ -700,7 +700,7 @@ shannonairport.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=shannonairport&dest=https%3A%2F%2Fshannonairport.6cubed.app" 302
 		}
@@ -715,7 +715,7 @@ storybook.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=storybook&dest=https%3A%2F%2Fstorybook.6cubed.app" 302
 		}
@@ -730,7 +730,7 @@ stroll.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=stroll&dest=https%3A%2F%2Fstroll.6cubed.app" 302
 		}
@@ -745,7 +745,7 @@ thezurichdatinggame.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=thezurichdatinggame&dest=https%3A%2F%2Fthezurichdatinggame.6cubed.app" 302
 		}
@@ -760,7 +760,7 @@ tigertank.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=tigertank&dest=https%3A%2F%2Ftigertank.6cubed.app" 302
 		}
@@ -775,7 +775,7 @@ tldrtech.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=tldrtech&dest=https%3A%2F%2Ftldrtech.6cubed.app" 302
 		}
@@ -790,7 +790,7 @@ tortellini.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=tortellini&dest=https%3A%2F%2Ftortellini.6cubed.app" 302
 		}
@@ -805,7 +805,7 @@ valentine.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=valentine&dest=https%3A%2F%2Fvalentine.6cubed.app" 302
 		}
@@ -820,7 +820,7 @@ vc.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=vc&dest=https%3A%2F%2Fvc.6cubed.app" 302
 		}
@@ -835,7 +835,7 @@ workforce.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=workforce&dest=https%3A%2F%2Fworkforce.6cubed.app" 302
 		}
@@ -850,7 +850,7 @@ worldphoto.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=worldphoto&dest=https%3A%2F%2Fworldphoto.6cubed.app" 302
 		}
@@ -865,7 +865,7 @@ zurichrunclubs.6cubed.app {
 		}
 	}
 	handle_errors {
-		@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=zurichrunclubs&dest=https%3A%2F%2Fzurichrunclubs.6cubed.app" 302
 		}

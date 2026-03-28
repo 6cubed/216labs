@@ -123,8 +123,9 @@ for app_id, docker_svc, port in entries:
     if use_warmup:
         dest_enc = quote(f"https://{app_id}.{domain}", safe="")
         warm = f"https://activator.{domain}/warmup?app={app_id}&dest={dest_enc}"
-        # Upstream 502/503/504: handle_response (reverse_proxy does not use handle_errors for these).
-        # Dial / gateway failures: handle_errors with same redirect.
+        # Upstream 502/503/504: handle_response (response came back from upstream).
+        # Dial / DNS / no-backend failures: handle_errors — some Caddy builds use status 0 for dial errors.
+        # Do not use a catch-all handle_errors: app 4xx/5xx responses must not redirect to warmup.
         lines += [
             f"{app_id}.{domain} {{",
             f"\treverse_proxy {docker_svc}:{port} {{",
@@ -134,7 +135,7 @@ for app_id, docker_svc, port in entries:
             "\t\t}",
             "\t}",
             "\thandle_errors {",
-            "\t\t@dial expression `{err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`",
+            "\t\t@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`",
             "\t\thandle @dial {",
             f'\t\t\tredir "{warm}" 302',
             "\t\t}",

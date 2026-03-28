@@ -223,7 +223,8 @@ def http_upstream_ready(docker_service: str, port: int, timeout: float = 8.0) ->
     """True when something accepts HTTP on the compose service (avoids Caddy↔warmup redirect loops)."""
     per_path = max(1.2, min(timeout, 12.0) / 2)
     headers = {"Connection": "close", "User-Agent": "activator-health/1.0"}
-    for path in ("/", "/healthz"):
+    # Prefer /healthz first — Next.js / can compile slowly on first hit; health routes are cheap.
+    for path in ("/healthz", "/"):
         url = f"http://{docker_service}:{port}{path}"
         try:
             req = urlrequest.Request(url, headers=headers)
