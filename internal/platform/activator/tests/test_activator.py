@@ -142,6 +142,17 @@ class ActivatorTests(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"]["phase"], "ready")
 
+    def test_manifest_never_evict_skips_lru_candidates(self):
+        with patch.object(
+            activator, "running_compose_services", return_value=["oneroom"]
+        ), patch.object(
+            activator, "docker_service_to_app_id", return_value="oneroom"
+        ), patch.object(
+            activator, "manifest_never_evict", return_value=True
+        ), patch.object(activator, "get_last_accessed_at", return_value=None):
+            c = activator.get_evictable_running_candidates()
+        self.assertEqual(c, [])
+
     def test_ghcr_auth_reads_token_from_db_when_env_empty(self):
         fd, path = tempfile.mkstemp(suffix=".db")
         os.close(fd)

@@ -21,7 +21,7 @@ app = Flask(__name__)
 PROJECT_ROOT = os.environ.get("ACTIVATOR_PROJECT_ROOT", "/workspace")
 DB_PATH = os.environ.get("ACTIVATOR_DB_PATH", os.path.join(PROJECT_ROOT, "216labs.db"))
 APP_HOST = os.environ.get("APP_HOST", "6cubed.app")
-START_TIMEOUT_SECONDS = int(os.environ.get("ACTIVATOR_START_TIMEOUT_SECONDS", "120"))
+START_TIMEOUT_SECONDS = int(os.environ.get("ACTIVATOR_START_TIMEOUT_SECONDS", "240"))
 DEPLOY_TRIGGER_URL = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_URL", "").strip()
 DEPLOY_TRIGGER_TOKEN = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_TOKEN", "").strip()
 
@@ -219,9 +219,9 @@ def get_internal_http_port(app_id: str) -> int:
     return 3000
 
 
-def http_upstream_ready(docker_service: str, port: int, timeout: float = 2.5) -> bool:
+def http_upstream_ready(docker_service: str, port: int, timeout: float = 8.0) -> bool:
     """True when something accepts HTTP on the compose service (avoids Caddy↔warmup redirect loops)."""
-    per_path = max(0.9, min(timeout, 4.0) / 2)
+    per_path = max(1.2, min(timeout, 12.0) / 2)
     headers = {"Connection": "close", "User-Agent": "activator-health/1.0"}
     for path in ("/", "/healthz"):
         url = f"http://{docker_service}:{port}{path}"
@@ -365,6 +365,14 @@ def running_compose_services() -> List[str]:
     return [s.strip() for s in ps.stdout.splitlines() if s.strip()]
 
 
+def manifest_never_evict(app_id: str) -> bool:
+    """When true in manifest.json, LRU/reaper must not stop this app (opt-in per product)."""
+    m = load_manifest_for_app(app_id)
+    if not m:
+        return False
+    return bool(m.get("activator_never_evict") or m.get("never_evict"))
+
+
 def get_evictable_running_candidates() -> List[Tuple[str, str, Optional[str]]]:
     """(docker_service, app_id, last_accessed_at) for running evictable compose services."""
     out: List[Tuple[str, str, Optional[str]]] = []
@@ -373,6 +381,8 @@ def get_evictable_running_candidates() -> List[Tuple[str, str, Optional[str]]]:
             continue
         aid = docker_service_to_app_id(svc)
         if not aid:
+            continue
+        if manifest_never_evict(aid):
             continue
         out.append((svc, aid, get_last_accessed_at(aid)))
     return out
@@ -508,6 +518,29 @@ def try_pull_image(docker_service: str) -> subprocess.CompletedProcess:
     )
 
 
+def _wait_for_http_after_up(
+    app_id: str,
+    docker_service: str,
+    internal_port: int,
+    deadline: float,
+) -> bool:
+    """Poll until HTTP responds or deadline. Updates status while waiting."""
+    while time.time() < deadline:
+        if compose_running(docker_service) and http_upstream_ready(
+            docker_service, internal_port
+        ):
+            return True
+        if compose_running(docker_service):
+            set_status(
+                app_id,
+                "starting",
+                "Container up; waiting for HTTP…",
+                docker_service=docker_service,
+            )
+        time.sleep(0.5)
+    return False
+
+
 def trigger_remote_deploy(app_id: str, docker_service: str) -> bool:
     if not DEPLOY_TRIGGER_URL:
         return False
@@ -603,28 +636,39 @@ def start_app(app_id: str) -> Dict[str, object]:
             return {"ok": False, "status": status}
 
         deadline = time.time() + START_TIMEOUT_SECONDS
-        while time.time() < deadline:
-            if compose_running(docker_service) and http_upstream_ready(
-                docker_service, internal_port
-            ):
-                set_runtime_state(app_id, "ready", "", touch_started=True, touch_accessed=True)
-                status = set_status(
-                    app_id,
-                    "ready",
-                    "App is serving HTTP.",
-                    docker_service=docker_service,
-                )
-                return {"ok": True, "status": status}
-            if compose_running(docker_service):
-                set_status(
-                    app_id,
-                    "starting",
-                    "Container up; waiting for HTTP…",
-                    docker_service=docker_service,
-                )
-            time.sleep(0.5)
+        if _wait_for_http_after_up(app_id, docker_service, internal_port, deadline):
+            set_runtime_state(app_id, "ready", "", touch_started=True, touch_accessed=True)
+            status = set_status(
+                app_id,
+                "ready",
+                "App is serving HTTP.",
+                docker_service=docker_service,
+            )
+            return {"ok": True, "status": status}
 
-        msg = "Container did not become reachable over HTTP before timeout."
+        set_status(
+            app_id,
+            "starting",
+            "HTTP not ready in time; restarting container once…",
+            docker_service=docker_service,
+        )
+        run_compose("restart", "-t", "15", docker_service)
+        retry_deadline = time.time() + max(90, START_TIMEOUT_SECONDS // 2)
+        if _wait_for_http_after_up(app_id, docker_service, internal_port, retry_deadline):
+            set_runtime_state(app_id, "ready", "", touch_started=True, touch_accessed=True)
+            status = set_status(
+                app_id,
+                "ready",
+                "App is serving HTTP (after restart).",
+                docker_service=docker_service,
+            )
+            return {"ok": True, "status": status}
+
+        msg = (
+            "Container did not become reachable over HTTP before timeout "
+            f"({START_TIMEOUT_SECONDS}s + one restart window). "
+            "Check container logs and memory limits; Next.js apps benefit from /healthz."
+        )
         set_runtime_state(app_id, "failed", msg, touch_accessed=True)
         status = set_status(app_id, "failed", msg, docker_service=docker_service)
         return {"ok": False, "status": status}
@@ -731,12 +775,14 @@ def warmup():
     let bounced = JSON.parse(sessionStorage.getItem(bounceKey) || '{{"n":0,"t":0}}');
     if (Date.now() - bounced.t > 300000) bounced = {{ n: 0, t: Date.now() }};
 
-    if (bounced.n >= 5) {{
+    if (bounced.n >= 8) {{
       statusEl.textContent = "This page reloaded too many times while the app stayed unreachable. Wait a minute, then try the site again.";
     }} else {{
       bounced.n += 1;
       bounced.t = Date.now();
       sessionStorage.setItem(bounceKey, JSON.stringify(bounced));
+
+      let failedRetries = 0;
 
       async function start() {{
         try {{
@@ -756,7 +802,14 @@ def warmup():
             return;
           }}
           if (data.phase === "failed") {{
-            statusEl.textContent = `Failed: ${{data.message || "unknown error"}}`;
+            if (failedRetries < 5) {{
+              failedRetries += 1;
+              statusEl.textContent = "Recovering — retrying start (" + failedRetries + "/5)…";
+              setTimeout(start, 4000);
+              setTimeout(poll, 2000);
+              return;
+            }}
+            statusEl.textContent = `Still failing after automatic retries. ${{data.message || "unknown error"}}`;
             return;
           }}
         }} catch (_err) {{

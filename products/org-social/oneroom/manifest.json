@@ -7,6 +7,7 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "oneroom",
+  "activator_never_evict": true,
   "build_context": "./products/org-social/oneroom",
   "stack": {
     "frontend": "Next.js",

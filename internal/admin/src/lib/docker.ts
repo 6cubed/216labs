@@ -59,8 +59,8 @@ export async function startContainer(
     process.env.ACTIVATOR_INTERNAL_URL || "http://activator:3040"
   ).replace(/\/$/, "");
   const url = `${base}/api/start/${encodeURIComponent(appId)}`;
-  // Activator waits up to ACTIVATOR_START_TIMEOUT_SECONDS for HTTP *after* compose up/pull.
-  // Total time often exceeds that cap; aborting at 120s caused flaky admin "on demand" failures.
+  // Activator waits up to ACTIVATOR_START_TIMEOUT_SECONDS for HTTP after compose up, then may restart once.
+  // Keep this above gunicorn timeout / worst-case cold start (see activator Dockerfile).
   const ms = Number.parseInt(
     process.env.ACTIVATOR_ADMIN_FETCH_TIMEOUT_MS || "240000",
     10

@@ -33,14 +33,14 @@ services:
       - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-216labs}
       - ACTIVATOR_PROJECT_ROOT=/workspace
       - ACTIVATOR_DB_PATH=/app/216labs.db
-      - ACTIVATOR_START_TIMEOUT_SECONDS=120
+      - ACTIVATOR_START_TIMEOUT_SECONDS=${ACTIVATOR_START_TIMEOUT_SECONDS:-240}
       - ACTIVATOR_REGISTRY_PREFIX=${ACTIVATOR_REGISTRY_PREFIX:-ghcr.io/6cubed/216labs}
       # Pull GHCR :latest before cold compose up so CI is not behind stale local tags.
       - ACTIVATOR_PULL_BEFORE_COLD_START=${ACTIVATOR_PULL_BEFORE_COLD_START:-true}
       - GHCR_TOKEN=${GHCR_TOKEN:-}
       - GHCR_USERNAME=${GHCR_USERNAME:-token}
-      # LRU pool: max evictable app containers (non-protected); 0 = unlimited. Default 10 keeps disk/RAM sane on small VPS.
-      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-10}
+      # LRU pool: max evictable app containers (non-protected); 0 = unlimited (default). Set e.g. 10 on RAM-starved VPS only.
+      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-0}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
       # Only edge + admin + marketing root; other apps can be LRU-stopped so cold traffic pulls from GHCR.
       - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing}

@@ -12,7 +12,7 @@
 
 3. **Cold-start pull** — On a **cold** service (not already running and healthy), the activator calls **`docker pull`** from GHCR (`ACTIVATOR_REGISTRY_PREFIX/<service>:latest`) **before** the first `compose up`, so local stale `216labs/<service>:latest` tags are refreshed from CI. Set `ACTIVATOR_PULL_BEFORE_COLD_START=false` to disable (emergency only). If `compose up` still fails, it retries pull + optional `ACTIVATOR_TRY_DOCKER_PULL` (Docker Hub). Use `GHCR_TOKEN` (read:packages) + `GHCR_USERNAME` for private packages. Images are published by `.github/workflows/ghcr-publish.yml`.
 
-4. **LRU reaper** — **Compose defaults to `ACTIVATOR_MAX_CONCURRENT_APPS=10`** (evictable app containers; protected services do not count). Set `0` in `.env` for unlimited (not recommended on small disks). Opening many subdomains in a row will **stop** older containers to stay under the limit unless you raise the cap or add services to `ACTIVATOR_PROTECTED_SERVICES`. Before starting another app the activator **stops** the least-recently-used evictable compose service (by `last_accessed_at`). A background thread repeats the same rule if the pool exceeds the cap.
+4. **LRU reaper** — **Compose defaults to `ACTIVATOR_MAX_CONCURRENT_APPS=0`** (unlimited). Set e.g. `10` in `.env` only on RAM-starved hosts; otherwise browsing many subdomains in a row **stops** older containers and causes surprise cold starts. Before starting another app when the cap is exceeded, the activator **stops** the least-recently-used evictable compose service (by `last_accessed_at`). Manifest `activator_never_evict: true` opts a product out of LRU. A background thread repeats the same rule if the pool exceeds the cap.
 
 **Protected services** (never evicted): `caddy`, `activator`, `admin`, `landing` by default (`ACTIVATOR_PROTECTED_SERVICES`).
 
@@ -43,7 +43,7 @@ Compose sets `pull_policy: never` on each `216labs/*` service so a plain `docker
 
 See `docker-compose.yml` `activator` service. Key variables:
 
-- `ACTIVATOR_MAX_CONCURRENT_APPS` — default **10** in compose; set `0` in `.env` for unlimited (RAM/disk risk on small VPS).
+- `ACTIVATOR_MAX_CONCURRENT_APPS` — default **0** in compose (unlimited); set e.g. `10` in `.env` only when you need a hard cap on small VPS.
 - `ACTIVATOR_REAPER_INTERVAL_SECONDS` — background trim interval (set `0` to disable reaper thread).
 - `ACTIVATOR_PROTECTED_SERVICES` — comma-separated compose service names.
 - `ACTIVATOR_BLOCK_START_SERVICES` — compose services that refuse `/api/start` (default `caddy,activator`).

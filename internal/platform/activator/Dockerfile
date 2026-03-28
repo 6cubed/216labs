@@ -21,5 +21,5 @@ ENV PYTHONUNBUFFERED=1
 ENV PORT=3040
 EXPOSE 3040
 
-# Timeout must exceed ACTIVATOR_START_TIMEOUT_SECONDS (default 120) so cold-start /api/start can finish.
-CMD ["gunicorn", "-b", "0.0.0.0:3040", "--workers", "1", "--timeout", "150", "app:app"]
+# Must exceed worst-case /api/start: ACTIVATOR_START_TIMEOUT_SECONDS + one restart window (see app.py).
+CMD ["gunicorn", "-b", "0.0.0.0:3040", "--workers", "1", "--timeout", "600", "app:app"]
