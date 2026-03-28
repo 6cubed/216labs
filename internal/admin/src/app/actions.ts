@@ -180,8 +180,10 @@ export async function toggleAppDeploy(
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      // Docker uses "no such container"; do not match arbitrary "404" substrings (e.g. in JSON bodies).
       const isNotFound =
-        msg.includes("no such container") || msg.includes("404");
+        /no such container/i.test(msg) ||
+        /^Activator start failed \(404\):/i.test(msg);
 
       if (isNotFound && nextEnabled) {
         // Container was never deployed — revert so DB stays consistent.

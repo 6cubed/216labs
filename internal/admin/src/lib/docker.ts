@@ -4,7 +4,7 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { isGhcrSyncExcludedService } from "@/lib/ghcr-pull";
 
-// Docker Compose names containers as: <project>-<service>-<replica>
+// Compose v2 default name is {project}_{service}_{replica} (underscores). Labels are authoritative.
 const COMPOSE_PROJECT = process.env.COMPOSE_PROJECT_NAME || "216labs";
 const SOCKET_PATH = "/var/run/docker.sock";
 
@@ -17,8 +17,40 @@ function syncProjectRoot(): string {
   ).replace(/\/$/, "");
 }
 
-function containerName(dockerService: string): string {
-  return `${COMPOSE_PROJECT}-${dockerService}-1`;
+/** Resolve the container for a compose service (labels first, then common name patterns). */
+async function getComposeContainer(
+  docker: Dockerode,
+  dockerService: string
+): Promise<Dockerode.Container | null> {
+  try {
+    const containers = await docker.listContainers({
+      all: true,
+      filters: JSON.stringify({
+        label: [
+          `com.docker.compose.project=${COMPOSE_PROJECT}`,
+          `com.docker.compose.service=${dockerService}`,
+        ],
+      }),
+    });
+    if (containers.length > 0) {
+      return docker.getContainer(containers[0].Id);
+    }
+  } catch {
+    /* fall through */
+  }
+  for (const name of [
+    `${COMPOSE_PROJECT}_${dockerService}_1`,
+    `${COMPOSE_PROJECT}-${dockerService}-1`,
+  ]) {
+    const c = docker.getContainer(name);
+    try {
+      await c.inspect();
+      return c;
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 function getClient(): Dockerode | null {
@@ -42,17 +74,13 @@ export async function startContainer(
 ): Promise<void> {
   const docker = getClient();
   if (!docker) return;
-  const name = containerName(dockerService);
-  const container = docker.getContainer(name);
-  try {
+  const container = await getComposeContainer(docker, dockerService);
+  if (container) {
     const info = await container.inspect();
     if (!info.State.Running) {
       await container.start();
     }
     return;
-  } catch (err: unknown) {
-    const code = (err as { statusCode?: number }).statusCode;
-    if (code !== 404) throw err;
   }
 
   const base = (
@@ -89,7 +117,8 @@ export async function startContainer(
 export async function stopContainer(dockerService: string): Promise<void> {
   const docker = getClient();
   if (!docker) return;
-  const container = docker.getContainer(containerName(dockerService));
+  const container = await getComposeContainer(docker, dockerService);
+  if (!container) return;
   try {
     const info = await container.inspect();
     if (info.State.Running) {
@@ -110,9 +139,9 @@ export async function getContainerStatus(
   const docker = getClient();
   if (!docker) return "unknown";
   try {
-    const info = await docker
-      .getContainer(containerName(dockerService))
-      .inspect();
+    const container = await getComposeContainer(docker, dockerService);
+    if (!container) return "missing";
+    const info = await container.inspect();
     return info.State.Running ? "running" : "stopped";
   } catch (err: unknown) {
     if (
@@ -137,7 +166,8 @@ export async function getContainerLogs(
   const docker = getClient();
   if (!docker) return [];
   try {
-    const container = docker.getContainer(containerName(dockerService));
+    const container = await getComposeContainer(docker, dockerService);
+    if (!container) return [];
     const buffer = await new Promise<Buffer>((resolve, reject) => {
       container.logs(
         { stdout: true, stderr: true, tail, follow: false },
