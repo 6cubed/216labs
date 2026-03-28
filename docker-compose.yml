@@ -39,8 +39,8 @@ services:
       - ACTIVATOR_PULL_BEFORE_COLD_START=${ACTIVATOR_PULL_BEFORE_COLD_START:-true}
       - GHCR_TOKEN=${GHCR_TOKEN:-}
       - GHCR_USERNAME=${GHCR_USERNAME:-token}
-      # LRU pool: max evictable app containers (non-protected); 0 = unlimited (default). Set e.g. 10 on RAM-starved VPS only.
-      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-0}
+      # Showroom: max evictable app containers (non-protected); LRU evicts to make room + GHCR pull for the requested app. 0 = unlimited (dev / huge RAM only).
+      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-10}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
       # Only edge + admin + marketing root; other apps can be LRU-stopped so cold traffic pulls from GHCR.
       - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing}

@@ -64,7 +64,7 @@ The factory separates three quantities:
 - **Cold by default** — demos **sleep** when idle; the **edge** (Caddy + Activator) stays **always on** within the droplet’s tiny footprint.
 - **No server-side builds** — **never** compile on the droplet; **build locally or in CI**, transfer artifacts. That keeps CPU spikes off the **\$6** box and avoids installing toolchains in production.
 - **Deploy batching & priority** — when disk or time is tight, **ship the spine first** (proxy, activator, admin), then **tail apps** in later batches. The deploy script already thinks in terms of **caps** and **priority lists** so one bad tail app does not starve the whole fleet.
-- **Optional LRU eviction** — you *can* cap concurrent running apps to protect RAM, at the cost of **churn** if someone browses many subdomains quickly. Defaults in a **browsing** grid often favor **no cap**; a **RAM-starved** host might turn the cap back on with eyes open.
+- **LRU pool (showroom)** — cap **evictable** running apps (default **10** in compose) so the droplet can **hotswap**: evict least-recently-used demos to make room for the **requested** app and pull from GHCR if needed. Set **`0`** only to disable eviction (e.g. dev or lots of RAM).
 
 **When you outgrow \$6 without changing the story**
 
@@ -313,7 +313,7 @@ So “thousands of demos” means **thousands available to wake**, not thousands
 
 While writing this, two behaviours did not match a grid you can actually browse:
 
-1. **LRU eviction with a low cap** — We had experimented with a **max concurrent app** pool so the droplet would stop idle containers to save RAM. That is valid on paper, but **browsing many subdomains in a row** looks like an attack on the pool: container 11 evicts container 1, so demos “randomly” go cold. **Default is now unlimited** (\`ACTIVATOR_MAX_CONCURRENT_APPS=0\`); turn a cap on only when you are truly RAM-starved and understand the tradeoff. Edge services (**Caddy, Activator, Admin, Landing**) stay protected from eviction when a cap is enabled.
+1. **LRU pool = showroom hotswap** — The **showroom** model is **100+ apps in the catalog**, only **N** evictable containers running at once. **Browsing many subdomains in a row** is exactly when **LRU** evicts older demos to **make room** for the next one and **pull** its image from GHCR if needed. Compose defaults to \`ACTIVATOR_MAX_CONCURRENT_APPS=10\`; set \`0\` only to turn off eviction. Edge services (**Caddy, Activator, Admin, Landing**) stay protected from eviction; per-app \`activator_never_evict\` in a manifest opts out.
 
 2. **SQLite as a gate** — Cold start used to require a row in \`216labs.db\` for every app. That is great for the admin dashboard, but it is a poor gate for **git-first** demos. The Activator now **falls back to \`manifest.json\`** on disk (same layout as the rest of the repo) to resolve \`docker_service\` and to refuse apps with **no HTTP port** (\`internal_port <= 0\`). If the image is on the host, you can wake the demo **before** the admin backfill catches up.
 

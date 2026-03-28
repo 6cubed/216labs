@@ -16,7 +16,7 @@ from urllib import request as urlrequest
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
-# v4: LRU off by default; landing protected — avoids evicting when browsing many apps
+# Showroom: compose sets ACTIVATOR_MAX_CONCURRENT_APPS (default 10) — LRU evicts least-recently-used apps to hotswap in the requested one; 0 = unlimited.
 
 PROJECT_ROOT = os.environ.get("ACTIVATOR_PROJECT_ROOT", "/workspace")
 DB_PATH = os.environ.get("ACTIVATOR_DB_PATH", os.path.join(PROJECT_ROOT, "216labs.db"))
