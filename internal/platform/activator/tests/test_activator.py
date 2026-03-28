@@ -62,7 +62,7 @@ class ActivatorTests(unittest.TestCase):
 
         def capture_pull(svc):
             pulls.append(svc)
-            return True
+            return (True, "")
 
         with patch.object(
             activator, "get_app_row", return_value={"docker_service": "pocket"}
@@ -100,7 +100,7 @@ class ActivatorTests(unittest.TestCase):
         ), patch.object(
             activator, "try_pull_image", return_value=DummyProc(returncode=0)
         ), patch.object(
-            activator, "try_registry_pull", return_value=True
+            activator, "try_registry_pull", return_value=(True, "")
         ), patch.object(
             activator, "compose_running", side_effect=fake_running
         ), patch.object(activator, "http_upstream_ready", return_value=True):

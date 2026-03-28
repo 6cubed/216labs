@@ -480,33 +480,63 @@ def _docker_cmd_env_for_ghcr(token: Optional[str] = None, username: Optional[str
     return env
 
 
-def try_registry_pull(docker_service: str) -> bool:
-    """Pull ACTIVATOR_REGISTRY_PREFIX/<service>:latest and retag to 216labs/<service>:latest."""
+def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
+    """Pull ACTIVATOR_REGISTRY_PREFIX/<service>:latest and retag to 216labs/<service>:latest.
+
+    Returns (ok, diagnostic). On failure, diagnostic includes docker output and auth hints when needed.
+    """
     _token, _user, registry_prefix = get_effective_ghcr_auth()
     if not registry_prefix:
-        return False
+        return False, "ACTIVATOR_REGISTRY_PREFIX is empty; cannot pull from GHCR."
     remote = f"{registry_prefix.rstrip('/')}/{docker_service}:latest"
     local = f"216labs/{docker_service}:latest"
     env = _docker_cmd_env_for_ghcr(_token, _user)
-    pull = subprocess.run(
-        ["docker", "pull", remote],
-        cwd=PROJECT_ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-        env=env,
-    )
-    if pull.returncode != 0:
-        return False
-    tag = subprocess.run(
-        ["docker", "tag", remote, local],
-        cwd=PROJECT_ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-        env=env,
-    )
-    return tag.returncode == 0
+    auth_hint = ""
+    if not (_token or "").strip():
+        auth_hint = (
+            "GHCR_TOKEN is not set in container env or admin env_vars (216labs.db). "
+            "Private GHCR images need a PAT with read:packages. "
+        )
+
+    last_detail = ""
+    for attempt in range(3):
+        pull = subprocess.run(
+            ["docker", "pull", remote],
+            cwd=PROJECT_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+            env=env,
+        )
+        tag = subprocess.run(
+            ["docker", "tag", remote, local],
+            cwd=PROJECT_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+            env=env,
+        )
+        if pull.returncode == 0 and tag.returncode == 0:
+            return True, ""
+        chunk = " ".join(
+            x
+            for x in (pull.stderr, pull.stdout, tag.stderr, tag.stdout)
+            if (x or "").strip()
+        )
+        last_detail = (chunk or "docker pull/tag failed with no output")[:1800]
+        if attempt < 2:
+            time.sleep(1.5)
+
+    out = last_detail
+    low = out.lower()
+    if auth_hint and (
+        "denied" in low
+        or "unauthorized" in low
+        or "authentication required" in low
+        or "no such image" in low
+    ):
+        out = auth_hint + out
+    return False, out
 
 
 def try_pull_image(docker_service: str) -> subprocess.CompletedProcess:
@@ -602,12 +632,23 @@ def start_app(app_id: str) -> Dict[str, object]:
             )
             return {"ok": True, "status": status}
 
+        registry_pull_notes = ""
         if PULL_BEFORE_COLD_START:
-            try_registry_pull(docker_service)
+            _ok, _diag = try_registry_pull(docker_service)
+            if (_diag or "").strip():
+                registry_pull_notes = _diag.strip()
 
         up = run_compose("up", "-d", "--no-build", docker_service)
-        if up.returncode != 0 and try_registry_pull(docker_service):
-            up = run_compose("up", "-d", "--no-build", docker_service)
+        if up.returncode != 0:
+            pull_ok, pull_diag = try_registry_pull(docker_service)
+            if (pull_diag or "").strip():
+                registry_pull_notes = (
+                    f"{registry_pull_notes}\n{pull_diag.strip()}".strip()
+                    if registry_pull_notes
+                    else pull_diag.strip()
+                )
+            if pull_ok:
+                up = run_compose("up", "-d", "--no-build", docker_service)
         if up.returncode != 0 and TRY_DOCKER_PULL:
             pull = try_pull_image(docker_service)
             if pull.returncode == 0:
@@ -632,6 +673,8 @@ def start_app(app_id: str) -> Dict[str, object]:
                     f"Run ./deploy.sh from a machine that has the image locally (deploy syncs missing tags); "
                     f"do not build on the server."
                 )
+            if registry_pull_notes:
+                err = f"{err}\n\nRegistry pull diagnostics:\n{registry_pull_notes}"
             set_runtime_state(app_id, "failed", err, touch_accessed=True)
             status = set_status(app_id, "failed", err, docker_service=docker_service)
             return {"ok": False, "status": status}
