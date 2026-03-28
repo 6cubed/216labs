@@ -42,12 +42,12 @@
     },
     {
       "key": "GHCR_USERNAME",
-      "description": "GitHub username for ghcr.io login (PAT owner); use with GHCR_TOKEN read:packages",
+      "description": "GitHub username for ghcr.io login (PAT owner); use with GHCR_TOKEN for private packages only",
       "is_secret": false
     },
     {
       "key": "GHCR_TOKEN",
-      "description": "PAT with read:packages for ghcr.io so activator can pull on cold start",
+      "description": "Optional: PAT with read:packages for private GHCR images only; public packages pull anonymously",
       "is_secret": true
     }
   ]

@@ -641,11 +641,12 @@ def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
     remote = f"{registry_prefix.rstrip('/')}/{image_short}:latest"
     local = f"216labs/{image_short}:latest"
     env = _docker_cmd_env_for_ghcr(_token, _user)
+    # Public GHCR packages can be pulled anonymously; a PAT is only required for private packages.
     auth_hint = ""
     if not (_token or "").strip():
         auth_hint = (
-            "GHCR_TOKEN is not set in container env or admin env_vars (216labs.db). "
-            "Private GHCR images need a PAT with read:packages. "
+            "GHCR_TOKEN is not set (public GHCR images do not require it). "
+            "If this package is private, set a PAT with read:packages in env or admin env_vars (216labs.db). "
         )
     hint_extra = ""
     if image_short != docker_service:
@@ -691,7 +692,6 @@ def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
                 "denied" in low
                 or "unauthorized" in low
                 or "authentication required" in low
-                or "no such image" in low
             ):
                 last_detail = auth_hint + last_detail
             if attempt < 4:
@@ -734,7 +734,6 @@ def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
         "denied" in low
         or "unauthorized" in low
         or "authentication required" in low
-        or "no such image" in low
     ):
         out = auth_hint + out
     return False, out
