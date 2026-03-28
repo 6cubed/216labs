@@ -1,8 +1,8 @@
 {
   "id": "tortellini",
   "name": "Tortellini Studio",
-  "tagline": "Warm tortellini-inspired palette and folded-corner UI",
-  "description": "Single-page experience using the user's tortellini photo as hero art: tomato-cream tones, parmesan cream, parsley green, and a comfort dial — no backend.",
+  "tagline": "Tortellini & spaghetti gamberoni — two palettes, one studio",
+  "description": "Dual-dish page: tortellini and spaghetti gamberoni hero shots, per-plate swatches (tomato/bottarga/chili vs cream/herb), comfort dial — static Next.js.",
   "category": "consumer",
   "internal_port": 3000,
   "memory_limit": "128m",

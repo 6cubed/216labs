@@ -6,10 +6,11 @@ const nunito = Nunito({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Tortellini Studio",
-  description: "A warm, folded-corner UI inspired by creamy tomato sauce, parmesan, and parsley.",
+  description:
+    "Warm pasta-plate UI: tortellini and spaghetti gamberoni with swatches, hero photos, and a comfort dial.",
   openGraph: {
     title: "Tortellini Studio",
-    description: "Comfort-food palette for the web — inspired by a plate of tortellini.",
+    description: "Two plates — tortellini & spaghetti gamberoni — translated into color and glow.",
   },
 };
 
