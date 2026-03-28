@@ -54,8 +54,8 @@ def iter_manifest_dirs():
                     continue
                 if os.path.isfile(os.path.join(sub, "manifest.json")):
                     yield rel_sub.replace("\\", "/"), sub
-                else:
-                    stack.append((sub, rel_sub))
+                # Keep traversing when a parent dir also has manifest.json (e.g. internal/admin + groundtruth).
+                stack.append((sub, rel_sub))
 
 
 for rel_dir, abs_path in iter_manifest_dirs():
