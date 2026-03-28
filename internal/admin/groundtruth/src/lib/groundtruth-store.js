@@ -8,7 +8,30 @@ const SEED_IMAGE_URLS = [
   "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1474511320723-9a56873867b5?auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=800&q=80",
+  // Self-hosted samples (216labs tortellini studio plates)
+  "/samples/tortellini.png",
+  "/samples/gamberoni.png",
 ];
+
+/** Pasta plate samples: merged into existing seed datasets on load so older groundtruth.json picks them up. */
+const PASTA_SAMPLE_URLS = ["/samples/tortellini.png", "/samples/gamberoni.png"];
+
+function mergePastaSamplesIntoSeedDatasets(store) {
+  if (!store?.datasets?.length) return false;
+  const seed =
+    store.datasets.find((d) => d.name === "Street inventory seed set") || store.datasets[0];
+  if (!seed || !Array.isArray(seed.imageUrls)) return false;
+  const seen = new Set(seed.imageUrls);
+  let changed = false;
+  for (const url of PASTA_SAMPLE_URLS) {
+    if (!seen.has(url)) {
+      seed.imageUrls.push(url);
+      seen.add(url);
+      changed = true;
+    }
+  }
+  return changed;
+}
 
 function uid(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -70,6 +93,9 @@ function loadStore() {
     if (!parsed || !Array.isArray(parsed.datasets)) return defaultStore();
     if (!Array.isArray(parsed.tasks)) parsed.tasks = [];
     if (!Array.isArray(parsed.submissions)) parsed.submissions = [];
+    if (mergePastaSamplesIntoSeedDatasets(parsed)) {
+      saveStore(parsed);
+    }
     return parsed;
   } catch {
     return defaultStore();
