@@ -878,6 +878,16 @@ def start_app(app_id: str) -> Dict[str, object]:
                 )
             if registry_pull_notes:
                 err = f"{err}\n\nRegistry pull diagnostics:\n{registry_pull_notes}"
+            elif "no such image" in low or "could not find image" in low:
+                tok, _u, _p = get_effective_ghcr_auth()
+                if not (tok or "").strip():
+                    err = (
+                        f"{err}\n\n"
+                        "No GHCR_TOKEN is configured (see GET /healthz: ghcr_auth_configured). "
+                        "GitHub org images are often private: anonymous docker pull from ghcr.io will not load them. "
+                        "Add read:packages PAT + GHCR_USERNAME in admin Environment (216labs.db), restart the activator "
+                        "container, or run ./deploy.sh to sync images to the droplet."
+                    )
             set_runtime_state(app_id, "failed", err, touch_accessed=True)
             status = set_status(app_id, "failed", err, docker_service=docker_service)
             return {"ok": False, "status": status}
