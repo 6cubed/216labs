@@ -3,6 +3,7 @@
 # change order; no code changes in deploy.sh needed.
 admin
 tortellini
+onefit
 groundtruth
 hello-nextjs
 hello-flask
@@ -42,7 +43,6 @@ offlinellm
 pipesecure
 ramblingradio
 stroll
-onefit
 hivefind
 agimemes
 agitshirts

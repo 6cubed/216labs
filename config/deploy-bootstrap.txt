@@ -3,3 +3,4 @@
 # deploy.sh reads the server admin DB first; this file is not required for GHCR deploys.
 # Greenfield / forks: uncomment or add IDs here if you want a few demos pre-enabled before first UI visit.
 tortellini
+onefit
