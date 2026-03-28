@@ -1,3 +1,6 @@
+import os
+import sqlite3
+import tempfile
 import threading
 import unittest
 from unittest.mock import patch
@@ -138,6 +141,32 @@ class ActivatorTests(unittest.TestCase):
             out = activator.start_app("npcworld")
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"]["phase"], "ready")
+
+    def test_ghcr_auth_reads_token_from_db_when_env_empty(self):
+        fd, path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        conn = sqlite3.connect(path)
+        conn.execute(
+            "CREATE TABLE env_vars (key TEXT NOT NULL, value TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO env_vars (key, value) VALUES ('GHCR_TOKEN', 'tok-from-db')"
+        )
+        conn.execute(
+            "INSERT INTO env_vars (key, value) VALUES ('GHCR_USERNAME', 'u-db')"
+        )
+        conn.commit()
+        conn.close()
+        with patch.object(activator, "DB_PATH", path), patch.dict(
+            os.environ, {"GHCR_TOKEN": ""}, clear=False
+        ):
+            t, u, p = activator.get_effective_ghcr_auth()
+        try:
+            self.assertEqual(t, "tok-from-db")
+            self.assertEqual(u, "u-db")
+            self.assertIn("ghcr.io", p)
+        finally:
+            os.unlink(path)
 
 
 if __name__ == "__main__":

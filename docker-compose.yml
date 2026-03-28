@@ -42,7 +42,8 @@ services:
       # LRU pool: max evictable app containers (non-protected); 0 = unlimited. Default 10 keeps disk/RAM sane on small VPS.
       - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-10}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
-      - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing,bugbounty,hello-nextjs,hello-flask}
+      # Only edge + admin + marketing root; other apps can be LRU-stopped so cold traffic pulls from GHCR.
+      - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing}
       # Compose services that refuse /api/start (avoid restarting edge or self).
       - ACTIVATOR_BLOCK_START_SERVICES=${ACTIVATOR_BLOCK_START_SERVICES:-caddy,activator}
       # Optional: delete 216labs/<svc>:latest on eviction to free disk (next cold start may pull from GHCR).

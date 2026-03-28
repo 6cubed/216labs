@@ -25,7 +25,7 @@ START_TIMEOUT_SECONDS = int(os.environ.get("ACTIVATOR_START_TIMEOUT_SECONDS", "1
 DEPLOY_TRIGGER_URL = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_URL", "").strip()
 DEPLOY_TRIGGER_TOKEN = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_TOKEN", "").strip()
 
-# 0 = unlimited (legacy). Set e.g. 10 on a 1GB droplet so only N app containers stay up.
+# 0 = unlimited. Production compose defaults to 10 so cold starts can LRU-evict to make room.
 MAX_CONCURRENT_APPS = int(os.environ.get("ACTIVATOR_MAX_CONCURRENT_APPS", "0"))
 REAPER_INTERVAL_SECONDS = int(os.environ.get("ACTIVATOR_REAPER_INTERVAL_SECONDS", "120"))
 REMOVE_IMAGE_ON_EVICT = os.environ.get("ACTIVATOR_REMOVE_IMAGE_ON_EVICT", "").strip().lower() in (
@@ -427,12 +427,43 @@ def reaper_loop() -> None:
             pass
 
 
-def _docker_cmd_env_for_ghcr() -> dict[str, str]:
-    """Set DOCKER_AUTH_CONFIG for ghcr.io when GHCR_TOKEN is set (read:packages PAT)."""
+def get_effective_ghcr_auth() -> Tuple[str, str, str]:
+    """Return (token, username, registry_prefix) from process env, else 216labs.db (same as droplet-ghcr-sync)."""
+    token = (os.environ.get("GHCR_TOKEN") or "").strip()
+    username = (os.environ.get("GHCR_USERNAME") or "token").strip() or "token"
+    prefix = (os.environ.get("ACTIVATOR_REGISTRY_PREFIX") or "").strip() or REGISTRY_PREFIX
+    if token:
+        return token, username, prefix
+    try:
+        with db_connection() as conn:
+            rows = conn.execute(
+                "SELECT key, value FROM env_vars WHERE key IN ('GHCR_TOKEN', 'GHCR_USERNAME', 'ACTIVATOR_REGISTRY_PREFIX') AND value != ''"
+            ).fetchall()
+        for key, val in rows:
+            v = str(val).strip()
+            if not v:
+                continue
+            if key == "GHCR_TOKEN":
+                token = v
+            elif key == "GHCR_USERNAME":
+                username = v
+            elif key == "ACTIVATOR_REGISTRY_PREFIX":
+                prefix = v
+    except (sqlite3.OperationalError, OSError, TypeError):
+        pass
+    if not prefix:
+        prefix = REGISTRY_PREFIX or "ghcr.io/6cubed/216labs"
+    return token, username, prefix
+
+
+def _docker_cmd_env_for_ghcr(token: Optional[str] = None, username: Optional[str] = None) -> Dict[str, str]:
+    """Set DOCKER_AUTH_CONFIG for ghcr.io when a PAT is available."""
     env = os.environ.copy()
-    if not GHCR_TOKEN:
+    t = (token if token is not None else GHCR_TOKEN).strip()
+    u = (username if username is not None else GHCR_USERNAME).strip() or "token"
+    if not t:
         return env
-    auth = base64.b64encode(f"{GHCR_USERNAME}:{GHCR_TOKEN}".encode()).decode()
+    auth = base64.b64encode(f"{u}:{t}".encode()).decode()
     cfg = {"auths": {"ghcr.io": {"auth": auth}}}
     env["DOCKER_AUTH_CONFIG"] = json.dumps(cfg)
     return env
@@ -440,11 +471,12 @@ def _docker_cmd_env_for_ghcr() -> dict[str, str]:
 
 def try_registry_pull(docker_service: str) -> bool:
     """Pull ACTIVATOR_REGISTRY_PREFIX/<service>:latest and retag to 216labs/<service>:latest."""
-    if not REGISTRY_PREFIX:
+    _token, _user, registry_prefix = get_effective_ghcr_auth()
+    if not registry_prefix:
         return False
-    remote = f"{REGISTRY_PREFIX.rstrip('/')}/{docker_service}:latest"
+    remote = f"{registry_prefix.rstrip('/')}/{docker_service}:latest"
     local = f"216labs/{docker_service}:latest"
-    env = _docker_cmd_env_for_ghcr()
+    env = _docker_cmd_env_for_ghcr(_token, _user)
     pull = subprocess.run(
         ["docker", "pull", remote],
         cwd=PROJECT_ROOT,
@@ -605,6 +637,7 @@ def start_app(app_id: str) -> Dict[str, object]:
 
 @app.get("/healthz")
 def healthz():
+    tok, _u, reg = get_effective_ghcr_auth()
     return jsonify(
         {
             "ok": True,
@@ -612,8 +645,9 @@ def healthz():
             "max_concurrent_apps": MAX_CONCURRENT_APPS,
             "lru_enabled": MAX_CONCURRENT_APPS > 0,
             "manifest_fallback": True,
-            "registry_prefix": REGISTRY_PREFIX or None,
-            "ghcr_auth_configured": bool(GHCR_TOKEN),
+            "registry_prefix": reg or None,
+            "ghcr_auth_configured": bool(tok),
+            "ghcr_auth_source": "env" if os.environ.get("GHCR_TOKEN", "").strip() else ("db" if tok else "none"),
             "pull_before_cold_start": PULL_BEFORE_COLD_START,
             "block_start_services": sorted(BLOCK_START_DOCKER_SERVICES),
         }
