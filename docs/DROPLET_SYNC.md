@@ -40,7 +40,7 @@ Run once manually:
 SYNC_PROJECT_ROOT=/opt/216labs /opt/216labs/scripts/droplet-ghcr-sync.sh
 ```
 
-Ensure `GHCR_USERNAME` / `GHCR_TOKEN` (read:packages) are set in `.env` or admin **Environment** (stored in `216labs.db`) if packages are private.
+**GHCR auth:** Public packages pull **without** credentials. Set `GHCR_USERNAME` / `GHCR_TOKEN` (read:packages) in `.env` or admin **Environment** (`216labs.db`) **only if** your GHCR packages are **private**.
 
 ## Cron alternative
 

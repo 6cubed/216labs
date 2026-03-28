@@ -42,6 +42,7 @@ TRY_DOCKER_PULL = os.environ.get("ACTIVATOR_TRY_DOCKER_PULL", "").strip().lower(
 # Default to GHCR org path so cold starts can recover from missing local images
 # even when ACTIVATOR_REGISTRY_PREFIX is unset on the droplet.
 REGISTRY_PREFIX = os.environ.get("ACTIVATOR_REGISTRY_PREFIX", "ghcr.io/6cubed/216labs").strip()
+# Optional: public ghcr.io packages allow anonymous docker pull; PAT only for private packages.
 GHCR_TOKEN = os.environ.get("GHCR_TOKEN", "").strip()
 GHCR_USERNAME = os.environ.get("GHCR_USERNAME", "token").strip() or "token"
 # Before first compose up on a cold service, pull GHCR :latest so CI is not behind stale local tags.
@@ -591,7 +592,7 @@ def get_effective_ghcr_auth() -> Tuple[str, str, str]:
 
 
 def _docker_cmd_env_for_ghcr(token: Optional[str] = None, username: Optional[str] = None) -> Dict[str, str]:
-    """Set DOCKER_AUTH_CONFIG for ghcr.io when a PAT is available."""
+    """Set DOCKER_AUTH_CONFIG for ghcr.io when a PAT is set (private packages). Public pulls omit this."""
     env = os.environ.copy()
     t = (token if token is not None else GHCR_TOKEN).strip()
     u = (username if username is not None else GHCR_USERNAME).strip() or "token"

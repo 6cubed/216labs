@@ -52,7 +52,7 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 
 1. **Droplet** — e.g. Docker marketplace image; small instance is fine (containers only, no builds).
 2. **DNS** — wildcard `*.6cubed.app` → your server IP (example: `46.101.88.197`).
-3. **Secrets** — `.env` / `.env.admin` on the host (see `.env.example`); fill secrets, then deploy.
+3. **Secrets** — `.env` / `.env.admin` on the host (see `.env.example`); fill secrets, then deploy. **`GHCR_TOKEN`** is only needed if GHCR images are **private**; public packages pull anonymously.
 
 ### Telegram cron jobs
 

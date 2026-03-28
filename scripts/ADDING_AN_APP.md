@@ -55,7 +55,7 @@ Env vars defined in `manifest.json` are seeded into the admin DB (empty values, 
 
 ## Production droplet: images from CI (GHCR), not Docker Hub
 
-Default `./deploy.sh` pulls `216labs/*` from **GHCR** after `.github/workflows/ghcr-publish.yml` publishes `latest`. Legacy: `DEPLOY_IMAGE_SOURCE=local` builds on your machine and streams images over SSH. On the droplet, `COMPOSE_PULL_POLICY=never` and `docker compose up ... --pull never` so Compose does not pull private tags unexpectedly.
+Default `./deploy.sh` pulls `216labs/*` from **GHCR** after `.github/workflows/ghcr-publish.yml` publishes `latest`. Legacy: `DEPLOY_IMAGE_SOURCE=local` builds on your machine and streams images over SSH. On the droplet, `COMPOSE_PULL_POLICY=never` and `docker compose up ... --pull never` so Compose does not resolve `216labs/*` via Docker Hub; sync/cold-start pulls GHCR instead (**public** GHCR packages do not require a PAT; **private** packages need `GHCR_TOKEN` / `GHCR_USERNAME`).
 
 ## How the pieces fit together
 

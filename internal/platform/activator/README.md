@@ -20,7 +20,7 @@ The **showroom** is the ability to **browse 100+ apps** from one small droplet. 
 
 2. **Wake-on-demand** — Caddy (reverse proxy) + this Flask app. Traffic waits on the warmup page while the container starts; no custom Go proxy is required.
 
-3. **Cold-start pull** — On a **cold** service (not already running and healthy), the activator calls **`docker pull`** from GHCR (`ACTIVATOR_REGISTRY_PREFIX/<service>:latest`) **before** the first `compose up`, so local stale `216labs/<service>:latest` tags are refreshed from CI. Set `ACTIVATOR_PULL_BEFORE_COLD_START=false` to disable (emergency only). If `compose up` still fails, it retries pull + optional `ACTIVATOR_TRY_DOCKER_PULL` (Docker Hub). Use `GHCR_TOKEN` (read:packages) + `GHCR_USERNAME` for private packages. Images are published by `.github/workflows/ghcr-publish.yml`.
+3. **Cold-start pull** — On a **cold** service (not already running and healthy), the activator calls **`docker pull`** from GHCR (`ACTIVATOR_REGISTRY_PREFIX/<short>:latest`, short name from the compose **image** line) **before** the first `compose up`, so local stale `216labs/<short>:latest` tags are refreshed from CI. Set `ACTIVATOR_PULL_BEFORE_COLD_START=false` to disable (emergency only). If `compose up` still fails, it retries pull + optional `ACTIVATOR_TRY_DOCKER_PULL` (Docker Hub). **Public** GHCR packages are pulled **anonymously** (no token). **`GHCR_TOKEN`** (read:packages) + **`GHCR_USERNAME`** are only needed if the package is **private**. Images are published by `.github/workflows/ghcr-publish.yml`.
 
 4. **LRU pool (showroom)** — With a **positive** `ACTIVATOR_MAX_CONCURRENT_APPS`, before starting another app the activator **stops** the least-recently-used evictable compose service (by `last_accessed_at`) until the pool is under the cap. A **background reaper** applies the same rule if something pushes the pool over the cap. This is how **many catalog apps** share **one** machine: **aggressive eviction** to make room for **the app being requested**, plus **GHCR** if the image was never loaded.
 
@@ -60,4 +60,4 @@ See `docker-compose.yml` `activator` service. Key variables:
 - `ACTIVATOR_REGISTRY_PREFIX` — e.g. `ghcr.io/6cubed/216labs` for cold-start pull.
 - `ACTIVATOR_PULL_BEFORE_COLD_START` — default `true`: pull GHCR `latest` before first `compose up` on a cold service.
 - `ACTIVATOR_START_TIMEOUT_SECONDS` — how long to wait for HTTP after `compose up` (and one restart recovery path in code).
-- `GHCR_USERNAME` / `GHCR_TOKEN` — droplet login for private packages (`read:packages`).
+- `GHCR_USERNAME` / `GHCR_TOKEN` — only for **private** GHCR packages (`read:packages`). Omit for **public** packages (anonymous pull).

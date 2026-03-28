@@ -1,0 +1,13 @@
+---
+description: When implementation facts change, update docs and comments to match (no stale guidance).
+alwaysApply: true
+---
+
+# Docs and comments stay true
+
+When you learn something new while coding (behavior, APIs, env vars, security, ops) that **contradicts** existing **documentation**, **comments**, **manifest descriptions**, or **user-facing strings**:
+
+1. **Update the sources of truth** in-repo (README, `docs/`, inline comments, `.cursor` rules, admin manifest copy, compose comments) so they match reality—**in the same task**, not “later.”
+2. **Prefer one clear sentence** over hedging; state constraints plainly (e.g. public vs private GHCR, when tokens are required).
+3. **Do not** leave misleading “you must …” guidance if the code or platform makes it optional.
+4. If only code changed and docs were never wrong, **no doc churn**—this rule is for **inconsistency**, not mandatory doc edits on every PR.

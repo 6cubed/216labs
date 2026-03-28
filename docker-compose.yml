@@ -37,6 +37,7 @@ services:
       - ACTIVATOR_REGISTRY_PREFIX=${ACTIVATOR_REGISTRY_PREFIX:-ghcr.io/6cubed/216labs}
       # Pull GHCR :latest before cold compose up so CI is not behind stale local tags.
       - ACTIVATOR_PULL_BEFORE_COLD_START=${ACTIVATOR_PULL_BEFORE_COLD_START:-true}
+      # Public GHCR packages: anonymous pull. Set these only for private packages (read:packages PAT).
       - GHCR_TOKEN=${GHCR_TOKEN:-}
       - GHCR_USERNAME=${GHCR_USERNAME:-token}
       # Showroom: max evictable app containers (non-protected); LRU evicts to make room + GHCR pull for the requested app. 0 = unlimited (dev / huge RAM only).
