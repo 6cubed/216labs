@@ -4,3 +4,4 @@
 # Greenfield / forks: uncomment or add IDs here if you want a few demos pre-enabled before first UI visit.
 tortellini
 onefit
+activator
