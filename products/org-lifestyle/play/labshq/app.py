@@ -1,8 +1,21 @@
 import os
+import re
 
 from flask import Flask, abort, render_template
 
 app = Flask(__name__)
+
+_GA_MEASUREMENT_ID_RE = re.compile(r"^G-[A-Z0-9]+$")
+
+
+def _ga_measurement_id() -> str:
+    raw = os.environ.get("GA_MEASUREMENT_ID", "").strip()
+    return raw if _GA_MEASUREMENT_ID_RE.match(raw) else ""
+
+
+@app.context_processor
+def _inject_ga_context():
+    return {"ga_measurement_id": _ga_measurement_id()}
 
 PUBLICATIONS = [
     {

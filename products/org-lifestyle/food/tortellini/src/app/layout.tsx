@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 const nunito = Nunito({ subsets: ["latin"], display: "swap" });
 
@@ -17,7 +18,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={nunito.className}>{children}</body>
+      <body className={nunito.className}>
+        <Ga4Script />
+        {children}</body>
     </html>
   );
 }

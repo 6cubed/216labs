@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 export const metadata: Metadata = {
   title: "OneRoom — AI Interior Designer",
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen font-sans">
+        <Ga4Script />
         <div className="fixed inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-[40%] -right-[20%] h-[80%] w-[60%] rounded-full bg-brand-100/40 blur-3xl" />
           <div className="absolute -bottom-[30%] -left-[20%] h-[70%] w-[50%] rounded-full bg-brand-50/60 blur-3xl" />

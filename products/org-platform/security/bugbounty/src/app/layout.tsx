@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 export const metadata: Metadata = {
   title: "Bug Bounty Program — 216Labs",
@@ -20,7 +21,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <Ga4Script />
+        {children}</body>
     </html>
   );
 }

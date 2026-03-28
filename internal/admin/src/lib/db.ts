@@ -369,6 +369,28 @@ function seedInfraEnvDefaults(db: Database.Database) {
   for (const row of telegramGroupCronKeys) {
     ins.run(row);
   }
+
+  const analyticsKeys: Array<{
+    key: string;
+    description: string;
+    is_secret: number;
+  }> = [
+    {
+      key: "GA_MEASUREMENT_ID",
+      description:
+        "Google Analytics 4 web stream ID (G-XXXXXXXX). Set on the host .env or here; compose passes it to all app containers for gtag.",
+      is_secret: 0,
+    },
+    {
+      key: "GA4_PROPERTY_ID",
+      description:
+        "Optional GA4 property id (numeric) for deep links and future Data API jobs — find in GA Admin → Property settings.",
+      is_secret: 0,
+    },
+  ];
+  for (const row of analyticsKeys) {
+    ins.run(row);
+  }
 }
 
 function readManifest(manifestPath: string): AppManifest | null {

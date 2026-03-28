@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
       <body className="antialiased">
+        <Ga4Script />
         <nav className="sticky top-0 z-50 bg-[#0f1729]/95 backdrop-blur-sm border-b border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
             <Link

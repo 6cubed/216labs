@@ -1,4 +1,5 @@
 import './globals.css'
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 export const metadata = {
   title: 'CrowdBulk',
@@ -13,6 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body style={{ margin: 0, fontFamily: 'system-ui, sans-serif', background: '#0f0f0f', color: '#e4e4e4', minHeight: '100vh' }}>
+        <Ga4Script />
         {children}
       </body>
     </html>

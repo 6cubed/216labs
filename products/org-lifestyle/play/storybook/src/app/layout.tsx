@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 export const metadata: Metadata = {
   title: "StoryMagic — AI Children's Storybooks",
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-story-cream font-body antialiased">
+        <Ga4Script />
         {children}
       </body>
     </html>

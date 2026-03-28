@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 export const metadata: Metadata = {
   title: "Euromaxxers | Wikipedia Network Explorer",
@@ -28,6 +29,7 @@ export default function RootLayout({
           color: "#f4f7ff",
         }}
       >
+        <Ga4Script />
         {children}
       </body>
     </html>

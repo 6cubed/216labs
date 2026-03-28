@@ -77,6 +77,7 @@ services:
     build: ./products/org-media/RamblingRadio
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/ramblingradio.db
@@ -93,6 +94,7 @@ services:
     build: ./products/org-social/Stroll.live
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - NODE_ENV=production
     expose:
@@ -106,6 +108,7 @@ services:
     build: ./products/org-social/oneroom
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - LLM_PROVIDER=${ONEROOM_LLM_PROVIDER:-openai}
@@ -122,6 +125,7 @@ services:
     build: ./products/org-shopping/onefit
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - LLM_PROVIDER=${ONEFIT_LLM_PROVIDER:-openai}
@@ -138,6 +142,7 @@ services:
     build: ./products/org-platform/ai/hivefind
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -151,6 +156,7 @@ services:
     build: ./internal/security/pipesecure
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - NODE_ENV=production
       - DATA_DIR=/app/data
       - GITHUB_TOKEN=${PIPESECURE_GITHUB_TOKEN:-}
@@ -190,6 +196,8 @@ services:
     build: ./internal/admin
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
+      - GA4_PROPERTY_ID=${GA4_PROPERTY_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - DATABASE_PATH=/app/216labs.db
@@ -221,6 +229,7 @@ services:
     build: ./internal/admin/workforce
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - WORKFORCE_STORE_PATH=/app/data/workforce-employees.json
@@ -237,6 +246,7 @@ services:
     build: ./internal/admin/groundtruth
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - GROUNDTRUTH_STORE_PATH=/app/data/groundtruth.json
@@ -277,6 +287,7 @@ services:
     build: ./products/org-lifestyle/play/agimemes.com
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - NEWS_API_KEY=${AGIMEMES_NEWS_API_KEY:-}
       - IMG_FLIP_USERNAME=${AGIMEMES_IMG_FLIP_USERNAME:-}
@@ -292,6 +303,7 @@ services:
     build: ./products/org-platform/ai/priors
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - PRIORS_DATABASE_PATH=/app/data/database.db
       - PRIORS_SECRET_KEY=${PRIORS_SECRET_KEY:-change-me}
@@ -309,6 +321,7 @@ services:
     build: ./products/org-shopping/bigleroys
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - BIGLEROYS_SECRET_KEY=${BIGLEROYS_SECRET_KEY:-change-me}
       - BIGLEROYS_GOOGLE_CLIENT_SECRETS_FILE=/app/client_secret.json
@@ -329,6 +342,7 @@ services:
     build: ./products/org-shopping/agitshirts
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - AGITSHIRTS_OPENAI_API_KEY=${AGITSHIRTS_OPENAI_API_KEY:-}
       - AGITSHIRTS_MODEL=${AGITSHIRTS_MODEL:-gpt-4o-mini}
@@ -344,6 +358,7 @@ services:
     build: ./products/org-lifestyle/geo/artisinaleurope
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -357,6 +372,7 @@ services:
     build: ./products/org-platform/ai/calibratedai
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - CALIBRATEDAI_OPENROUTER_API_KEY=${CALIBRATEDAI_OPENROUTER_API_KEY:-}
@@ -374,6 +390,7 @@ services:
     build: ./products/org-platform/ai/1pageresearch
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - ONEPAGE_OPENROUTER_API_KEY=${ONEPAGE_OPENROUTER_API_KEY:-}
       - ONEPAGE_MODEL=${ONEPAGE_MODEL:-google/gemini-2.0-flash-001}
@@ -391,6 +408,7 @@ services:
     build: ./products/org-social/thezurichdatinggame
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - ZDGAME_DB_PATH=/app/data/zdgame.db
@@ -410,6 +428,7 @@ services:
     build: ./products/org-social/shannonairport
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - SHANNONAIRPORT_BASE_URL=https://shannonairport.6cubed.app
@@ -424,6 +443,7 @@ services:
     build: ./products/org-lifestyle/play/storybook
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - STORYBOOK_OPENAI_API_KEY=${STORYBOOK_OPENAI_API_KEY:-}
@@ -449,6 +469,7 @@ services:
     build: ./products/org-shopping/valentine
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - VALENTINE_OPENAI_API_KEY=${VALENTINE_OPENAI_API_KEY:-}
@@ -475,6 +496,7 @@ services:
     build: ./products/org-platform/ai/offlinellm
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -488,6 +510,7 @@ services:
     build: ./products/org-platform/ai/pocket
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -501,6 +524,7 @@ services:
     build: ./internal/admin/pocket-cursor-bridge
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - POCKETCURSOR_DATA_DIR=/app/data
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
@@ -523,6 +547,7 @@ services:
     build: ./products/org-media/blog
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -536,6 +561,7 @@ services:
     build: ./products/org-growth/ads/marketing
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_HOST=${APP_HOST:-6cubed.app}
@@ -550,6 +576,7 @@ services:
     build: ./products/org-growth/ads/merch
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - NEXT_PUBLIC_MERCH_STORE_URL=${NEXT_PUBLIC_MERCH_STORE_URL:-}
@@ -565,6 +592,7 @@ services:
     build: ./products/org-shopping/onefitblog
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -578,6 +606,7 @@ services:
     build: ./products/org-lifestyle/play/tigertank
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -591,6 +620,7 @@ services:
     build: ./products/org-lifestyle/geo/worldphoto
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - DATA_DIR=/app/data
@@ -607,6 +637,7 @@ services:
     build: ./products/org-lifestyle/geo/euromaxxers
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -620,6 +651,7 @@ services:
     build: ./products/org-lifestyle/geo/zurichrunclubs
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -633,6 +665,7 @@ services:
     build: ./products/org-lifestyle/food/tortellini
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -646,6 +679,7 @@ services:
     build: ./products/org-growth/ads/landing
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - ADMIN_INTERNAL_URL=${ADMIN_INTERNAL_URL:-http://admin:3000}
     expose:
@@ -659,6 +693,7 @@ services:
     build: ./products/org-platform/toolkit-demos/hello-nextjs
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -671,6 +706,7 @@ services:
     build: ./products/org-platform/toolkit-demos/hello-flask
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
     expose:
       - "5000"
@@ -683,6 +719,7 @@ services:
     build: ./products/org-platform/security/bugbounty
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - APP_HOST=${APP_HOST:-6cubed.app}
@@ -698,6 +735,7 @@ services:
     build: ./products/org-platform/vc
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_HOST=${APP_HOST:-6cubed.app}
@@ -713,6 +751,7 @@ services:
     build: ./products/org-lifestyle/play/labshq
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - LABSHQ_BASE_URL=${LABSHQ_BASE_URL:-https://labshq.6cubed.app}
     expose:
@@ -726,6 +765,7 @@ services:
     build: ./products/org-lifestyle/play/facerate
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - FACERATE_DB_PATH=/app/data/facerate.db
       - FACERATE_FACES_DIR=/app/static/faces
@@ -743,6 +783,7 @@ services:
     build: ./products/org-platform/ai/crowdbulk
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - CROWDBULK_DB_PATH=/app/data/crowdbulk.db
@@ -763,6 +804,7 @@ services:
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - NPCWORLD_BASE_URL=https://npcworld.6cubed.app
@@ -777,6 +819,7 @@ services:
     build: ./products/org-platform/ai/audioaicheckup
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - AUDIOAICHECKUP_OPENAI_API_KEY=${AUDIOAICHECKUP_OPENAI_API_KEY:-}
@@ -795,6 +838,7 @@ services:
     build: ./products/org-lifestyle/play/avatar
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - AVATAR_OPENAI_API_KEY=${AVATAR_OPENAI_API_KEY:-}
       - AVATAR_MODEL=${AVATAR_MODEL:-gpt-4o-mini}
@@ -811,6 +855,7 @@ services:
     build: ./products/org-lifestyle/play/anchor/backend
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - ANCHOR_DATABASE_URL=sqlite+aiosqlite:///./data/anchor.db
       - ANCHOR_SECRET_KEY=${ANCHOR_SECRET_KEY:-change-me}
     volumes:
@@ -835,6 +880,7 @@ services:
     build: ./products/org-media/germandaily
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - GERMANDAILY_DATA_DIR=/app/data
       - GERMANDAILY_OPENAI_API_KEY=${GERMANDAILY_OPENAI_API_KEY:-}
@@ -851,6 +897,7 @@ services:
     build: ./products/org-media/russiandaily
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - RUSSIANDAILY_DATA_DIR=/app/data
       - RUSSIANDAILY_OPENAI_API_KEY=${RUSSIANDAILY_OPENAI_API_KEY:-}
@@ -867,6 +914,7 @@ services:
     build: ./products/org-platform/local/explore
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - EXPLORE_DATA_DIR=/app/data
       - EXPLORE_OPENAI_API_KEY=${EXPLORE_OPENAI_API_KEY:-}
@@ -883,6 +931,7 @@ services:
     build: ./products/org-lifestyle/play/angelwatcher
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - ANGELWATCHER_DATA_DIR=/app/data
     volumes:
@@ -898,6 +947,7 @@ services:
     build: ./products/org-growth/ads/emailgpt
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - EMAILGPT_DATA_DIR=/app/data
       - EMAILGPT_RESEND_API_KEY=${EMAILGPT_RESEND_API_KEY:-}
@@ -917,6 +967,7 @@ services:
     build: ./products/org-media/tldrtech
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - TLDRTECH_DATA_DIR=/app/data
       - TLDRTECH_SMTP_HOST=${TLDRTECH_SMTP_HOST:-}
@@ -940,6 +991,7 @@ services:
     build: ./products/org-shopping/mysteryshopper
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
       - MYSTERYSHOPPER_DATA_DIR=/app/data
@@ -956,6 +1008,7 @@ services:
     build: ./products/org-platform/ai/llminternals
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     expose:
@@ -969,6 +1022,7 @@ services:
     build: ./products/org-lifestyle/play/maxlearn
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - MAXLEARN_DATA_DIR=/app/data
     volumes:
@@ -984,6 +1038,7 @@ services:
     build: ./products/org-lifestyle/play/muinteoir
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     volumes:
@@ -999,6 +1054,7 @@ services:
     build: ./products/org-platform/local/impulse
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - IMPULSE_BASE_URL=${IMPULSE_BASE_URL:-https://impulse.6cubed.app}
     expose:
@@ -1012,6 +1068,7 @@ services:
     build: ./products/org-social/mediate
     restart: unless-stopped
     environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - MEDIATE_DATA_DIR=/app/data
       - MEDIATE_SECRET_KEY=${MEDIATE_SECRET_KEY:-}

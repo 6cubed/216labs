@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import "./globals.css"
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 const site =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://merch.6cubed.app"
@@ -20,7 +21,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="antialiased">
-      <body className="min-h-screen mesh-bg text-[var(--text)]">{children}</body>
+      <body className="min-h-screen mesh-bg text-[var(--text)]">
+        <Ga4Script />
+        {children}</body>
     </html>
   )
 }

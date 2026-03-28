@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 export const metadata: Metadata = {
   title: "Hello Next.js — toolkit demo",
@@ -11,6 +12,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body style={{ fontFamily: "system-ui, sans-serif", margin: "2rem", lineHeight: 1.5 }}>
+        <Ga4Script />
         {children}
       </body>
     </html>

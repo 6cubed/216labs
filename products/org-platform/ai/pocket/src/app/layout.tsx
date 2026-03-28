@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -25,7 +26,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${plusJakarta.variable} antialiased min-h-[100dvh] font-sans`}>{children}</body>
+      <body className={`${plusJakarta.variable} antialiased min-h-[100dvh] font-sans`}>
+        <Ga4Script />
+        {children}</body>
     </html>
   )
 }

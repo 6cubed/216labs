@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const mono = JetBrains_Mono({
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${mono.variable} font-sans bg-[#070c18] text-slate-100 min-h-screen antialiased`}
       >
+        <Ga4Script />
         {children}
       </body>
     </html>
