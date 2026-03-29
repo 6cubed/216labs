@@ -392,6 +392,22 @@ function seedInfraEnvDefaults(db: Database.Database) {
     ins.run(row);
   }
 
+  const workforceKeys: Array<{
+    key: string;
+    description: string;
+    is_secret: number;
+  }> = [
+    {
+      key: "WORKFORCE_TELEGRAM_CHAT_ID",
+      description:
+        "Telegram chat id for the Workforce test cron job (workforce-telegram-test): supergroup/channel where the digital employee’s bot should post (e.g. -100…).",
+      is_secret: 0,
+    },
+  ];
+  for (const row of workforceKeys) {
+    ins.run(row);
+  }
+
   const analyticsKeys: Array<{
     key: string;
     description: string;
