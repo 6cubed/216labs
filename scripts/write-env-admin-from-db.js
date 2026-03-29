@@ -6,8 +6,8 @@
  * Usage: node scripts/write-env-admin-from-db.js [path/to/216labs.db]
  * Default DB path: /app/216labs.db (admin container).
  */
-// Resolve from admin image /app/node_modules when run with: docker exec -w /app … node …/write-env-admin-from-db.js
-const Database = require("better-sqlite3");
+// Script lives under /workspace/scripts; Node resolves deps from that dir unless we require explicitly.
+const Database = require("/app/node_modules/better-sqlite3");
 const path = process.argv[2] || "/app/216labs.db";
 const db = new Database(path);
 const rows = db
