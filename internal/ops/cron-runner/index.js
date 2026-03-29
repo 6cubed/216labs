@@ -138,21 +138,6 @@ function isDue(schedule, date) {
 }
 
 /**
- * Read CRON_RUNNER_SECRET from env_vars (same as admin). sql.js DB must have env_vars table.
- */
-function readCronSecretFromDb(db) {
-  try {
-    const row = db
-      .prepare("SELECT value FROM env_vars WHERE key = ?")
-      .get("CRON_RUNNER_SECRET");
-    if (!row || row.value === undefined || row.value === null) return "";
-    return String(row.value).trim();
-  } catch {
-    return "";
-  }
-}
-
-/**
  * Idempotent schema: create missing tables (same DDL as admin) and seed job rows.
  * Cron-runner may open 216labs.db before admin has initialized it — do not require admin first.
  */
@@ -279,7 +264,17 @@ createServer(async (req, res) => {
     try {
       ensureCronRunnerMigrations(db);
       const envSecret = (process.env.CRON_RUNNER_SECRET || "").trim();
-      const dbSecret = readCronSecretFromDb(db);
+      let dbSecret = "";
+      try {
+        const row = db
+          .prepare("SELECT value FROM env_vars WHERE key = ?")
+          .get("CRON_RUNNER_SECRET");
+        if (row && row.value != null && row.value !== undefined) {
+          dbSecret = String(row.value).trim();
+        }
+      } catch {
+        dbSecret = "";
+      }
       const expected = envSecret || dbSecret;
       const auth = req.headers.authorization;
       const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : "";
