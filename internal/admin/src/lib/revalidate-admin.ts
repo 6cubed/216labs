@@ -6,6 +6,7 @@ export function revalidateAdminPaths(): void {
     "/",
     "/applications",
     "/activity",
+    "/errors",
     "/analytics",
     "/env",
     "/cron",
