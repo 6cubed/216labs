@@ -79,7 +79,8 @@ async function evaluateOpenAI(
   audioBuffer: Buffer,
   question: string
 ): Promise<string> {
-  const apiKey = process.env.AUDIOAICHECKUP_OPENAI_API_KEY;
+  const apiKey =
+    process.env.AUDIOAICHECKUP_OPENAI_API_KEY ?? process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OpenAI API key not configured");
 
   const mp3Buffer = convertWebmToMp3(audioBuffer);

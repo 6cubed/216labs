@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 
 function getClient(): OpenAI {
-  const key = process.env.STORYBOOK_OPENAI_API_KEY;
-  if (!key) throw new Error("STORYBOOK_OPENAI_API_KEY is not set");
+  const key =
+    process.env.STORYBOOK_OPENAI_API_KEY ?? process.env.OPENAI_API_KEY;
+  if (!key) throw new Error("Set OPENAI_API_KEY or STORYBOOK_OPENAI_API_KEY");
   return new OpenAI({ apiKey: key });
 }
 

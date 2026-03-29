@@ -124,7 +124,11 @@ def _openai_mediates(
     raw: str,
     recipient: str,
 ) -> str:
-    api_key = (os.environ.get("MEDIATE_OPENAI_API_KEY") or "").strip()
+    api_key = (
+        os.environ.get("MEDIATE_OPENAI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or ""
+    ).strip()
     if not api_key:
         return (
             "[Mediator unavailable: set MEDIATE_OPENAI_API_KEY on the server] "

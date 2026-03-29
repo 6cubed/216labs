@@ -15,7 +15,11 @@ avoid bullet lists unless asked. Light warmth and curiosity are welcome; never p
 
 
 def _api_key() -> str:
-    return (os.environ.get("AVATAR_OPENAI_API_KEY") or "").strip()
+    return (
+        os.environ.get("AVATAR_OPENAI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or ""
+    ).strip()
 
 
 def _chat_model() -> str:

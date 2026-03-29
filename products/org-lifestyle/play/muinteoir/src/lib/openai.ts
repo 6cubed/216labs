@@ -24,7 +24,10 @@ async function getApiKey(overrideKey?: string): Promise<string> {
   }
 
   const key = process.env.MUINTEOIR_OPENAI_API_KEY ?? process.env.OPENAI_API_KEY ?? "";
-  if (!key) throw new Error("No OpenAI API key configured. Set MUINTEOIR_OPENAI_API_KEY in the admin panel.");
+  if (!key)
+    throw new Error(
+      "No OpenAI API key configured. Set OPENAI_API_KEY or MUINTEOIR_OPENAI_API_KEY in admin Env."
+    );
   return key;
 }
 

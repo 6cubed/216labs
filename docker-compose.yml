@@ -113,7 +113,7 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - LLM_PROVIDER=${ONEROOM_LLM_PROVIDER:-openai}
-      - OPENAI_API_KEY=${ONEROOM_OPENAI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-${ONEROOM_OPENAI_API_KEY:-}}
       - GEMINI_API_KEY=${ONEROOM_GEMINI_API_KEY:-}
     expose:
       - "3000"
@@ -131,7 +131,7 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - LLM_PROVIDER=${ONEFIT_LLM_PROVIDER:-openai}
-      - OPENAI_API_KEY=${ONEFIT_OPENAI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-${ONEFIT_OPENAI_API_KEY:-}}
       - GEMINI_API_KEY=${ONEFIT_GEMINI_API_KEY:-}
     expose:
       - "3000"
@@ -351,7 +351,7 @@ services:
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
-      - AGITSHIRTS_OPENAI_API_KEY=${AGITSHIRTS_OPENAI_API_KEY:-}
+      - AGITSHIRTS_OPENAI_API_KEY=${OPENAI_API_KEY:-${AGITSHIRTS_OPENAI_API_KEY:-}}
       - AGITSHIRTS_MODEL=${AGITSHIRTS_MODEL:-gpt-4o-mini}
       - AGITSHIRTS_CHECKOUT_BASE_URL=${AGITSHIRTS_CHECKOUT_BASE_URL:-}
     expose:
@@ -453,7 +453,7 @@ services:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
-      - STORYBOOK_OPENAI_API_KEY=${STORYBOOK_OPENAI_API_KEY:-}
+      - STORYBOOK_OPENAI_API_KEY=${OPENAI_API_KEY:-${STORYBOOK_OPENAI_API_KEY:-}}
       - STORYBOOK_STRIPE_SECRET_KEY=${STORYBOOK_STRIPE_SECRET_KEY:-}
       - STORYBOOK_STRIPE_WEBHOOK_SECRET=${STORYBOOK_STRIPE_WEBHOOK_SECRET:-}
       - NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY:-}
@@ -829,7 +829,7 @@ services:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
-      - AUDIOAICHECKUP_OPENAI_API_KEY=${AUDIOAICHECKUP_OPENAI_API_KEY:-}
+      - AUDIOAICHECKUP_OPENAI_API_KEY=${OPENAI_API_KEY:-${AUDIOAICHECKUP_OPENAI_API_KEY:-}}
       - AUDIOAICHECKUP_GEMINI_API_KEY=${AUDIOAICHECKUP_GEMINI_API_KEY:-}
       - DATA_DIR=/app/data
     volumes:
@@ -847,7 +847,7 @@ services:
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
-      - AVATAR_OPENAI_API_KEY=${AVATAR_OPENAI_API_KEY:-}
+      - AVATAR_OPENAI_API_KEY=${OPENAI_API_KEY:-${AVATAR_OPENAI_API_KEY:-}}
       - AVATAR_MODEL=${AVATAR_MODEL:-gpt-4o-mini}
       - AVATAR_TTS_VOICE=${AVATAR_TTS_VOICE:-nova}
     expose:
@@ -907,7 +907,7 @@ services:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - RUSSIANDAILY_DATA_DIR=/app/data
-      - RUSSIANDAILY_OPENAI_API_KEY=${RUSSIANDAILY_OPENAI_API_KEY:-}
+      - RUSSIANDAILY_OPENAI_API_KEY=${OPENAI_API_KEY:-${RUSSIANDAILY_OPENAI_API_KEY:-}}
     volumes:
       - ./products/org-media/russiandaily/data:/app/data
     expose:
@@ -924,7 +924,7 @@ services:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - EXPLORE_DATA_DIR=/app/data
-      - EXPLORE_OPENAI_API_KEY=${EXPLORE_OPENAI_API_KEY:-}
+      - EXPLORE_OPENAI_API_KEY=${OPENAI_API_KEY:-${EXPLORE_OPENAI_API_KEY:-}}
     volumes:
       - ./products/org-platform/local/explore/data:/app/data
     expose:
@@ -960,7 +960,7 @@ services:
       - EMAILGPT_RESEND_API_KEY=${EMAILGPT_RESEND_API_KEY:-}
       - EMAILGPT_FROM_EMAIL=${EMAILGPT_FROM_EMAIL:-}
       - EMAILGPT_CRON_SECRET=${EMAILGPT_CRON_SECRET:-}
-      - EMAILGPT_OPENAI_API_KEY=${EMAILGPT_OPENAI_API_KEY:-}
+      - EMAILGPT_OPENAI_API_KEY=${OPENAI_API_KEY:-${EMAILGPT_OPENAI_API_KEY:-}}
     volumes:
       - ./products/org-growth/ads/emailgpt/data:/app/data
     expose:
@@ -984,7 +984,7 @@ services:
       - TLDRTECH_SMTP_USE_TLS=${TLDRTECH_SMTP_USE_TLS:-true}
       - TLDRTECH_FROM_EMAIL=${TLDRTECH_FROM_EMAIL:-}
       - TLDRTECH_CRON_SECRET=${TLDRTECH_CRON_SECRET:-}
-      - TLDRTECH_OPENAI_API_KEY=${TLDRTECH_OPENAI_API_KEY:-}
+      - TLDRTECH_OPENAI_API_KEY=${OPENAI_API_KEY:-${TLDRTECH_OPENAI_API_KEY:-}}
     volumes:
       - ./products/org-media/tldrtech/data:/app/data
     expose:
@@ -1048,6 +1048,7 @@ services:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
+      - MUINTEOIR_OPENAI_API_KEY=${OPENAI_API_KEY:-${MUINTEOIR_OPENAI_API_KEY:-}}
     volumes:
       - ./products/org-lifestyle/play/muinteoir/data:/app/data
     expose:
@@ -1079,7 +1080,7 @@ services:
       - PORT=5000
       - MEDIATE_DATA_DIR=/app/data
       - MEDIATE_SECRET_KEY=${MEDIATE_SECRET_KEY:-}
-      - MEDIATE_OPENAI_API_KEY=${MEDIATE_OPENAI_API_KEY:-}
+      - MEDIATE_OPENAI_API_KEY=${OPENAI_API_KEY:-${MEDIATE_OPENAI_API_KEY:-}}
       - MEDIATE_MODEL=${MEDIATE_MODEL:-gpt-4o-mini}
       - MEDIATE_BASE_URL=${MEDIATE_BASE_URL:-https://mediate.6cubed.app}
     volumes:

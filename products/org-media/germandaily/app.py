@@ -221,7 +221,11 @@ def generate_batch_llm(
     avoid: list[str],
     exclude: set[str],
 ) -> list[dict[str, str]] | None:
-    api_key = (os.environ.get("GERMANDAILY_OPENAI_API_KEY") or "").strip()
+    api_key = (
+        os.environ.get("GERMANDAILY_OPENAI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or ""
+    ).strip()
     if not api_key:
         return None
     exclude_sample = ", ".join(sorted(exclude)[:80]) if exclude else "(none yet)"
@@ -334,7 +338,11 @@ def index():
             (today,),
         ).fetchall()
 
-    api_key = (os.environ.get("GERMANDAILY_OPENAI_API_KEY") or "").strip()
+    api_key = (
+        os.environ.get("GERMANDAILY_OPENAI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or ""
+    ).strip()
     return flask.render_template(
         "index.html",
         date_label=today,
@@ -356,7 +364,11 @@ def _tts_text_for_row(row: sqlite3.Row, part: str) -> str | None:
 
 @app.route("/api/tts", methods=["POST"])
 def api_tts():
-    api_key = (os.environ.get("GERMANDAILY_OPENAI_API_KEY") or "").strip()
+    api_key = (
+        os.environ.get("GERMANDAILY_OPENAI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or ""
+    ).strip()
     if not api_key:
         return flask.jsonify({"ok": False, "error": "TTS not configured"}), 503
 

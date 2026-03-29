@@ -52,7 +52,11 @@ NUDGE_POOL = [
 
 
 def get_nudge() -> str:
-    api_key = os.environ.get("EMAILGPT_OPENAI_API_KEY", "").strip()
+    api_key = (
+        os.environ.get("EMAILGPT_OPENAI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or ""
+    ).strip()
     if api_key:
         try:
             from openai import OpenAI

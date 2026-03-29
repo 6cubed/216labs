@@ -16,7 +16,8 @@ DATA_FILE = Path(__file__).resolve().parent / "data" / "daily_drop.json"
 def _generate() -> dict:
     return generate_or_load_daily_drop(
         data_file=DATA_FILE,
-        openai_api_key=os.getenv("AGITSHIRTS_OPENAI_API_KEY"),
+        openai_api_key=os.getenv("AGITSHIRTS_OPENAI_API_KEY")
+        or os.getenv("OPENAI_API_KEY"),
         checkout_base_url=os.getenv("AGITSHIRTS_CHECKOUT_BASE_URL", ""),
         model=os.getenv("AGITSHIRTS_MODEL", "gpt-4o-mini"),
     )

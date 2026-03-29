@@ -339,6 +339,21 @@ function seedInfraEnvDefaults(db: Database.Database) {
     `INSERT OR IGNORE INTO env_vars (key, value, description, is_secret, updated_at)
      VALUES (@key, '', @description, @is_secret, NULL)`
   );
+  const platformKeys: Array<{
+    key: string;
+    description: string;
+    is_secret: number;
+  }> = [
+    {
+      key: "OPENAI_API_KEY",
+      description:
+        "Default OpenAI API key for all apps. Prefer this over per-app keys; use user/metadata fields on the API for usage attribution.",
+      is_secret: 1,
+    },
+  ];
+  for (const row of platformKeys) {
+    ins.run(row);
+  }
   for (const row of ghcrKeys) {
     ins.run(row);
   }
@@ -363,7 +378,7 @@ function seedInfraEnvDefaults(db: Database.Database) {
     {
       key: "TELEGRAM_GROUP_HOURLY_OPENAI_API_KEY",
       description:
-        "OpenAI API key for hourly group replies. Falls back to OPENAI_API_KEY on cron-runner if unset.",
+        "Optional override for hourly group replies. If empty, cron-runner uses OPENAI_API_KEY.",
       is_secret: 1,
     },
     {

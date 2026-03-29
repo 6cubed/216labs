@@ -120,7 +120,11 @@ def _fetch_hn_top_stories_for_previous_day(max_items: int = 5) -> list[dict[str,
 
 
 def _augment_items_with_openai(items: list[dict[str, str]]) -> list[dict[str, str]]:
-    api_key = os.environ.get("TLDRTECH_OPENAI_API_KEY", "").strip()
+    api_key = (
+        os.environ.get("TLDRTECH_OPENAI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or ""
+    ).strip()
     if not api_key:
         return items
     try:
