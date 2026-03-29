@@ -278,10 +278,13 @@ services:
       - HAPPYPATH_INTERNAL_URL=http://happypath:3000
       - CRON_RUNNER_SECRET=${CRON_RUNNER_SECRET:-}
       - RUN_SERVER_PORT=3029
+      - WORKFORCE_STORE_PATH=/app/workforce-data/workforce-employees.json
+      - WORKFORCE_TELEGRAM_CHAT_ID=${WORKFORCE_TELEGRAM_CHAT_ID:-}
     expose:
       - "3029"
     volumes:
       - ./216labs.db:/app/216labs.db
+      - ./internal/admin/workforce/data:/app/workforce-data:ro
     mem_limit: 128m
 
   # ── AGI Memes ────────────────────────────────────────────────

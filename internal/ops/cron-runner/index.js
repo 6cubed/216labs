@@ -161,6 +161,16 @@ function ensureCronRunnerMigrations(db) {
       0
     );
   `);
+  db.exec(`
+    INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+    VALUES (
+      'workforce-telegram-test',
+      'Workforce Telegram test',
+      'Sends a short test message from the first digital employee (Workforce) to WORKFORCE_TELEGRAM_CHAT_ID.',
+      '0 * * * *',
+      0
+    );
+  `);
   return true;
 }
 

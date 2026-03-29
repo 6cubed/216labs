@@ -238,6 +238,7 @@ function initSchema(db: Database.Database) {
   `);
   seedDefaultCronJobs(db);
   ensureTelegramGroupHourlyCronJob(db);
+  ensureWorkforceTelegramTestCronJob(db);
 
   ensureDeploymentEventsTable(db);
   backfillDeploymentEventsFromApps(db);
@@ -851,6 +852,19 @@ function ensureTelegramGroupHourlyCronJob(db: Database.Database): void {
        'telegram-group-hourly-reply',
        'Group hourly AI reply',
        'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.',
+       '0 * * * *',
+       0
+     )`
+  ).run();
+}
+
+function ensureWorkforceTelegramTestCronJob(db: Database.Database): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+     VALUES (
+       'workforce-telegram-test',
+       'Workforce Telegram test',
+       'Sends a short test message from the first digital employee (Workforce) to WORKFORCE_TELEGRAM_CHAT_ID.',
        '0 * * * *',
        0
      )`

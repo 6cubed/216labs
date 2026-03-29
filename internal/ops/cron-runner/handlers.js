@@ -4,6 +4,8 @@
  * opts: { HAPPYPATH_INTERNAL_URL }
  */
 
+import { existsSync, readFileSync } from "fs";
+
 const STATE_KEY_LAST_UPDATE = "telegram-group-hourly:last_update_id";
 const TG_API = "https://api.telegram.org";
 
@@ -227,10 +229,62 @@ export async function telegramGroupHourlyReply(db, _opts) {
   };
 }
 
+/**
+ * Post a short test message as the first digital employee (Workforce registry)
+ * to WORKFORCE_TELEGRAM_CHAT_ID using that employee's bot token.
+ */
+export async function workforceTelegramTest(_db, _opts) {
+  const storePath =
+    process.env.WORKFORCE_STORE_PATH || "/app/workforce-data/workforce-employees.json";
+  const chatId = process.env.WORKFORCE_TELEGRAM_CHAT_ID?.trim() || "";
+
+  if (!chatId) {
+    console.warn(
+      "[cron-runner] workforce-telegram-test: set WORKFORCE_TELEGRAM_CHAT_ID"
+    );
+    return "";
+  }
+
+  if (!existsSync(storePath)) {
+    return `Workforce test: no store file at ${storePath}`;
+  }
+
+  let store;
+  try {
+    store = JSON.parse(readFileSync(storePath, "utf8"));
+  } catch (err) {
+    return `Workforce test: cannot read registry — ${err.message}`;
+  }
+
+  const employees = store?.employees;
+  if (!Array.isArray(employees) || employees.length === 0) {
+    return "Workforce test: no digital employees in the Workforce registry.";
+  }
+
+  const sorted = [...employees].sort((a, b) =>
+    String(a.createdAt || "").localeCompare(String(b.createdAt || ""))
+  );
+  const employee = sorted[0];
+  const token = employee.telegramBotToken?.trim();
+  if (!token) {
+    return "Workforce test: first employee has no Telegram bot token.";
+  }
+
+  const name = employee.name || "Digital employee";
+  const text = `[Test] ${name} — cron ping (${new Date().toISOString()})`;
+
+  return {
+    text,
+    chatId,
+    sendToken: token,
+  };
+}
+
 export const HANDLERS = {
   "telegram-daily-digest": telegramDailyDigest,
   "telegram-happypath-summary": telegramHappypathSummary,
   "telegram-security-summary": telegramSecuritySummary,
   "telegram-weekly-lint": telegramWeeklyLint,
   "telegram-group-hourly-reply": telegramGroupHourlyReply,
+  "workforce-telegram-test": workforceTelegramTest,
 };
