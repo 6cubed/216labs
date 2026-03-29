@@ -12,6 +12,7 @@ import {
   moveTodoCard,
   ensureCronRunnerSecretExists,
   getEffectiveCronRunnerSecret,
+  getEnvVarValue,
 } from "@/lib/db";
 import { startContainer, stopContainer, pullLatestGhcrForService } from "@/lib/docker";
 import { canPullGhcrFromAdmin } from "@/lib/ghcr-pull";
@@ -309,11 +310,13 @@ export async function moveTodoCardAction(
 export async function runCronJobNow(jobId: string): Promise<ActionResult> {
   ensureCronRunnerSecretExists();
   const secret = getEffectiveCronRunnerSecret();
-  const baseUrl =
-    (process.env.CRON_RUNNER_INTERNAL_URL || "http://cron-runner:3029").replace(
-      /\/$/,
-      ""
-    );
+  const fromEnv = process.env.CRON_RUNNER_INTERNAL_URL?.trim();
+  const fromDb = getEnvVarValue("CRON_RUNNER_INTERNAL_URL")?.trim();
+  const baseUrl = (
+    fromEnv ||
+    fromDb ||
+    "http://cron-runner:3029"
+  ).replace(/\/$/, "");
   if (!secret) {
     return {
       error: "Could not resolve CRON_RUNNER_SECRET (unexpected after seed).",
@@ -340,7 +343,7 @@ export async function runCronJobNow(jobId: string): Promise<ActionResult> {
     const msg = err instanceof Error ? err.message : String(err);
     return {
       error: msg.includes("fetch")
-        ? "Could not reach cron-runner. Is it running and CRON_RUNNER_INTERNAL_URL correct?"
+        ? `Could not reach cron-runner at ${baseUrl}. Start the cron-runner container (same compose stack as admin) or set CRON_RUNNER_INTERNAL_URL in Env / host .env — default on the VPS is http://cron-runner:3029.`
         : msg,
     };
   }

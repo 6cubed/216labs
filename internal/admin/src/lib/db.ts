@@ -334,6 +334,12 @@ function seedInfraEnvDefaults(db: Database.Database) {
         "Shared secret for admin → cron-runner Run now. Left empty: auto-generated in DB on first cron page load or Run now (no .env needed).",
       is_secret: 1,
     },
+    {
+      key: "CRON_RUNNER_INTERNAL_URL",
+      description:
+        "Base URL for Run now (POST /run/:id). Default http://cron-runner:3029 when admin and cron-runner share Docker Compose networking.",
+      is_secret: 0,
+    },
   ];
   const ins = db.prepare(
     `INSERT OR IGNORE INTO env_vars (key, value, description, is_secret, updated_at)

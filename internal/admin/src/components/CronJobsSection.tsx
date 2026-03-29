@@ -90,7 +90,9 @@ export function CronJobsSection({ jobs }: { jobs: DbCronJob[] }) {
           </span>
         </h2>
         <p className="text-xs text-muted max-w-md text-right">
-          Scheduled tasks that write to the project Telegram chat. Toggle on/off; Run now works while you are logged into admin (secret is kept in the shared DB).
+          Run now calls the cron-runner service (default{" "}
+          <code className="text-[10px]">http://cron-runner:3029</code> inside Compose). Ensure
+          cron-runner is up; override in Env if needed.
         </p>
       </div>
 
