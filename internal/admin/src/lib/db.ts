@@ -908,6 +908,24 @@ function ensureWorkforceTelegramTestCronJob(db: Database.Database): void {
   ).run();
 }
 
+/** Partial or legacy DBs may lack cron_jobs; keep admin cron UI and toggles working. */
+function ensureCronJobsTable(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cron_jobs (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      schedule TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 0,
+      last_run_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+  seedDefaultCronJobs(db);
+  ensureTelegramGroupHourlyCronJob(db);
+  ensureWorkforceTelegramTestCronJob(db);
+}
+
 /** Append-only log: VPS deploys (deploy.sh), per-app rollouts, optional CI rows. */
 export interface DbDeploymentEvent {
   id: string;
@@ -1046,15 +1064,20 @@ function backfillAppAnalytics(db: Database.Database): void {
 }
 
 export function getCronJobs(): DbCronJob[] {
-  return getDb()
+  const db = getDb();
+  ensureCronJobsTable(db);
+  return db
     .prepare("SELECT * FROM cron_jobs ORDER BY name")
     .all() as DbCronJob[];
 }
 
 export function setCronJobEnabled(id: string, enabled: boolean): void {
-  getDb()
-    .prepare("UPDATE cron_jobs SET enabled = ? WHERE id = ?")
-    .run(enabled ? 1 : 0, id);
+  const db = getDb();
+  ensureCronJobsTable(db);
+  db.prepare("UPDATE cron_jobs SET enabled = ? WHERE id = ?").run(
+    enabled ? 1 : 0,
+    id
+  );
 }
 
 export function getAppAnalyticsMap(): Record<string, DbAppAnalytics> {
