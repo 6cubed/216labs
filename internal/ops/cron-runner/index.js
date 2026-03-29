@@ -137,39 +137,56 @@ function isDue(schedule, date) {
   }
 }
 
-/** Idempotent schema for cron-runner state and new job rows (runs before tick / run-now). */
+/**
+ * Read CRON_RUNNER_SECRET from env_vars (same as admin). sql.js DB must have env_vars table.
+ */
+function readCronSecretFromDb(db) {
+  try {
+    const row = db
+      .prepare("SELECT value FROM env_vars WHERE key = ?")
+      .get("CRON_RUNNER_SECRET");
+    if (!row || row.value === undefined || row.value === null) return "";
+    return String(row.value).trim();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Idempotent schema: create missing tables (same DDL as admin) and seed job rows.
+ * Cron-runner may open 216labs.db before admin has initialized it — do not require admin first.
+ */
 function ensureCronRunnerMigrations(db) {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS env_vars (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '',
+      is_secret INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS cron_jobs (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      schedule TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 0,
+      last_run_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
     CREATE TABLE IF NOT EXISTS cron_runner_state (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
   `);
-  const tableExists = db
-    .prepare(
-      "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'cron_jobs'"
-    )
-    .get();
-  if (!tableExists) return false;
   db.exec(`
-    INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
-    VALUES (
-      'telegram-group-hourly-reply',
-      'Group hourly AI reply',
-      'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.',
-      '0 * * * *',
-      0
-    );
-  `);
-  db.exec(`
-    INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
-    VALUES (
-      'workforce-telegram-test',
-      'Workforce Telegram test',
-      'Sends a short test message from the first digital employee (Workforce) to WORKFORCE_TELEGRAM_CHAT_ID.',
-      '0 * * * *',
-      0
-    );
+    INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled) VALUES
+    ('telegram-daily-digest', 'Daily codebase digest', 'Summarise repo activity and open PRs/issues; post to Telegram.', '0 9 * * *', 0),
+    ('telegram-weekly-lint', 'Weekly lint & quality report', 'Run lint/formatter checks and report findings to Telegram.', '0 9 * * 1', 0),
+    ('telegram-security-summary', 'Security scan summary', 'PipeSecure/Semgrep findings summary posted to Telegram.', '0 10 * * *', 0),
+    ('telegram-happypath-summary', 'Happy Path run summary', 'Last Happy Path results per app posted to Telegram.', '0 8 * * *', 0),
+    ('telegram-group-hourly-reply', 'Group hourly AI reply', 'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.', '0 * * * *', 0),
+    ('workforce-telegram-test', 'Workforce Telegram test', 'Sends a short test message from the first digital employee (Workforce) to WORKFORCE_TELEGRAM_CHAT_ID.', '0 * * * *', 0);
   `);
   return true;
 }
@@ -230,10 +247,7 @@ async function runJob(db, job) {
 async function tick() {
   const db = await getDb();
   try {
-    if (!ensureCronRunnerMigrations(db)) {
-      console.warn("[cron-runner] Table cron_jobs not found; run admin once to init schema.");
-      return;
-    }
+    ensureCronRunnerMigrations(db);
     const rows = db
       .prepare("SELECT id, name, schedule FROM cron_jobs WHERE enabled = 1")
       .all();
@@ -263,6 +277,7 @@ createServer(async (req, res) => {
     const jobId = match[1];
     const db = await getDb();
     try {
+      ensureCronRunnerMigrations(db);
       const envSecret = (process.env.CRON_RUNNER_SECRET || "").trim();
       const dbSecret = readCronSecretFromDb(db);
       const expected = envSecret || dbSecret;
@@ -271,16 +286,6 @@ createServer(async (req, res) => {
       if (expected && token !== expected) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, error: "Unauthorized" }));
-        return;
-      }
-      if (!ensureCronRunnerMigrations(db)) {
-        res.writeHead(503, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            ok: false,
-            error: "cron_jobs not initialized; start admin once.",
-          })
-        );
         return;
       }
       const job = db
