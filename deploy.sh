@@ -613,7 +613,7 @@ fi
 ADMIN_CTR=$(docker ps --filter name=admin --format "{{.Names}}" 2>/dev/null | head -1 || true)
 if [ -n "$ADMIN_CTR" ]; then
   # Escape $ as $$ so Docker Compose does not eat bcrypt ($2a$…) or other literals (see .env.example).
-  docker exec "$ADMIN_CTR" node /workspace/scripts/write-env-admin-from-db.js /app/216labs.db \
+  docker exec -w /app "$ADMIN_CTR" node /workspace/scripts/write-env-admin-from-db.js /app/216labs.db \
     > .env.admin 2>/dev/null || : > .env.admin
   ENV_COUNT=$(wc -l < .env.admin | tr -d ' ')
   echo "==> Loaded ${ENV_COUNT} env vars from admin container"
