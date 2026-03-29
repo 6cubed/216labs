@@ -212,9 +212,10 @@ export function AppsOverviewTable({
               <th className="px-4 py-3 font-medium">Path</th>
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium">Deploy</th>
-              <th className="px-4 py-3 font-medium">Runtime</th>
+              <th className="px-4 py-3 font-medium">Pull latest</th>
+              <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Last deploy</th>
-              <th className="px-4 py-3 font-medium">Size</th>
+              <th className="px-4 py-3 font-medium">Image size</th>
               <th className="px-4 py-3 font-medium">Open</th>
               <th className="px-4 py-3 font-medium">Logs</th>
             </tr>
@@ -273,7 +274,12 @@ export function AppsOverviewTable({
                     {formatShortDate(app.lastDeployedAt)}
                   </td>
                   <td className="px-4 py-3 text-xs font-mono text-muted whitespace-nowrap">
-                    {formatSize(app.imageSizeMB)}
+                    <span className="block">{formatSize(app.imageSizeMB)}</span>
+                    {app.startupTimeMs != null && (
+                      <span className="block text-[10px] text-cyan-400/90 mt-0.5">
+                        {app.startupTimeMs}ms startup
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {url && isRunning ? (
