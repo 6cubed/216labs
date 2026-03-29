@@ -612,11 +612,9 @@ fi
 # Write env vars from running admin container — the authoritative source.
 ADMIN_CTR=$(docker ps --filter name=admin --format "{{.Names}}" 2>/dev/null | head -1 || true)
 if [ -n "$ADMIN_CTR" ]; then
-  docker exec "$ADMIN_CTR" node -e "
-const db = require('better-sqlite3')('/app/216labs.db');
-const rows = db.prepare(\"SELECT key, value FROM env_vars WHERE value IS NOT NULL AND value != ''\").all();
-rows.forEach(r => process.stdout.write(r.key + '=' + r.value + '\n'));
-" > .env.admin 2>/dev/null || : > .env.admin
+  # Escape $ as $$ so Docker Compose does not eat bcrypt ($2a$…) or other literals (see .env.example).
+  docker exec "$ADMIN_CTR" node /workspace/scripts/write-env-admin-from-db.js /app/216labs.db \
+    > .env.admin 2>/dev/null || : > .env.admin
   ENV_COUNT=$(wc -l < .env.admin | tr -d ' ')
   echo "==> Loaded ${ENV_COUNT} env vars from admin container"
 else
