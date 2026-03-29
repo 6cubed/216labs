@@ -66,7 +66,7 @@ while ((match = imgRegex.exec(htmlContent)) !== null) {
         try {
             const base64Src = await imageToBase64(imagePath);
             replacements.push({ original: originalSrc, replacement: base64Src });
-        } catch (error) {
+        } catch {
             // Image not found, skip
         }
     }

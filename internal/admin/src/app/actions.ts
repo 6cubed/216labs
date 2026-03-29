@@ -16,7 +16,6 @@ import {
 } from "@/lib/db";
 import { startContainer, stopContainer, pullLatestGhcrForService } from "@/lib/docker";
 import { canPullGhcrFromAdmin } from "@/lib/ghcr-pull";
-import { revalidatePath } from "next/cache";
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { getProjectsRoot } from "@/lib/repo-paths";

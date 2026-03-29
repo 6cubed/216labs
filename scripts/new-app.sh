@@ -43,25 +43,6 @@ case "$STACK" in
     ;;
 esac
 
-# ── Auto-assign admin tracking port (max existing + 1) ────────
-NEXT_PORT=$(python3 - "$REPO_ROOT" << 'PYEOF'
-import sys, json, os
-repo_root = sys.argv[1]
-ports = []
-for entry in os.listdir(repo_root):
-    manifest_path = os.path.join(repo_root, entry, 'manifest.json')
-    if os.path.isfile(manifest_path):
-        try:
-            with open(manifest_path) as f:
-                m = json.load(f)
-            # We don't store admin_port in manifests, but we check known ones
-        except:
-            pass
-# Return the next port (we'll let db.ts auto-assign from max+1)
-print(8020)
-PYEOF
-)
-
 # ── Create directory ───────────────────────────────────────────
 mkdir -p "$APP_DIR"
 echo "Created $APP_DIR"

@@ -55,7 +55,6 @@ async function getComposeContainer(
 
 function getClient(): Dockerode | null {
   try {
-    const { existsSync } = require("fs") as typeof import("fs");
     if (!existsSync(SOCKET_PATH)) return null;
     return new Dockerode({ socketPath: SOCKET_PATH });
   } catch {

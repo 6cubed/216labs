@@ -19,7 +19,10 @@ export function DeployToggle({
   const [localEnabled, setLocalEnabled] = useState(deployEnabled);
 
   useEffect(() => {
-    if (!isPending) setLocalEnabled(deployEnabled);
+    if (isPending) return;
+    queueMicrotask(() => {
+      setLocalEnabled((prev) => (prev === deployEnabled ? prev : deployEnabled));
+    });
   }, [deployEnabled, isPending]);
 
   const active = isPending ? !localEnabled : localEnabled;

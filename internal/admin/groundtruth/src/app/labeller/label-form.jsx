@@ -19,6 +19,8 @@ export function LabelForm({ action, task }) {
       <div className="imagesGrid">
         {task.dataset.imageUrls.map((imageUrl) => (
           <label key={imageUrl} className="card">
+            {/* Dynamic dataset URLs; eslint-disable: next/image needs remotePatterns per host */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary imageUrl from dataset */}
             <img src={imageUrl} alt="Dataset sample" />
             <span style={{ marginTop: "0.5rem" }}>Labels</span>
             <input

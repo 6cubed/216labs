@@ -71,8 +71,6 @@ interface AppManifest {
   }>;
 }
 
-const DB_PATH =
-  process.env.DATABASE_PATH || join(process.cwd(), "..", "216labs.db");
 const PROJECTS_ROOT =
   process.env.PROJECTS_ROOT || join(process.cwd(), "..");
 
