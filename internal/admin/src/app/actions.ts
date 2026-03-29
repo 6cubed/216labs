@@ -10,6 +10,8 @@ import {
   updateTodoCard,
   deleteTodoCard,
   moveTodoCard,
+  ensureCronRunnerSecretExists,
+  getEffectiveCronRunnerSecret,
 } from "@/lib/db";
 import { startContainer, stopContainer, pullLatestGhcrForService } from "@/lib/docker";
 import { canPullGhcrFromAdmin } from "@/lib/ghcr-pull";
@@ -305,7 +307,8 @@ export async function moveTodoCardAction(
 }
 
 export async function runCronJobNow(jobId: string): Promise<ActionResult> {
-  const secret = process.env.CRON_RUNNER_SECRET;
+  ensureCronRunnerSecretExists();
+  const secret = getEffectiveCronRunnerSecret();
   const baseUrl =
     (process.env.CRON_RUNNER_INTERNAL_URL || "http://cron-runner:3029").replace(
       /\/$/,
@@ -313,16 +316,16 @@ export async function runCronJobNow(jobId: string): Promise<ActionResult> {
     );
   if (!secret) {
     return {
-      error:
-        "CRON_RUNNER_SECRET not set. Add it in Admin → Env and redeploy.",
+      error: "Could not resolve CRON_RUNNER_SECRET (unexpected after seed).",
     };
   }
   try {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${secret}`,
+    };
     const res = await fetch(`${baseUrl}/run/${encodeURIComponent(jobId)}`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${secret}`,
-      },
+      headers,
       signal: AbortSignal.timeout(60000),
     });
     const body = await res.json().catch(() => ({}));

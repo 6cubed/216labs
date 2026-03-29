@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { randomUUID } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { getDatabasePath, getProjectsRoot } from "./repo-paths";
@@ -325,6 +325,12 @@ function seedInfraEnvDefaults(db: Database.Database) {
       key: "ADMIN_GITHUB_TOKEN",
       description:
         "Optional GitHub PAT for deployment feed (Actions API). Public repo works without; token raises rate limits.",
+      is_secret: 1,
+    },
+    {
+      key: "CRON_RUNNER_SECRET",
+      description:
+        "Shared secret for admin → cron-runner Run now. Left empty: auto-generated in DB on first cron page load or Run now (no .env needed).",
       is_secret: 1,
     },
   ];
@@ -938,6 +944,37 @@ export function getEnvVarValue(key: string): string | null {
     .get(key) as { value: string } | undefined;
   const v = row?.value?.trim();
   return v && v.length > 0 ? v : null;
+}
+
+/** Process env wins; then 216labs.db env_vars (same file cron-runner reads). */
+export function getEffectiveCronRunnerSecret(): string | null {
+  const env = process.env.CRON_RUNNER_SECRET?.trim();
+  if (env) return env;
+  return getEnvVarValue("CRON_RUNNER_SECRET");
+}
+
+/**
+ * Ensures CRON_RUNNER_SECRET exists in DB when unset in env and empty in DB.
+ * Called from /cron and Run now so cron-runner can authenticate without manual .env.
+ */
+export function ensureCronRunnerSecretExists(): void {
+  if (process.env.CRON_RUNNER_SECRET?.trim()) return;
+  if (getEnvVarValue("CRON_RUNNER_SECRET")) return;
+  const db = getDb();
+  const secret = randomBytes(24).toString("hex");
+  const row = db
+    .prepare("SELECT 1 FROM env_vars WHERE key = 'CRON_RUNNER_SECRET'")
+    .get() as { 1: number } | undefined;
+  if (row) {
+    db.prepare(
+      "UPDATE env_vars SET value = ?, updated_at = datetime('now') WHERE key = 'CRON_RUNNER_SECRET'"
+    ).run(secret);
+  } else {
+    db.prepare(
+      `INSERT INTO env_vars (key, value, description, is_secret, updated_at)
+       VALUES ('CRON_RUNNER_SECRET', ?, 'Auto-generated for admin Run now', 1, datetime('now'))`
+    ).run(secret);
+  }
 }
 
 export interface DbAppAnalytics {

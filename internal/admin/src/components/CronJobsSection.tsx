@@ -90,7 +90,7 @@ export function CronJobsSection({ jobs }: { jobs: DbCronJob[] }) {
           </span>
         </h2>
         <p className="text-xs text-muted max-w-md text-right">
-          Scheduled tasks that write to the project Telegram chat (digests, lint reports, security summaries). Toggle on/off below.
+          Scheduled tasks that write to the project Telegram chat. Toggle on/off; Run now works while you are logged into admin (secret is kept in the shared DB).
         </p>
       </div>
 

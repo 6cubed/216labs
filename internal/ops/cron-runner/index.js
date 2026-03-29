@@ -1,7 +1,8 @@
 /**
  * Cron runner: every 5 minutes, read enabled jobs from 216labs.db,
  * run due handlers, send to Telegram, update last_run_at.
- * Exposes POST /run/:id for immediate run (admin panel); auth via CRON_RUNNER_SECRET.
+ * Exposes POST /run/:id for immediate run (admin panel). Auth: CRON_RUNNER_SECRET env
+ * or same key in env_vars (216labs.db); if both empty, accepts unauthenticated POST (trust Docker network).
  * Uses sql.js (WASM) so there are no native deps — runs on any platform.
  */
 import { createRequire } from "module";
@@ -242,66 +243,67 @@ new Cron("*/5 * * * *", { timezone: "UTC" }, async () => {
   await tick();
 });
 
-// HTTP server for "Run now" from admin (POST /run/:id, Authorization: Bearer CRON_RUNNER_SECRET)
-if (CRON_RUNNER_SECRET) {
-  createServer(async (req, res) => {
-    const url = new URL(req.url || "/", `http://localhost:${RUN_SERVER_PORT}`);
-    const match = url.pathname.match(/^\/run\/([a-z0-9-]+)$/);
-    const method = (req.method || "").toUpperCase();
+// HTTP server for "Run now" from admin (POST /run/:id). Secret: env CRON_RUNNER_SECRET or env_vars in DB.
+createServer(async (req, res) => {
+  const url = new URL(req.url || "/", `http://localhost:${RUN_SERVER_PORT}`);
+  const match = url.pathname.match(/^\/run\/([a-z0-9-]+)$/);
+  const method = (req.method || "").toUpperCase();
 
-    if (method === "POST" && match) {
-      const jobId = match[1];
+  if (method === "POST" && match) {
+    const jobId = match[1];
+    const db = await getDb();
+    try {
+      const envSecret = (process.env.CRON_RUNNER_SECRET || "").trim();
+      const dbSecret = readCronSecretFromDb(db);
+      const expected = envSecret || dbSecret;
       const auth = req.headers.authorization;
       const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : "";
-      if (token !== CRON_RUNNER_SECRET) {
+      if (expected && token !== expected) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, error: "Unauthorized" }));
         return;
       }
-      const db = await getDb();
-      try {
-        if (!ensureCronRunnerMigrations(db)) {
-          res.writeHead(503, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({
-              ok: false,
-              error: "cron_jobs not initialized; start admin once.",
-            })
-          );
-          return;
-        }
-        const job = db
-          .prepare("SELECT id, name, schedule FROM cron_jobs WHERE id = ?")
-          .get(jobId);
-        if (!job) {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ ok: false, error: "Job not found" }));
-          return;
-        }
-        await runJob(db, job);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: true, job: jobId }));
-      } catch (err) {
-        console.error("[cron-runner] Run now error:", err);
-        res.writeHead(500, { "Content-Type": "application/json" });
+      if (!ensureCronRunnerMigrations(db)) {
+        res.writeHead(503, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             ok: false,
-            error: err && err.message ? err.message : "Run failed",
+            error: "cron_jobs not initialized; start admin once.",
           })
         );
-      } finally {
-        db.close();
+        return;
       }
-      return;
+      const job = db
+        .prepare("SELECT id, name, schedule FROM cron_jobs WHERE id = ?")
+        .get(jobId);
+      if (!job) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: "Job not found" }));
+        return;
+      }
+      await runJob(db, job);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, job: jobId }));
+    } catch (err) {
+      console.error("[cron-runner] Run now error:", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          ok: false,
+          error: err && err.message ? err.message : "Run failed",
+        })
+      );
+    } finally {
+      db.close();
     }
+    return;
+  }
 
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: false, error: "Not found" }));
-  }).listen(RUN_SERVER_PORT, "0.0.0.0", () => {
-    console.log("[cron-runner] Run-now server on port", RUN_SERVER_PORT);
-  });
-}
+  res.writeHead(404, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ ok: false, error: "Not found" }));
+}).listen(RUN_SERVER_PORT, "0.0.0.0", () => {
+  console.log("[cron-runner] Run-now server on port", RUN_SERVER_PORT);
+});
 
 console.log("[cron-runner] Started; checking every 5 minutes (UTC). DB:", DATABASE_PATH);
 await tick();
