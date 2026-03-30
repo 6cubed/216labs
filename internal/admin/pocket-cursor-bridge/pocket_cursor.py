@@ -21,6 +21,7 @@ import base64
 import json
 import os
 import re
+import unicodedata
 import subprocess as sp
 import threading
 import time
@@ -2173,13 +2174,20 @@ def tg_pocket_commands_help_text():
 
 
 def telegram_command_base(text: str) -> str:
-    """Telegram groups send /cmd@BotUsername; strip @suffix so routing matches /cmd."""
-    if not text or not text.strip().startswith("/"):
-        return text.strip() if text else ""
-    first = text.strip().split(None, 1)[0]
+    """Telegram groups send /cmd@BotUsername; strip @suffix so routing matches /cmd.
+
+    Some clients use compatibility characters (e.g. fullwidth @ U+FF20). Without
+    NFKC, "@" may not match and the whole /cmd@bot string fails to match /cmd.
+    """
+    if not text:
+        return ""
+    t = unicodedata.normalize("NFKC", text.strip())
+    if not t.startswith("/"):
+        return t
+    first = t.split(None, 1)[0]
     if "@" in first:
-        return first.split("@", 1)[0]
-    return first
+        return first.split("@", 1)[0].lower()
+    return first.lower()
 
 
 def strip_leading_bot_mention(text: str, bot_username: str | None) -> str:
