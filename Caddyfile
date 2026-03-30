@@ -47,6 +47,21 @@ activator.6cubed.app {
 	reverse_proxy activator:3040
 }
 
+agentcart.6cubed.app {
+	reverse_proxy agentcart:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=agentcart&dest=https%3A%2F%2Fagentcart.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=agentcart&dest=https%3A%2F%2Fagentcart.6cubed.app" 302
+		}
+	}
+}
+
 agimemes.6cubed.app {
 	reverse_proxy agimemes:5000 {
 		@cold status 502 503 504

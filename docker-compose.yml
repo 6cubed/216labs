@@ -151,6 +151,21 @@ services:
       - "3000"
     mem_limit: 128m
 
+  # ── AgentCart (agentic commerce demo) ─────────────────────────
+  agentcart:
+    image: 216labs/agentcart:latest
+    pull_policy: never
+    build: ./products/org-platform/local/agentcart
+    restart: unless-stopped
+    environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
+      - PORT=3000
+      - NODE_ENV=production
+      - AGENTCART_API_KEY=${AGENTCART_API_KEY:-}
+    expose:
+      - "3000"
+    mem_limit: 128m
+
   # ── HiveFind ─────────────────────────────────────────────────
   hivefind:
     image: 216labs/hivefind:latest
