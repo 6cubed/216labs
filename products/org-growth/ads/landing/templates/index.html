@@ -139,6 +139,27 @@
     <p class="repo-link"><a href="https://github.com/6cubed/216labs" target="_blank" rel="noopener noreferrer">216labs on GitHub</a></p>
 
     <section class="section">
+      <h2>Latest from the blog</h2>
+      {% if blog_posts %}
+      <div class="links">
+        {% for post in blog_posts %}
+        <a href="{{ post.url }}" target="_blank" rel="noopener noreferrer">
+          <span class="name">{{ post.title }}</span>
+          {% if post.date %}
+          <span class="desc">{{ post.date }}{% if post.excerpt %} · {{ post.excerpt }}{% endif %}</span>
+          {% elif post.excerpt %}
+          <span class="desc">{{ post.excerpt }}</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      <p class="repo-link" style="margin-top:1rem"><a href="https://blog.6cubed.app" target="_blank" rel="noopener noreferrer">All posts on blog.6cubed.app →</a></p>
+      {% else %}
+      <p class="empty-hint">Blog feed loads when the blog service is reachable (<a href="https://blog.6cubed.app" target="_blank" rel="noopener noreferrer">blog.6cubed.app</a>).</p>
+      {% endif %}
+    </section>
+
+    <section class="section">
       <h2>Live apps</h2>
       {% if live_apps %}
       <div class="links">

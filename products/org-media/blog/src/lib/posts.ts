@@ -64,7 +64,7 @@ The factory separates three quantities:
 - **Cold by default** — demos **sleep** when idle; the **edge** (Caddy + Activator) stays **always on** within the droplet’s tiny footprint.
 - **No server-side builds** — **never** compile on the droplet; **build locally or in CI**, transfer artifacts. That keeps CPU spikes off the **\$6** box and avoids installing toolchains in production.
 - **Deploy batching & priority** — when disk or time is tight, **ship the spine first** (proxy, activator, admin), then **tail apps** in later batches. The deploy script already thinks in terms of **caps** and **priority lists** so one bad tail app does not starve the whole fleet.
-- **LRU pool (showroom)** — cap **evictable** running apps (default **10** in compose) so the droplet can **hotswap**: evict least-recently-used demos to make room for the **requested** app and pull from GHCR if needed. Set **`0`** only to disable eviction (e.g. dev or lots of RAM).
+- **LRU pool (showroom)** — cap **evictable** running apps (default **10** in compose) so the droplet can **hotswap**: evict least-recently-used demos to make room for the **requested** app and pull from GHCR if needed. Set **0** only to disable eviction (e.g. dev or lots of RAM).
 
 **When you outgrow \$6 without changing the story**
 

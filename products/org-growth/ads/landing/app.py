@@ -37,7 +37,47 @@ def _fetch_live_apps():
     return []
 
 
+def _fetch_blog_feed():
+    """Latest posts from the blog service (same Docker network) or public URL fallback."""
+    url = os.environ.get("BLOG_FEED_URL", "http://blog:3000/api/feed").strip()
+    if not url:
+        return []
+    try:
+        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read().decode())
+            items = data.get("items") or []
+            if not isinstance(items, list):
+                return []
+            out = []
+            for it in items[:10]:
+                if not isinstance(it, dict):
+                    continue
+                t = (it.get("title") or "").strip()
+                u = (it.get("url") or "").strip()
+                if not t or not u:
+                    continue
+                out.append(
+                    {
+                        "title": t,
+                        "excerpt": (it.get("excerpt") or "").strip(),
+                        "date": (it.get("date") or "").strip(),
+                        "url": u,
+                    }
+                )
+            return out
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, TypeError):
+        pass
+    return []
+
+
+@app.route("/health")
+def health():
+    return ("ok", 200, {"Content-Type": "text/plain; charset=utf-8"})
+
+
 @app.route("/")
 def index():
     live_apps = _fetch_live_apps()
-    return render_template("index.html", live_apps=live_apps)
+    blog_posts = _fetch_blog_feed()
+    return render_template("index.html", live_apps=live_apps, blog_posts=blog_posts)
