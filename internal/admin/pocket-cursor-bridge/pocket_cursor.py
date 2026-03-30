@@ -2190,6 +2190,40 @@ def telegram_command_base(text: str) -> str:
     return first.lower()
 
 
+def _utf16_slice(text: str, offset: int, length: int) -> str:
+    """Slice by Telegram message entity offset/length (UTF-16 code units)."""
+    if length <= 0 or not text:
+        return ""
+    end16 = offset + length
+    u16 = 0
+    start_idx = None
+    for i, ch in enumerate(text):
+        if u16 == offset:
+            start_idx = i
+        cp = ord(ch)
+        u16 += 2 if cp > 0xFFFF else 1
+        if start_idx is not None and u16 >= end16:
+            return text[start_idx : i + 1]
+    if start_idx is not None:
+        return text[start_idx:]
+    return ""
+
+
+def telegram_command_from_message(msg: dict, bot_username: str | None) -> str:
+    """Resolve /cmd for routing: prefer bot_command entity (accurate in groups); else strip + parse."""
+    text = msg.get("text") or ""
+    for ent in msg.get("entities") or []:
+        if ent.get("type") != "bot_command":
+            continue
+        off = int(ent.get("offset", 0))
+        ln = int(ent.get("length", 0))
+        raw = _utf16_slice(text, off, ln)
+        if raw:
+            return telegram_command_base(raw)
+    t = strip_leading_bot_mention(text, bot_username)
+    return telegram_command_base(t)
+
+
 def strip_leading_bot_mention(text: str, bot_username: str | None) -> str:
     """Remove a leading @botusername (groups often use this when privacy mode is on).
 
@@ -2476,6 +2510,8 @@ def sender_thread():
 
                 raw_text = text
                 bu = bot.get('username') if bot else None
+                # Command routing must use bot_command entity + raw text when present (groups / @mention prefix).
+                cmd = telegram_command_from_message(msg, bu)
                 text = strip_leading_bot_mention(text, bu)
                 # Message was only "@Bot" (common in groups with privacy on) — nothing to forward
                 if not text and not photo and not voice:
@@ -2489,7 +2525,6 @@ def sender_thread():
                     continue
 
                 print(f"[sender] {user}: {raw_text}")
-                cmd = telegram_command_base(text)
 
                 # Handle commands (cmd strips /foo@BotName → /foo for group chats)
                 if cmd == '/start':
