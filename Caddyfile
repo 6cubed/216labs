@@ -227,6 +227,21 @@ crowdbulk.6cubed.app {
 	}
 }
 
+dj.6cubed.app {
+	reverse_proxy dj:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=dj&dest=https%3A%2F%2Fdj.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=dj&dest=https%3A%2F%2Fdj.6cubed.app" 302
+		}
+	}
+}
+
 emailgpt.6cubed.app {
 	reverse_proxy emailgpt:5000 {
 		@cold status 502 503 504
