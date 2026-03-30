@@ -435,6 +435,99 @@ Self-reported height and nutrition; recall bias and social desirability likely. 
 Community discourse produces a **statistically significant association**: users who self-report better nutrition during growth are more likely to report adult height at or above their sibling (41% vs. 28%). The signal is consistent with a modest role for nutrition in realised height in populations where severe stunting is rare. The finding is observational and confounded; it supports the plausibility of nutrition–height links rather than proving causation.""",
         "tags": "height,nutrition,growth,vitamin D,zinc,protein,reddit,observational",
     },
+
+    # ── 7. Fasting / TRE & digestion (literature synthesis — no fabricated stats) ─
+    {
+        "slug": "fasting-digestion-evidence-synthesis",
+        "title": "Fasting, Time-Restricted Eating, and Digestive Symptoms: Significance Without Number-Hallucination",
+        "intervention": "Planned fasting or time-restricted eating (e.g. daily eating windows, alternate-day patterns)",
+        "outcome": "Digestive comfort and function (reflux, bloating, bowel habits, IBS-related symptoms)",
+        "source_communities": "Curated synthesis of clinical and mechanistic literature (not a Reddit corpus scrape)",
+        "sample_size": None,
+        "effect_summary": "There is no responsibly defensible single “effect size” or p-value for “fasting improves digestion” without specifying the population, protocol, and endpoint. Human trials usually prioritise weight and metabolic markers; GI outcomes are often secondary, adverse-event, or exploratory—so claims of universal digestive benefit are not supported. Meal timing can plausibly matter for reflux for some people; IBS-style symptoms are heterogeneous.",
+        "p_value": None,
+        "p_value_display": None,
+        "effect_size": None,
+        "effect_size_label": None,
+        "confidence_interval": None,
+        "stats": [
+            {
+                "metric": "Synthesis mode",
+                "value": "Thinking-budget / no numeric invention",
+                "notes": "No fabricated N, p, CI, or Cohen’s h; qualitative tiers only",
+            },
+            {
+                "metric": "What “significance” means here",
+                "value": "Inferential + clinical",
+                "notes": "Statistical significance requires a pre-specified model on real data; this page does not substitute a made-up p-value for that",
+            },
+            {
+                "metric": "Typical IF / TRE trial focus",
+                "value": "Weight, energy intake, glycaemia, lipids",
+                "notes": "Digestive endpoints rarely primary; GI data often safety or exploratory",
+            },
+            {
+                "metric": "Reflux & timing (general nutrition literature)",
+                "value": "Plausible mechanism",
+                "notes": "Late eating is often discussed as a reflux trigger; shifting food earlier may help some individuals—magnitude varies by study design",
+            },
+            {
+                "metric": "IBS / functional gut",
+                "value": "High heterogeneity",
+                "notes": "Fasting can coincide with fewer total FODMAP exposures or, conversely, larger meals → mixed real-world responses",
+            },
+            {
+                "metric": "Risk of worsening",
+                "value": "Non-zero",
+                "notes": "Some people report more bloating, headache, or irritability during adaptation—ignored if we only cherry-pick success posts",
+            },
+        ],
+        "report_markdown": """## Fasting, Time-Restricted Eating, and Digestion
+
+**Report type:** Curated evidence synthesis (thinking-budget mode)  
+**Not included:** Fabricated community sample sizes, p-values, confidence intervals, or effect sizes
+
+---
+
+### 1. Clarify the question
+
+“Improved digestion” might mean: less reflux, less bloating, more predictable stools, less pain, faster gastric emptying, or better tolerance of foods. **Each endpoint needs its own evidence base.** Combining them into one headline “fasting fixes digestion” is already a category error.
+
+### 2. What would be required to claim statistical significance?
+
+To say “fasting is associated with improved digestion” in the **inferential** sense you would need, at minimum:
+
+- A **pre-registered** hypothesis and analysis plan
+- A defined **population** (e.g. adults with overweight; people with functional dyspepsia; IBS subtypes)
+- A **control condition** matched for calories, diet quality, or behaviour change where relevant
+- A **primary GI endpoint** analysed with an appropriate model—not a post-hoc dredge through secondary symptoms
+
+This report **does not perform** that meta-analysis and therefore **does not output a p-value**. Any page that hands you a crisp p-value without pointing to the exact paper, endpoint, and model is at high risk of number hallucination.
+
+### 3. Human evidence in qualitative tiers (no invented percentages)
+
+**Stronger / more direct (still endpoint-specific):**  
+Randomised trials of meal timing and energy restriction sometimes report **adverse events** or **symptom checklists** that include GI items. Those tables are the honest place to look for “did participants tolerate this?” They often show **mixed** GI effects—improvement in some subscales, neutral in others, or mild increases in symptoms during adaptation.
+
+**Moderate / mechanistic:**  
+There is a coherent physiological story: eating closer to sleep can overlap with **lower oesophageal sphincter** competence and **supine reflux** in susceptible people. **Moving food earlier** in the day (a common side effect of time-restricted eating) could therefore help **some** reflux-prone individuals without proving fasting per se is magic.
+
+**Weaker / anecdotal:**  
+Social threads that celebrate “fasting cured my bloating” are **not** independent trials. They confound hydration, fibre, alcohol, stress, sleep, and concurrent diet changes.
+
+### 4. Where honest uncertainty remains
+
+- **IBS and functional disorders:** Responses depend on subtype (IBS-D vs IBS-C), FODMAP load, meal size, and stress. Fasting is neither universally helpful nor universally safe here.
+- **Adaptation phase:** Short-term GI upset during dietary change is common; judging “success” at week one vs week eight can flip the narrative.
+- **Energy deficit:** Large caloric deficits can slow gastric emptying or alter motility in some contexts; digestion is not independent of overall intake.
+
+### 5. Bottom line
+
+**There is no single, universally significant verdict** that “fasting improves digestion” in the same sense as a well-powered trial on a defined GI primary endpoint. The **least wrong** summary: meal-timing changes may **plausibly** improve **some** digestive symptoms (notably reflux linked to late eating) for **some** people; evidence is **heterogeneous**; **worsening** is possible; and **any numeric claim** should be pinned to a **named study** rather than invented for narrative effect.
+
+If you need a hard quantitative answer, the next step is a **systematic review** restricted to RCTs that pre-specify GI outcomes—not a one-page synthetic statistic.""",
+        "tags": "fasting,time-restricted eating,digestion,IBS,reflux,literature-synthesis,evidence-review",
+    },
 ]
 
 

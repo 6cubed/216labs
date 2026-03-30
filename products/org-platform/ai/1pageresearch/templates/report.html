@@ -298,10 +298,11 @@
     </div>
   </div>
 
+  {% set lit_synth = report.tags and 'literature-synthesis' in report.tags.replace(' ', '') %}
   <!-- Stats panel -->
   <div class="stats-panel">
     <div class="stats-panel-header">
-      <h3>Statistical Summary</h3>
+      <h3>{% if lit_synth %}Evidence checklist{% else %}Statistical Summary{% endif %}</h3>
       {% if report.p_value and report.p_value < 0.05 %}
       <span class="sig-badge">p {{ report.p_value_display or report.p_value }}</span>
       {% endif %}
@@ -361,9 +362,14 @@
   </div>
 
   <div class="disclaimer">
+    {% if lit_synth %}
+    <strong>⚠ Evidence synthesis (not a corpus scrape):</strong> This report summarizes mechanisms and published human evidence in qualitative form.
+    It does <em>not</em> invent sample sizes, p-values, or confidence intervals. Treat as orientation reading, not medical advice; check primary sources before acting.
+    {% else %}
     <strong>⚠ Observational Data:</strong> This report is an analysis of public internet discourse (Reddit and similar communities).
     All figures are derived from self-reported, community-generated data. This is not a clinical trial. Findings should be treated as
     hypothesis-generating signals, not medical advice.
+    {% endif %}
   </div>
 
   <!-- Full markdown report -->
