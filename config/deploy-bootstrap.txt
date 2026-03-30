@@ -2,6 +2,9 @@
 # Production: use the admin dashboard (deploy toggles) and CI (.github/workflows/ghcr-publish.yml) for images.
 # deploy.sh reads the server admin DB first; this file is not required for GHCR deploys.
 # Greenfield / forks: uncomment or add IDs here if you want a few demos pre-enabled before first UI visit.
+# Root domain + www + homepage feed (always merge into deploy catalogue when missing from DB).
+landing
+blog
 tortellini
 onefit
 activator
