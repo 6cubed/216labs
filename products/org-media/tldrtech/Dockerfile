@@ -2,10 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY internal/python/labs_http /app/labs_http
+
+COPY products/org-media/tldrtech/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY products/org-media/tldrtech/ .
 
 ENV PYTHONUNBUFFERED=1
 ENV PORT=5000

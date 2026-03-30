@@ -21,14 +21,14 @@ import re
 import subprocess
 import sys
 import time
-import urllib.error
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT / "internal" / "python"))
+from labs_http import http_probe  # noqa: E402
 APP_ID_RE = re.compile(r"^[a-z0-9][a-z0-9.-]*$")
 DOCKER_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
 SHARED_REBUILD_PATHS = {
@@ -37,6 +37,7 @@ SHARED_REBUILD_PATHS = {
     "scripts/generate-compose.py",
     "scripts/generate-caddyfile.py",
     "scripts/quality-factory.py",
+    "scripts/compose-ghcr-matrix.py",
 }
 
 
@@ -196,7 +197,12 @@ def select_apps(
 ) -> list[AppManifest]:
     selected = apps
     if mode == "changed":
-        if changed and any(p in SHARED_REBUILD_PATHS or p.startswith(".github/workflows/") for p in changed):
+        if changed and any(
+            p in SHARED_REBUILD_PATHS
+            or p.startswith(".github/workflows/")
+            or p.startswith("internal/python/")
+            for p in changed
+        ):
             selected = apps
         elif changed:
             selected = [
@@ -226,19 +232,7 @@ def check_compose(selected: list[AppManifest], service_names: set[str]) -> list[
 
 
 def _http_probe(url: str, timeout_s: float) -> tuple[int | None, str]:
-    req = urllib.request.Request(url, headers={"User-Agent": "quality-factory/1.0"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
-            body = resp.read(5000).decode("utf-8", errors="replace")
-            return int(resp.getcode()), body
-    except urllib.error.HTTPError as e:
-        try:
-            body = e.read(5000).decode("utf-8", errors="replace")
-        except Exception:
-            body = ""
-        return int(e.code), body
-    except Exception as e:
-        return None, str(e)
+    return http_probe(url, timeout_s, user_agent="quality-factory/1.0")
 
 
 def _check_live_one(app: AppManifest, domain: str, timeout_s: float, retries: int) -> CheckReport:

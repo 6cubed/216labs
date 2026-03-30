@@ -66,6 +66,9 @@ def _service_changed(name: str, svc: dict, changed_files: set[str]) -> bool:
         for f in changed_files
     ):
         return True
+    # Shared Python copied into multiple image build contexts (e.g. labs_http).
+    if any(f.startswith("internal/python/") for f in changed_files):
+        return True
 
     context, dockerfile = _service_paths(name, svc)
     if dockerfile and dockerfile in changed_files:

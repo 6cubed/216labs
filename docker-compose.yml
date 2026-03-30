@@ -713,7 +713,9 @@ services:
   landing:
     image: 216labs/landing:latest
     pull_policy: never
-    build: ./products/org-growth/ads/landing
+    build:
+      context: .
+      dockerfile: products/org-growth/ads/landing/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
@@ -1002,7 +1004,9 @@ services:
   tldrtech:
     image: 216labs/tldrtech:latest
     pull_policy: never
-    build: ./products/org-media/tldrtech
+    build:
+      context: .
+      dockerfile: products/org-media/tldrtech/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

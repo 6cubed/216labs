@@ -1,11 +1,10 @@
 # 216labs landing — 6cubed.app / www
-import json
 import os
 import re
-import urllib.error
-import urllib.request
 
 from flask import Flask, render_template
+
+from labs_http import fetch_json, normalize_blog_items
 
 app = Flask(__name__)
 
@@ -25,50 +24,18 @@ def _inject_ga_context():
 def _fetch_live_apps():
     base = os.environ.get("ADMIN_INTERNAL_URL", "http://admin:3000").rstrip("/")
     url = f"{base}/api/public/live-apps"
-    try:
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=4) as resp:
-            data = json.loads(resp.read().decode())
-            items = data.get("items") or []
-            if isinstance(items, list):
-                return items
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, TypeError):
-        pass
-    return []
+    data = fetch_json(url, timeout=4, default=None)
+    if not isinstance(data, dict):
+        return []
+    items = data.get("items") or []
+    return items if isinstance(items, list) else []
 
 
 def _fetch_blog_feed():
     """Latest posts from the blog service (same Docker network) or public URL fallback."""
     url = os.environ.get("BLOG_FEED_URL", "http://blog:3000/api/feed").strip()
-    if not url:
-        return []
-    try:
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=4) as resp:
-            data = json.loads(resp.read().decode())
-            items = data.get("items") or []
-            if not isinstance(items, list):
-                return []
-            out = []
-            for it in items[:10]:
-                if not isinstance(it, dict):
-                    continue
-                t = (it.get("title") or "").strip()
-                u = (it.get("url") or "").strip()
-                if not t or not u:
-                    continue
-                out.append(
-                    {
-                        "title": t,
-                        "excerpt": (it.get("excerpt") or "").strip(),
-                        "date": (it.get("date") or "").strip(),
-                        "url": u,
-                    }
-                )
-            return out
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, TypeError):
-        pass
-    return []
+    data = fetch_json(url, timeout=4, default=None)
+    return normalize_blog_items(data, max_items=10) if data is not None else []
 
 
 @app.route("/health")

@@ -4,7 +4,6 @@ import random
 import smtplib
 import sqlite3
 import urllib.parse
-import urllib.request
 from datetime import UTC, datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,6 +11,8 @@ from pathlib import Path
 from typing import Any
 
 import flask
+
+from labs_http import fetch_json
 
 app = flask.Flask(__name__)
 app.secret_key = os.environ.get("TLDRTECH_SESSION_SECRET", "tldrtech-dev-secret")
@@ -80,10 +81,13 @@ def _fetch_hn_top_stories_for_previous_day(max_items: int = 5) -> list[dict[str,
     }
     url = "https://hn.algolia.com/api/v1/search_by_date?" + urllib.parse.urlencode(params)
 
-    try:
-        with urllib.request.urlopen(url, timeout=12) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except Exception:
+    payload = fetch_json(
+        url,
+        timeout=12.0,
+        headers={"User-Agent": "TLDRtech/1.0 (+https://tldrtech.6cubed.app)"},
+        default=None,
+    )
+    if not isinstance(payload, dict):
         return FALLBACK_ITEMS[:max_items]
 
     hits = payload.get("hits") or []
