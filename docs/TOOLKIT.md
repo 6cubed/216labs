@@ -40,6 +40,10 @@ To approximate a **minimal deploy surface** before that split:
 
 - Replace branding strings in `README.md` and manifests with your org name; keep the **mechanics** (manifests, deploy, admin) unchanged.
 
+## Shared Python (HTTP)
+
+`internal/python/labs_http/` holds stdlib-only helpers (`fetch_json`, `http_probe`, `normalize_blog_items`) with consistent timeouts and error handling. Images that import it use a **repo-root** Docker build (`build.context: .` plus a `dockerfile` path under `products/…`) and `COPY internal/python/labs_http /app/labs_http`.
+
 ## Related scripts
 
 - `./scripts/new-app.sh <id> [nextjs|flask|fastapi]` — scaffold another app under `products/org-platform/local/`.
