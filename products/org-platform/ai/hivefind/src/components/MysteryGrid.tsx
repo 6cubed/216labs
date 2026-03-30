@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Card } from "@216labs/ui";
 import { mysteries } from "@/data/mysteries";
 import { MysteryCard } from "./MysteryCard";
 import type { MysteryStatus, MysteryCategory } from "@/data/types";
@@ -125,7 +126,10 @@ export function MysteryGrid() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border border-dashed bg-surface/50 py-16">
+        <Card
+          tone="surface"
+          className="flex flex-col items-center justify-center border-dashed bg-surface/50 py-16"
+        >
           <svg className="mb-3 h-10 w-10 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -136,7 +140,7 @@ export function MysteryGrid() {
           >
             Clear filters
           </button>
-        </div>
+        </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((m, i) => (

@@ -1,0 +1,5 @@
+{
+  "name": "216labs-monorepo",
+  "private": true,
+  "workspaces": ["packages/*", "products/org-platform/ai/hivefind"]
+}

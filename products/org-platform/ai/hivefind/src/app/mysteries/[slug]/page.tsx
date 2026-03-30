@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { cardVariants, cn, Button } from "@216labs/ui";
 import { mysteries, getMysteryBySlug } from "@/data/mysteries";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CategoryBadge } from "@/components/CategoryBadge";
@@ -67,7 +68,7 @@ export default async function MysteryPage({ params }: { params: Promise<{ slug: 
         </div>
       </header>
 
-      <section className="mb-10 rounded-xl border border-border bg-surface p-5 sm:p-6">
+      <section className={cn(cardVariants({ tone: "surface" }), "mb-10 p-5 sm:p-6")}>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
           Summary
         </h2>
@@ -77,7 +78,7 @@ export default async function MysteryPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {mystery.keyFacts.length > 0 && (
-        <section className="mb-10 rounded-xl border border-border bg-surface p-5 sm:p-6">
+        <section className={cn(cardVariants({ tone: "surface" }), "mb-10 p-5 sm:p-6")}>
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">
             Key Facts
           </h2>
@@ -93,7 +94,7 @@ export default async function MysteryPage({ params }: { params: Promise<{ slug: 
       )}
 
       {mystery.persons.length > 0 && (
-        <section className="mb-10 rounded-xl border border-border bg-surface p-5 sm:p-6">
+        <section className={cn(cardVariants({ tone: "surface" }), "mb-10 p-5 sm:p-6")}>
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">
             Key Persons
           </h2>
@@ -158,20 +159,26 @@ export default async function MysteryPage({ params }: { params: Promise<{ slug: 
           your information through our platform.
         </p>
         <div className="flex gap-3">
-          <Link
-            href="/#submit"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-amber-400"
+          <Button
+            asChild
+            variant="ghost"
+            className="h-auto min-h-0 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-amber-400 hover:text-background"
           >
-            Submit a Tip
-          </Link>
-          <a
-            href="https://www.garda.ie/en/contact-us/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-light"
+            <Link href="/#submit">Submit a Tip</Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            className="h-auto min-h-0 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-light"
           >
-            Contact Gardaí
-          </a>
+            <a
+              href="https://www.garda.ie/en/contact-us/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Contact Gardaí
+            </a>
+          </Button>
         </div>
       </section>
     </div>
