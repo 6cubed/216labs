@@ -251,6 +251,13 @@ chat_id = int(chat_id_file.read_text().strip()) if chat_id_file.exists() else No
 chat_id_lock = threading.Lock()
 muted_file = Path(__file__).parent / '.muted'
 muted = muted_file.exists()  # Persisted across restarts
+auto_approve_prompts_file = BRIDGE_DIR / '.auto_approve_prompts'
+_ap_env = os.environ.get('POCKET_AUTO_APPROVE_PROMPTS', '').strip().lower()
+if _ap_env in ('1', 'true', 'yes', 'on'):
+    auto_approve_prompts_file.touch()
+elif _ap_env in ('0', 'false', 'no', 'off'):
+    auto_approve_prompts_file.unlink(missing_ok=True)
+auto_approve_prompts = auto_approve_prompts_file.exists()
 active_chat_file = Path(__file__).parent / '.active_chat'
 context_pcts_file = Path(__file__).parent / '.context_pcts'
 phone_outbox = Path(__file__).parent / '_phone_outbox'
@@ -261,6 +268,8 @@ last_sent_lock = threading.Lock()
 last_tg_message_id = None  # Message ID of the last Telegram message (for reactions)
 pending_confirms = {}  # {tool_call_id: {buttons_selector, buttons: [{label, index}]}} for inline keyboards
 pending_confirms_lock = threading.Lock()
+confirm_token_map = {}  # {short_token: tool_call_id} to keep Telegram callback_data <= 64 bytes
+confirm_token_map_lock = threading.Lock()
 
 # Forum supergroups (topics): outgoing sends must include message_thread_id or replies go to General / wrong topic.
 _thread_path = BRIDGE_DIR / ".chat_thread_id"
@@ -509,6 +518,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'status', 'description': 'Show bridge status (pause, workspaces, verbosity)'},
     {'command': 'pause', 'description': 'Pause Cursor to Telegram forwarding'},
     {'command': 'play', 'description': 'Resume forwarding'},
+    {'command': 'autoprompt', 'description': 'Auto-click Run/confirm (on|off|status)'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
     {'command': 'verbose', 'description': 'Mirror agent thinking live (Telegram edits)'},
     {'command': 'reasoning', 'description': 'Alias: mirror agent thinking live (same as /verbose)'},
@@ -2133,16 +2143,18 @@ def tg_bridge_status_text():
     """Human-readable bridge status for /start and /status."""
     conv_name = cursor_get_active_conv()
     status_line = "⏸ Paused" if muted else "▶ Active"
+    ap_line = "⚡ Auto-approve prompts: ON" if auto_approve_prompts else "⛔ Auto-approve prompts: OFF"
     instances = len(instance_registry)
     lines = [
         f"PocketCursor is running. {status_line}",
+        ap_line,
         f"{instances} workspace{'s' if instances != 1 else ''} connected.",
     ]
     if conv_name:
         lines.append(f"💬 {conv_name}")
     lines.append(
-        "\n/newchat /chats /deleteoldchats /commands /logs /logevents /status /pause /play /screenshot "
-        "/verbose /reasoning /normal /quiet /unpair"
+        "\n/newchat /chats /deleteoldchats /commands /logs /logevents /status /pause /play /autoprompt "
+        "/screenshot /verbose /reasoning /normal /quiet /unpair"
     )
     lines.append(f"Verbosity: {get_bridge_verbosity()}")
     lines.append(
@@ -2187,7 +2199,7 @@ def strip_leading_bot_mention(text: str, bot_username: str | None) -> str:
 
 
 def sender_thread():
-    global chat_id, allowed_user_ids, last_sent_text, last_tg_message_id, muted, active_instance_id, mirrored_chat
+    global chat_id, allowed_user_ids, last_sent_text, last_tg_message_id, muted, auto_approve_prompts, active_instance_id, mirrored_chat
     print("[sender] Starting Telegram poller...")
 
     # Drain any pending updates from before this restart
@@ -2224,9 +2236,13 @@ def sender_thread():
                         continue
 
                     action, _, tool_id = cb_data.partition(':')
+                    lookup_tool_id = tool_id
+                    if action.startswith('btn_') and tool_id:
+                        with confirm_token_map_lock:
+                            lookup_tool_id = confirm_token_map.pop(tool_id, tool_id)
                     with pending_confirms_lock:
-                        selectors = pending_confirms.pop(tool_id, None)
-                    print(f"[sender] Callback: action={action!r} tool_id={tool_id[:12]}... selectors={'found' if selectors else 'NONE'}")
+                        selectors = pending_confirms.pop(lookup_tool_id, None)
+                    print(f"[sender] Callback: action={action!r} tool_id={lookup_tool_id[:12]}... selectors={'found' if selectors else 'NONE'}")
 
                     if cb_data == 'noop':
                         tg_call('answerCallbackQuery', callback_query_id=cb_id)
@@ -2550,6 +2566,36 @@ def sender_thread():
                         resume_msg += f"\n💬 {conv_name}"
                     tg_send(cid, resume_msg)
                     print("[sender] Resumed")
+                    continue
+
+                if cmd == '/autoprompt' or cmd.startswith('/autoprompt '):
+                    parts = text.strip().split(maxsplit=1)
+                    arg = parts[1].strip().lower() if len(parts) > 1 else ''
+                    if arg in ('on', '1', 'true', 'yes'):
+                        auto_approve_prompts = True
+                        auto_approve_prompts_file.touch()
+                        tg_send(
+                            cid,
+                            "✅ Auto-approve prompts: ON\n"
+                            "Cursor confirmation dialogs (e.g. Run) are clicked automatically.\n"
+                            "Use /autoprompt off to require Telegram buttons again.",
+                        )
+                        print("[sender] Auto-approve prompts ON")
+                    elif arg in ('off', '0', 'false', 'no'):
+                        auto_approve_prompts = False
+                        auto_approve_prompts_file.unlink(missing_ok=True)
+                        tg_send(
+                            cid,
+                            "⛔ Auto-approve prompts: OFF\n"
+                            "You will get Telegram inline buttons for each confirmation.",
+                        )
+                        print("[sender] Auto-approve prompts OFF")
+                    else:
+                        tg_send(
+                            cid,
+                            f"Auto-approve prompts: {'ON' if auto_approve_prompts else 'OFF'}\n"
+                            "Use /autoprompt on or /autoprompt off",
+                        )
                     continue
 
                 if cmd == '/screenshot':
@@ -3033,16 +3079,54 @@ def monitor_thread():
                             else:
                                 print(f"[command-rules] Auto-accept click failed ({click_result}), falling back to keyboard")
 
+                    # Auto-approve all confirmations (toggle: /autoprompt or .auto_approve_prompts; env POCKET_AUTO_APPROVE_PROMPTS)
+                    if auto_approve_prompts and btns_selector and buttons:
+                        accept_idx, accept_label = command_rules.find_accept_button(buttons)
+                        if accept_idx is None:
+                            accept_idx = buttons[0]['index']
+                            accept_label = buttons[0].get('label', '?')
+                        png_ap = cdp_screenshot_element(sec_selector) if sec_selector else None
+                        click_result = cdp_eval(f"""
+                            (function() {{
+                                const btns = document.querySelectorAll('{btns_selector}');
+                                if (!btns[{accept_idx}]) return 'ERROR: button not found';
+                                btns[{accept_idx}].click();
+                                return 'OK';
+                            }})();
+                        """)
+                        if click_result and click_result.strip() == 'OK':
+                            print(f"[auto-prompt] Auto-approved: {text} -> {accept_label}")
+                            if not muted and cid:
+                                if png_ap:
+                                    tg_send_photo_bytes(
+                                        cid,
+                                        png_ap,
+                                        filename='auto_approve.png',
+                                        caption=f"✅ Auto-approved: {text}",
+                                    )
+                                else:
+                                    tg_send(cid, f"✅ Auto-approved: {text}")
+                            with pending_confirms_lock:
+                                pending_confirms.pop(tool_id, None)
+                            if sec_key:
+                                forwarded_ids.add(sec_key)
+                            section_stable.pop(sec_key, None)
+                            continue
+                        print(f"[auto-prompt] Auto-approve click failed ({click_result}), falling back to keyboard")
+
                     if not muted:
                         tg_typing(cid)
                         png = None
                         if sec_selector:
                             png = cdp_screenshot_element(sec_selector)
                         keyboard = []
+                        callback_token = base64.urlsafe_b64encode(os.urandom(6)).decode('ascii').rstrip('=')
+                        with confirm_token_map_lock:
+                            confirm_token_map[callback_token] = tool_id
                         for btn in buttons:
                             keyboard.append([{
                                 'text': btn['label'],
-                                'callback_data': f"btn_{btn['index']}:{tool_id}"
+                                'callback_data': f"btn_{btn['index']}:{callback_token}"
                             }])
                         if png:
                             print(f"[monitor] Forwarding CONFIRMATION with keyboard: {text}")

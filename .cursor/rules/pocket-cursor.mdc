@@ -10,6 +10,7 @@ alwaysApply: true
 - **Windows:** `internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` — `python internal/admin/pocket-cursor-bridge/restart_pocket_cursor.py` with `block_until_ms: 0` (long-running process).
 - **Auto-restart:** When editing any file under `internal/admin/pocket-cursor-bridge/`, always restart the bridge after changes that affect runtime behavior (bug fixes, features, refactors). Do not wait for the user to ask.
 - If the user reports unexpected behavior, check if a restart is needed first.
+- **Auto-approve Cursor confirmations:** `/autoprompt on` and `/autoprompt off` (persisted in `internal/admin/pocket-cursor-bridge/.auto_approve_prompts`). Optional env `POCKET_AUTO_APPROVE_PROMPTS=1|0` syncs that file on bridge startup. When ON, Run/confirm dialogs are clicked automatically so Telegram does not block on inline Run.
 
 ## Phone outbox ("send to phone", "phone outbox")
 
