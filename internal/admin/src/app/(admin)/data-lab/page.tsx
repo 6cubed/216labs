@@ -38,6 +38,12 @@ export default async function DataLabPage() {
           MVP data engineering showroom: run scrape and transform jobs in CI, publish compact
           artifacts, keep the droplet clean.
         </p>
+        <p className="text-xs text-muted mt-2 border border-border/60 rounded-md px-3 py-2 bg-muted/20">
+          <strong className="text-foreground">URL:</strong>{" "}
+          <code className="text-foreground/90">https://admin.{process.env.NEXT_PUBLIC_APP_HOST || "6cubed.app"}/data-lab</code>
+          . The admin site uses HTTP Basic Auth — if you see <strong className="text-foreground">401</strong> or a browser
+          password prompt, sign in with the same credentials as the rest of admin (not your GitHub login).
+        </p>
         {runsNote ? (
           <p className="text-sm text-amber-400/90 mt-2 border border-amber-500/20 rounded-md px-3 py-2 bg-amber-500/5">
             {runsNote}

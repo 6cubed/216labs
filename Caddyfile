@@ -21,11 +21,33 @@ anchor.6cubed.app {
 }
 
 6cubed.app {
-	reverse_proxy landing:5000
+	reverse_proxy landing:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=landing&dest=https%3A%2F%2F6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=landing&dest=https%3A%2F%2F6cubed.app" 302
+		}
+	}
 }
 
 www.6cubed.app {
-	reverse_proxy landing:5000
+	reverse_proxy landing:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=landing&dest=https%3A%2F%2Fwww.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=landing&dest=https%3A%2F%2Fwww.6cubed.app" 302
+		}
+	}
 }
 
 1pageresearch.6cubed.app {

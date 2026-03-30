@@ -1,0 +1,11 @@
+[
+  {
+    "id": "web-scrape-demo",
+    "name": "Web Scrape Demo",
+    "description": "Scrape ~10k public rows, transform into a clean analytical dataset, and publish parquet + duckdb artifacts.",
+    "schedule": "0 6 * * *",
+    "owner": "data-lab",
+    "status": "active",
+    "path": "internal/data-jobs/web-scrape-demo/run_job.py"
+  }
+]

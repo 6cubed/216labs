@@ -98,19 +98,45 @@ for dir_path in manifest_dirs():
 
 entries.sort(key=lambda x: x[0])
 
-# Root domain (6cubed.app + www.6cubed.app) → landing app
+# Root domain (6cubed.app + www.6cubed.app) → landing app (with Activator warmup on cold upstream)
 if root_domain_app:
     svc, port = root_domain_app
-    lines += [
-        f"{domain} {{",
-        f"\treverse_proxy {svc}:{port}",
-        "}",
-        "",
-        f"www.{domain} {{",
-        f"\treverse_proxy {svc}:{port}",
-        "}",
-        "",
-    ]
+    try:
+        rp = int(port)
+    except (TypeError, ValueError):
+        rp = 0
+    if rp > 0:
+        for host in (domain, f"www.{domain}"):
+            dest_enc = quote(f"https://{host}", safe="")
+            warm = f"https://activator.{domain}/warmup?app={svc}&dest={dest_enc}"
+            lines += [
+                f"{host} {{",
+                f"\treverse_proxy {svc}:{port} {{",
+                "\t\t@cold status 502 503 504",
+                "\t\thandle_response @cold {",
+                f'\t\t\tredir "{warm}" 302',
+                "\t\t}",
+                "\t}",
+                "\thandle_errors {",
+                "\t\t@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`",
+                "\t\thandle @dial {",
+                f'\t\t\tredir "{warm}" 302',
+                "\t\t}",
+                "\t}",
+                "}",
+                "",
+            ]
+    else:
+        lines += [
+            f"{domain} {{",
+            f"\treverse_proxy {svc}:{port}",
+            "}",
+            "",
+            f"www.{domain} {{",
+            f"\treverse_proxy {svc}:{port}",
+            "}",
+            "",
+        ]
 
 # On cold upstream (502/503/504), send users to Activator warmup so docker compose can start the app.
 # Skip activator itself and manifests with internal_port 0 (no HTTP upstream).

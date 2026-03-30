@@ -1,0 +1,38 @@
+name: data-jobs-mvp
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  web-scrape-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r internal/data-jobs/requirements.txt
+
+      - name: Run sample data job
+        run: |
+          python internal/data-jobs/web-scrape-demo/run_job.py \
+            --target-rows 10000 \
+            --output-dir internal/data-jobs/out/web-scrape-demo
+
+      - name: Upload data artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-scrape-demo-${{ github.run_number }}
+          path: internal/data-jobs/out/web-scrape-demo/
+          if-no-files-found: error
