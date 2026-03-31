@@ -5,6 +5,7 @@ __pycache__
 .env.admin-sync
 .bridge_verbosity
 .allowed_user_ids
+.agent_conversation_off_user_ids
 .owner_id
 .chat_thread_id
 .chat_id

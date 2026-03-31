@@ -259,6 +259,45 @@ if _ap_env in ('1', 'true', 'yes', 'on'):
 elif _ap_env in ('0', 'false', 'no', 'off'):
     auto_approve_prompts_file.unlink(missing_ok=True)
 auto_approve_prompts = auto_approve_prompts_file.exists()
+
+# Per-user: when in this set, Telegram text/photos are not sent to Cursor (group chat "sidebar" mode).
+agent_conversation_off_file = BRIDGE_DIR / ".agent_conversation_off_user_ids"
+
+
+def _load_agent_conversation_off_user_ids() -> set[int]:
+    s: set[int] = set()
+    if not agent_conversation_off_file.is_file():
+        return s
+    try:
+        data = json.loads(agent_conversation_off_file.read_text(encoding="utf-8"))
+        if isinstance(data, list):
+            for x in data:
+                if isinstance(x, int):
+                    s.add(x)
+                elif isinstance(x, str) and x.strip().isdigit():
+                    s.add(int(x.strip()))
+    except (json.JSONDecodeError, OSError):
+        pass
+    return s
+
+
+agent_conversation_off_user_ids: set[int] = _load_agent_conversation_off_user_ids()
+
+
+def _save_agent_conversation_off_user_ids() -> None:
+    try:
+        agent_conversation_off_file.write_text(
+            json.dumps(sorted(agent_conversation_off_user_ids)), encoding="utf-8"
+        )
+    except OSError as e:
+        print(f"[bridge] Could not save {agent_conversation_off_file}: {e}")
+
+
+def agent_conversation_enabled_for_user(user_id: int) -> bool:
+    """If False, this user's messages are not forwarded to Cursor (commands still work)."""
+    return user_id not in agent_conversation_off_user_ids
+
+
 active_chat_file = Path(__file__).parent / '.active_chat'
 context_pcts_file = Path(__file__).parent / '.context_pcts'
 phone_outbox = Path(__file__).parent / '_phone_outbox'
@@ -520,6 +559,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'pause', 'description': 'Pause Cursor to Telegram forwarding'},
     {'command': 'play', 'description': 'Resume forwarding'},
     {'command': 'autoprompt', 'description': 'Auto-click Run/confirm (on|off|status)'},
+    {'command': 'agentconversation', 'description': 'Your msgs to Cursor on|off (group mode)'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
     {'command': 'verbose', 'description': 'Mirror agent thinking live (Telegram edits)'},
     {'command': 'reasoning', 'description': 'Alias: mirror agent thinking live (same as /verbose)'},
@@ -2458,6 +2498,11 @@ def sender_thread():
 
                 # Handle photo messages (from phone gallery, camera, etc.)
                 if photo:
+                    if not agent_conversation_enabled_for_user(user_id):
+                        print(
+                            f"[sender] Skipped photo (agentconversation off): {user} ({user_id})"
+                        )
+                        continue
                     print(f"[sender] {user}: [photo] {caption}")
                     tg_typing(cid)
                     # Mark so monitor knows this turn came from Telegram
@@ -2501,6 +2546,11 @@ def sender_thread():
 
                 # Handle voice messages (no transcription — text and photos only)
                 if voice:
+                    if not agent_conversation_enabled_for_user(user_id):
+                        print(
+                            f"[sender] Skipped voice (agentconversation off): {user} ({user_id})"
+                        )
+                        continue
                     print(f"[sender] {user}: [voice] ignored ({voice.get('duration', '?')}s)")
                     tg_send(
                         cid,
@@ -2713,6 +2763,45 @@ def sender_thread():
                             )
                     else:
                         tg_send(cid, "No open chats right now.")
+                    continue
+
+                if cmd == "/agentconversation" or cmd.startswith("/agentconversation "):
+                    parts = text.strip().split(maxsplit=1)
+                    arg = parts[1].strip().lower() if len(parts) > 1 else ""
+                    if arg in ("off", "0", "false", "no"):
+                        agent_conversation_off_user_ids.add(user_id)
+                        _save_agent_conversation_off_user_ids()
+                        tg_send(
+                            cid,
+                            "🔕 Agent conversation: OFF for you.\n"
+                            "Your messages and photos will not go to Cursor. "
+                            "Other people in this chat are unchanged.\n"
+                            "Use /agentconversation ON when you want to send again.",
+                        )
+                        print(f"[sender] agentconversation OFF for user {user_id}")
+                    elif arg in ("on", "1", "true", "yes"):
+                        agent_conversation_off_user_ids.discard(user_id)
+                        _save_agent_conversation_off_user_ids()
+                        tg_send(
+                            cid,
+                            "🔔 Agent conversation: ON for you.\n"
+                            "Your messages go to Cursor again.",
+                        )
+                        print(f"[sender] agentconversation ON for user {user_id}")
+                    else:
+                        on = agent_conversation_enabled_for_user(user_id)
+                        tg_send(
+                            cid,
+                            f"Agent conversation for you: {'ON' if on else 'OFF'}\n"
+                            "• /agentconversation ON — send your messages to Cursor\n"
+                            "• /agentconversation OFF — chat here without hitting the bridge",
+                        )
+                    continue
+
+                if not agent_conversation_enabled_for_user(user_id):
+                    print(
+                        f"[sender] Skipped (agentconversation off): user {user_id} {raw_text[:100]!r}"
+                    )
                     continue
 
                 # Record what we're sending (so monitor knows which turn is ours)
