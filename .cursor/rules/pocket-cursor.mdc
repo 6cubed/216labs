@@ -11,7 +11,7 @@ alwaysApply: true
 - **Auto-restart:** When editing any file under `internal/admin/pocket-cursor-bridge/`, always restart the bridge after changes that affect runtime behavior (bug fixes, features, refactors). Do not wait for the user to ask.
 - If the user reports unexpected behavior, check if a restart is needed first.
 - **Auto-approve Cursor confirmations:** `/autoprompt on` and `/autoprompt off` (persisted in `internal/admin/pocket-cursor-bridge/.auto_approve_prompts`). Optional env `POCKET_AUTO_APPROVE_PROMPTS=1|0` syncs that file on bridge startup. When ON, Run/confirm dialogs are clicked automatically so Telegram does not block on inline Run.
-- **Per-user Cursor forwarding (group chats):** `/agentconversation ON` and `/agentconversation OFF` — when OFF, that Telegram user’s text and photos are not sent to Cursor; slash commands still work. State is per user id in `internal/admin/pocket-cursor-bridge/.agent_conversation_off_user_ids`. `/agentconversation` alone shows your current mode.
+- **Per-user Cursor forwarding:** `/agentconversation ON` and `/agentconversation OFF`. **Groups/supergroups:** default is OFF for each user until they `/agentconversation ON` (persisted in `.agent_conversation_on_user_ids`). **Private chat with the bot:** default is ON until `/agentconversation OFF` (`.agent_conversation_off_user_ids`). Slash commands always work. `/agentconversation` alone shows mode for the current chat type.
 
 ## Phone outbox ("send to phone", "phone outbox")
 

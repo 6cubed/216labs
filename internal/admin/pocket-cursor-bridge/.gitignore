@@ -6,6 +6,7 @@ __pycache__
 .bridge_verbosity
 .allowed_user_ids
 .agent_conversation_off_user_ids
+.agent_conversation_on_user_ids
 .owner_id
 .chat_thread_id
 .chat_id
