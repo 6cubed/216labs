@@ -581,7 +581,7 @@ A vibe code factory that ships fast can also ship vulnerabilities: new dependenc
 
 **PipeSecure: overseer of the repo**
 
-PipeSecure is our in-house security module. It clones the 216labs monorepo (or the repo you point it at), runs static analysis with Semgrep and ast-grep using a curated set of rules — SQL injection, XSS, path traversal, SSRF, hardcoded secrets, auth bypass, prototype pollution, eval usage, DOM XSS — and compares results to the previous run. New findings become new GitHub issues, labelled by severity. Fix the code and the next scan no longer sees the finding; PipeSecure closes the issue and adds a “Resolved” comment. So the growing repo is continuously checked without someone having to remember to run a scanner or triage a backlog by hand.
+PipeSecure is our in-house security module. It clones the monorepo or any list of GitHub repos you configure, runs static analysis with Semgrep and ast-grep using a curated set of rules — SQL injection, XSS, path traversal, SSRF, hardcoded secrets, auth bypass, prototype pollution, eval usage, DOM XSS — and compares results to the previous run. New findings become new GitHub issues, labelled by severity. Fix the code and the next scan no longer sees the finding; PipeSecure closes the issue and adds a “Resolved” comment. So the growing repo is continuously checked without someone having to remember to run a scanner or triage a backlog by hand.
 
 **Daily rhythm, not one-off audits**
 
@@ -589,7 +589,7 @@ We run PipeSecure on an interval (by default every 24 hours). So every day the f
 
 **One dashboard, one source of truth**
 
-PipeSecure exposes a small status dashboard (pipesecure.6cubed.app) that shows the last scan time, how many findings it had, and all open security issues with links to the GitHub issue. So at a glance we see whether the repo is clean or has outstanding items. The issues live in the repo’s issue tracker, so they’re part of the same workflow as every other task. For a factory that already believes in one monorepo, one deploy path, and one admin, PipeSecure is the same idea for security: one scanner, one place for findings, and a daily cadence that keeps the loop tight without blocking the vibe.
+PipeSecure exposes a small status dashboard (pipesecure.6cubed.app) that shows the last scan time, how many findings it had, and all open security issues with links to each repo’s GitHub issue. So at a glance we see whether targets are clean or have outstanding items. The issues live in each target’s issue tracker, so they’re part of the same workflow as every other task. For a factory that already believes in one monorepo, one deploy path, and one admin, PipeSecure is the same idea for security: one scanner, one place for findings, and a daily cadence that keeps the loop tight without blocking the vibe.
     `.trim(),
   },
   {

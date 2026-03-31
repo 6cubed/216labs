@@ -192,6 +192,9 @@ services:
       - DATA_DIR=/app/data
       - GITHUB_TOKEN=${PIPESECURE_GITHUB_TOKEN:-}
       - GITHUB_REPO=${PIPESECURE_GITHUB_REPO:-6cubed/216labs}
+      # Comma/newline-separated owner/repo list (optional). Overrides single GITHUB_REPO when set.
+      - GITHUB_REPOS=${PIPESECURE_GITHUB_REPOS:-}
+      - PIPESECURE_DRY_RUN=${PIPESECURE_DRY_RUN:-}
       - SCAN_INTERVAL_HOURS=${PIPESECURE_SCAN_INTERVAL_HOURS:-24}
       - PORT=3000
     volumes:

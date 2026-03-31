@@ -31,6 +31,13 @@ db.exec(`
   );
 `);
 
+const cols = db.prepare("PRAGMA table_info(tracked_issues)").all() as { name: string }[];
+if (!cols.some((c) => c.name === "github_repo")) {
+  db.exec(
+    `ALTER TABLE tracked_issues ADD COLUMN github_repo TEXT NOT NULL DEFAULT '6cubed/216labs'`
+  );
+}
+
 export interface TrackedIssue {
   fingerprint: string;
   issue_number: number | null;
@@ -41,6 +48,7 @@ export interface TrackedIssue {
   severity: string;
   created_at: string;
   resolved_at: string | null;
+  github_repo: string;
 }
 
 export const issueStore = {
@@ -56,6 +64,12 @@ export const issueStore = {
       .all() as TrackedIssue[];
   },
 
+  getAllOpenForRepo(repoFullName: string): TrackedIssue[] {
+    return db
+      .prepare("SELECT * FROM tracked_issues WHERE state = 'open' AND github_repo = ?")
+      .all(repoFullName) as TrackedIssue[];
+  },
+
   insert(data: {
     fingerprint: string;
     issue_number: number;
@@ -63,10 +77,11 @@ export const issueStore = {
     file_path: string;
     title: string;
     severity: string;
+    github_repo: string;
   }) {
     db.prepare(`
-      INSERT INTO tracked_issues (fingerprint, issue_number, state, rule_id, file_path, title, severity)
-      VALUES (@fingerprint, @issue_number, 'open', @rule_id, @file_path, @title, @severity)
+      INSERT INTO tracked_issues (fingerprint, issue_number, state, rule_id, file_path, title, severity, github_repo)
+      VALUES (@fingerprint, @issue_number, 'open', @rule_id, @file_path, @title, @severity, @github_repo)
     `).run(data);
   },
 

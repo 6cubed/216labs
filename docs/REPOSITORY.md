@@ -25,7 +25,7 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 | **Stroll.live** | Express + React + Vite, SQLite | [stroll.6cubed.app](https://stroll.6cubed.app) |
 | **OneFit** | Next.js, SQLite | [onefit.6cubed.app](https://onefit.6cubed.app) |
 | **HiveFind** | Next.js | [hivefind.6cubed.app](https://hivefind.6cubed.app) |
-| **PipeSecure** | Node (security scanner) | [pipesecure.6cubed.app](https://pipesecure.6cubed.app) |
+| **PipeSecure** | Node (security scanner; single or multi-repo via `PIPESECURE_GITHUB_REPOS`) | [pipesecure.6cubed.app](https://pipesecure.6cubed.app) |
 | **AGI Memes** | Flask | [agimemes.6cubed.app](https://agimemes.6cubed.app) |
 | **AgitShirts** | Flask | [agitshirts.6cubed.app](https://agitshirts.6cubed.app) |
 | **Priors** | Flask, Google OAuth, Gemini | [priors.6cubed.app](https://priors.6cubed.app) |

@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import { getStatusData } from "./db";
-import { config, githubToken } from "./config";
+import { config, githubToken, scanTargets } from "./config";
 
 const SEVERITY_COLOR: Record<string, string> = {
   critical: "#dc2626",
@@ -34,9 +34,13 @@ function formatDate(iso: string | null | undefined): string {
 function renderPage(): string {
   const tokenMissing = !githubToken();
   const { openIssues, bySeverity, lastScan } = getStatusData();
-  const repo = config.github.repo;
-  const repoUrl = `https://github.com/${repo}`;
-  const issuesUrl = `${repoUrl}/issues?q=is%3Aissue+is%3Aopen+label%3Asecurity`;
+  const targets = scanTargets();
+  const primaryRepo = config.github.repo;
+  const primaryRepoUrl = `https://github.com/${primaryRepo}`;
+  const watchLine =
+    targets.length <= 2
+      ? targets.map((t) => `<a href="https://github.com/${t.fullName}" target="_blank" style="color:#2563eb;">${t.fullName}</a>`).join(" · ")
+      : `${targets.length} repositories (e.g. <a href="${primaryRepoUrl}" target="_blank" style="color:#2563eb;">${primaryRepo}</a>)`;
 
   const totalOpen = openIssues.length;
   const scanFinished = lastScan?.finished_at ? formatDate(lastScan.finished_at) : "no scan yet";
@@ -50,14 +54,17 @@ function renderPage(): string {
     })
     .map((issue) => {
       const color = SEVERITY_COLOR[issue.severity] ?? "#6b7280";
+      const issueRepo = issue.github_repo || primaryRepo;
+      const issueRepoUrl = `https://github.com/${issueRepo}`;
       const issueLink = issue.issue_number
-        ? `<a href="${repoUrl}/issues/${issue.issue_number}" target="_blank" style="color:#2563eb;text-decoration:none;">#${issue.issue_number}</a>`
+        ? `<a href="${issueRepoUrl}/issues/${issue.issue_number}" target="_blank" style="color:#2563eb;text-decoration:none;">#${issue.issue_number}</a>`
         : "—";
       return `
         <tr>
           <td style="padding:10px 12px;white-space:nowrap;">
             <span style="color:${color};font-weight:600;font-size:12px;text-transform:uppercase;">${issue.severity}</span>
           </td>
+          <td style="padding:10px 12px;font-size:12px;"><a href="${issueRepoUrl}" target="_blank" style="color:#6b7280;text-decoration:none;">${escHtml(issueRepo)}</a></td>
           <td style="padding:10px 12px;font-weight:500;">${escHtml(issue.title)}</td>
           <td style="padding:10px 12px;color:#6b7280;font-size:13px;font-family:monospace;">${escHtml(issue.file_path)}</td>
           <td style="padding:10px 12px;font-size:13px;">${issueLink}</td>
@@ -79,7 +86,7 @@ function renderPage(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PipeSecure — ${repo}</title>
+  <title>PipeSecure — ${escHtml(primaryRepo)}${targets.length > 1 ? ` +${targets.length - 1}` : ""}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f8fafc; color: #111827; }
@@ -103,13 +110,9 @@ ${tokenMissing ? `
         <h1 style="font-size:20px;font-weight:700;">PipeSecure</h1>
       </div>
       <div style="margin-top:4px;font-size:13px;color:#6b7280;">
-        Watching <a href="${repoUrl}" target="_blank" style="color:#2563eb;">${repo}</a> · scans every ${nextScanHours}h
+        Watching ${watchLine} · scans every ${nextScanHours}h
       </div>
     </div>
-    <a href="${issuesUrl}" target="_blank"
-       style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#111827;color:#fff;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none;">
-      View on GitHub ↗
-    </a>
   </div>
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;">
@@ -135,6 +138,7 @@ ${tokenMissing ? `
       <thead>
         <tr style="background:#f9fafb;border-bottom:1px solid #e5e7eb;">
           <th style="padding:10px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Severity</th>
+          <th style="padding:10px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Repo</th>
           <th style="padding:10px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Finding</th>
           <th style="padding:10px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">File</th>
           <th style="padding:10px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Issue</th>

@@ -3,7 +3,8 @@ import { mkdtempSync, rmSync, readdirSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import crypto from "crypto";
-import { githubBranch, githubRepo, githubToken } from "./config";
+import type { ScanTarget } from "./config";
+import { githubToken } from "./config";
 
 export interface Finding {
   fingerprint: string;
@@ -31,35 +32,41 @@ const SEVERITY_MAP: Record<string, Finding["severity"]> = {
 
 const RULES_DIR = join(__dirname, "rules");
 
-export function makeFingerprint(ruleId: string, filePath: string, startLine: number): string {
+export function makeFingerprint(
+  repoFullName: string,
+  ruleId: string,
+  filePath: string,
+  startLine: number
+): string {
   return crypto
     .createHash("sha256")
-    .update(`${ruleId}|${filePath}|${startLine}`)
+    .update(`${repoFullName}|${ruleId}|${filePath}|${startLine}`)
     .digest("hex")
     .slice(0, 16);
 }
 
-export async function scanRepo(commitSha?: string): Promise<Finding[]> {
+export async function scanRepo(target: ScanTarget): Promise<Finding[]> {
   const token = githubToken();
   if (!token) {
     console.warn("[scanner] GITHUB_TOKEN not set; skipping clone and scan");
     return [];
   }
 
-  const cloneUrl = `https://x-access-token:${token}@github.com/${githubRepo}.git`;
+  const { fullName, branch } = target;
+  const cloneUrl = `https://x-access-token:${token}@github.com/${fullName}.git`;
   const tmpDir = mkdtempSync(join(tmpdir(), "pipesecure-"));
 
-  console.log(`[scanner] Cloning ${githubRepo}...`);
+  console.log(`[scanner] Cloning ${fullName}@${branch}...`);
 
   try {
-    execSync(
-      `git clone --depth 1 --branch ${githubBranch} ${cloneUrl} ${tmpDir}`,
-      { stdio: "pipe", timeout: 120_000 }
-    );
+    execSync(`git clone --depth 1 --branch ${branch} ${cloneUrl} ${tmpDir}`, {
+      stdio: "pipe",
+      timeout: 120_000,
+    });
 
     const findings: Finding[] = [
-      ...runSemgrep(tmpDir),
-      ...runAstGrep(tmpDir),
+      ...runSemgrep(tmpDir, fullName),
+      ...runAstGrep(tmpDir, fullName),
     ];
 
     const seen = new Set<string>();
@@ -73,7 +80,7 @@ export async function scanRepo(commitSha?: string): Promise<Finding[]> {
   }
 }
 
-function runSemgrep(repoDir: string): Finding[] {
+function runSemgrep(repoDir: string, repoFullName: string): Finding[] {
   const semgrepRulesDir = join(RULES_DIR, "semgrep");
 
   const result = spawnSync(
@@ -92,26 +99,34 @@ function runSemgrep(repoDir: string): Finding[] {
 
   try {
     const output = JSON.parse(stdout);
-    return (output.results || []).map((r: any): Finding => ({
-      fingerprint: makeFingerprint(r.check_id, r.path, r.start?.line || 0),
-      ruleId: r.check_id,
-      title: titleFromRuleId(r.check_id),
-      message: r.extra?.message || "",
-      severity: SEVERITY_MAP[r.extra?.severity?.toUpperCase()] ?? "medium",
-      filePath: r.path.replace(repoDir + "/", "").replace(repoDir, ""),
-      startLine: r.start?.line || 0,
-      endLine: r.end?.line || 0,
-      codeSnippet: r.extra?.lines || "",
-      tool: "semgrep",
-      cweIds: r.extra?.metadata?.cwe || [],
-    }));
+    return (output.results || []).map((r: any): Finding => {
+      const filePath = r.path.replace(repoDir + "/", "").replace(repoDir, "");
+      return {
+        fingerprint: makeFingerprint(
+          repoFullName,
+          r.check_id,
+          filePath,
+          r.start?.line || 0
+        ),
+        ruleId: r.check_id,
+        title: titleFromRuleId(r.check_id),
+        message: r.extra?.message || "",
+        severity: SEVERITY_MAP[r.extra?.severity?.toUpperCase()] ?? "medium",
+        filePath,
+        startLine: r.start?.line || 0,
+        endLine: r.end?.line || 0,
+        codeSnippet: r.extra?.lines || "",
+        tool: "semgrep",
+        cweIds: r.extra?.metadata?.cwe || [],
+      };
+    });
   } catch (err) {
     console.error("[scanner] semgrep JSON parse error:", err);
     return [];
   }
 }
 
-function runAstGrep(repoDir: string): Finding[] {
+function runAstGrep(repoDir: string, repoFullName: string): Finding[] {
   const astgrepRulesDir = join(RULES_DIR, "astgrep");
   const findings: Finding[] = [];
 
@@ -136,17 +151,19 @@ function runAstGrep(repoDir: string): Finding[] {
     try {
       const items: any[] = JSON.parse(result.stdout);
       for (const r of items) {
+        const filePath = (r.file || "").replace(repoDir + "/", "").replace(repoDir, "");
         findings.push({
           fingerprint: makeFingerprint(
+            repoFullName,
             r.ruleId || ruleFile,
-            r.file || "",
+            filePath,
             r.range?.start?.line || 0
           ),
           ruleId: r.ruleId || ruleFile,
           title: titleFromRuleId(r.ruleId || ruleFile),
           message: r.message || "",
           severity: SEVERITY_MAP[r.severity?.toUpperCase()] ?? "medium",
-          filePath: (r.file || "").replace(repoDir + "/", "").replace(repoDir, ""),
+          filePath,
           startLine: r.range?.start?.line || 0,
           endLine: r.range?.end?.line || 0,
           codeSnippet: r.text || "",

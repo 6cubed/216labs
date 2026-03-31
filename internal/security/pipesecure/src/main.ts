@@ -1,5 +1,6 @@
 import { runScan } from "./scan";
 import { startStatusServer } from "./status";
+import { scanTargets } from "./config";
 
 const INTERVAL_MS =
   parseFloat(process.env.SCAN_INTERVAL_HOURS || "24") * 60 * 60 * 1000;
@@ -11,8 +12,13 @@ function sleep(ms: number): Promise<void> {
 
 async function main(): Promise<void> {
   console.log("[pipesecure] Starting up");
+  const targets = scanTargets();
+  const repoList =
+    targets.length > 3
+      ? `${targets.length} repos (first: ${targets[0].fullName})`
+      : targets.map((t) => t.fullName).join(", ");
   console.log(
-    `[pipesecure] Scanning ${process.env.GITHUB_REPO || "6cubed/216labs"} every ${process.env.SCAN_INTERVAL_HOURS || "24"}h`
+    `[pipesecure] Scanning ${repoList} every ${process.env.SCAN_INTERVAL_HOURS || "24"}h`
   );
 
   startStatusServer(PORT);
