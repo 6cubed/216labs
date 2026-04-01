@@ -1,211 +1,8 @@
 import { unstable_noStore as noStore } from "next/cache";
 
+import { clubs, dayFull, dayOrder, type RunClub } from "@/data/clubs";
+
 export const dynamic = "force-dynamic";
-
-type RunClub = {
-  club: string;
-  day: "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
-  startTime: string;
-  meetup: string;
-  pace: string;
-  sourceLabel: string;
-  sourceUrl: string;
-};
-
-const clubs: RunClub[] = [
-  {
-    club: "Zurich Run Collective",
-    day: "Mon",
-    startTime: "18:30",
-    meetup: "Sihlcity entrance",
-    pace: "5:00-6:00 / km",
-    sourceLabel: "Instagram",
-    sourceUrl: "https://www.instagram.com/",
-  },
-  {
-    club: "Oerlikon Base Miles",
-    day: "Mon",
-    startTime: "19:00",
-    meetup: "Oerlikon station, platform hall",
-    pace: "5:10-6:10 / km",
-    sourceLabel: "Strava club",
-    sourceUrl: "https://www.strava.com/clubs",
-  },
-  {
-    club: "Limmat Morning Crew",
-    day: "Tue",
-    startTime: "06:30",
-    meetup: "Buerkliplatz (lakeside)",
-    pace: "4:40-5:20 / km",
-    sourceLabel: "WhatsApp group",
-    sourceUrl: "https://www.whatsapp.com/",
-  },
-  {
-    club: "Zurich HB Lunch Loop",
-    day: "Tue",
-    startTime: "12:15",
-    meetup: "Zurich HB main hall clock",
-    pace: "4:45-5:30 / km",
-    sourceLabel: "Telegram",
-    sourceUrl: "https://telegram.org/",
-  },
-  {
-    club: "West End Strides",
-    day: "Tue",
-    startTime: "18:45",
-    meetup: "Hardbruecke station front",
-    pace: "5:15-6:00 / km",
-    sourceLabel: "Instagram",
-    sourceUrl: "https://www.instagram.com/",
-  },
-  {
-    club: "ETH Hill Repeats",
-    day: "Wed",
-    startTime: "19:00",
-    meetup: "ETH Polyterrasse",
-    pace: "Intervals (mixed)",
-    sourceLabel: "Club website",
-    sourceUrl: "https://ethz.ch/en.html",
-  },
-  {
-    club: "Zurich Lakeside Intervals",
-    day: "Wed",
-    startTime: "06:45",
-    meetup: "Bellevue lakeside",
-    pace: "Intervals (mixed)",
-    sourceLabel: "Website",
-    sourceUrl: "https://www.zuerich.com/en",
-  },
-  {
-    club: "Seefeld Sunset Runners",
-    day: "Wed",
-    startTime: "18:30",
-    meetup: "Seefeld Kreuzplatz",
-    pace: "5:20-6:20 / km",
-    sourceLabel: "Meetup",
-    sourceUrl: "https://www.meetup.com/",
-  },
-  {
-    club: "Zurich Social Runners",
-    day: "Thu",
-    startTime: "18:45",
-    meetup: "Europaallee plaza",
-    pace: "5:15-6:15 / km",
-    sourceLabel: "Meetup",
-    sourceUrl: "https://www.meetup.com/",
-  },
-  {
-    club: "Campus Tempo Zurich",
-    day: "Thu",
-    startTime: "19:15",
-    meetup: "Irchel campus main square",
-    pace: "4:20-5:00 / km",
-    sourceLabel: "Strava club",
-    sourceUrl: "https://www.strava.com/clubs",
-  },
-  {
-    club: "Old Town Easy Run",
-    day: "Thu",
-    startTime: "07:00",
-    meetup: "Rathaus bridge",
-    pace: "5:45-6:30 / km",
-    sourceLabel: "WhatsApp group",
-    sourceUrl: "https://www.whatsapp.com/",
-  },
-  {
-    club: "Friday Riverside Tempo",
-    day: "Fri",
-    startTime: "07:00",
-    meetup: "Bellevue tram stop",
-    pace: "4:20-5:00 / km",
-    sourceLabel: "Telegram",
-    sourceUrl: "https://telegram.org/",
-  },
-  {
-    club: "ETH Friday Run Club",
-    day: "Fri",
-    startTime: "18:45",
-    meetup: "ETH Polyterrasse",
-    pace: "4:40-5:30 / km",
-    sourceLabel: "ETH community page",
-    sourceUrl: "https://ethz.ch/en.html",
-  },
-  {
-    club: "Zurich Friday Social 5K",
-    day: "Fri",
-    startTime: "19:00",
-    meetup: "Europaallee plaza",
-    pace: "5:10-6:00 / km",
-    sourceLabel: "Instagram",
-    sourceUrl: "https://www.instagram.com/",
-  },
-  {
-    club: "Uetliberg Long Run",
-    day: "Sat",
-    startTime: "08:00",
-    meetup: "Zurich HB, track 21",
-    pace: "5:20-6:20 / km",
-    sourceLabel: "Website",
-    sourceUrl: "https://www.zuerich.com/en",
-  },
-  {
-    club: "Saturday Track Session",
-    day: "Sat",
-    startTime: "10:00",
-    meetup: "Letzigrund stadium gate",
-    pace: "Intervals / coached",
-    sourceLabel: "Club website",
-    sourceUrl: "https://www.zuerich.com/en",
-  },
-  {
-    club: "Sihl Riverside Recovery",
-    day: "Sat",
-    startTime: "16:00",
-    meetup: "Kasernenareal",
-    pace: "6:00-6:45 / km",
-    sourceLabel: "Telegram",
-    sourceUrl: "https://telegram.org/",
-  },
-  {
-    club: "Lake Loop Recovery Club",
-    day: "Sun",
-    startTime: "09:30",
-    meetup: "Chinagarten Zurich",
-    pace: "6:00-6:45 / km",
-    sourceLabel: "Instagram",
-    sourceUrl: "https://www.instagram.com/",
-  },
-  {
-    club: "Sunday Coffee Runners",
-    day: "Sun",
-    startTime: "10:00",
-    meetup: "Buerkliplatz kiosk",
-    pace: "5:30-6:30 / km",
-    sourceLabel: "Meetup",
-    sourceUrl: "https://www.meetup.com/",
-  },
-  {
-    club: "Zurich Half Prep Group",
-    day: "Sun",
-    startTime: "08:30",
-    meetup: "Sihlcity footbridge",
-    pace: "4:50-5:40 / km",
-    sourceLabel: "Strava club",
-    sourceUrl: "https://www.strava.com/clubs",
-  },
-];
-
-const dayOrder: RunClub["day"][] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-const dayFull: Record<RunClub["day"], string> = {
-  Mon: "Monday",
-  Tue: "Tuesday",
-  Wed: "Wednesday",
-  Thu: "Thursday",
-  Fri: "Friday",
-  Sat: "Saturday",
-  Sun: "Sunday",
-};
 
 function timeToMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number);
@@ -226,6 +23,7 @@ function buildTimetableRows(): { time: string; byDay: Record<RunClub["day"], Run
 }
 
 function SessionBlock({ item }: { item: RunClub }) {
+  const hint = `Confirm this week’s ${dayFull[item.day]} ${item.startTime} run on the page you open (filter by date where available).`;
   return (
     <div
       style={{
@@ -240,12 +38,13 @@ function SessionBlock({ item }: { item: RunClub }) {
       <div style={{ color: "#b8c9f0", fontSize: "0.78rem", marginTop: "0.2rem" }}>{item.meetup}</div>
       <div style={{ color: "#9eb4e8", fontSize: "0.74rem", marginTop: "0.15rem" }}>{item.pace}</div>
       <a
-        href={item.sourceUrl}
+        href={item.evidenceUrl}
         target="_blank"
         rel="noreferrer"
+        title={hint}
         style={{ color: "#9fbeff", fontSize: "0.76rem", marginTop: "0.35rem", display: "inline-block" }}
       >
-        {item.sourceLabel} →
+        {item.linkLabel} →
       </a>
     </div>
   );
@@ -264,8 +63,9 @@ export default function Page() {
         {clubs.length} sessions — days across the top, start times down the side (school-style grid).
       </p>
       <p style={{ color: "#c8d6ff", maxWidth: 880 }}>
-        Each cell is empty or lists the run(s) starting that day at that time. Links go to the source of truth so you can
-        confirm latest details before you head out.
+        Each cell lists runs starting that day at that time. Links open filtered listings, hashtag feeds, club search, or
+        official program pages — not generic app homepages. Use the destination’s calendar or date filter to verify that
+        week’s session before you head out.
       </p>
 
       <section
@@ -387,8 +187,9 @@ export default function Page() {
       </section>
 
       <p style={{ marginTop: "1rem", color: "#9eb4e8", fontSize: "0.92rem" }}>
-        Note: check each source right before attending. Run clubs often update for weather, route changes, or race-day
-        adjustments.
+        Note: replace placeholder club names and listing URLs in <code style={{ color: "#c8d6ff" }}>src/data/clubs.ts</code>{" "}
+        with real clubs and permalinks (Meetup events, Strava club pages, public Telegram/Instagram posts) when you have
+        them. Run clubs often change for weather, routes, or race-day adjustments — always double-check on the source.
       </p>
     </main>
   );

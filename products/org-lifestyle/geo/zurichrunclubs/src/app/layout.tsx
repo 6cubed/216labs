@@ -3,7 +3,8 @@ import { Ga4Script } from "@/components/ga4/Ga4Script";
 
 export const metadata: Metadata = {
   title: "Zurich Run Clubs",
-  description: "Concise weekly timetable for run clubs in Zurich with source-of-truth links.",
+  description:
+    "Weekly timetable for Zurich-area runs with links to filtered listings and feeds — not generic social homepages. Confirm each session on the destination.",
 };
 
 export default function RootLayout({
