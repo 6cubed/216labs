@@ -234,9 +234,11 @@ function initSchema(db: Database.Database) {
       value TEXT NOT NULL
     );
   `);
+  ensureEdgeVisitorDayTable(db);
   seedDefaultCronJobs(db);
   ensureTelegramGroupHourlyCronJob(db);
   ensureWorkforceTelegramTestCronJob(db);
+  ensureEdgeVisitorRollupCronJob(db);
 
   ensureDeploymentEventsTable(db);
   backfillDeploymentEventsFromApps(db);
@@ -906,6 +908,32 @@ function ensureWorkforceTelegramTestCronJob(db: Database.Database): void {
   ).run();
 }
 
+/** Coarse daily unique visitors per app (from Caddy JSON logs via cron-runner rollup). */
+function ensureEdgeVisitorDayTable(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS edge_visitor_day (
+      app_id TEXT NOT NULL,
+      day_utc TEXT NOT NULL,
+      visitor_hash TEXT NOT NULL,
+      PRIMARY KEY (app_id, day_utc, visitor_hash)
+    );
+    CREATE INDEX IF NOT EXISTS idx_edge_visitor_day_app_day ON edge_visitor_day(app_id, day_utc);
+  `);
+}
+
+function ensureEdgeVisitorRollupCronJob(db: Database.Database): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+     VALUES (
+       'edge-visitor-rollup',
+       'Edge visitor rollup (Caddy logs)',
+       'Reads Caddy JSON access logs and stores coarse daily unique visitors per app in edge_visitor_day.',
+       '*/15 * * * *',
+       1
+     )`
+  ).run();
+}
+
 /** Partial or legacy DBs may lack cron_jobs; keep admin cron UI and toggles working. */
 function ensureCronJobsTable(db: Database.Database): void {
   db.exec(`
@@ -919,9 +947,11 @@ function ensureCronJobsTable(db: Database.Database): void {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+  ensureEdgeVisitorDayTable(db);
   seedDefaultCronJobs(db);
   ensureTelegramGroupHourlyCronJob(db);
   ensureWorkforceTelegramTestCronJob(db);
+  ensureEdgeVisitorRollupCronJob(db);
 }
 
 /** Append-only log: VPS deploys (deploy.sh), per-app rollouts, optional CI rows. */

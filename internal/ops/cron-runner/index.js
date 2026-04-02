@@ -163,6 +163,13 @@ function ensureCronRunnerMigrations(db) {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS edge_visitor_day (
+      app_id TEXT NOT NULL,
+      day_utc TEXT NOT NULL,
+      visitor_hash TEXT NOT NULL,
+      PRIMARY KEY (app_id, day_utc, visitor_hash)
+    );
+    CREATE INDEX IF NOT EXISTS idx_edge_visitor_day_app_day ON edge_visitor_day(app_id, day_utc);
   `);
   db.exec(`
     INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled) VALUES
@@ -171,7 +178,8 @@ function ensureCronRunnerMigrations(db) {
     ('telegram-security-summary', 'Security scan summary', 'PipeSecure/Semgrep findings summary posted to Telegram.', '0 10 * * *', 0),
     ('telegram-happypath-summary', 'Happy Path run summary', 'Last Happy Path results per app posted to Telegram.', '0 8 * * *', 0),
     ('telegram-group-hourly-reply', 'Group hourly AI reply', 'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.', '0 * * * *', 0),
-    ('workforce-telegram-test', 'Workforce Telegram test', 'Sends a short test message from the first digital employee (Workforce) to WORKFORCE_TELEGRAM_CHAT_ID.', '0 * * * *', 0);
+    ('workforce-telegram-test', 'Workforce Telegram test', 'Sends a short test message from the first digital employee (Workforce) to WORKFORCE_TELEGRAM_CHAT_ID.', '0 * * * *', 0),
+    ('edge-visitor-rollup', 'Edge visitor rollup (Caddy logs)', 'Reads Caddy JSON access logs and stores coarse daily unique visitors per app in edge_visitor_day.', '*/15 * * * *', 1);
   `);
   return true;
 }

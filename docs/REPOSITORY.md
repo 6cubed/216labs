@@ -58,6 +58,18 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 
 **cron-runner** runs scheduled jobs from the admin **Cron** UI. Set **`TELEGRAM_BOT_TOKEN`** and **`TELEGRAM_CHAT_ID`** (or equivalent) in admin **Env** so jobs can post to Telegram.
 
+### Edge traffic (unique visitors per app)
+
+Caddy writes a **shared JSON access log** to the **`caddy_access_logs`** Docker volume (`/var/log/caddy/access.log` in the **caddy** and **cron-runner** containers). The **`edge-visitor-rollup`** cron job (default **on**, every **15 minutes**) appends coarse daily rows into **`216labs.db`** table **`edge_visitor_day`** (`app_id`, `day_utc`, `visitor_hash` where `visitor_hash` is derived from client IP + `User-Agent`). This is **not** GA4-level identity; it is an **edge approximation** for ops and automation.
+
+Query example (rolling **7** days, app id = manifest id, e.g. `onefit`):
+
+```bash
+./scripts/query_edge_uniques.sh onefit 7
+```
+
+On the droplet, point **`EDGE_UNIQUES_DB`** at the host’s `216labs.db` if you run the script from another directory.
+
 ## Local development
 
 ```bash

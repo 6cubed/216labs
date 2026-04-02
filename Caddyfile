@@ -5,6 +5,14 @@
 # HTTPS certificates via Let's Encrypt.
 
 admin.6cubed.app {
+	# JSON access log for edge visitor rollup (cron-runner job edge-visitor-rollup)
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 14
+		}
+		format json
+	}
 	basicauth {
 		{env.ADMIN_USER} {env.ADMIN_PASSWORD_HASH}
 	}
@@ -12,6 +20,14 @@ admin.6cubed.app {
 }
 
 anchor.6cubed.app {
+	# JSON access log for edge visitor rollup (cron-runner job edge-visitor-rollup)
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 14
+		}
+		format json
+	}
 	handle /api/* {
 		reverse_proxy anchor-api:8000
 	}
@@ -21,6 +37,14 @@ anchor.6cubed.app {
 }
 
 6cubed.app {
+	# JSON access log for edge visitor rollup (cron-runner job edge-visitor-rollup)
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 14
+		}
+		format json
+	}
 	reverse_proxy landing:5000 {
 		@cold status 502 503 504
 		handle_response @cold {
@@ -36,6 +60,14 @@ anchor.6cubed.app {
 }
 
 www.6cubed.app {
+	# JSON access log for edge visitor rollup (cron-runner job edge-visitor-rollup)
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 14
+		}
+		format json
+	}
 	reverse_proxy landing:5000 {
 		@cold status 502 503 504
 		handle_response @cold {
@@ -909,6 +941,21 @@ worldphoto.6cubed.app {
 	}
 }
 
+ytsync.6cubed.app {
+	reverse_proxy ytsync:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=ytsync&dest=https%3A%2F%2Fytsync.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=ytsync&dest=https%3A%2F%2Fytsync.6cubed.app" 302
+		}
+	}
+}
+
 zurichrunclubs.6cubed.app {
 	reverse_proxy zurichrunclubs:3000 {
 		@cold status 502 503 504
@@ -925,21 +972,14 @@ zurichrunclubs.6cubed.app {
 }
 
 zurichrunningclubs.6cubed.app {
+	# JSON access log for edge visitor rollup (cron-runner job edge-visitor-rollup)
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 14
+		}
+		format json
+	}
 	redir https://zurichrunclubs.6cubed.app 302
-}
-
-ytsync.6cubed.app {
-	reverse_proxy ytsync:5000 {
-		@cold status 502 503 504
-		handle_response @cold {
-			redir "https://activator.6cubed.app/warmup?app=ytsync&dest=https%3A%2F%2Fytsync.6cubed.app" 302
-		}
-	}
-	handle_errors {
-		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @dial {
-			redir "https://activator.6cubed.app/warmup?app=ytsync&dest=https%3A%2F%2Fytsync.6cubed.app" 302
-		}
-	}
 }
 

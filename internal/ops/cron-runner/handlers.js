@@ -4,7 +4,8 @@
  * opts: { HAPPYPATH_INTERNAL_URL }
  */
 
-import { existsSync, readFileSync } from "fs";
+import { createHash } from "crypto";
+import { existsSync, openSync, closeSync, readSync, readFileSync, statSync } from "fs";
 
 const STATE_KEY_LAST_UPDATE = "telegram-group-hourly:last_update_id";
 const TG_API = "https://api.telegram.org";
@@ -280,6 +281,137 @@ export async function workforceTelegramTest(_db, _opts) {
   };
 }
 
+const EDGE_ROLLUP_STATE_KEY = "edge_rollup_log_bytes";
+const DEFAULT_CADDY_LOG = "/var/log/caddy/access.log";
+
+function hostToAppId(host, appHost) {
+  if (!host || typeof host !== "string") return null;
+  const h = host.split(":")[0].toLowerCase().trim();
+  const base = (appHost || "6cubed.app").toLowerCase();
+  if (h === base || h === `www.${base}`) return "landing";
+  const suffix = `.${base}`;
+  if (!h.endsWith(suffix)) return null;
+  const sub = h.slice(0, -suffix.length);
+  const first = sub.split(".")[0];
+  return first || null;
+}
+
+function shouldCountLine(rec) {
+  const st = rec.status;
+  if (typeof st !== "number" || st >= 400 || st === 0) return false;
+  const req = rec.request;
+  if (!req || typeof req !== "object") return false;
+  const method = req.method;
+  if (method !== "GET" && method !== "HEAD") return false;
+  const uri = typeof req.uri === "string" ? req.uri : "";
+  if (uri.startsWith("/_next/static")) return false;
+  if (uri === "/favicon.ico" || uri === "/robots.txt") return false;
+  if (/\.(js|mjs|css|map|woff2?|ttf|png|jpg|jpeg|gif|svg|ico|webp|json)(\?|$)/i.test(uri)) return false;
+  return true;
+}
+
+function visitorHash(clientIp, userAgent) {
+  const ua = String(userAgent || "");
+  const ip = String(clientIp || "");
+  return createHash("sha256").update(`${ip}|${ua}`, "utf8").digest("hex").slice(0, 32);
+}
+
+function tsToDayUtc(ts) {
+  const n = typeof ts === "number" ? ts : parseFloat(String(ts));
+  if (!Number.isFinite(n)) return null;
+  const ms = n > 1e12 ? Math.floor(n) : Math.floor(n * 1000);
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+/**
+ * Ingest new Caddy JSON access log lines into edge_visitor_day (216labs.db).
+ * Returns empty string so cron does not post to Telegram.
+ */
+export async function edgeVisitorRollup(db) {
+  const logPath = process.env.CADDY_ACCESS_LOG || DEFAULT_CADDY_LOG;
+  const appHost = process.env.APP_HOST || "6cubed.app";
+  if (!existsSync(logPath)) {
+    return "";
+  }
+
+  let offset = 0;
+  try {
+    const row = db.prepare("SELECT value FROM cron_runner_state WHERE key = ?").get(EDGE_ROLLUP_STATE_KEY);
+    if (row && row.value != null && row.value !== undefined) {
+      offset = parseInt(String(row.value), 10) || 0;
+    }
+  } catch {
+    offset = 0;
+  }
+
+  let size;
+  try {
+    size = statSync(logPath).size;
+  } catch {
+    return "";
+  }
+  if (size === 0) {
+    db.prepare("INSERT OR REPLACE INTO cron_runner_state (key, value) VALUES (?, ?)").run(
+      EDGE_ROLLUP_STATE_KEY,
+      "0"
+    );
+    return "";
+  }
+  if (offset > size) offset = 0;
+
+  const len = size - offset;
+  if (len <= 0) return "";
+
+  const fd = openSync(logPath, "r");
+  const buf = Buffer.alloc(len);
+  readSync(fd, buf, 0, len, offset);
+  closeSync(fd);
+
+  const text = buf.toString("utf8");
+  const lines = text.split("\n");
+  const insertStmt = db.prepare(
+    "INSERT OR IGNORE INTO edge_visitor_day (app_id, day_utc, visitor_hash) VALUES (?, ?, ?)"
+  );
+
+  let processed = 0;
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    let rec;
+    try {
+      rec = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!shouldCountLine(rec)) continue;
+    const req = rec.request;
+    const appId = hostToAppId(req.host, appHost);
+    if (!appId) continue;
+
+    const clientIp = req.client_ip || req.remote_ip || "";
+    const headers = req.headers && typeof req.headers === "object" ? req.headers : {};
+    const rawUa = headers["User-Agent"] || headers["User-agent"] || "";
+    const ua = Array.isArray(rawUa) ? rawUa[0] : rawUa;
+
+    const dayUtc = tsToDayUtc(rec.ts);
+    if (!dayUtc) continue;
+
+    const vh = visitorHash(clientIp, ua);
+    insertStmt.run(appId, dayUtc, vh);
+    processed += 1;
+  }
+
+  const newOffset = offset + buf.length;
+  db.prepare("INSERT OR REPLACE INTO cron_runner_state (key, value) VALUES (?, ?)").run(
+    EDGE_ROLLUP_STATE_KEY,
+    String(newOffset)
+  );
+
+  if (processed > 0) {
+    console.log(`[edge-visitor-rollup] ingested ${processed} qualifying lines`);
+  }
+  return "";
+}
+
 export const HANDLERS = {
   "telegram-daily-digest": telegramDailyDigest,
   "telegram-happypath-summary": telegramHappypathSummary,
@@ -287,4 +419,5 @@ export const HANDLERS = {
   "telegram-weekly-lint": telegramWeeklyLint,
   "telegram-group-hourly-reply": telegramGroupHourlyReply,
   "workforce-telegram-test": workforceTelegramTest,
+  "edge-visitor-rollup": edgeVisitorRollup,
 };
