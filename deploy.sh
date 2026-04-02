@@ -210,14 +210,19 @@ if [ -n "$RUNTIME_RAW" ]; then
     fi
   done
   RUNTIME_APPS=$(echo "$RUNTIME_APPS" | tr -s ' ')
-  if [[ " $ENABLED_APPS " == *" admin "* ]] && [[ " $RUNTIME_APPS " != *" admin "* ]]; then
-    RUNTIME_APPS="admin $RUNTIME_APPS"
-    RUNTIME_APPS=$(echo "$RUNTIME_APPS" | tr -s ' ')
-  fi
-  # Root domain + www reverse_proxy to landing; keep it in the hot pool when deploy-enabled.
-  if [[ " $ENABLED_APPS " == *" landing "* ]] && [[ " $RUNTIME_APPS " != *" landing "* ]]; then
-    RUNTIME_APPS="$RUNTIME_APPS landing"
-    RUNTIME_APPS=$(echo "$RUNTIME_APPS" | tr -s ' ')
+  # Respect explicit DEPLOY_RUNTIME_APPS.
+  # Auto-including admin/landing is only for showroom mode where the intention is a minimal
+  # always-hot pool while other apps cold-start via activator.
+  if [ "$SHOWROOM" = "1" ]; then
+    if [[ " $ENABLED_APPS " == *" admin "* ]] && [[ " $RUNTIME_APPS " != *" admin "* ]]; then
+      RUNTIME_APPS="admin $RUNTIME_APPS"
+      RUNTIME_APPS=$(echo "$RUNTIME_APPS" | tr -s ' ')
+    fi
+    # Root domain + www reverse_proxy to landing; keep it in the hot pool when deploy-enabled.
+    if [[ " $ENABLED_APPS " == *" landing "* ]] && [[ " $RUNTIME_APPS " != *" landing "* ]]; then
+      RUNTIME_APPS="$RUNTIME_APPS landing"
+      RUNTIME_APPS=$(echo "$RUNTIME_APPS" | tr -s ' ')
+    fi
   fi
   if [ -z "$RUNTIME_APPS" ]; then
     echo "ERROR: DEPLOY_RUNTIME_APPS / showroom hot list resolved to empty (no overlap with enabled apps)." >&2
