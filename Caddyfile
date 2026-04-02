@@ -928,3 +928,18 @@ zurichrunningclubs.6cubed.app {
 	redir https://zurichrunclubs.6cubed.app 302
 }
 
+ytsync.6cubed.app {
+	reverse_proxy ytsync:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=ytsync&dest=https%3A%2F%2Fytsync.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=ytsync&dest=https%3A%2F%2Fytsync.6cubed.app" 302
+		}
+	}
+}
+

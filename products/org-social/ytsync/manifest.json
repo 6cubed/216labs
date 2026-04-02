@@ -1,0 +1,24 @@
+{
+  "id": "ytsync",
+  "name": "YT Sync",
+  "tagline": "Watch YouTube together in sync",
+  "description": "Create a room, share the invite link, and collaboratively control a YouTube embed with realtime play/pause/seek sync over WebSockets.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "256m",
+  "docker_service": "ytsync",
+  "build_context": "./products/org-social/ytsync",
+  "stack": {
+    "frontend": "Vite + React (SPA)",
+    "backend": "Express + ws (WebSocket)",
+    "database": null,
+    "other": "In-memory rooms (ephemeral)"
+  },
+  "env_vars": [
+    {
+      "key": "PORT",
+      "description": "Port to listen on (default 5000).",
+      "is_secret": false
+    }
+  ]
+}
