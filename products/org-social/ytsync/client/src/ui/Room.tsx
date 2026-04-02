@@ -23,6 +23,8 @@ export function Room({ roomId }: { roomId: string }) {
   const [serverTimeMs, setServerTimeMs] = useState<number>(Date.now());
   const [videoInput, setVideoInput] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [needsClickToPlay, setNeedsClickToPlay] = useState(false);
+  const [autoplayAssist, setAutoplayAssist] = useState(true);
 
   const wsRef = useRef<WebSocket | null>(null);
   const playerRef = useRef<any>(null);
@@ -118,6 +120,8 @@ export function Room({ roomId }: { roomId: string }) {
             if (!ws || ws.readyState !== WebSocket.OPEN || !p) return;
             const ytState = p.getPlayerState?.();
             const t = Number(p.getCurrentTime?.() || 0);
+            // If user clicked the iframe, clear any autoplay-block hint.
+            if (ytState === 1) setNeedsClickToPlay(false);
             // 1 = playing, 2 = paused
             if (ytState === 1) ws.send(JSON.stringify({ type: "play", roomId, at: t } satisfies ClientToServer));
             if (ytState === 2) ws.send(JSON.stringify({ type: "pause", roomId, at: t } satisfies ClientToServer));
@@ -159,10 +163,19 @@ export function Room({ roomId }: { roomId: string }) {
     };
 
     (async () => {
+      const now = Date.now();
+      const expected = computeExpectedPosition(state, serverTimeMs, now);
+
       if (state.videoId) {
         const currentId = p.getVideoData?.()?.video_id;
         if (currentId !== state.videoId) {
-          p.cueVideoById?.(state.videoId);
+          // If the room is supposed to be playing, load (not just cue) so it actually starts.
+          // If paused, cue so the user sees the right video without forcing playback.
+          if (state.paused) {
+            p.cueVideoById?.({ videoId: state.videoId, startSeconds: Math.max(0, expected) });
+          } else {
+            p.loadVideoById?.({ videoId: state.videoId, startSeconds: Math.max(0, expected) });
+          }
         }
       }
 
@@ -173,16 +186,27 @@ export function Room({ roomId }: { roomId: string }) {
       }
 
       // Position correction
-      const now = Date.now();
-      const expected = computeExpectedPosition(state, serverTimeMs, now);
       const cur = Number(p.getCurrentTime?.() || 0);
       if (Number.isFinite(expected) && Math.abs(cur - expected) > 0.75) {
         p.seekTo?.(expected, true);
       }
 
       // Play/pause
-      if (state.paused) p.pauseVideo?.();
-      else p.playVideo?.();
+      if (state.paused) {
+        p.pauseVideo?.();
+      } else {
+        if (autoplayAssist) p.mute?.();
+        p.playVideo?.();
+        // If browser blocks autoplay, player often stays paused. Show a clear “click to start” affordance.
+        window.setTimeout(() => {
+          try {
+            const ytState = p.getPlayerState?.();
+            if (ytState !== 1) setNeedsClickToPlay(true);
+          } catch {
+            // ignore
+          }
+        }, 600);
+      }
     })()
       .catch(() => {
         // ignore; typically player not ready yet
@@ -394,10 +418,46 @@ export function Room({ roomId }: { roomId: string }) {
                 </option>
               ))}
             </select>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "#b8c9f0", fontWeight: 700 }}>
+              <input
+                type="checkbox"
+                checked={autoplayAssist}
+                onChange={(e) => setAutoplayAssist(e.target.checked)}
+              />
+              autoplay assist (mute)
+            </label>
           </div>
 
-          <div style={{ marginTop: "0.75rem", borderRadius: 12, overflow: "hidden", border: "1px solid #2f4478" }}>
+          <div style={{ marginTop: "0.75rem", borderRadius: 12, overflow: "hidden", border: "1px solid #2f4478", position: "relative" }}>
             <div id="yt-player" />
+            {needsClickToPlay ? (
+              <button
+                onClick={() => {
+                  const p = playerRef.current;
+                  if (!p) return;
+                  setNeedsClickToPlay(false);
+                  try {
+                    if (autoplayAssist) p.mute?.();
+                    p.playVideo?.();
+                  } catch {
+                    // ignore
+                  }
+                }}
+                style={{
+                  position: "absolute",
+                  inset: 12,
+                  borderRadius: 12,
+                  border: "1px solid #3d5a9e",
+                  background: "rgba(20, 36, 71, 0.78)",
+                  color: "#edf2ff",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+                title="Some browsers require a click before media can play. Click once to start."
+              >
+                Click to start playback
+              </button>
+            ) : null}
           </div>
 
           <div style={{ marginTop: "0.65rem", color: "#9eb4e8", fontSize: "0.9rem" }}>
