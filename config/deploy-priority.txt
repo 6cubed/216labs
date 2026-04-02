@@ -3,6 +3,7 @@
 # change order; no code changes in deploy.sh needed.
 admin
 activator
+ytsync
 tortellini
 onefit
 groundtruth
