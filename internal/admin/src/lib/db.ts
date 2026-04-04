@@ -406,7 +406,7 @@ function seedInfraEnvDefaults(db: Database.Database) {
     {
       key: "WORKFORCE_TELEGRAM_CHAT_ID",
       description:
-        "Telegram chat id for the Workforce test cron job (workforce-telegram-test): supergroup/channel where the digital employee’s bot should post (e.g. -100…).",
+        "Optional. Telegram chat id for job workforce-telegram-test (supergroup/channel id, e.g. -100…). If empty, cron-runner falls back to TELEGRAM_CHAT_ID so the digital employee posts to the same chat as other cron jobs.",
       is_secret: 0,
     },
   ];

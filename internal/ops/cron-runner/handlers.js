@@ -22,6 +22,17 @@ function setCronState(db, key, value) {
   );
 }
 
+/** Admin Env (216labs.db env_vars); compose may not pass every key into the container. */
+function getEnvVar(db, key) {
+  try {
+    const row = db.prepare("SELECT value FROM env_vars WHERE key = ?").get(key);
+    const v = row?.value;
+    return typeof v === "string" && v.trim() ? v.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
 /**
  * Drain getUpdates for a single chat; advances Telegram offset.
  */
@@ -234,14 +245,20 @@ export async function telegramGroupHourlyReply(db, _opts) {
  * Post a short test message as the first digital employee (Workforce registry)
  * to WORKFORCE_TELEGRAM_CHAT_ID using that employee's bot token.
  */
-export async function workforceTelegramTest(_db, _opts) {
+export async function workforceTelegramTest(db, _opts) {
   const storePath =
     process.env.WORKFORCE_STORE_PATH || "/app/workforce-data/workforce-employees.json";
-  const chatId = process.env.WORKFORCE_TELEGRAM_CHAT_ID?.trim() || "";
+  // Prefer dedicated workforce target; else same chat as other cron posts (env or admin DB).
+  const chatId =
+    process.env.WORKFORCE_TELEGRAM_CHAT_ID?.trim() ||
+    getEnvVar(db, "WORKFORCE_TELEGRAM_CHAT_ID") ||
+    process.env.TELEGRAM_CHAT_ID?.trim() ||
+    getEnvVar(db, "TELEGRAM_CHAT_ID") ||
+    "";
 
   if (!chatId) {
     console.warn(
-      "[cron-runner] workforce-telegram-test: set WORKFORCE_TELEGRAM_CHAT_ID"
+      "[cron-runner] workforce-telegram-test: set WORKFORCE_TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID (admin Env / env_vars)"
     );
     return "";
   }
