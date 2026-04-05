@@ -178,15 +178,48 @@ function ensureCronRunnerMigrations(db) {
     ('telegram-security-summary', 'Security scan summary', 'PipeSecure/Semgrep findings summary posted to Telegram.', '0 10 * * *', 0),
     ('telegram-happypath-summary', 'Happy Path run summary', 'Last Happy Path results per app posted to Telegram.', '0 8 * * *', 0),
     ('telegram-group-hourly-reply', 'Group hourly AI reply', 'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.', '0 * * * *', 0),
-    ('workforce-telegram-test', 'Workforce Telegram test', 'Sends a short test message from the first digital employee (Workforce) to WORKFORCE_TELEGRAM_CHAT_ID.', '0 * * * *', 0),
+    ('workforce-telegram-test', 'Workforce Telegram test', 'Hourly ping from the first digital employee bot (or main bot if registry empty). Chat: WORKFORCE_TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID.', '0 * * * *', 1),
     ('edge-visitor-rollup', 'Edge visitor rollup (Caddy logs)', 'Reads Caddy JSON access logs and stores coarse daily unique visitors per app in edge_visitor_day.', '*/15 * * * *', 1);
   `);
+  ensureWorkforceCronEnabledOnce(db);
   return true;
 }
 
-async function sendToTelegram(text, chatIdOverride, tokenOverride) {
-  const chatId = chatIdOverride || TELEGRAM_CHAT_ID;
-  const token = tokenOverride || TELEGRAM_BOT_TOKEN;
+/** Read admin Env (216labs.db) when process env is empty — compose often omits keys that exist only in env_vars. */
+function envFromDb(db, key) {
+  if (!db) return "";
+  try {
+    const row = db.prepare("SELECT value FROM env_vars WHERE key = ?").get(key);
+    const v = row?.value;
+    return typeof v === "string" && v.trim() ? v.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+/** One-time: turn on workforce Telegram test job so it actually runs without a manual toggle. */
+function ensureWorkforceCronEnabledOnce(db) {
+  try {
+    const row = db
+      .prepare("SELECT value FROM cron_runner_state WHERE key = ?")
+      .get("workforce_telegram_cron_enabled_v1");
+    if (row?.value === "1") return;
+    db.prepare("UPDATE cron_jobs SET enabled = 1 WHERE id = 'workforce-telegram-test'").run();
+    db.prepare("INSERT OR REPLACE INTO cron_runner_state (key, value) VALUES (?, ?)").run(
+      "workforce_telegram_cron_enabled_v1",
+      "1"
+    );
+    console.log("[cron-runner] enabled job workforce-telegram-test (one-time bootstrap)");
+  } catch (e) {
+    console.warn("[cron-runner] ensureWorkforceCronEnabledOnce:", e?.message || e);
+  }
+}
+
+async function sendToTelegram(text, chatIdOverride, tokenOverride, db) {
+  const chatId =
+    chatIdOverride || envFromDb(db, "TELEGRAM_CHAT_ID") || TELEGRAM_CHAT_ID || "";
+  const token =
+    tokenOverride || envFromDb(db, "TELEGRAM_BOT_TOKEN") || TELEGRAM_BOT_TOKEN || "";
   if (!token || !chatId) {
     console.warn(
       "[cron-runner] Telegram token or chat id not set; skipping send"
@@ -232,7 +265,7 @@ async function runJob(db, job) {
     text = `${name}: error — ${err.message}`;
   }
   if (text && text.length > 0) {
-    await sendToTelegram(text, overrideChatId, sendTokenOverride);
+    await sendToTelegram(text, overrideChatId, sendTokenOverride, db);
   }
   db.prepare("UPDATE cron_jobs SET last_run_at = datetime('now') WHERE id = ?").run(id);
 }

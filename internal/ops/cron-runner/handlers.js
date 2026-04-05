@@ -264,19 +264,29 @@ export async function workforceTelegramTest(db, _opts) {
   }
 
   if (!existsSync(storePath)) {
-    return `Workforce test: no store file at ${storePath}`;
+    return {
+      text: `Workforce: registry file missing at ${storePath}. Add a digital employee in Admin → Workforce (or create that JSON on the host).`,
+      chatId,
+    };
   }
 
   let store;
   try {
     store = JSON.parse(readFileSync(storePath, "utf8"));
   } catch (err) {
-    return `Workforce test: cannot read registry — ${err.message}`;
+    return {
+      text: `Workforce: cannot read registry — ${err.message}`,
+      chatId,
+    };
   }
 
   const employees = store?.employees;
   if (!Array.isArray(employees) || employees.length === 0) {
-    return "Workforce test: no digital employees in the Workforce registry.";
+    return {
+      text:
+        "Workforce: no digital employees in the registry yet. Add one in Admin → Workforce; the next run will post using that bot’s token.",
+      chatId,
+    };
   }
 
   const sorted = [...employees].sort((a, b) =>
@@ -285,7 +295,10 @@ export async function workforceTelegramTest(db, _opts) {
   const employee = sorted[0];
   const token = employee.telegramBotToken?.trim();
   if (!token) {
-    return "Workforce test: first employee has no Telegram bot token.";
+    return {
+      text: "Workforce: first digital employee has no Telegram bot token — edit them in Admin → Workforce.",
+      chatId,
+    };
   }
 
   const name = employee.name || "Digital employee";

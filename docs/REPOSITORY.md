@@ -58,6 +58,8 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 
 **cron-runner** runs scheduled jobs from the admin **Cron** UI. Set **`TELEGRAM_BOT_TOKEN`** and **`TELEGRAM_CHAT_ID`** (or equivalent) in admin **Env** so jobs can post to Telegram.
 
+**Workforce (`workforce-telegram-test`):** Reads **`TELEGRAM_CHAT_ID`** and **`TELEGRAM_BOT_TOKEN`** from **`env_vars`** in **`216labs.db`** when the container env is empty (same as other crons). Optional **`WORKFORCE_TELEGRAM_CHAT_ID`** overrides the destination chat. The job is **enabled by default**; it posts hourly using the first digital employee’s bot token from **`internal/admin/workforce/data/workforce-employees.json`**, or the **main bot** with a setup hint if the registry is missing or empty.
+
 ### Edge traffic (unique visitors per app)
 
 Caddy writes a **shared JSON access log** to the **`caddy_access_logs`** Docker volume (`/var/log/caddy/access.log` in the **caddy** and **cron-runner** containers). The **`edge-visitor-rollup`** cron job (default **on**, every **15 minutes**) appends coarse daily rows into **`216labs.db`** table **`edge_visitor_day`** (`app_id`, `day_utc`, `visitor_hash` where `visitor_hash` is derived from client IP + `User-Agent`). This is **not** GA4-level identity; it is an **edge approximation** for ops and automation.

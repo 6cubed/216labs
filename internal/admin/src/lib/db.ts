@@ -238,6 +238,7 @@ function initSchema(db: Database.Database) {
   seedDefaultCronJobs(db);
   ensureTelegramGroupHourlyCronJob(db);
   ensureWorkforceTelegramTestCronJob(db);
+  ensureWorkforceTelegramCronBootstrapped(db);
   ensureEdgeVisitorRollupCronJob(db);
 
   ensureDeploymentEventsTable(db);
@@ -901,11 +902,28 @@ function ensureWorkforceTelegramTestCronJob(db: Database.Database): void {
      VALUES (
        'workforce-telegram-test',
        'Workforce Telegram test',
-       'Sends a short test message from the first digital employee (Workforce) to WORKFORCE_TELEGRAM_CHAT_ID.',
+       'Hourly ping from the first digital employee’s bot (or main bot if registry empty). Uses TELEGRAM_CHAT_ID when WORKFORCE_TELEGRAM_CHAT_ID is unset.',
        '0 * * * *',
-       0
+       1
      )`
   ).run();
+}
+
+/** One-time: ensure workforce job is on (matches cron-runner bootstrap). */
+function ensureWorkforceTelegramCronBootstrapped(db: Database.Database): void {
+  try {
+    const row = db
+      .prepare("SELECT value FROM cron_runner_state WHERE key = ?")
+      .get("workforce_telegram_cron_enabled_v1");
+    if (row) return;
+    db.prepare("UPDATE cron_jobs SET enabled = 1 WHERE id = 'workforce-telegram-test'").run();
+    db.prepare("INSERT OR REPLACE INTO cron_runner_state (key, value) VALUES (?, ?)").run(
+      "workforce_telegram_cron_enabled_v1",
+      "1"
+    );
+  } catch {
+    // ignore if cron_runner_state missing on legacy DB
+  }
 }
 
 /** Coarse daily unique visitors per app (from Caddy JSON logs via cron-runner rollup). */
@@ -951,6 +969,7 @@ function ensureCronJobsTable(db: Database.Database): void {
   seedDefaultCronJobs(db);
   ensureTelegramGroupHourlyCronJob(db);
   ensureWorkforceTelegramTestCronJob(db);
+  ensureWorkforceTelegramCronBootstrapped(db);
   ensureEdgeVisitorRollupCronJob(db);
 }
 
