@@ -3,6 +3,8 @@
  * run due handlers, send to Telegram, update last_run_at.
  * Exposes POST /run/:id for immediate run (admin panel). Auth: CRON_RUNNER_SECRET env
  * or same key in env_vars (216labs.db); if both empty, accepts unauthenticated POST (trust Docker network).
+ * GET /telegram-env — masked proof of which Telegram-related keys exist in process env vs env_vars
+ * (same auth as POST /run when a secret is configured).
  * Uses sql.js (WASM) so there are no native deps — runs on any platform.
  */
 import { createRequire } from "module";
@@ -219,6 +221,129 @@ function ensureWorkforceCronEnabledOnce(db) {
   }
 }
 
+function maskChatSuffix(s, len = 4) {
+  const t = String(s ?? "").trim();
+  if (!t) return null;
+  if (t.length <= len) return "*".repeat(Math.min(t.length, 8));
+  return `…${t.slice(-len)}`;
+}
+
+function getCronExpectedSecret(db) {
+  const envSecret = (process.env.CRON_RUNNER_SECRET || "").trim();
+  let dbSecret = "";
+  try {
+    const row = db.prepare("SELECT value FROM env_vars WHERE key = ?").get("CRON_RUNNER_SECRET");
+    if (row) {
+      const v = row.value ?? row.VALUE;
+      if (v != null && v !== "") dbSecret = String(v).trim();
+    }
+  } catch {
+    dbSecret = "";
+  }
+  return envSecret || dbSecret;
+}
+
+function cronAuthOk(db, req) {
+  const expected = getCronExpectedSecret(db);
+  if (!expected) return true;
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  return token === expected;
+}
+
+function telegramKeyPresence(db, key) {
+  const pe = process.env[key];
+  const proc = !!(pe && String(pe).trim());
+  const dbv = envFromDb(db, key);
+  const fromDb = !!dbv;
+  if (key.includes("CHAT_ID")) {
+    return {
+      in_process_env: proc,
+      in_env_vars_db: fromDb,
+      process_suffix: proc ? maskChatSuffix(pe) : null,
+      db_suffix: fromDb ? maskChatSuffix(dbv) : null,
+    };
+  }
+  return {
+    in_process_env: proc,
+    in_env_vars_db: fromDb,
+  };
+}
+
+function buildTelegramEnvReport(db) {
+  const keys = ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "WORKFORCE_TELEGRAM_CHAT_ID"];
+  const keys_detail = {};
+  for (const k of keys) keys_detail[k] = telegramKeyPresence(db, k);
+
+  const resolvedChat =
+    envFromDb(db, "WORKFORCE_TELEGRAM_CHAT_ID") ||
+    process.env.WORKFORCE_TELEGRAM_CHAT_ID?.trim() ||
+    envFromDb(db, "TELEGRAM_CHAT_ID") ||
+    TELEGRAM_CHAT_ID ||
+    "";
+  const resolvedMainToken =
+    envFromDb(db, "TELEGRAM_BOT_TOKEN") || TELEGRAM_BOT_TOKEN || "";
+
+  const storePath =
+    process.env.WORKFORCE_STORE_PATH || "/app/workforce-data/workforce-employees.json";
+  const workforce = {
+    store_path: storePath,
+    file_exists: existsSync(storePath),
+    employee_count: 0,
+    first_employee_name: null,
+    first_employee_telegram_token_configured: false,
+  };
+  try {
+    if (workforce.file_exists) {
+      const raw = JSON.parse(readFileSync(storePath, "utf8"));
+      const em = raw?.employees;
+      if (Array.isArray(em)) {
+        workforce.employee_count = em.length;
+        const sorted = [...em].sort((a, b) =>
+          String(a.createdAt || "").localeCompare(String(b.createdAt || ""))
+        );
+        const first = sorted[0];
+        if (first) {
+          workforce.first_employee_name = first.name || null;
+          workforce.first_employee_telegram_token_configured = !!(
+            first.telegramBotToken && String(first.telegramBotToken).trim()
+          );
+        }
+      }
+    }
+  } catch (err) {
+    workforce.registry_read_error = err.message || String(err);
+  }
+
+  let workforce_job_enabled = null;
+  try {
+    const row = db.prepare("SELECT enabled FROM cron_jobs WHERE id = ?").get("workforce-telegram-test");
+    if (row) {
+      const en = row.enabled ?? row.ENABLED;
+      workforce_job_enabled = en === 1 || en === true || String(en) === "1";
+    }
+  } catch {
+    workforce_job_enabled = null;
+  }
+
+  return {
+    ok: true,
+    database_path: DATABASE_PATH,
+    db_file_exists: existsSync(DATABASE_PATH),
+    resolved_chat_id_suffix: maskChatSuffix(resolvedChat),
+    can_send_with_main_bot_token: !!(resolvedChat && resolvedMainToken),
+    workforce_telegram_test_job_enabled: workforce_job_enabled,
+    workforce_ping_uses_first_employee_bot_token:
+      workforce.first_employee_telegram_token_configured,
+    keys: keys_detail,
+    workforce_registry: workforce,
+    hints: [
+      "If the first employee has telegramBotToken, workforce test sends with that bot — it must be in the target chat.",
+      "Chat resolution order: WORKFORCE_TELEGRAM_CHAT_ID then TELEGRAM_CHAT_ID (process env and env_vars).",
+    ],
+  };
+}
+
 async function sendToTelegram(text, chatIdOverride, tokenOverride, db) {
   const override =
     typeof chatIdOverride === "string" && chatIdOverride.trim()
@@ -312,27 +437,39 @@ createServer(async (req, res) => {
   const match = url.pathname.match(/^\/run\/([a-z0-9-]+)$/);
   const method = (req.method || "").toUpperCase();
 
+  if (method === "GET" && url.pathname === "/telegram-env") {
+    const db = await getDb();
+    try {
+      ensureCronRunnerMigrations(db);
+      if (!cronAuthOk(db, req)) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: "Unauthorized" }));
+        return;
+      }
+      const report = buildTelegramEnvReport(db);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(report));
+    } catch (err) {
+      console.error("[cron-runner] telegram-env error:", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          ok: false,
+          error: err && err.message ? err.message : "Failed",
+        })
+      );
+    } finally {
+      db.close();
+    }
+    return;
+  }
+
   if (method === "POST" && match) {
     const jobId = match[1];
     const db = await getDb();
     try {
       ensureCronRunnerMigrations(db);
-      const envSecret = (process.env.CRON_RUNNER_SECRET || "").trim();
-      let dbSecret = "";
-      try {
-        const row = db
-          .prepare("SELECT value FROM env_vars WHERE key = ?")
-          .get("CRON_RUNNER_SECRET");
-        if (row && row.value != null && row.value !== undefined) {
-          dbSecret = String(row.value).trim();
-        }
-      } catch {
-        dbSecret = "";
-      }
-      const expected = envSecret || dbSecret;
-      const auth = req.headers.authorization;
-      const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : "";
-      if (expected && token !== expected) {
+      if (!cronAuthOk(db, req)) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, error: "Unauthorized" }));
         return;
@@ -366,7 +503,11 @@ createServer(async (req, res) => {
   res.writeHead(404, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ ok: false, error: "Not found" }));
 }).listen(RUN_SERVER_PORT, "0.0.0.0", () => {
-  console.log("[cron-runner] Run-now server on port", RUN_SERVER_PORT);
+  console.log(
+    "[cron-runner] HTTP on port",
+    RUN_SERVER_PORT,
+    "(POST /run/:id, GET /telegram-env)"
+  );
 });
 
 console.log("[cron-runner] Started; checking every 5 minutes (UTC). DB:", DATABASE_PATH);
