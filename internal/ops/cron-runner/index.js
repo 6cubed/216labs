@@ -190,8 +190,11 @@ function envFromDb(db, key) {
   if (!db) return "";
   try {
     const row = db.prepare("SELECT value FROM env_vars WHERE key = ?").get(key);
-    const v = row?.value;
-    return typeof v === "string" && v.trim() ? v.trim() : "";
+    if (!row) return "";
+    const v = row.value ?? row.VALUE;
+    if (v == null || v === "") return "";
+    const s = String(v).trim();
+    return s || "";
   } catch {
     return "";
   }
@@ -203,7 +206,8 @@ function ensureWorkforceCronEnabledOnce(db) {
     const row = db
       .prepare("SELECT value FROM cron_runner_state WHERE key = ?")
       .get("workforce_telegram_cron_enabled_v1");
-    if (row?.value === "1") return;
+    const flag = row?.value ?? row?.VALUE;
+    if (String(flag ?? "") === "1") return;
     db.prepare("UPDATE cron_jobs SET enabled = 1 WHERE id = 'workforce-telegram-test'").run();
     db.prepare("INSERT OR REPLACE INTO cron_runner_state (key, value) VALUES (?, ?)").run(
       "workforce_telegram_cron_enabled_v1",
@@ -216,13 +220,22 @@ function ensureWorkforceCronEnabledOnce(db) {
 }
 
 async function sendToTelegram(text, chatIdOverride, tokenOverride, db) {
+  const override =
+    typeof chatIdOverride === "string" && chatIdOverride.trim()
+      ? chatIdOverride.trim()
+      : "";
   const chatId =
-    chatIdOverride || envFromDb(db, "TELEGRAM_CHAT_ID") || TELEGRAM_CHAT_ID || "";
+    override ||
+    envFromDb(db, "WORKFORCE_TELEGRAM_CHAT_ID") ||
+    process.env.WORKFORCE_TELEGRAM_CHAT_ID?.trim() ||
+    envFromDb(db, "TELEGRAM_CHAT_ID") ||
+    TELEGRAM_CHAT_ID ||
+    "";
   const token =
     tokenOverride || envFromDb(db, "TELEGRAM_BOT_TOKEN") || TELEGRAM_BOT_TOKEN || "";
   if (!token || !chatId) {
     console.warn(
-      "[cron-runner] Telegram token or chat id not set; skipping send"
+      "[cron-runner] Telegram token or chat id not set; skipping send (check TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID or WORKFORCE_TELEGRAM_CHAT_ID in admin Env / env_vars)"
     );
     return;
   }

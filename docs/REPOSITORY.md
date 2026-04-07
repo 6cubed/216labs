@@ -58,7 +58,7 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 
 **cron-runner** runs scheduled jobs from the admin **Cron** UI. Set **`TELEGRAM_BOT_TOKEN`** and **`TELEGRAM_CHAT_ID`** (or equivalent) in admin **Env** so jobs can post to Telegram.
 
-**Workforce (`workforce-telegram-test`):** Reads **`TELEGRAM_CHAT_ID`** and **`TELEGRAM_BOT_TOKEN`** from **`env_vars`** in **`216labs.db`** when the container env is empty (same as other crons). Optional **`WORKFORCE_TELEGRAM_CHAT_ID`** overrides the destination chat. The job is **enabled by default**; it posts hourly using the first digital employee’s bot token from **`internal/admin/workforce/data/workforce-employees.json`**, or the **main bot** with a setup hint if the registry is missing or empty.
+**Workforce (`workforce-telegram-test`):** **`TELEGRAM_BOT_TOKEN`** and chat id are read from **`env_vars`** in **`216labs.db`** when the container env is empty (same as other crons). Chat resolution order is **`WORKFORCE_TELEGRAM_CHAT_ID`** then **`TELEGRAM_CHAT_ID`** (handler override, then shared send path). The handler no longer bails out before send when the chat id exists only in **`env_vars`**. The job is **enabled by default**; it posts hourly using the first digital employee’s bot token from **`internal/admin/workforce/data/workforce-employees.json`**, or the **main bot** with a setup hint if the registry is missing or empty. Messages from a configured employee appear **as that employee’s bot**, not the main logging bot, until you add a token or remove it from the registry entry.
 
 ### Edge traffic (unique visitors per app)
 

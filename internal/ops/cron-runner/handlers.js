@@ -26,8 +26,11 @@ function setCronState(db, key, value) {
 function getEnvVar(db, key) {
   try {
     const row = db.prepare("SELECT value FROM env_vars WHERE key = ?").get(key);
-    const v = row?.value;
-    return typeof v === "string" && v.trim() ? v.trim() : "";
+    if (!row) return "";
+    const v = row.value ?? row.VALUE;
+    if (v == null || v === "") return "";
+    const s = String(v).trim();
+    return s || "";
   } catch {
     return "";
   }
@@ -258,15 +261,16 @@ export async function workforceTelegramTest(db, _opts) {
 
   if (!chatId) {
     console.warn(
-      "[cron-runner] workforce-telegram-test: set WORKFORCE_TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID (admin Env / env_vars)"
+      "[cron-runner] workforce-telegram-test: no chat id in process env yet; sendToTelegram will still try WORKFORCE_TELEGRAM_CHAT_ID / TELEGRAM_CHAT_ID from env_vars"
     );
-    return "";
   }
+
+  const chatPayload = chatId ? { chatId } : {};
 
   if (!existsSync(storePath)) {
     return {
       text: `Workforce: registry file missing at ${storePath}. Add a digital employee in Admin → Workforce (or create that JSON on the host).`,
-      chatId,
+      ...chatPayload,
     };
   }
 
@@ -276,7 +280,7 @@ export async function workforceTelegramTest(db, _opts) {
   } catch (err) {
     return {
       text: `Workforce: cannot read registry — ${err.message}`,
-      chatId,
+      ...chatPayload,
     };
   }
 
@@ -285,7 +289,7 @@ export async function workforceTelegramTest(db, _opts) {
     return {
       text:
         "Workforce: no digital employees in the registry yet. Add one in Admin → Workforce; the next run will post using that bot’s token.",
-      chatId,
+      ...chatPayload,
     };
   }
 
@@ -297,7 +301,7 @@ export async function workforceTelegramTest(db, _opts) {
   if (!token) {
     return {
       text: "Workforce: first digital employee has no Telegram bot token — edit them in Admin → Workforce.",
-      chatId,
+      ...chatPayload,
     };
   }
 
@@ -306,7 +310,7 @@ export async function workforceTelegramTest(db, _opts) {
 
   return {
     text,
-    chatId,
+    ...chatPayload,
     sendToken: token,
   };
 }
