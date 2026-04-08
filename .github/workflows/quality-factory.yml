@@ -112,10 +112,10 @@ jobs:
         run: exit 1
 
   live-sweep-report:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # Run after live-sweep even when shard jobs fail (shards use continue-on-error).
+    if: ${{ always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     needs: [live-sweep]
     runs-on: ubuntu-latest
-    if: always()
     steps:
       - name: Download shard reports
         uses: actions/download-artifact@v4
