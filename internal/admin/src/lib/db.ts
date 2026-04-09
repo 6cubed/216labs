@@ -284,16 +284,46 @@ function initSchema(db: Database.Database) {
 
 /** Default admin logging channel and cron-runner URL. Only sets when value is empty. */
 function seedInfraEnvDefaults(db: Database.Database) {
-  // Optional: set ADMIN_DEFAULT_TELEGRAM_LOGGING_CHAT_ID on the admin container (compose / droplet .env).
-  // Never hardcode real chat IDs in the repo.
+  const insertEnvKey = db.prepare(
+    `INSERT OR IGNORE INTO env_vars (key, value, description, is_secret, updated_at)
+     VALUES (@key, '', @description, @is_secret, NULL)`
+  );
+  for (const row of [
+    {
+      key: "TELEGRAM_BOT_TOKEN",
+      description:
+        "Bot token for admin logging and cron-runner (same 216labs.db; compose may pass TELEGRAM_BOT_TOKEN from host .env).",
+      is_secret: 1,
+    },
+    {
+      key: "TELEGRAM_CHAT_ID",
+      description:
+        "Logging channel / supergroup id (e.g. -100…). Cron-runner reads this table when compose env is empty.",
+      is_secret: 0,
+    },
+  ]) {
+    insertEnvKey.run(row);
+  }
+
+  // Optional: set ADMIN_DEFAULT_* on the admin container (compose / droplet .env).
+  // Never hardcode real tokens or chat IDs in the repo.
   const chatIdFromEnv =
     typeof process.env.ADMIN_DEFAULT_TELEGRAM_LOGGING_CHAT_ID === "string"
       ? process.env.ADMIN_DEFAULT_TELEGRAM_LOGGING_CHAT_ID.trim()
       : "";
   if (chatIdFromEnv) {
     db.prepare(
-      `UPDATE env_vars SET value = ? WHERE key = 'TELEGRAM_CHAT_ID' AND (value = '' OR value IS NULL)`
+      `UPDATE env_vars SET value = ?, updated_at = datetime('now') WHERE key = 'TELEGRAM_CHAT_ID' AND (value = '' OR value IS NULL)`
     ).run(chatIdFromEnv);
+  }
+  const tokenFromEnv =
+    typeof process.env.ADMIN_DEFAULT_TELEGRAM_BOT_TOKEN === "string"
+      ? process.env.ADMIN_DEFAULT_TELEGRAM_BOT_TOKEN.trim()
+      : "";
+  if (tokenFromEnv) {
+    db.prepare(
+      `UPDATE env_vars SET value = ?, updated_at = datetime('now') WHERE key = 'TELEGRAM_BOT_TOKEN' AND (value = '' OR value IS NULL)`
+    ).run(tokenFromEnv);
   }
   db.prepare(
     `UPDATE env_vars SET value = 'http://cron-runner:3029' WHERE key = 'CRON_RUNNER_INTERNAL_URL' AND (value = '' OR value IS NULL)`

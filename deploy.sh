@@ -624,7 +624,19 @@ if [ -n "$ADMIN_CTR" ]; then
   echo "==> Loaded ${ENV_COUNT} env vars from admin container"
 else
   : > .env.admin
-  echo "==> No admin container running yet, using .env defaults only"
+  # When admin is not running (e.g. limited deploy), still pass env_vars from 216labs.db into compose
+  # so cron-runner and others get TELEGRAM_* / CRON_RUNNER_SECRET (same escaping as write-env-admin-from-db.js).
+  if [ -f 216labs.db ] && [ -f scripts/export-env-admin-from-db.py ] && command -v python3 &>/dev/null; then
+    if python3 scripts/export-env-admin-from-db.py 216labs.db >> .env.admin 2>/dev/null; then
+      ENV_DB=$(wc -l < .env.admin | tr -d ' ')
+      if [ "${ENV_DB:-0}" -gt 0 ]; then
+        echo "==> Loaded ${ENV_DB} env vars from 216labs.db (admin container not running; python export)"
+      fi
+    fi
+  fi
+  if [ ! -s .env.admin ]; then
+    echo "==> No admin container running yet, using .env defaults only"
+  fi
 fi
 
 # Force Caddy to reload so it picks up Caddyfile changes (e.g. new app vhosts like blog).
