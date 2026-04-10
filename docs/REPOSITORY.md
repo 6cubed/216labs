@@ -15,6 +15,17 @@ The layout stays **client-agnostic**: manifests, one admin DB, one deploy path, 
 | **`packages/`** | Shared libraries / design-system-style code (reserved; empty until extracted). |
 | **`config/`** | Deploy caps, bootstrap snippets, priority order, repo-level configuration. |
 
+### Public writing: Tigertank vs 216Labs blog
+
+Two Next.js publications serve different audiences. **Do not** put think-tank / policy / societal speculation essays in the factory blog.
+
+| Surface | URL | Purpose | Posts live in repo |
+|--------|-----|---------|---------------------|
+| **Tigertank** | [tigertank.6cubed.app](https://tigertank.6cubed.app) | Speculative “think tank” essays (policy, governance, fiscal ideas, housing, systems) | `products/org-lifestyle/play/tigertank/src/lib/posts.ts` — routes **`/`** and **`/p/[slug]`** |
+| **216Labs blog** | [blog.6cubed.app](https://blog.6cubed.app) | Monorepo / factory essays: deploy, hosting, security, roadmap, vibe-coding practice | `products/org-media/blog/src/lib/posts.ts` — routes **`/`** and **`/blog/[slug]`** |
+
+Caddy routes both like any other enabled app (`manifest.json` → `tigertank` / `blog`). When adding a long-form essay, pick the column first; duplicate publishing the same piece in both places is discouraged.
+
 ## Projects (public URLs)
 
 Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for truth.
@@ -41,6 +52,8 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 | **Pocket** | Next.js, WebGPU, WebSocket relay | [pocket.6cubed.app](https://pocket.6cubed.app) |
 | **StoryMagic** | Next.js, SQLite, OpenAI, Stripe | [storybook.6cubed.app](https://storybook.6cubed.app) |
 | **216Labs Admin** | Next.js (workflow & pipeline) | [admin.6cubed.app](https://admin.6cubed.app) |
+| **216Labs blog** | Next.js (factory & toolkit essays) | [blog.6cubed.app](https://blog.6cubed.app) |
+| **Tigertank** | Next.js (speculative policy & society essays) | [tigertank.6cubed.app](https://tigertank.6cubed.app) |
 
 ## Deploy
 

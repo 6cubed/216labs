@@ -8,64 +8,6 @@ export interface Post {
 
 export const posts: Post[] = [
   {
-    slug: 'ireland-county-income-tax-switzerland-vote-with-your-feet',
-    title:
-      'Think tank: Ireland, county-by-county income tax, and the Swiss lesson in “voting with your feet”',
-    excerpt:
-      'A speculative sketch: what if Irish counties set income tax rates like Swiss cantons—seeded by a rule inversely related to population density—so competition and self-interest create downward pressure and referendum incentives align under a clean, explicit model?',
-    date: '2026-04-10',
-    body: `
-Ireland collects income tax at the national level with admirable administrative simplicity. Switzerland does something structurally different: **sub-national governments set rates**, residents sort across borders in response to bundles of taxes and services, and the system has survived for generations without dissolving into chaos. This note is **not** a ready-made bill. It is a **think-tank thought experiment**: what if Ireland introduced a **county-level income tax band** (or a clearly defined county surcharge/rebate layered on a federal base) so that **competition between counties** became a first-class feature of fiscal policy—and the **initial rate schedule** were chosen so that a simple model of self-interest makes a **narrow Yes win in a referendum** feel less like magic and more like **mechanism design**?
-
-**Why Switzerland is the right comparator**
-
-Swiss cantons are not Irish counties—scale, history, and federal architecture differ. Still, the lesson that matters here is **Tiebout-style sorting**: when people can choose jurisdiction without changing country, **taxes and public goods become a market**. Counties that overprice relative to quality lose mobile taxpayers; counties that deliver value attract them. The claim is not that “markets solve public finance” without friction. It is that **fiscal decentralization introduces an optimization pressure**—a **downward drift on the tax wedge** for mobile bases unless voters consciously trade it off for services they want. That pressure is the **optimization function** people intuit when they say competition keeps governments honest.
-
-**County-by-county income tax in Ireland: what would “work” even mean?**
-
-Constitutional and EU constraints are real; this essay abstracts them to ask about **shape**, not enactability tomorrow. A workable design would need:
-
-- A **national base** (uniform rules, administration, possibly collection) so compliance cost does not multiply by 26 experiments.
-- A **county margin**—a rate band, a local multiplier, or a transparent surcharge—set by an elected county body within **pre-agreed floors and ceilings** so the system stays legible.
-- **Equalization** or transition rules so sparse counties are not punished for geography alone—otherwise “competition” becomes a polite word for collapse.
-
-The intellectual prize is the same as in Switzerland: **local democratic choice** within a **federal skeleton**, with **mobility** as the feedback signal.
-
-**Seeding rates: inverse to population density**
-
-Here is the “piece of mathematical beauty” the headline promises—stated honestly as **a normative construction**, not an empirical law of nature.
-
-Let each county **c** have population density **ρ_c** (people per km²). Pick a function **h** that rises with **sparsity** (1/ρ). The **initial local marginal rate add-on** **τ_c** is:
-
-**τ_c = τ₀ × h(1/ρ_c) / Σ_k w_k h(1/ρ_k)**
-
-Here **h** maps sparsity into “fiscal room,” weights **w_k** pin the **national aggregate** to a revenue target, and **τ₀** scales the schedule. Intuition: **dense counties**—where land and congestion are scarce and agglomeration rents are high—start with **higher initial local burdens**; **sparse counties** start lower to attract residents and employers. The exact curve is a political choice; the **structure** is what creates elegance: **one scalar field** (density) orders the entire initial map, so the referendum debate can be about **parameters** (how steep the curve) rather than **26 separate pork stories**.
-
-After the seed, **counties adjust** inside bands. The optimization story begins: a county that raises **τ_c** too far without improving quality loses net in-migration of the most elastic earners; a county that cuts may gain them. **Downward pressure** is not guaranteed in every subgame—nothing in public finance is—but it is **the central tendency** when labor and capital are at least somewhat mobile and information about bundles is imperfect but not zero.
-
-**“51% Yes” and self-interest: a democratic soundness sketch**
-
-No honest analyst should promise a **mathematical proof** that **actual Irish voters** approve any real referendum. What you *can* do in a think tank is specify a **stylized electorate** and show **incentive alignment**.
-
-Imagine:
-
-- A **pivotal voter model** where a fraction of the population is **mobile enough** to care about the county margin, another fraction is **immobile** and cares mostly about local services financed by the margin, and a middle group is **quasi-indifferent** at the seed.
-- Under the **density-based seed**, **more than half** of the weighted electorate sees **weakly positive** expected surplus at **t = 0**: dense areas get **credibly promised** service and infrastructure spending from the higher initial wedge; sparse areas get **lower initial wedge** and **growth optionality**; the quasi-indifferent block breaks tie in favor of **trying the mechanism** because the schedule is **transparent** and **reversible** via future county votes.
-
-In that toy world, **individual greed**—understood as **rational pursuit of post-tax income and local amenities**—does not undermine the reform; it **stabilizes** it. Everyone expects to **exploit** the rules (move, lobby, vote locally), and those actions are **the feedback loop** the design needs. Call that **“democratically sound”** in the **mechanism-design** sense: **the institution turns private incentives into a public discovery process** for rates and bundles.
-
-Real referendums add **loss aversion**, **distrust**, and **media storms**. The sketch is not a guarantee; it is a **design target**: choose the seed so the **median plausible story** is “I can live with this” for a **narrow majority**, then let **feet and ballots** do the rest.
-
-**Vote with your feet**
-
-Ireland already has **internal migration**; what it lacks is a **first-class fiscal price tag** attached to county residence at the margin. Making that price tag **visible**—without sabotaging national solidarity—is how you earn the phrase **“vote with your feet.”** Some people will stay and pay for Dublin’s bundle; others will optimize **post-tax life** in the midlands or the west. That is not betrayal of the republic; it is **honesty about trade-offs**.
-
-**Closing**
-
-Switzerland did not arrive at fiscal federalism by theorem. Ireland would not either. But **county-by-county income taxation**, seeded by a **transparent, inverse-density schedule**, is a coherent think-tank proposal: it imports **competitive discipline**, keeps **democratic agency local**, and gives **optimization theory** something to chew on without pretending spreadsheets replace politics. The next step is not a manifesto—it is **simulation**: feed real CSO density and revenue data, draw a few curves **h**, and ask where the **median voter’s surplus** actually sits. Until then, treat this as **an opening argument**, not a finished constitution.
-    `.trim(),
-  },
-  {
     slug: 'six-dollar-droplet-price-sheet-and-scaling-thousands-of-demos',
     title:
       'The $6 droplet price sheet: what this whole setup costs and how thousands of demos still fit',
