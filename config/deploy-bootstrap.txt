@@ -10,3 +10,5 @@ onefit
 activator
 cron-runner
 ytsync
+# Live on droplet; needed when deploy.sh has no admin DB (toolkit cap must include it).
+tigertank
