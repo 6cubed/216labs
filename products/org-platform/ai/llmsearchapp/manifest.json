@@ -1,0 +1,44 @@
+{
+  "id": "llmsearchapp",
+  "name": "LLM Search",
+  "tagline": "Perplexity-style answers with live web search, citations, and streaming",
+  "description": "Ask questions in natural language. The app searches the web (Tavily or Brave), streams an OpenAI answer with inline [n] citations, shows source cards with favicons, suggests follow-up questions, and persists chat history on disk.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "512m",
+  "docker_service": "llmsearchapp",
+  "build_context": "./products/org-platform/ai/llmsearchapp",
+  "stack": {
+    "frontend": "Next.js 14",
+    "backend": "Route handlers (NDJSON stream)",
+    "database": null,
+    "other": ["OpenAI", "Tavily or Brave Search API", "session JSON files"]
+  },
+  "env_vars": [
+    {
+      "key": "OPENAI_API_KEY",
+      "description": "Required. Chat completions for synthesis and query rewrite.",
+      "is_secret": true
+    },
+    {
+      "key": "TAVILY_API_KEY",
+      "description": "Preferred web search API (https://tavily.com).",
+      "is_secret": true
+    },
+    {
+      "key": "BRAVE_SEARCH_API_KEY",
+      "description": "Alternative web search if Tavily is unset (Brave Search API).",
+      "is_secret": true
+    },
+    {
+      "key": "LLMSEARCH_MODEL",
+      "description": "Optional. OpenAI model id (default: gpt-4o-mini).",
+      "is_secret": false
+    },
+    {
+      "key": "LLMSEARCH_DATA_DIR",
+      "description": "Optional. Session storage directory (default: ./data in container).",
+      "is_secret": false
+    }
+  ]
+}

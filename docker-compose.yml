@@ -1078,6 +1078,27 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── LLM Search (Perplexity-style search + citations) ───────────
+  llmsearchapp:
+    image: 216labs/llmsearchapp:latest
+    pull_policy: never
+    build: ./products/org-platform/ai/llmsearchapp
+    restart: unless-stopped
+    environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
+      - PORT=3000
+      - NODE_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - BRAVE_SEARCH_API_KEY=${BRAVE_SEARCH_API_KEY:-}
+      - LLMSEARCH_MODEL=${LLMSEARCH_MODEL:-}
+      - LLMSEARCH_DATA_DIR=/app/data
+    volumes:
+      - ./products/org-platform/ai/llmsearchapp/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 512m
+
   # ── MaxLearn (Tinder for Wikipedia rabbit holes) ───────────────
   maxlearn:
     image: 216labs/maxlearn:latest

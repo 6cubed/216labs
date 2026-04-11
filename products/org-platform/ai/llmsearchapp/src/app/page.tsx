@@ -1,0 +1,465 @@
+"use client";
+
+import { CitationMarkdown } from "@/components/CitationMarkdown";
+import type { ChatMessage, Source } from "@/lib/types";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+type UiMessage = {
+  role: "user" | "assistant";
+  content: string;
+  sources?: Source[];
+  related?: string[];
+  streaming?: boolean;
+};
+
+type SessionMeta = { id: string; title: string; updatedAt: string };
+
+function faviconUrl(u: string): string {
+  try {
+    const host = new URL(u).hostname;
+    return `https://www.google.com/s2/favicons?domain=${host}&sz=32`;
+  } catch {
+    return "";
+  }
+}
+
+export default function Home() {
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<UiMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sessions, setSessions] = useState<SessionMeta[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const refreshSessions = useCallback(async () => {
+    try {
+      const r = await fetch("/api/sessions");
+      if (!r.ok) return;
+      const data = (await r.json()) as { sessions: SessionMeta[] };
+      setSessions(data.sessions ?? []);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshSessions();
+  }, [refreshSessions]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const hasConversation = messages.length > 0;
+
+  const send = async (text: string) => {
+    const q = text.trim();
+    if (!q || loading) return;
+
+    setError(null);
+    setLoading(true);
+    setSearchQuery(null);
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+
+    const nextMessages: UiMessage[] = [
+      ...messages,
+      { role: "user", content: q },
+      { role: "assistant", content: "", streaming: true },
+    ];
+    setMessages(nextMessages);
+    setInput("");
+
+    const apiMessages = [
+      ...messages.map((m) => ({ role: m.role, content: m.content })),
+      { role: "user" as const, content: q },
+    ];
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: sessionId ?? undefined,
+          messages: apiMessages,
+        }),
+        signal: abortRef.current.signal,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || res.statusText);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const dec = new TextDecoder();
+      let buf = "";
+      let sources: Source[] = [];
+      let related: string[] = [];
+      let acc = "";
+      let doneSid: string | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let ev: Record<string, unknown>;
+          try {
+            ev = JSON.parse(line) as Record<string, unknown>;
+          } catch {
+            continue;
+          }
+          if (ev.type === "sources") {
+            sources = (ev.sources as Source[]) ?? [];
+          } else if (ev.type === "token" && typeof ev.text === "string") {
+            acc += ev.text;
+            setMessages((prev) => {
+              const copy = [...prev];
+              const last = copy.length - 1;
+              if (copy[last]?.role === "assistant") {
+                copy[last] = {
+                  role: "assistant",
+                  content: acc,
+                  sources,
+                  streaming: true,
+                };
+              }
+              return copy;
+            });
+          } else if (ev.type === "related") {
+            related = (ev.questions as string[]) ?? [];
+          } else if (ev.type === "error") {
+            throw new Error(String(ev.message || "Stream error"));
+          } else if (ev.type === "done") {
+            doneSid = typeof ev.sessionId === "string" ? ev.sessionId : null;
+            if (typeof ev.searchQuery === "string") setSearchQuery(ev.searchQuery);
+          }
+        }
+      }
+
+      setSessionId(doneSid);
+      setMessages((prev) => {
+        const copy = [...prev];
+        const last = copy.length - 1;
+        if (copy[last]?.role === "assistant") {
+          copy[last] = {
+            role: "assistant",
+            content: acc,
+            sources,
+            related,
+            streaming: false,
+          };
+        }
+        return copy;
+      });
+      void refreshSessions();
+    } catch (e) {
+      if ((e as Error).name === "AbortError") {
+        setMessages((prev) => (prev.length >= 2 ? prev.slice(0, -2) : []));
+        return;
+      }
+      const msg = e instanceof Error ? e.message : "Request failed";
+      setError(msg);
+      setMessages((prev) => (prev.length >= 2 ? prev.slice(0, -2) : []));
+    } finally {
+      setLoading(false);
+      abortRef.current = null;
+    }
+  };
+
+  const stop = () => abortRef.current?.abort();
+
+  const newChat = () => {
+    setSessionId(null);
+    setMessages([]);
+    setInput("");
+    setError(null);
+    setSearchQuery(null);
+  };
+
+  const loadSession = async (id: string) => {
+    setError(null);
+    const r = await fetch(`/api/sessions/${id}`);
+    if (!r.ok) return;
+    const data = (await r.json()) as { session: { messages: ChatMessage[] } };
+    const msgs = data.session.messages;
+    setSessionId(id);
+    setMessages(
+      msgs.map((m) => ({
+        role: m.role,
+        content: m.content,
+        sources: m.sources,
+        related: m.related,
+      }))
+    );
+  };
+
+  const deleteSession = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+    if (sessionId === id) newChat();
+    void refreshSessions();
+  };
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void send(input);
+  };
+
+  const suggested = useMemo(
+    () => [
+      "What changed in EU AI regulation in 2024?",
+      "Best practices for RAG with streaming citations",
+      "Compare PostgreSQL vs SQLite for edge deployments",
+    ],
+    []
+  );
+
+  return (
+    <div className="relative min-h-screen bg-[var(--bg)] bg-grid">
+      <div
+        className="pointer-events-none fixed inset-0 bg-gradient-to-b from-sky-500/5 via-transparent to-indigo-500/5"
+        aria-hidden
+      />
+
+      <aside
+        className={`fixed left-0 top-0 z-40 flex h-full w-72 flex-col border-r border-[var(--border)] bg-[var(--surface)] transition-transform max-md:shadow-xl md:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-[var(--border)] p-3">
+          <span className="text-sm font-semibold tracking-tight text-[var(--text)]">
+            LLM Search
+          </span>
+          <button
+            type="button"
+            onClick={newChat}
+            className="rounded-lg bg-[var(--surface2)] px-2.5 py-1 text-xs font-medium text-[var(--text)] hover:bg-[var(--border)]"
+          >
+            New chat
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-2">
+          {sessions.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => void loadSession(s.id)}
+              className={`group mb-1 flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-[var(--surface2)] ${
+                sessionId === s.id ? "bg-[var(--surface2)]" : ""
+              }`}
+            >
+              <span className="line-clamp-2 flex-1 text-[var(--text)]">{s.title}</span>
+              <button
+                type="button"
+                className="shrink-0 text-[var(--muted)] opacity-0 hover:text-red-400 group-hover:opacity-100"
+                onClick={(e) => void deleteSession(s.id, e)}
+                aria-label="Delete chat"
+              >
+                ×
+              </button>
+            </button>
+          ))}
+        </div>
+        <p className="border-t border-[var(--border)] p-3 text-[10px] leading-relaxed text-[var(--muted)]">
+          Web search via Tavily or Brave. Set keys in admin Env. Answers stream from
+          OpenAI.
+        </p>
+      </aside>
+
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          aria-label="Close sidebar"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <main
+        className={`relative z-10 mx-auto min-h-screen max-w-3xl px-3 pb-32 pt-4 transition-[margin] md:ml-72 md:px-6 ${
+          hasConversation ? "" : "flex flex-col justify-center"
+        }`}
+      >
+        <header className="mb-6 flex items-center gap-3">
+          <button
+            type="button"
+            className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 text-[var(--text)] md:hidden"
+            onClick={() => setSidebarOpen((o) => !o)}
+            aria-label="Toggle sidebar"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-[var(--text)] md:text-2xl">
+              Ask anything
+            </h1>
+            <p className="text-sm text-[var(--muted)]">
+              Live web sources · Citations · Streaming · History
+            </p>
+          </div>
+        </header>
+
+        {!hasConversation && (
+          <div className="mb-8 flex flex-wrap gap-2">
+            {suggested.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => void send(s)}
+                className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-left text-sm text-[var(--muted)] transition hover:border-sky-500/40 hover:text-[var(--text)]"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-8">
+          {messages.map((m, idx) => (
+            <article key={idx}>
+              {m.role === "user" ? (
+                <div className="flex justify-end">
+                  <div className="max-w-[92%] rounded-2xl bg-[var(--surface2)] px-4 py-3 text-[var(--text)]">
+                    {m.content}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {m.streaming && !m.content && (
+                    <div className="flex gap-1.5 text-[var(--muted)]">
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-sky-400 [animation-delay:-0.3s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-sky-400 [animation-delay:-0.15s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-sky-400" />
+                    </div>
+                  )}
+                  {m.content ? (
+                    <CitationMarkdown content={m.content} sources={m.sources ?? []} />
+                  ) : null}
+
+                  {m.sources && m.sources.length > 0 && !m.streaming && (
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                        Sources
+                      </div>
+                      <ul className="space-y-2">
+                        {m.sources.map((s, i) => (
+                          <li key={s.url + i}>
+                            <a
+                              href={s.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex gap-2 rounded-lg p-2 hover:bg-[var(--surface2)]"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={faviconUrl(s.url)}
+                                alt=""
+                                className="mt-0.5 h-4 w-4 shrink-0 opacity-80"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm font-medium text-[var(--text)]">
+                                  <span className="mr-2 text-[var(--accent)]">[{i + 1}]</span>
+                                  {s.title}
+                                </div>
+                                <div className="truncate text-xs text-[var(--muted)]">{s.url}</div>
+                              </div>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {m.related && m.related.length > 0 && !m.streaming && (
+                    <div>
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                        Related
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {m.related.map((q) => (
+                          <button
+                            key={q}
+                            type="button"
+                            onClick={() => void send(q)}
+                            className="rounded-full border border-[var(--border)] bg-[var(--surface2)] px-3 py-1.5 text-left text-sm text-[var(--muted)] hover:border-sky-500/40 hover:text-[var(--text)]"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+
+        {searchQuery && hasConversation && (
+          <p className="mt-4 text-xs text-[var(--muted)]">
+            Search query: <span className="text-[var(--accent)]">{searchQuery}</span>
+          </p>
+        )}
+
+        <div ref={bottomRef} />
+      </main>
+
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--border)] bg-[var(--bg)]/90 p-3 backdrop-blur md:left-72">
+        <form onSubmit={onSubmit} className="mx-auto flex max-w-3xl gap-2">
+          <input
+            className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-[var(--text)] placeholder:text-[var(--muted)] focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/30"
+            placeholder="Ask a question…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={loading}
+          />
+          {loading ? (
+            <button
+              type="button"
+              onClick={stop}
+              className="shrink-0 rounded-xl border border-red-500/40 bg-red-500/10 px-5 py-3 text-sm font-medium text-red-200 hover:bg-red-500/20"
+            >
+              Stop
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              className="shrink-0 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 disabled:opacity-40"
+            >
+              Search
+            </button>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
