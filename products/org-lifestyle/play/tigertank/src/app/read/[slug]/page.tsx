@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { unstable_noStore } from 'next/cache'
 import { getPostBySlug } from '@/lib/posts'
 
-/** Do not use generateStaticParams here — it forces a per-slug prerender at build time and can bake NOT_FOUND. */
+/** Route lives under /read (not /p) so Docker/GHCR layer merge cannot resurrect stale per-slug SSG files. */
 export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 
@@ -16,6 +17,7 @@ function renderBody(body: string) {
 }
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
+  unstable_noStore()
   const { slug } = params
   const post = getPostBySlug(decodeURIComponent(slug))
   if (!post) notFound()

@@ -24,7 +24,7 @@ export default function HomePage() {
       <main className="space-y-10">
         {posts.map((post) => (
           <article key={post.slug} className="border-b border-[var(--surface)] pb-10 last:border-0">
-            <Link href={`/p/${post.slug}`} className="group block">
+            <Link href={`/read/${post.slug}`} className="group block">
               <time className="text-xs text-[var(--muted)]" dateTime={post.date}>
                 {new Date(post.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
               </time>

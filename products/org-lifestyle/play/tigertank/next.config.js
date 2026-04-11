@@ -1,10 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  async redirects() {
+    return [
+      {
+        source: "/p/:slug",
+        destination: "/read/:slug",
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     return [
       {
-        source: "/p/:path*",
+        source: "/read/:path*",
         headers: [
           {
             key: "Cache-Control",

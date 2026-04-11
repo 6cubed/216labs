@@ -21,7 +21,7 @@ Two Next.js publications serve different audiences. **Do not** put think-tank / 
 
 | Surface | URL | Purpose | Posts live in repo |
 |--------|-----|---------|---------------------|
-| **Tigertank** | [tigertank.6cubed.app](https://tigertank.6cubed.app) | Speculative “think tank” essays (policy, governance, fiscal ideas, housing, systems) | `products/org-lifestyle/play/tigertank/src/lib/posts.ts` — routes **`/`** and **`/p/[slug]`** |
+| **Tigertank** | [tigertank.6cubed.app](https://tigertank.6cubed.app) | Speculative “think tank” essays (policy, governance, fiscal ideas, housing, systems) | `products/org-lifestyle/play/tigertank/src/lib/posts.ts` — routes **`/`** and **`/read/[slug]`** (legacy **`/p/:slug`** redirects to **`/read/:slug`**) |
 | **216Labs blog** | [blog.6cubed.app](https://blog.6cubed.app) | Monorepo / factory essays: deploy, hosting, security, roadmap, vibe-coding practice | `products/org-media/blog/src/lib/posts.ts` — routes **`/`** and **`/blog/[slug]`** |
 
 Caddy routes both like any other enabled app (`manifest.json` → `tigertank` / `blog`). When adding a long-form essay, pick the column first; duplicate publishing the same piece in both places is discouraged.
