@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPostBySlug, getAllSlugs } from '@/lib/posts'
+import { getPostBySlug } from '@/lib/posts'
 
-/** Avoid stale SSG 404s when posts change: resolve the slug at request time from the shipped module. */
+/** Do not use generateStaticParams here — it forces a per-slug prerender at build time and can bake NOT_FOUND. */
 export const dynamic = 'force-dynamic'
+export const dynamicParams = true
 
 function renderBody(body: string) {
   return body.split(/\n\n+/).map((block, i) => {
@@ -12,10 +13,6 @@ function renderBody(body: string) {
     const html = trimmed.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     return <p key={i} className="mb-4 leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />
   })
-}
-
-export async function generateStaticParams() {
-  return getAllSlugs().map((slug) => ({ slug }))
 }
 
 export default async function PostPage({ params }: { params: { slug: string } }) {

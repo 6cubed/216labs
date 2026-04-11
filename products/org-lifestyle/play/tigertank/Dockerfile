@@ -3,7 +3,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+# Avoid reusing a stale .next from BuildKit cache when only posts/content changed.
+RUN rm -rf .next && npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
