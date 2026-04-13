@@ -2,7 +2,7 @@
   "id": "llmsearchapp",
   "name": "LLM Search",
   "tagline": "Perplexity-style answers with live web search, citations, and streaming",
-  "description": "Ask questions in natural language. The app searches the web (Tavily or Brave), streams an OpenAI answer with inline [n] citations, shows source cards with favicons, suggests follow-up questions, and persists chat history on disk.",
+  "description": "Ask questions in natural language. Default mode runs a WebLLM model in the browser (no API keys) with Wikipedia retrieval via public CORS APIs. Optional Cloud mode uses Tavily or Brave plus OpenAI on the server. Citations, streaming, sidebar history — local chats use browser storage; cloud chats use disk on the server.",
   "category": "consumer",
   "internal_port": 3000,
   "memory_limit": "512m",
