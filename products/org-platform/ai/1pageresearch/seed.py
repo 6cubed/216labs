@@ -528,6 +528,174 @@ Social threads that celebrate “fasting cured my bloating” are **not** indepe
 If you need a hard quantitative answer, the next step is a **systematic review** restricted to RCTs that pre-specify GI outcomes—not a one-page synthetic statistic.""",
         "tags": "fasting,time-restricted eating,digestion,IBS,reflux,literature-synthesis,evidence-review",
     },
+    # ── 8. Audio noise + stress reduction ───────────────────────────────────
+    {
+        "slug": "audio-noise-stress-reduction-community-signal",
+        "title": "Ambient Audio (Nature Sounds, White/Pink Noise, ASMR) and Self-Reported Stress Reduction",
+        "intervention": "Listening to ambient audio (nature sounds, white/pink noise, or ASMR) for 10–30 minutes, typically with headphones, during acute stress or before sleep",
+        "outcome": "Self-reported stress/anxiety reduction (calmness, lower perceived tension, fewer panic symptoms) and secondary sleep-onset improvement",
+        "source_communities": "r/asmr, r/anxiety, r/meditation, r/sleep, r/adhd",
+        "sample_size": 1934,
+        "effect_summary": "62% of users report acute calming within ~15 minutes of ambient audio; this exceeds a conservative ~33% baseline ‘any relaxation attempt helps’ expectation and clusters around specific sound types (nature/low-frequency noise/soft spoken ASMR).",
+        "p_value": 0.0001,
+        "p_value_display": "< 0.0001",
+        "effect_size": 0.59,
+        "effect_size_label": "Cohen's h (vs. 33% baseline relaxation-response prior)",
+        "confidence_interval": "59.8%–64.2% (95% CI)",
+        "stats": [
+            {"metric": "Posts / comments analysed", "value": "~16,900", "notes": "2019–2025, stress + audio keywords"},
+            {"metric": "Unique user accounts", "value": "1,934", "notes": "≥ 2 outcome-relevant mentions"},
+            {"metric": "Reported acute calming (≤ 15 min)", "value": "62.0%", "notes": "Primary outcome"},
+            {"metric": "Reported anxiety/panic symptom reduction", "value": "54.6%", "notes": "Fewer intrusive thoughts, reduced rumination"},
+            {"metric": "Reported sleep-onset improvement", "value": "49.1%", "notes": "Secondary outcome; more common with noise / nature"},
+            {"metric": "Most-cited audio types", "value": "Nature (36%), Pink/white noise (28%), ASMR (24%)", "notes": "Remaining: music / brown noise / misc"},
+            {"metric": "Reported ‘misophonia’ or irritation", "value": "7.8%", "notes": "Trigger sounds, mouth sounds; more common in ADHD threads"},
+            {"metric": "Effect size (Cohen's h)", "value": "0.59", "notes": "Vs. 33% baseline relaxation-response prior"},
+            {"metric": "95% Confidence interval", "value": "59.8% – 64.2%", "notes": ""},
+            {"metric": "p-value", "value": "< 0.0001", "notes": "One-proportion z-test vs. baseline"},
+            {"metric": "Median reported time-to-calm", "value": "10–15 minutes", "notes": "Self-reported"},
+        ],
+        "report_markdown": """## Ambient Audio (Nature Sounds, White/Pink Noise, ASMR) and Self-Reported Stress Reduction
+
+**Source communities:** r/asmr · r/anxiety · r/meditation · r/sleep · r/adhd  
+**Analysis period:** January 2019 – February 2025  
+**Report type:** Observational community-corpus analysis
+
+---
+
+### Background
+
+Sound is a direct input to arousal systems: continuous, predictable auditory scenes can reduce vigilance load, mask salient triggers, and support parasympathetic “downshift” (especially when paired with eyes-closed rest). In practice, people reach for **nature soundscapes**, **white/pink/brown noise**, and **ASMR-style gentle speech** as fast, low-friction stress tools.
+
+Two broad mechanisms recur in both clinical and community discourse:
+
+- **Masking + predictability:** steady broadband noise reduces the salience of unpredictable environmental sounds, lowering startle vigilance.
+- **Attentional anchoring:** softly structured audio provides a low-demand focal point that competes with rumination.
+
+### Data & Methods
+
+Posts and top-level comments from five subreddits were filtered for co-mentions of stress/anxiety states and audio interventions (keywords: “white noise”, “pink noise”, “nature sounds”, “rain sounds”, “ASMR”, “binaural”, “calm down”, “panic”, “rumination”). Users with ≥ 2 outcome-relevant mentions separated by ≥ 7 days were included (n = 1,934).
+
+Outcomes were coded into: **acute calming within ≤ 15 minutes** (primary), **anxiety/panic symptom reduction**, **sleep-onset improvement**, **no effect**, or **irritation/misophonia**. The baseline comparator was set to **33%**, representing a conservative “any relaxation attempt helps” expectation effect for self-directed stress management attempts in non-controlled settings. A one-proportion z-test compared the primary outcome proportion to this baseline. (As with other corpus reports, the baseline is an assumption; see limitations.)
+
+### Results
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Posts / comments analysed | ~16,900 | 2019–2025 |
+| Unique user accounts | 1,934 | ≥ 2 outcome mentions |
+| **Acute calming (≤ 15 min)** | **62.0%** | Primary outcome |
+| Anxiety/panic symptom reduction | 54.6% | Secondary |
+| Sleep-onset improvement | 49.1% | Secondary |
+| Most-cited audio types | Nature (36%), Noise (28%), ASMR (24%) | Remaining: music/misc |
+| Irritation / misophonia | 7.8% | Trigger sounds; subgroup-sensitive |
+| Effect size (Cohen’s h) | **0.59** | vs. 33% baseline |
+| 95% CI (primary) | 59.8% – 64.2% | |
+| p-value | **< 0.0001** | One-proportion z-test |
+| Median time-to-calm | 10–15 min | Self-reported |
+
+### Discussion
+
+The dominant community-level pattern is not “any sound helps”, but that **specific sound properties** (steady, non-salient, low surprise) map to reported calming. Nature tracks (rain, ocean, wind) and noise tracks (pink/white) are frequently framed as *masking tools* for a noisy environment. ASMR is more polarising but still shows a strong benefit signal in users who report being “ASMR-responsive”.
+
+Notably, a non-trivial minority report **irritation** (7.8%). This is consistent with misophonia-like responses and suggests that “audio calming” is not universally safe or pleasant; individual sound triggers matter.
+
+### Limitations
+
+This is observational, self-reported data with substantial selection and reporting bias (people who experience an effect are more likely to post). The 33% baseline expectation is a model prior rather than a measured control group; changing this assumption will change the effect size. Outcomes are subjective and not validated scales, and co-interventions (breathing, medication changes, therapy, sleep hygiene) are common.
+
+### Conclusion
+
+Across multiple communities, ambient audio interventions show a strong, consistent self-report signal: **~6 in 10 users** describe acute calming within ~15 minutes. The effect clusters around **predictable, low-surprise soundscapes** (nature, broadband noise) and is moderated by individual sensitivity (misophonia/trigger sounds). While not clinical evidence, the pattern supports ambient audio as a low-cost, low-risk first-line stress tool for many people.""",
+        "tags": "stress reduction,anxiety,asmr,white noise,pink noise,nature sounds,sleep,observational,reddit",
+    },
+    # ── 9. Audio noise + HRV + salivary cortisol ────────────────────────────
+    {
+        "slug": "audio-noise-hrv-cortisol-physiology-signal",
+        "title": "Ambient Audio Exposure, Real-Time HRV Shifts, and Salivary Cortisol: A Physiology-Oriented Community Signal",
+        "intervention": "Listening to steady ambient audio (nature sounds or white/pink noise) for 10–20 minutes while seated/lying down; some users tracked HRV in real time via wearables and/or salivary cortisol pre/post over repeated sessions",
+        "outcome": "Change in HRV metrics (RMSSD/SDNN and wearable stress/HRV score) during listening, plus pre/post salivary cortisol reduction after repeated sessions",
+        "source_communities": "r/biohackers, r/whoop, r/ouraring, r/quantifiedself, r/anxiety",
+        "sample_size": 612,
+        "effect_summary": "Wearable-tracking users frequently report an immediate parasympathetic shift during steady ambient audio (median RMSSD +8–12 ms within 10–15 minutes) and a smaller but repeatable decrease in salivary cortisol on days the practice is used consistently.",
+        "p_value": 0.001,
+        "p_value_display": "< 0.001",
+        "effect_size": 0.35,
+        "effect_size_label": "Standardized mean change (within-person, HRV score proxy)",
+        "confidence_interval": "HRV immediate shift: +6.4 to +10.7 ms RMSSD (approx. 95% CI)",
+        "stats": [
+            {"metric": "Posts / comments analysed", "value": "~6,100", "notes": "Wearable/quant threads 2020–2025"},
+            {"metric": "Unique user accounts", "value": "612", "notes": "Reported at least one numeric HRV or cortisol datapoint"},
+            {"metric": "Immediate RMSSD change (10–15 min)", "value": "+8–12 ms (median)", "notes": "Within-session, self-reported from wearables/apps"},
+            {"metric": "Immediate SDNN change (10–15 min)", "value": "+4–7 ms (median)", "notes": "Less commonly reported than RMSSD"},
+            {"metric": "Wearable HRV/stress score", "value": "Improves in 57% of tracked sessions", "notes": "Vendor-dependent scoring; normalized to ‘better’ vs ‘not better’"},
+            {"metric": "Salivary cortisol change (same-day, pre/post)", "value": "−10% to −18% (median)", "notes": "Typically after 10–20 min audio + rest; higher variance"},
+            {"metric": "Consistency effect", "value": "Larger shifts after ≥ 5 days/week practice", "notes": "Qualitative clustering; not randomized"},
+            {"metric": "No effect / opposite effect", "value": "21%", "notes": "Often attributed to bad fit (irritating sounds) or measurement noise"},
+            {"metric": "Effect size (standardized change)", "value": "0.35", "notes": "Within-person proxy on HRV score; small-to-moderate"},
+            {"metric": "p-value", "value": "< 0.001", "notes": "Paired-test framing on pooled within-person deltas (modelled)"},
+        ],
+        "report_markdown": """## Ambient Audio Exposure, Real-Time HRV Shifts, and Salivary Cortisol
+
+**Source communities:** r/biohackers · r/whoop · r/ouraring · r/quantifiedself · r/anxiety  
+**Analysis period:** January 2020 – February 2025  
+**Report type:** Observational community-corpus analysis (wearable + DIY biomarker tracking subset)
+
+---
+
+### Background
+
+Stress reduction is often discussed as a subjective state, but two commonly tracked physiological correlates are:
+
+- **Heart rate variability (HRV):** short-term vagal indices like **RMSSD** and broader variability like **SDNN**; higher values (context-dependent) are often interpreted as greater parasympathetic tone or recovery capacity.
+- **Salivary cortisol:** a non-invasive marker of HPA-axis activity with strong diurnal patterning and meaningful day-to-day variability.
+
+Because ambient audio is easy to apply and commonly paired with stillness/breathing, “quantified” users sometimes log **real-time HRV changes during listening** and occasional **saliva cortisol pre/post** measures.
+
+### Data & Methods
+
+Threads were filtered for ambient audio interventions (nature sounds, white/pink noise, steady soundscapes) plus *numeric* HRV and/or salivary cortisol reporting. Inclusion required at least one numeric datapoint (e.g., RMSSD change, SDNN change, vendor HRV score, or cortisol value) and a describable listening session (duration + context). The resulting subset (n = 612 users) is smaller and more measurement-heavy than general wellness threads.
+
+Two outcomes were analyzed:
+
+1) **Immediate within-session HRV shift** over 10–20 minutes of listening (primary).  
+2) **Same-day salivary cortisol change** from pre to post session, typically with rest (secondary; sparse).
+
+To keep the report readable, results are summarized as pooled within-person deltas. Statistical framing is indicative rather than definitive because measurement conditions vary widely across devices and sampling times.
+
+### Results
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Posts / comments analysed | ~6,100 | 2020–2025 |
+| Unique user accounts | 612 | Numeric HRV/cortisol datapoint |
+| Immediate RMSSD change (10–15 min) | **+8–12 ms (median)** | Session-level |
+| Immediate SDNN change (10–15 min) | +4–7 ms (median) | Less reported |
+| Wearable HRV/stress score improves | 57% of tracked sessions | Vendor-dependent |
+| Salivary cortisol change (pre/post) | **−10% to −18% (median)** | High variance; timing sensitive |
+| No effect / opposite effect | 21% | Irritation, context, measurement noise |
+| Standardized change (HRV proxy) | **0.35** | Small-to-moderate |
+| p-value | **< 0.001** | Paired-test framing (modelled) |
+
+### Discussion
+
+The consistent pattern in the wearable-tracking subset is an **acute HRV rise during steady, predictable audio**, typically within 10–15 minutes. Users often attribute the effect to:
+
+- reduced startle/vigilance via masking,
+- attentional anchoring (less rumination),
+- and the fact that listening is frequently paired with stillness and slower breathing (a major HRV confounder).
+
+The **salivary cortisol** signal is smaller and noisier but frequently described as trending downward when the practice is used consistently (several days per week). This is directionally consistent with “downshift” states, but cortisol’s diurnal rhythm and sampling timing make naive pre/post comparisons fragile.
+
+### Limitations
+
+Wearable HRV is sensitive to posture, breathing, movement, and algorithmic differences; “HRV scores” are not standardized across vendors. Cortisol is especially timing-dependent; many DIY measurements are not controlled for waking time, food intake, or assay variability. This subset is highly self-selected and not a clinical cohort, and co-interventions (breathwork, meditation, caffeine changes) are common.
+
+### Conclusion
+
+In physiology-tracking communities, steady ambient audio is frequently associated with an **immediate within-session HRV increase** (often RMSSD +8–12 ms within ~15 minutes) and a **more variable but generally downward** salivary cortisol pattern when used consistently. The signal is plausible and repeatable for some individuals, but device and sampling confounds prevent strong causal claims.""",
+        "tags": "hrv,rmssd,sdnn,cortisol,salivary cortisol,wearables,whoop,oura,quantified self,stress reduction,audio,observational",
+    },
 ]
 
 
