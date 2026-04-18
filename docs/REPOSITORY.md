@@ -51,6 +51,7 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 | **Múinteoir** | Next.js, SQLite, OpenAI | [muinteoir.6cubed.app](https://muinteoir.6cubed.app) |
 | **Pocket** | Next.js, WebGPU, WebSocket relay | [pocket.6cubed.app](https://pocket.6cubed.app) |
 | **StoryMagic** | Next.js, SQLite, OpenAI, Stripe | [storybook.6cubed.app](https://storybook.6cubed.app) |
+| **Frame & Flux (AI art gallery)** | Next.js, SQLite, Stripe Checkout + shipping | [aiart.6cubed.app](https://aiart.6cubed.app) |
 | **216Labs Admin** | Next.js (workflow & pipeline) | [admin.6cubed.app](https://admin.6cubed.app) |
 | **216Labs blog** | Next.js (factory & toolkit essays) | [blog.6cubed.app](https://blog.6cubed.app) |
 | **Tigertank** | Next.js (speculative policy & society essays) | [tigertank.6cubed.app](https://tigertank.6cubed.app) |

@@ -1,0 +1,50 @@
+{
+  "id": "aiart",
+  "name": "Frame & Flux",
+  "tagline": "AI-assisted prints, shipped.",
+  "description": "Gallery of limited AI-assisted fine art prints. Stripe checkout collects payment and shipping; orders are stored for fulfillment.",
+  "category": "shopping",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "aiart",
+  "build_context": "./products/org-shopping/ai-art-gallery",
+  "stack": {
+    "frontend": "Next.js",
+    "backend": null,
+    "database": "SQLite (better-sqlite3)",
+    "other": ["Stripe Checkout", "Resend (optional)"]
+  },
+  "env_prefix": "AIART",
+  "env_vars": [
+    {
+      "key": "AIART_STRIPE_SECRET_KEY",
+      "description": "Stripe secret key for Checkout (payment + shipping address).",
+      "is_secret": true
+    },
+    {
+      "key": "AIART_STRIPE_WEBHOOK_SECRET",
+      "description": "Stripe webhook signing secret for /api/webhook (checkout.session.completed).",
+      "is_secret": true
+    },
+    {
+      "key": "AIART_RESEND_API_KEY",
+      "description": "Optional. Resend API key to email ops on new paid orders.",
+      "is_secret": true
+    },
+    {
+      "key": "AIART_ADMIN_EMAIL",
+      "description": "Optional. Recipient for fulfillment notifications.",
+      "is_secret": false
+    },
+    {
+      "key": "AIART_FROM_EMAIL",
+      "description": "Optional. From address for Resend (must be verified in Resend).",
+      "is_secret": false
+    },
+    {
+      "key": "AIART_DEFAULT_PRINT_PRICE_CENTS",
+      "description": "Optional. Fallback price in USD cents when a print has no per-item price (default 6900).",
+      "is_secret": false
+    }
+  ]
+}

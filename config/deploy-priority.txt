@@ -23,6 +23,7 @@ russiandaily
 maxlearn
 tigertank
 valentine
+aiart
 npcworld
 labshq
 impulse

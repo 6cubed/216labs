@@ -533,6 +533,29 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── Frame & Flux (AI art gallery — Stripe + ship) ───────────────
+  aiart:
+    image: 216labs/aiart:latest
+    pull_policy: never
+    build: ./products/org-shopping/ai-art-gallery
+    restart: unless-stopped
+    environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
+      - PORT=3000
+      - NODE_ENV=production
+      - AIART_STRIPE_SECRET_KEY=${AIART_STRIPE_SECRET_KEY:-}
+      - AIART_STRIPE_WEBHOOK_SECRET=${AIART_STRIPE_WEBHOOK_SECRET:-}
+      - AIART_RESEND_API_KEY=${AIART_RESEND_API_KEY:-}
+      - AIART_ADMIN_EMAIL=${AIART_ADMIN_EMAIL:-}
+      - AIART_FROM_EMAIL=${AIART_FROM_EMAIL:-}
+      - AIART_DEFAULT_PRINT_PRICE_CENTS=${AIART_DEFAULT_PRINT_PRICE_CENTS:-6900}
+      - DATA_DIR=/app/data
+    volumes:
+      - ./products/org-shopping/ai-art-gallery/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── OfflineLLM ───────────────────────────────────────────────────
   offlinellm:
     image: 216labs/offlinellm:latest
