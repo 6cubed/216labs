@@ -14,5 +14,11 @@
     "database": "SQLite (better-sqlite3)",
     "other": null
   },
-  "env_vars": []
+  "env_vars": [
+    {
+      "key": "ADMIN_TV_STUDIO_MODEL",
+      "description": "Optional. Overrides default LLM for /tv-studio (e.g. google/gemini-2.0-flash-001 on OpenRouter, gpt-4o-mini on OpenAI).",
+      "is_secret": false
+    }
+  ]
 }

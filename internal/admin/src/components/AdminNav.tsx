@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/applications", label: "Applications" },
   { href: "/analytics", label: "Analytics" },
   { href: "/data-lab", label: "Data Lab" },
+  { href: "/tv-studio", label: "TV Studio" },
   { href: "/env", label: "Env" },
   { href: "/cron", label: "Cron" },
   { href: "/bridge-logs", label: "Bridge logs" },
