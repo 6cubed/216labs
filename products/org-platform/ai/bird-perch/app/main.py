@@ -39,6 +39,12 @@ async def index():
     return FileResponse(index_path)
 
 
+@app.get("/healthz")
+def healthz():
+    """Cheap probe for activator / Caddy (matches other apps)."""
+    return {"ok": True}
+
+
 @app.get("/api/health")
 def health():
     mock = os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes")

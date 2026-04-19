@@ -50,6 +50,7 @@ SYNC_PROJECT_ROOT=/opt/216labs /opt/216labs/scripts/droplet-ghcr-sync.sh
 
 ## Notes
 
+- **New app subdomains:** The activator can cold-start any app that exists in `docker-compose.yml` on the droplet and has a GHCR image, but **`./deploy.sh` only pulls images and runs `compose up` for apps in the deploy catalogue** (server DB + `config/deploy-bootstrap.txt`), capped by **`DEPLOY_MAX_APPS` (default 10)** and ordered by **`config/deploy-priority.txt`**. If a new app is missing from that cut, add its id to bootstrap and near the top of deploy-priority, push, then redeploy so the image is pulled and the service is started; regenerate the Caddyfile (`scripts/generate-caddyfile.py`) before deploy if you added a manifest.
 - Same-digest `docker pull` is cheap (manifest check). `--force-recreate` after each successful pull restarts the container when CI published a new image.
 - If pulls fail with **no space left on device**, lower **`DROPLET_MIN_FREE_MB`**, raise eviction aggressiveness, set **`DROPLET_MAX_EVICTABLE_RUNNING`**, and/or enable **`DROPLET_PRUNE_IMAGE_ON_EVICTION`** — then `git pull` on the server and re-run the scripts (or wait for timers).
 - This does **not** change which services are enabled; it only updates images for services that are already running.

@@ -14,6 +14,7 @@ explore
 angelwatcher
 landing
 aiart
+birdperch
 bugbounty
 blog
 marketing
@@ -54,7 +55,6 @@ artisinaleurope
 thezurichdatinggame
 oneroom
 audioaicheckup
-birdperch
 storybook
 euromaxxers
 zurichrunclubs
