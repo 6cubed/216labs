@@ -7,6 +7,7 @@ landing
 blog
 tortellini
 onefit
+aiart
 activator
 cron-runner
 ytsync

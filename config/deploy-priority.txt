@@ -13,6 +13,7 @@ shannonairport
 explore
 angelwatcher
 landing
+aiart
 bugbounty
 blog
 marketing
@@ -23,7 +24,6 @@ russiandaily
 maxlearn
 tigertank
 valentine
-aiart
 npcworld
 labshq
 impulse
