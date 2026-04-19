@@ -41,7 +41,7 @@ async def index():
 
 @app.get("/healthz")
 def healthz():
-    """Cheap probe for activator / Caddy (matches other apps)."""
+    """Cheap probe for load balancers / Caddy (no model load)."""
     return {"ok": True}
 
 
