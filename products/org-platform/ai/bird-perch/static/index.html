@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bird Perch — vocal ID</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <h1>Bird Perch</h1>
+        <p class="lede">
+          Record a short clip of a bird call or upload audio. The backend runs Google’s
+          <strong>bird-vocalization-classifier</strong> (TensorFlow 2 on Kaggle) and returns the nearest
+          species matches in logit space (softmax-ranked).
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="row">
+          <button type="button" id="btnRec" class="btn primary">Record</button>
+          <button type="button" id="btnStop" class="btn" disabled>Stop</button>
+          <label class="file">
+            <input type="file" id="fileIn" accept="audio/*" />
+            <span>Upload audio</span>
+          </label>
+        </div>
+        <p id="status" class="status">Idle</p>
+        <p id="err" class="err" hidden></p>
+      </section>
+
+      <section class="panel">
+        <h2>Nearest vocal matches</h2>
+        <ol id="results" class="results"></ol>
+      </section>
+
+      <footer class="foot">
+        <a href="/api/health">Health</a>
+        ·
+        <span id="meta"></span>
+      </footer>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

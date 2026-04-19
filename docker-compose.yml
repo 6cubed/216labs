@@ -915,6 +915,25 @@ services:
       - "3000"
     mem_limit: 512m
 
+  # ── Bird Perch (Kaggle bird vocalization TF + static audio UI) ─
+  birdperch:
+    image: 216labs/birdperch:latest
+    pull_policy: never
+    build: ./products/org-platform/ai/bird-perch
+    restart: unless-stopped
+    environment:
+      - PORT=8000
+      - BIRDPERCH_MOCK=${BIRDPERCH_MOCK:-0}
+      - BIRDPERCH_MODEL_PATH=${BIRDPERCH_MODEL_PATH:-}
+      - KAGGLE_USERNAME=${KAGGLE_USERNAME:-}
+      - KAGGLE_KEY=${KAGGLE_KEY:-}
+      - KAGGLEHUB_CACHE=/app/data/kagglehub
+    volumes:
+      - ./products/org-platform/ai/bird-perch/data:/app/data
+    expose:
+      - "8000"
+    mem_limit: 2048m
+
   # ── Avatar (LLM + TTS talking head) ────────────────────────────
   avatar:
     image: 216labs/avatar:latest

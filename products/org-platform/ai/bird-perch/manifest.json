@@ -1,0 +1,40 @@
+{
+  "id": "birdperch",
+  "name": "Bird Perch",
+  "tagline": "Bird vocal ID — Kaggle TF classifier + k-NN ranks",
+  "description": "Lightweight static audio UI and FastAPI backend. Loads google/bird-vocalization-classifier (TensorFlow 2) from Kaggle Models, runs nearest-species ranking from logits. Requires Kaggle credentials for first-time model download unless BIRDPERCH_MODEL_PATH points to an extracted model directory.",
+  "category": "ai",
+  "internal_port": 8000,
+  "memory_limit": "2048m",
+  "docker_service": "birdperch",
+  "build_context": "./products/org-platform/ai/bird-perch",
+  "stack": {
+    "frontend": "Static HTML/JS",
+    "backend": "FastAPI",
+    "database": null,
+    "other": ["TensorFlow CPU", "librosa", "kagglehub"]
+  },
+  "env_prefix": "BIRDPERCH",
+  "env_vars": [
+    {
+      "key": "BIRDPERCH_MODEL_PATH",
+      "description": "Optional. Local path to an extracted Kaggle TF SavedModel (skips kagglehub download).",
+      "is_secret": false
+    },
+    {
+      "key": "BIRDPERCH_MOCK",
+      "description": "Set to 1 for development without TensorFlow model (returns mock species).",
+      "is_secret": false
+    },
+    {
+      "key": "KAGGLE_USERNAME",
+      "description": "Kaggle API username (with KAGGLE_KEY) for kagglehub model download on first request.",
+      "is_secret": false
+    },
+    {
+      "key": "KAGGLE_KEY",
+      "description": "Kaggle API key for model download.",
+      "is_secret": true
+    }
+  ]
+}
