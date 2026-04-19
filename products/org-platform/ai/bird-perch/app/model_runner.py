@@ -64,7 +64,14 @@ def download_model_path() -> str:
             version=4,
         )
     except Exception:
-        return kagglehub.model_download(handle.strip())
+        try:
+            # Some Kaggle listings use capital T in TensorFlow2
+            return kagglehub.model_download(
+                "google/bird-vocalization-classifier/TensorFlow2/bird-vocalization-classifier",
+                version=4,
+            )
+        except Exception:
+            return kagglehub.model_download(handle.strip())
 
 
 def _find_label_file(model_dir: str) -> str | None:
