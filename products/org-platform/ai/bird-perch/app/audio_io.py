@@ -32,7 +32,10 @@ def _sniff_suffix(data: bytes) -> str:
 
 
 def _decode_via_ffmpeg(audio_bytes: bytes) -> bytes:
-    """Decode arbitrary audio to mono float32 WAV bytes (soundfile can read this)."""
+    """Decode arbitrary audio to mono WAV bytes.
+
+    We use pcm_s16le for maximum decoder compatibility on the Python side.
+    """
     p = subprocess.run(
         [
             "ffmpeg",
@@ -45,7 +48,7 @@ def _decode_via_ffmpeg(audio_bytes: bytes) -> bytes:
             "-f",
             "wav",
             "-acodec",
-            "pcm_f32le",
+            "pcm_s16le",
             "-ac",
             "1",
             "pipe:1",
@@ -98,7 +101,12 @@ def _load_raw(audio_bytes: bytes) -> tuple[np.ndarray, int]:
     ):
         return _load_via_tempfile_librosa(audio_bytes)
 
-    return sf.read(io.BytesIO(wav_bytes), always_2d=False)
+    try:
+        return sf.read(io.BytesIO(wav_bytes), always_2d=False)
+    except Exception:
+        # If ffmpeg produced bytes but the WAV still isn't parseable for some reason,
+        # fall back to file-based decoding on the original payload.
+        return _load_via_tempfile_librosa(audio_bytes)
 
 
 def load_audio_mono(audio_bytes: bytes, target_sr: int) -> np.ndarray:
