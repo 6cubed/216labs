@@ -19,6 +19,9 @@ SKIP_GHCR_SERVICES = frozenset(
     {s.strip().lower() for s in os.environ.get("GHCR_SKIP_SERVICES", "anchor-web").split(",") if s.strip()}
 )
 
+# Compose may emit fully-qualified GHCR names; the build job still tags/pushes as REGISTRY_PREFIX/<short>:latest.
+_GHCR_IMAGE_PREFIX = "ghcr.io/6cubed/216labs/"
+
 
 def _norm_repo_path(path: str) -> str:
     p = path.replace("\\", "/").strip()
@@ -54,6 +57,30 @@ def _service_paths(name: str, svc: dict) -> tuple[str, str]:
         return context, dockerfile
     # Non-build services are filtered earlier; keep safe defaults.
     return "", ""
+
+
+def _service_image(svc: dict) -> str:
+    """Return the image reference string from a compose service (string or object form)."""
+    img = svc.get("image")
+    if isinstance(img, str):
+        return img.strip()
+    if isinstance(img, dict):
+        return str(img.get("name", "") or "").strip()
+    return ""
+
+
+def _normalize_local_image(img: str) -> str:
+    """Map compose image names to the local 216labs/* tag used by `docker compose build`."""
+    img = (img or "").strip()
+    if not img:
+        return ""
+    if img.startswith("216labs/"):
+        return img
+    pfx = _GHCR_IMAGE_PREFIX
+    if img.lower().startswith(pfx):
+        rest = img[len(pfx) :]
+        return f"216labs/{rest}" if rest else ""
+    return ""
 
 
 def _service_changed(name: str, svc: dict, changed_files: set[str]) -> bool:
@@ -98,13 +125,32 @@ def main() -> None:
             continue
         if not _service_changed(name, svc, changed_files):
             continue
-        img = svc.get("image", "")
+        img = _normalize_local_image(_service_image(svc))
         if not img.startswith("216labs/"):
             continue
         row: dict[str, str] = {"service": name, "image": img, "platform": ""}
         if name == "cron-runner":
             row["platform"] = "linux/amd64"
         include.append(row)
+
+    if not include:
+        # Never silently publish nothing while marking the workflow green (build-push would be skipped).
+        sample: list[str] = []
+        for n in sorted(services.keys()):
+            if n == "caddy" or n.lower() in SKIP_GHCR_SERVICES:
+                continue
+            s2 = services.get(n) or {}
+            if "build" not in s2:
+                continue
+            raw = _service_image(s2)
+            sample.append(f"{n}: raw={raw!r} normalized={_normalize_local_image(raw)!r}")
+        print(
+            "compose-ghcr-matrix: ERROR: GHCR build matrix is empty "
+            f"(changed_files={len(changed_files)}).\n"
+            + "\n".join(sample[:30]),
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
 
     print(json.dumps(include))
 
