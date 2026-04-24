@@ -43,7 +43,10 @@
       status.textContent = j.note || "OK";
       (j.species || []).forEach((row) => {
         const li = document.createElement("li");
-        li.innerHTML = `<span class="match-name">${escapeHtml(row.species)}</span>
+        const title = row.species_code ? escapeHtml(row.species_code) : "";
+        li.innerHTML = `<span class="match-name"${title ? ` title="${title}"` : ""}>${escapeHtml(
+          row.species || ""
+        )}</span>
           <span class="match-p">${(row.confidence * 100).toFixed(1)}%</span>`;
         results.appendChild(li);
       });

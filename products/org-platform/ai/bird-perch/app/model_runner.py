@@ -15,6 +15,8 @@ from typing import Any
 
 import numpy as np
 
+from .taxonomy import load_species_code_map, species_display
+
 _tf = None
 _model = None
 _infer_fn = None
@@ -183,15 +185,33 @@ def _run_mock(_waveform: np.ndarray) -> PredictResult:
     p = _softmax(logits)
     order = np.argsort(-p)[:12]
     z = _l2_norm(logits)
-    species = [
-        {
-            "rank": i + 1,
-            "species": f"(mock) bird_class_{int(j)}",
-            "confidence": float(p[int(j)]),
-            "cosine_to_class_axis": float(z[int(j)]),
-        }
-        for i, j in enumerate(order)
+    mock_names = [
+        "Northern Cardinal",
+        "Blue Jay",
+        "American Crow",
+        "American Robin",
+        "House Sparrow",
+        "Song Sparrow",
+        "Red-winged Blackbird",
+        "Canada Goose",
+        "Mallard",
+        "Rock Pigeon",
+        "European Starling",
+        "Downy Woodpecker",
     ]
+    species = []
+    for i, j in enumerate(order):
+        j = int(j)
+        name = mock_names[i % len(mock_names)]
+        code = f"mock_class_{j}"
+        row = {
+            "rank": i + 1,
+            "species": name,
+            "species_code": code,
+            "confidence": float(p[j]),
+            "cosine_to_class_axis": float(z[j]),
+        }
+        species.append(row)
     return PredictResult(
         species=species,
         embedding=z.tolist()[:256],
@@ -214,22 +234,25 @@ def _nearest_from_logits(logits: np.ndarray, labels: list[str], k: int = 15) -> 
     p = _softmax(logits.astype(np.float64))
     order = np.argsort(-p)[:k]
     z = _l2_norm(logits.astype(np.float64))
+    tax = load_species_code_map()
     out: list[dict[str, Any]] = []
     for rank, j in enumerate(order, start=1):
         j = int(j)
-        name = labels[j] if j < len(labels) else f"class_{j}"
+        raw = labels[j] if j < len(labels) else f"class_{j}"
+        disp, code_field = species_display(raw, tax)
         u = np.zeros_like(z)
         u[j] = 1.0
         cos = float(np.dot(z, u))
-        out.append(
-            {
-                "rank": rank,
-                "species": name,
-                "confidence": float(p[j]),
-                "logit": float(logits[j]),
-                "cosine_to_class_axis": cos,
-            }
-        )
+        row: dict[str, Any] = {
+            "rank": rank,
+            "species": disp,
+            "confidence": float(p[j]),
+            "logit": float(logits[j]),
+            "cosine_to_class_axis": cos,
+        }
+        if code_field:
+            row["species_code"] = code_field
+        out.append(row)
     return out
 
 
