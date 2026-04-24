@@ -2,7 +2,7 @@
   "id": "birdperch",
   "name": "Bird Perch",
   "tagline": "Bird vocal ID — Kaggle TF classifier + k-NN ranks",
-  "description": "Lightweight static audio UI and FastAPI backend. Loads google/bird-vocalization-classifier (TensorFlow 2) from Kaggle Models, runs nearest-species ranking from logits. Requires Kaggle credentials for first-time model download unless BIRDPERCH_MODEL_PATH points to an extracted model directory. Classifier labels are often eBird-style species codes — set BIRDPERCH_EBIRD_TAXONOMY_CSV (or mount data/ebird_taxonomy.csv) so /api/identify returns common + scientific names in species, with species_code for the raw label.",
+  "description": "Lightweight static audio UI and FastAPI backend. Loads google/bird-vocalization-classifier (TensorFlow 2) from Kaggle Models, runs nearest-species ranking from logits. Requires Kaggle credentials for first-time model download unless BIRDPERCH_MODEL_PATH points to an extracted model directory. Classifier labels are often eBird-style species codes — set BIRDPERCH_EBIRD_TAXONOMY_CSV (or mount data/ebird_taxonomy.csv) so /api/identify returns common + scientific names in species, with species_code for the raw label. Live listen streams WebM chunks over /ws/listen with a rolling buffer and periodic re-inference (see BIRDPERCH_STREAM_* env vars).",
   "category": "ai",
   "internal_port": 8000,
   "memory_limit": "2048m",
@@ -29,6 +29,21 @@
     {
       "key": "BIRDPERCH_EBIRD_TAXONOMY_CSV",
       "description": "Optional. eBird/Clements taxonomy CSV with SPECIES_CODE + COMMON_NAME (and optional SCIENTIFIC_NAME) columns so API species field is human-readable; raw code is returned as species_code.",
+      "is_secret": false
+    },
+    {
+      "key": "BIRDPERCH_STREAM_INFER_SEC",
+      "description": "Optional. Minimum seconds between live /ws/listen classifier runs (default 1.5). Lower = snappier UI, higher CPU.",
+      "is_secret": false
+    },
+    {
+      "key": "BIRDPERCH_STREAM_RING_SEC",
+      "description": "Optional. Rolling PCM buffer length in seconds for live listen (default 22).",
+      "is_secret": false
+    },
+    {
+      "key": "BIRDPERCH_STREAM_MAX_CHUNK_BYTES",
+      "description": "Optional. Max WebM chunk size per WebSocket binary frame for live listen (default 524288).",
       "is_secret": false
     },
     {

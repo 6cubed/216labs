@@ -4,9 +4,21 @@
   const err = $("err");
   const results = $("results");
   const meta = $("meta");
+  const liveMeta = $("liveMeta");
+  const liveSpecies = $("liveSpecies");
+  const liveConf = $("liveConf");
+  const liveTop5 = $("liveTop5");
 
   let mediaRecorder = null;
   const chunks = [];
+
+  let liveWs = null;
+  let liveRecorder = null;
+  let liveStream = null;
+  let livePing = null;
+  let liveActive = false;
+  let liveHelloText = "";
+  let liveTargetSr = 48000;
 
   function setErr(msg) {
     if (!msg) {
@@ -16,6 +28,23 @@
     }
     err.hidden = false;
     err.textContent = msg;
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function setLiveUiLocked(on) {
+    $("btnLiveStart").disabled = on;
+    $("fileIn").disabled = on;
+    $("btnRec").disabled = on;
+  }
+
+  function setRecordUiLocked(on) {
+    $("btnLiveStart").disabled = on;
+    $("fileIn").disabled = on;
   }
 
   async function refreshHealth() {
@@ -56,16 +85,157 @@
     }
   }
 
-  function escapeHtml(s) {
-    const d = document.createElement("div");
-    d.textContent = s;
-    return d.innerHTML;
+  function stopLive() {
+    liveActive = false;
+    if (livePing) {
+      clearInterval(livePing);
+      livePing = null;
+    }
+    if (liveRecorder && liveRecorder.state !== "inactive") {
+      try {
+        liveRecorder.stop();
+      } catch (_) {}
+    }
+    liveRecorder = null;
+    if (liveStream) {
+      liveStream.getTracks().forEach((t) => t.stop());
+      liveStream = null;
+    }
+    if (liveWs) {
+      try {
+        liveWs.close();
+      } catch (_) {}
+      liveWs = null;
+    }
+    $("btnLiveStop").disabled = true;
+    $("btnLiveStart").disabled = false;
+    setLiveUiLocked(false);
+    setRecordUiLocked(false);
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+      $("btnRec").disabled = false;
+    }
+    status.textContent = "Live stopped";
+  }
+
+  function renderTick(msg) {
+    const top = msg.top;
+    if (top && top.species) {
+      liveSpecies.textContent = top.species;
+      liveConf.textContent =
+        typeof top.confidence === "number" ? `${(top.confidence * 100).toFixed(1)}% confidence` : "";
+    } else {
+      liveSpecies.textContent = "—";
+      liveConf.textContent = "";
+    }
+    liveTop5.innerHTML = "";
+    (msg.top5 || []).forEach((row) => {
+      const li = document.createElement("li");
+      const title = row.species_code ? escapeHtml(row.species_code) : "";
+      li.innerHTML = `<span class="match-name"${title ? ` title="${title}"` : ""}>${escapeHtml(
+        row.species || ""
+      )}</span>
+        <span class="match-p">${(row.confidence * 100).toFixed(1)}%</span>`;
+      liveTop5.appendChild(li);
+    });
+    if (liveHelloText && typeof msg.buffer_samples === "number") {
+      liveMeta.textContent = `${liveHelloText} · buffer ~${(msg.buffer_samples / liveTargetSr).toFixed(1)}s`;
+    }
+  }
+
+  async function startLive() {
+    setErr("");
+    if (liveActive) return;
+    liveHelloText = "";
+    liveSpecies.textContent = "…";
+    liveConf.textContent = "";
+    liveTop5.innerHTML = "";
+    liveMeta.textContent = "";
+    setLiveUiLocked(true);
+    $("btnLiveStop").disabled = false;
+    status.textContent = "Connecting live stream…";
+
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${proto}://${location.host}/ws/listen`);
+    liveWs = ws;
+
+    ws.addEventListener("message", (ev) => {
+      let msg;
+      try {
+        msg = JSON.parse(ev.data);
+      } catch {
+        return;
+      }
+      if (msg.type === "hello") {
+        liveTargetSr = typeof msg.target_sr === "number" && msg.target_sr > 0 ? msg.target_sr : 48000;
+        liveHelloText = `Infer every ${msg.infer_interval_ms} ms · ring ~${msg.ring_seconds}s`;
+        liveMeta.textContent = liveHelloText;
+        return;
+      }
+      if (msg.type === "pong") return;
+      if (msg.type === "tick") {
+        renderTick(msg);
+        return;
+      }
+      if (msg.type === "error") {
+        setErr(msg.detail || "Live error");
+      }
+    });
+
+    ws.addEventListener("error", () => {
+      setErr("Live WebSocket error");
+      stopLive();
+    });
+
+    ws.addEventListener("close", () => {
+      if (liveActive) {
+        stopLive();
+      }
+    });
+
+    ws.addEventListener(
+      "open",
+      async () => {
+        try {
+          liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (e) {
+          setErr("Microphone: " + (e.message || e));
+          stopLive();
+          return;
+        }
+
+        const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : "audio/webm";
+        liveRecorder = new MediaRecorder(liveStream, { mimeType: mime });
+        const sliceMs = 900;
+        liveRecorder.ondataavailable = async (e) => {
+          if (!e.data.size || !liveWs || liveWs.readyState !== WebSocket.OPEN) return;
+          try {
+            const buf = await e.data.arrayBuffer();
+            liveWs.send(buf);
+          } catch (_) {}
+        };
+        liveRecorder.start(sliceMs);
+
+        liveActive = true;
+        status.textContent = "Live — listening…";
+        livePing = setInterval(() => {
+          if (liveWs && liveWs.readyState === WebSocket.OPEN) {
+            try {
+              liveWs.send(JSON.stringify({ type: "ping" }));
+            } catch (_) {}
+          }
+        }, 25000);
+      },
+      { once: true }
+    );
   }
 
   $("btnRec").addEventListener("click", async () => {
     setErr("");
     chunks.length = 0;
     try {
+      setRecordUiLocked(true);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
@@ -78,6 +248,7 @@
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
         sendBlob(blob);
+        setRecordUiLocked(false);
       };
       mediaRecorder.start();
       $("btnStop").disabled = false;
@@ -85,6 +256,7 @@
       status.textContent = "Recording…";
     } catch (e) {
       setErr("Microphone: " + (e.message || e));
+      setRecordUiLocked(false);
     }
   });
 
@@ -102,6 +274,14 @@
     if (!f) return;
     sendBlob(f);
     ev.target.value = "";
+  });
+
+  $("btnLiveStart").addEventListener("click", () => {
+    startLive();
+  });
+
+  $("btnLiveStop").addEventListener("click", () => {
+    stopLive();
   });
 
   refreshHealth();

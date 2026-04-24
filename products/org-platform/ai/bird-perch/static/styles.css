@@ -116,3 +116,51 @@ body {
 .foot a {
   color: #93c5fd;
 }
+
+.live h2 {
+  margin-top: 0;
+}
+.live-hint {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #94a3b8;
+  margin: 0 0 1rem;
+}
+.live-meta {
+  margin-top: 0.75rem;
+}
+.live-current {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+}
+.live-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+.live-species {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.25;
+}
+.live-conf {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: #86efac;
+  font-variant-numeric: tabular-nums;
+}
+.live-sub {
+  font-size: 0.85rem;
+  margin: 1rem 0 0.5rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+.live-list {
+  margin: 0;
+}

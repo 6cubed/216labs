@@ -30,6 +30,27 @@
         <p id="err" class="err" hidden></p>
       </section>
 
+      <section class="panel live">
+        <h2>Live listen</h2>
+        <p class="live-hint">
+          Streams short WebM chunks over a WebSocket; the server keeps a rolling buffer and
+          periodically re-runs the classifier so you see a <strong>current best species</strong> while
+          you listen. Heavier than a single upload — use a sensible infer interval on small VPS.
+        </p>
+        <div class="row">
+          <button type="button" id="btnLiveStart" class="btn primary">Start live</button>
+          <button type="button" id="btnLiveStop" class="btn" disabled>Stop live</button>
+        </div>
+        <p id="liveMeta" class="status live-meta"></p>
+        <div class="live-current" aria-live="polite">
+          <div class="live-label">Current best match</div>
+          <div id="liveSpecies" class="live-species">—</div>
+          <div id="liveConf" class="live-conf"></div>
+        </div>
+        <h3 class="live-sub">Top 5 (this frame)</h3>
+        <ol id="liveTop5" class="results live-list"></ol>
+      </section>
+
       <section class="panel">
         <h2>Nearest vocal matches</h2>
         <ol id="results" class="results"></ol>
