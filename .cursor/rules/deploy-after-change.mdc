@@ -18,6 +18,6 @@ After any change to an app or infrastructure in this repo:
 5. **Task complete** for routine code work: committed and pushed. If the user also asked to deploy or SSH, complete those steps too (or report the exact error if keys/network fail).
 
 6. **Single-app fast track (optional):** When work is scoped to **one app** and they want that container live on the droplet **without** waiting for CI + a full multi-app pull, use **local build + transfer for that app only**:  
-   `DEPLOY_IMAGE_SOURCE=local` and `DEPLOY_RUNTIME_APPS="<app_id>"` (see `deploy.sh`; `admin` is added if enabled). Still run `./deploy.sh user@host` when they ask for deploy—this limits build/transfer to that runtime subset instead of every enabled app. For broad or multi-app changes, prefer **GHCR** (default) and deferred droplet sync.
+   `DEPLOY_IMAGE_SOURCE=local` and `DEPLOY_RUNTIME_APPS="<app_id>"` (see `deploy.sh`: subset limits **build/pull**, not which other containers stay running, unless `DEPLOY_SHOWROOM=1`). Still run `./deploy.sh user@host` when they ask for deploy. For broad or multi-app changes, prefer **GHCR** (default) and deferred droplet sync.
 
 See **docs/SCALING.md** and the Digital Ocean checklist for what a full droplet rollout does when you choose to run it.

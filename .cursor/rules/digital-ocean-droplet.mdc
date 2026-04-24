@@ -20,7 +20,7 @@ alwaysApply: true
 **Never build Docker images on the server.** The droplet is resource-limited.
 
 - **Default:** GitHub Actions builds and pushes to GHCR. `deploy.sh` (when run) pulls on the server and retags—no laptop build.
-- **Single-app iteration:** When deploying from a laptop with `DEPLOY_IMAGE_SOURCE=local`, set `DEPLOY_RUNTIME_APPS="<app_id>"` so only that app’s image is built and transferred (not every enabled app). Default shipping path remains CI + GHCR.
+- **Single-app iteration:** With `DEPLOY_RUNTIME_APPS="<app_id>"`, only that app’s image is built/transferred (local) or pulled (GHCR); **full compose catalogue still stays up** unless `DEPLOY_SHOWROOM=1`. Pair `DEPLOY_IMAGE_SOURCE=local` with Docker on the laptop when you want local build + ssh transfer. Default shipping path remains CI + GHCR.
 - **Legacy / fallback:** Full local build+transfer of many images is heavier; prefer GHCR unless you need an immediate single-container rollout.
 - On the server: do **not** run `docker compose build` or `docker build`. Only `git pull`, image pull/load, `docker compose up -d`, and read-only ops.
 
