@@ -121,6 +121,19 @@ services:
     # Next standalone + vision routes can spike RAM; 256m OOM-kills during cold start on small VPS.
     mem_limit: 512m
 
+  # ── Stranger Hall (topic-queue stranger text chat, MVP) ───────
+  strangerhall:
+    image: 216labs/strangerhall:latest
+    pull_policy: never
+    build: ./products/org-social/strangerhall
+    restart: unless-stopped
+    environment:
+      - PORT=3050
+      - NODE_ENV=production
+    expose:
+      - "3050"
+    mem_limit: 128m
+
   # ── OneFit ────────────────────────────────────────────────────
   onefit:
     image: 216labs/onefit:latest

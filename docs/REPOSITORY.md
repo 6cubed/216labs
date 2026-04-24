@@ -47,6 +47,7 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 | **Artisanal Europe** | Next.js | [artisinaleurope.6cubed.app](https://artisinaleurope.6cubed.app) |
 | **Zurich Dating Game** | Next.js, SQLite | [thezurichdatinggame.6cubed.app](https://thezurichdatinggame.6cubed.app) |
 | **OneRoom** | Next.js | [oneroom.6cubed.app](https://oneroom.6cubed.app) |
+| **Stranger Hall** | Node.js (Express + WebSockets), topic queues | [strangerhall.6cubed.app](https://strangerhall.6cubed.app) |
 | **Audio AI Checkup** | Next.js, SQLite | [audioaicheckup.6cubed.app](https://audioaicheckup.6cubed.app) |
 | **Bird Perch** | FastAPI, TensorFlow (Kaggle bird vocalization classifier) | [birdperch.6cubed.app](https://birdperch.6cubed.app) |
 | **Múinteoir** | Next.js, SQLite, OpenAI | [muinteoir.6cubed.app](https://muinteoir.6cubed.app) |

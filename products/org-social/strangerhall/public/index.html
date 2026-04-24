@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stranger Hall</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div id="gate" class="panel gate" hidden>
+      <h1>Stranger Hall</h1>
+      <p class="lede">
+        Text-only stranger chat with <strong>topic queues</strong> — match on interests instead of pure roulette.
+      </p>
+      <ul class="rules">
+        <li>No video or voice in this MVP (safer defaults, less abuse surface).</li>
+        <li>No accounts; chats are ephemeral and not stored server-side.</li>
+        <li>Illegal content, harassment, and spam are prohibited — use Report if needed.</li>
+        <li>This is a demo stack — do not post secrets, payment info, or personal data.</li>
+      </ul>
+      <button type="button" id="btnAck" class="btn primary">I understand — continue</button>
+    </div>
+
+    <main id="app" class="wrap" hidden>
+      <header class="head">
+        <h1>Stranger Hall</h1>
+        <p id="status" class="status">Disconnected</p>
+      </header>
+
+      <section class="panel">
+        <label class="lbl" for="topic">Topic</label>
+        <select id="topic" class="select">
+          <option value="random">Random</option>
+          <option value="coding">Coding</option>
+          <option value="music">Music</option>
+          <option value="games">Games</option>
+          <option value="movies">Movies</option>
+          <option value="books">Books</option>
+          <option value="sports">Sports</option>
+          <option value="art">Art</option>
+          <option value="life">Life / chat</option>
+        </select>
+        <div class="row">
+          <button type="button" id="btnFind" class="btn primary">Find stranger</button>
+          <button type="button" id="btnSkip" class="btn" disabled>Skip</button>
+          <button type="button" id="btnReport" class="btn danger" disabled>Report</button>
+        </div>
+      </section>
+
+      <section class="panel chat-panel">
+        <div id="log" class="log" aria-live="polite"></div>
+        <div class="composer">
+          <input id="msg" type="text" maxlength="2000" placeholder="Message…" autocomplete="off" disabled />
+          <button type="button" id="btnSend" class="btn primary" disabled>Send</button>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <a href="/api/stats">Stats</a>
+        ·
+        <a href="/health">Health</a>
+      </footer>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

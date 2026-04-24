@@ -1,0 +1,160 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171b22;
+  --text: #e8eaef;
+  --muted: #9aa3b2;
+  --accent: #6c9cff;
+  --danger: #ff6b6b;
+  --border: #2a3140;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.head h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+}
+
+.status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-top: 1rem;
+}
+
+.gate .lede {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.rules {
+  color: var(--muted);
+  line-height: 1.45;
+  padding-left: 1.2rem;
+}
+
+.lbl {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.select {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #12151c;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn {
+  border: 1px solid var(--border);
+  background: #1e2430;
+  color: var(--text);
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: #5a87e6;
+  color: #0a0c10;
+  font-weight: 600;
+}
+
+.btn.danger {
+  border-color: #994444;
+  color: #ffb4b4;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+}
+
+.log {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 360px;
+  padding: 0.5rem;
+  background: #12151c;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.line {
+  margin: 0.35rem 0;
+  word-break: break-word;
+}
+
+.line.sys {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.composer {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.composer input {
+  flex: 1;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #12151c;
+  color: var(--text);
+}
+
+.foot {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.foot a {
+  color: var(--accent);
+}

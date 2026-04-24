@@ -1,0 +1,31 @@
+{
+  "id": "strangerhall",
+  "name": "Stranger Hall",
+  "tagline": "Topic-first stranger text chat — Omegle-style matching without video roulette",
+  "description": "MVP: anonymous text-only pairing with topic queues, skip, and basic rate limits. Not moderated by humans; no video/WebRTC in v1. Intended for demos — enable only if you accept abuse-mitigation limits.",
+  "category": "social",
+  "internal_port": 3050,
+  "memory_limit": "128m",
+  "docker_service": "strangerhall",
+  "health_path": "/health",
+  "build_context": "./products/org-social/strangerhall",
+  "stack": {
+    "frontend": "Static HTML/JS",
+    "backend": "Node.js (Express + ws)",
+    "database": null,
+    "other": ["In-memory matchmaking"]
+  },
+  "env_prefix": "STRANGERHALL",
+  "env_vars": [
+    {
+      "key": "STRANGERHALL_MAX_MSG_CHARS",
+      "description": "Max characters per chat message (default 2000).",
+      "is_secret": false
+    },
+    {
+      "key": "STRANGERHALL_MSG_PER_MINUTE",
+      "description": "Soft rate limit per IP (default 40).",
+      "is_secret": false
+    }
+  ]
+}
