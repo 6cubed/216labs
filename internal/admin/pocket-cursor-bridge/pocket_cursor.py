@@ -3232,9 +3232,23 @@ def monitor_thread():
                         stable_need = 0
                     else:
                         stable_need = 1  # normal: one tick — don't block answer behind 2s thinking gate
+                elif sec_type == 'confirmation':
+                    stable_need = 1
 
-                # Not stable yet — stop here (sequential ordering)
+                # Not stable yet — stop here (sequential ordering), unless a Run/confirm bubble below
+                # is still blocked by streaming thinking/markdown (DOM lists those first).
                 if section_stable.get(sec_key, 0) < stable_need:
+                    has_later_confirm = False
+                    for j in range(i + 1, len(sections)):
+                        s2 = sections[j]
+                        if not isinstance(s2, dict) or s2.get('type') != 'confirmation':
+                            continue
+                        sk2 = s2.get('id', '')
+                        if sk2 and sk2 not in forwarded_ids:
+                            has_later_confirm = True
+                            break
+                    if has_later_confirm:
+                        continue
                     break
 
                 # Empty thinking placeholder: skip without blocking later sections (e.g. answer text)
@@ -3248,18 +3262,13 @@ def monitor_thread():
                     tool_id = sec_id
                     with pending_confirms_lock:
                         if tool_id in pending_confirms:
-                            # Already tracked this confirmation
+                            # Already sent to Telegram (or awaiting callback)
                             if sec_key:
                                 forwarded_ids.add(sec_key)
                             section_stable.pop(sec_key, None)
                             continue
                     buttons = sec.get('buttons', [])
                     btns_selector = sec.get('buttons_selector', '')
-                    with pending_confirms_lock:
-                        pending_confirms[tool_id] = {
-                            'buttons_selector': btns_selector,
-                            'buttons': buttons
-                        }
 
                     # Auto-accept: check command text against allow/deny rules
                     rule_result = command_rules.match(text) if COMMAND_RULES else None
@@ -3344,17 +3353,34 @@ def monitor_thread():
                             }])
                         if png:
                             print(f"[monitor] Forwarding CONFIRMATION with keyboard: {text}")
-                            tg_send_photo_bytes_with_keyboard(cid, png, keyboard,
+                            result = tg_send_photo_bytes_with_keyboard(
+                                cid, png, keyboard,
                                 filename='confirmation.png', caption=f"⚡ {text}")
                         else:
                             print(f"[monitor] Forwarding CONFIRMATION as text: {text}")
-                            tg_call(
+                            result = tg_call(
                                 'sendMessage',
                                 chat_id=cid,
                                 text=f"⚡ {text}",
                                 reply_markup={'inline_keyboard': keyboard},
                                 **_tg_thread_kw(),
                             )
+                        ok = isinstance(result, dict) and result.get('ok')
+                        if ok:
+                            with pending_confirms_lock:
+                                pending_confirms[tool_id] = {
+                                    'buttons_selector': btns_selector,
+                                    'buttons': buttons,
+                                }
+                        else:
+                            with confirm_token_map_lock:
+                                confirm_token_map.pop(callback_token, None)
+                            print(
+                                "[monitor] confirmation Telegram send failed; "
+                                "cleared callback token — will retry next tick",
+                                flush=True,
+                            )
+                            continue
 
                 elif not muted:
                     # Only send to Telegram when not muted
