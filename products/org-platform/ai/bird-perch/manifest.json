@@ -32,6 +32,11 @@
       "is_secret": false
     },
     {
+      "key": "BIRDPERCH_EBIRD_TAXONOMY_URL",
+      "description": "Optional. Download URL for an eBird/Clements taxonomy CSV (used at startup if the CSV file is missing). Defaults to Cornell Clements eBird taxonomy CSV.",
+      "is_secret": false
+    },
+    {
       "key": "BIRDPERCH_STREAM_INFER_SEC",
       "description": "Optional. Minimum seconds between live /ws/listen classifier runs (default 1.5). Lower = snappier UI, higher CPU.",
       "is_secret": false

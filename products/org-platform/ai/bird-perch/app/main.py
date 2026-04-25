@@ -17,7 +17,7 @@ from starlette.websockets import WebSocketDisconnect
 from .audio_io import load_audio_mono, pad_or_crop
 from .model_runner import ensure_model_loaded, get_expected_samples, predict_waveform
 from .stream_buffer import ChunkRing
-from .taxonomy import parse_ebird_taxonomy_csv, reset_taxonomy_cache
+from .taxonomy import ensure_taxonomy_csv, parse_ebird_taxonomy_csv, reset_taxonomy_cache
 
 TARGET_SR = int(os.environ.get("BIRDPERCH_SAMPLE_RATE", "48000"))
 MAX_BYTES = int(os.environ.get("BIRDPERCH_MAX_UPLOAD_BYTES", str(8 * 1024 * 1024)))
@@ -47,6 +47,12 @@ if os.path.isdir(static_dir):
 TAXONOMY_PATH = os.environ.get("BIRDPERCH_EBIRD_TAXONOMY_CSV", "").strip() or os.path.join(
     BASE_DIR, "data", "ebird_taxonomy.csv"
 )
+
+
+@app.on_event("startup")
+def _startup_taxonomy_prefetch():
+    # Best-effort: download a taxonomy CSV into /app/data if missing so results are human-readable.
+    ensure_taxonomy_csv(TAXONOMY_PATH)
 
 
 def _identify_payload(y: np.ndarray) -> dict:
@@ -88,7 +94,8 @@ def health():
 @app.get("/api/taxonomy")
 def taxonomy_status():
     """Whether a taxonomy CSV is present for human-readable species names."""
-    return {"ok": True, "present": os.path.isfile(TAXONOMY_PATH), "path": TAXONOMY_PATH}
+    present, resolved = ensure_taxonomy_csv(TAXONOMY_PATH)
+    return {"ok": True, "present": present, "path": resolved}
 
 
 @app.post("/api/taxonomy")

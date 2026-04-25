@@ -10,6 +10,9 @@ from pathlib import Path
 _APP_DIR = Path(__file__).resolve().parent
 _DEFAULT_TAXONOMY = _APP_DIR.parent / "data" / "ebird_taxonomy.csv"
 
+# Official Cornell / Clements checklist CSV (large). Override with BIRDPERCH_EBIRD_TAXONOMY_URL.
+_DEFAULT_TAXONOMY_URL = "https://www.birds.cornell.edu/clementschecklist/wp-content/uploads/2026/04/eBird_taxonomy_v2025-4.csv"
+
 _cache_map: dict[str, str] | None = None
 _cache_path: str | None = None
 _cache_mtime: float | None = None
@@ -21,6 +24,48 @@ def reset_taxonomy_cache() -> None:
     _cache_map = None
     _cache_path = None
     _cache_mtime = None
+
+
+def ensure_taxonomy_csv(path: str | None = None, url: str | None = None) -> tuple[bool, str]:
+    """Ensure a taxonomy CSV exists on disk (download if missing).
+
+    Returns (present, resolved_path). Never raises on download failure.
+    """
+    resolved = path or os.environ.get("BIRDPERCH_EBIRD_TAXONOMY_CSV", "").strip() or str(_DEFAULT_TAXONOMY)
+    resolved = resolved.strip()
+    if not resolved:
+        return False, ""
+    if os.path.isfile(resolved) and os.path.getsize(resolved) > 10_000:
+        return True, resolved
+
+    fetch_url = (url or os.environ.get("BIRDPERCH_EBIRD_TAXONOMY_URL", "").strip() or _DEFAULT_TAXONOMY_URL).strip()
+    if not fetch_url:
+        return False, resolved
+
+    try:
+        import httpx
+
+        os.makedirs(os.path.dirname(resolved) or ".", exist_ok=True)
+        tmp = f"{resolved}.tmp"
+        with httpx.Client(follow_redirects=True, timeout=60) as client:
+            r = client.get(fetch_url)
+            r.raise_for_status()
+            # Write bytes as-is; CSV is UTF-8.
+            with open(tmp, "wb") as f:
+                f.write(r.content)
+        # Validate quickly before swapping into place.
+        mapping = parse_ebird_taxonomy_csv(tmp)
+        if not mapping:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            return False, resolved
+        os.replace(tmp, resolved)
+        reset_taxonomy_cache()
+        return True, resolved
+    except Exception:
+        return False, resolved
 
 
 def _norm_header(h: str) -> str:
