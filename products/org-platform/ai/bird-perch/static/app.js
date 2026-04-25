@@ -8,6 +8,7 @@
   const liveSpecies = $("liveSpecies");
   const liveConf = $("liveConf");
   const liveTop5 = $("liveTop5");
+  const taxStatus = $("taxStatus");
 
   let mediaRecorder = null;
   const chunks = [];
@@ -54,6 +55,36 @@
       meta.textContent = j.mock ? "mock model" : j.model === "ready" ? "model loaded" : "model lazy-load";
     } catch {
       meta.textContent = "health check failed";
+    }
+  }
+
+  async function refreshTaxonomyStatus() {
+    if (!taxStatus) return;
+    try {
+      const r = await fetch("/api/taxonomy");
+      const j = await r.json();
+      taxStatus.textContent = j.present ? "taxonomy loaded" : "no taxonomy CSV yet";
+    } catch {
+      taxStatus.textContent = "taxonomy status failed";
+    }
+  }
+
+  async function uploadTaxonomyCsv(file) {
+    setErr("");
+    if (!file) return;
+    if (taxStatus) taxStatus.textContent = "uploading…";
+    const fd = new FormData();
+    fd.append("file", file, file.name || "taxonomy.csv");
+    try {
+      const res = await fetch("/api/taxonomy", { method: "POST", body: fd });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(j.detail || j.error || res.statusText);
+      }
+      if (taxStatus) taxStatus.textContent = `taxonomy saved (${j.rows} rows)`;
+    } catch (e) {
+      setErr(e.message || String(e));
+      if (taxStatus) taxStatus.textContent = "upload failed";
     }
   }
 
@@ -284,5 +315,16 @@
     stopLive();
   });
 
+  const taxIn = $("taxIn");
+  if (taxIn) {
+    taxIn.addEventListener("change", (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      uploadTaxonomyCsv(f);
+      ev.target.value = "";
+    });
+  }
+
   refreshHealth();
+  refreshTaxonomyStatus();
 })();

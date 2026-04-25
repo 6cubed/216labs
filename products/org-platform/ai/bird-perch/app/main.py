@@ -17,6 +17,7 @@ from starlette.websockets import WebSocketDisconnect
 from .audio_io import load_audio_mono, pad_or_crop
 from .model_runner import ensure_model_loaded, get_expected_samples, predict_waveform
 from .stream_buffer import ChunkRing
+from .taxonomy import parse_ebird_taxonomy_csv, reset_taxonomy_cache
 
 TARGET_SR = int(os.environ.get("BIRDPERCH_SAMPLE_RATE", "48000"))
 MAX_BYTES = int(os.environ.get("BIRDPERCH_MAX_UPLOAD_BYTES", str(8 * 1024 * 1024)))
@@ -42,6 +43,10 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 static_dir = os.path.join(BASE_DIR, "static")
 if os.path.isdir(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+TAXONOMY_PATH = os.environ.get("BIRDPERCH_EBIRD_TAXONOMY_CSV", "").strip() or os.path.join(
+    BASE_DIR, "data", "ebird_taxonomy.csv"
+)
 
 
 def _identify_payload(y: np.ndarray) -> dict:
@@ -78,6 +83,43 @@ def health():
     mock = os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes")
     # Do not download the TF model on health checks — first /api/identify loads it.
     return {"ok": True, "model": "mock" if mock else "lazy", "mock": mock}
+
+
+@app.get("/api/taxonomy")
+def taxonomy_status():
+    """Whether a taxonomy CSV is present for human-readable species names."""
+    return {"ok": True, "present": os.path.isfile(TAXONOMY_PATH), "path": TAXONOMY_PATH}
+
+
+@app.post("/api/taxonomy")
+async def upload_taxonomy(file: UploadFile = File(...)):
+    """Upload an eBird taxonomy CSV to the server (persisted on the /app/data volume)."""
+    raw = await file.read()
+    if len(raw) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="CSV too large")
+    try:
+        txt = raw.decode("utf-8", errors="replace")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read CSV: {e}") from e
+
+    # Validate headers / format before writing.
+    import tempfile
+
+    with tempfile.NamedTemporaryFile("w", delete=True, encoding="utf-8", newline="") as tmp:
+        tmp.write(txt)
+        tmp.flush()
+        mapping = parse_ebird_taxonomy_csv(tmp.name)
+    if not mapping:
+        raise HTTPException(
+            status_code=400,
+            detail="CSV did not parse (need SPECIES_CODE + COMMON_NAME columns; optional SCIENTIFIC_NAME).",
+        )
+
+    os.makedirs(os.path.dirname(TAXONOMY_PATH), exist_ok=True)
+    with open(TAXONOMY_PATH, "w", encoding="utf-8", newline="") as f:
+        f.write(txt)
+    reset_taxonomy_cache()
+    return {"ok": True, "saved_to": TAXONOMY_PATH, "rows": len(mapping)}
 
 
 @app.post("/api/identify")

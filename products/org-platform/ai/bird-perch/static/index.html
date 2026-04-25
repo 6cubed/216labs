@@ -43,6 +43,21 @@
       </section>
 
       <section class="panel">
+        <h2>Species names (human readable)</h2>
+        <p class="lede" style="margin: 0">
+          If matches look like codes, upload an eBird taxonomy CSV once (it is saved on the server) so
+          results show common/scientific names.
+        </p>
+        <div class="row" style="margin-top: 0.75rem">
+          <label class="file">
+            <input type="file" id="taxIn" accept=".csv,text/csv" />
+            <span>Upload taxonomy CSV</span>
+          </label>
+          <span id="taxStatus" class="status" style="margin: 0"></span>
+        </div>
+      </section>
+
+      <section class="panel">
         <div class="row">
           <button type="button" id="btnRec" class="btn primary">Record</button>
           <button type="button" id="btnStop" class="btn" disabled>Stop</button>

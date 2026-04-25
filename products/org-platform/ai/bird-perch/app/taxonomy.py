@@ -15,6 +15,14 @@ _cache_path: str | None = None
 _cache_mtime: float | None = None
 
 
+def reset_taxonomy_cache() -> None:
+    """Clear cached mapping so the next request reloads from disk."""
+    global _cache_map, _cache_path, _cache_mtime
+    _cache_map = None
+    _cache_path = None
+    _cache_mtime = None
+
+
 def _norm_header(h: str) -> str:
     return h.strip().lower().replace(" ", "_")
 
