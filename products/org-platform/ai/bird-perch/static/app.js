@@ -3,11 +3,13 @@
   const status = $("status");
   const err = $("err");
   const results = $("results");
+  const bgResults = $("bgResults");
   const meta = $("meta");
   const liveMeta = $("liveMeta");
   const liveSpecies = $("liveSpecies");
   const liveConf = $("liveConf");
   const liveTop5 = $("liveTop5");
+  const liveBg5 = $("liveBg5");
   const taxStatus = $("taxStatus");
 
   let mediaRecorder = null;
@@ -92,6 +94,7 @@
     setErr("");
     status.textContent = "Uploading…";
     results.innerHTML = "";
+    if (bgResults) bgResults.innerHTML = "";
     const fd = new FormData();
     fd.append("file", blob, "clip.webm");
     try {
@@ -110,6 +113,14 @@
           <span class="match-p">${(row.confidence * 100).toFixed(1)}%</span>`;
         results.appendChild(li);
       });
+      if (bgResults) {
+        (j.background || []).forEach((row) => {
+          const li = document.createElement("li");
+          li.innerHTML = `<span class="match-name">${escapeHtml(row.label || "")}</span>
+            <span class="match-p">${(row.confidence * 100).toFixed(1)}%</span>`;
+          bgResults.appendChild(li);
+        });
+      }
     } catch (e) {
       setErr(e.message || String(e));
       status.textContent = "Failed";
@@ -168,6 +179,15 @@
         <span class="match-p">${(row.confidence * 100).toFixed(1)}%</span>`;
       liveTop5.appendChild(li);
     });
+    if (liveBg5) {
+      liveBg5.innerHTML = "";
+      (msg.bg5 || []).forEach((row) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span class="match-name">${escapeHtml(row.label || "")}</span>
+          <span class="match-p">${(row.confidence * 100).toFixed(1)}%</span>`;
+        liveBg5.appendChild(li);
+      });
+    }
     if (liveHelloText && typeof msg.buffer_samples === "number") {
       liveMeta.textContent = `${liveHelloText} · buffer ~${(msg.buffer_samples / liveTargetSr).toFixed(1)}s`;
     }

@@ -57,6 +57,16 @@
       "is_secret": false
     },
     {
+      "key": "BIRDPERCH_YAMNET",
+      "description": "Optional. Set to 1 to run YAMNet background-sound labels and return them in the API/UI. Default 0 (off) to save CPU.",
+      "is_secret": false
+    },
+    {
+      "key": "BIRDPERCH_YAMNET_TOPK",
+      "description": "Optional. Top-K YAMNet labels to return (default 8 for uploads, 5 for live listen).",
+      "is_secret": false
+    },
+    {
       "key": "KAGGLE_USERNAME",
       "description": "Kaggle API username (with KAGGLE_KEY) for kagglehub model download on first request.",
       "is_secret": false

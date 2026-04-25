@@ -23,6 +23,7 @@ from .taxonomy import (
     parse_ebird_taxonomy_csv,
     reset_taxonomy_cache,
 )
+from .yamnet_runner import predict_background
 
 TARGET_SR = int(os.environ.get("BIRDPERCH_SAMPLE_RATE", "48000"))
 MAX_BYTES = int(os.environ.get("BIRDPERCH_MAX_UPLOAD_BYTES", str(8 * 1024 * 1024)))
@@ -66,8 +67,17 @@ def _identify_payload(y: np.ndarray) -> dict:
     if isinstance(n, int) and n > 0:
         y = pad_or_crop(y, n)
     result = predict_waveform(y)
+    yamnet_on = os.environ.get("BIRDPERCH_YAMNET", "").strip() in ("1", "true", "yes")
+    bg = []
+    if yamnet_on:
+        topk = int(os.environ.get("BIRDPERCH_YAMNET_TOPK", "8"))
+        try:
+            bg = predict_background(y, TARGET_SR, topk=topk)
+        except Exception:
+            bg = []
     return {
         "species": result.species,
+        "background": bg,
         "embedding_preview": result.embedding,
         "note": result.note,
         "sample_rate": TARGET_SR,
@@ -272,6 +282,14 @@ async def ws_listen(websocket: WebSocket):
             except Exception as e:
                 await websocket.send_json({"type": "error", "detail": str(e)})
                 continue
+            bg = []
+            yamnet_on = os.environ.get("BIRDPERCH_YAMNET", "").strip() in ("1", "true", "yes")
+            if yamnet_on:
+                topk = int(os.environ.get("BIRDPERCH_YAMNET_TOPK", "5"))
+                try:
+                    bg = await asyncio.to_thread(predict_background, y_infer, TARGET_SR, topk=topk)
+                except Exception:
+                    bg = []
 
             top = result.species[0] if result.species else None
             await websocket.send_json(
@@ -281,6 +299,7 @@ async def ws_listen(websocket: WebSocket):
                     "buffer_samples": buf_samples,
                     "top": top,
                     "top5": result.species[:5],
+                    "bg5": bg[:5],
                     "note": result.note,
                 }
             )
