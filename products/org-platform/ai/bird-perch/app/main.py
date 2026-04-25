@@ -25,16 +25,38 @@ from .taxonomy import (
 )
 from .yamnet_runner import predict_background
 
-TARGET_SR = int(os.environ.get("BIRDPERCH_SAMPLE_RATE", "48000"))
-MAX_BYTES = int(os.environ.get("BIRDPERCH_MAX_UPLOAD_BYTES", str(8 * 1024 * 1024)))
-STREAM_MAX_CHUNK = int(os.environ.get("BIRDPERCH_STREAM_MAX_CHUNK_BYTES", str(512 * 1024)))
-STREAM_INFER_SEC = float(os.environ.get("BIRDPERCH_STREAM_INFER_SEC", "1.5"))
-STREAM_RING_SEC = float(os.environ.get("BIRDPERCH_STREAM_RING_SEC", "22"))
+
+def _env_int(key: str, default: int) -> int:
+    v = os.environ.get(key, "")
+    v = v.strip() if isinstance(v, str) else ""
+    if not v:
+        return int(default)
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return int(default)
+
+
+def _env_float(key: str, default: float) -> float:
+    v = os.environ.get(key, "")
+    v = v.strip() if isinstance(v, str) else ""
+    if not v:
+        return float(default)
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return float(default)
+
+TARGET_SR = _env_int("BIRDPERCH_SAMPLE_RATE", 48000)
+MAX_BYTES = _env_int("BIRDPERCH_MAX_UPLOAD_BYTES", 8 * 1024 * 1024)
+STREAM_MAX_CHUNK = _env_int("BIRDPERCH_STREAM_MAX_CHUNK_BYTES", 512 * 1024)
+STREAM_INFER_SEC = _env_float("BIRDPERCH_STREAM_INFER_SEC", 1.5)
+STREAM_RING_SEC = _env_float("BIRDPERCH_STREAM_RING_SEC", 22.0)
 # MediaRecorder sends WebM fragments; only the first chunk usually includes the EBML init segment.
 # Accumulate raw bytes and decode the growing blob; append only the new PCM tail so the ring buffer
 # is not double-counted on each full-file re-decode.
-STREAM_MAX_WEBM_ACC = int(os.environ.get("BIRDPERCH_STREAM_MAX_WEBM_BYTES", str(15 * 1024 * 1024)))
-MIN_CONF = float(os.environ.get("BIRDPERCH_MIN_CONF", "0.20"))
+STREAM_MAX_WEBM_ACC = _env_int("BIRDPERCH_STREAM_MAX_WEBM_BYTES", 15 * 1024 * 1024)
+MIN_CONF = _env_float("BIRDPERCH_MIN_CONF", 0.20)
 
 app = FastAPI(title="Bird Perch", version="0.1.0")
 
