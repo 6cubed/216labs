@@ -34,6 +34,7 @@ STREAM_RING_SEC = float(os.environ.get("BIRDPERCH_STREAM_RING_SEC", "22"))
 # Accumulate raw bytes and decode the growing blob; append only the new PCM tail so the ring buffer
 # is not double-counted on each full-file re-decode.
 STREAM_MAX_WEBM_ACC = int(os.environ.get("BIRDPERCH_STREAM_MAX_WEBM_BYTES", str(15 * 1024 * 1024)))
+MIN_CONF = float(os.environ.get("BIRDPERCH_MIN_CONF", "0.20"))
 
 app = FastAPI(title="Bird Perch", version="0.1.0")
 
@@ -120,6 +121,7 @@ def info():
         "taxonomy_present": present,
         "taxonomy_path": resolved,
         "yamnet": yamnet_on,
+        "min_conf": MIN_CONF,
         "stream": {
             "infer_sec": STREAM_INFER_SEC,
             "ring_sec": STREAM_RING_SEC,
@@ -315,6 +317,10 @@ async def ws_listen(websocket: WebSocket):
                     bg = []
 
             top = result.species[0] if result.species else None
+            if top and isinstance(top, dict):
+                c = top.get("confidence")
+                if isinstance(c, (int, float)) and float(c) < MIN_CONF:
+                    top = None
             await websocket.send_json(
                 {
                     "type": "tick",
@@ -323,6 +329,7 @@ async def ws_listen(websocket: WebSocket):
                     "top": top,
                     "top5": result.species[:5],
                     "bg5": bg[:5],
+                    "min_conf": MIN_CONF,
                     "note": result.note,
                 }
             )

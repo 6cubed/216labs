@@ -167,7 +167,8 @@
         typeof top.confidence === "number" ? `${(top.confidence * 100).toFixed(1)}% confidence` : "";
     } else {
       liveSpecies.textContent = "—";
-      liveConf.textContent = "";
+      liveConf.textContent =
+        typeof msg.min_conf === "number" ? `No confident match (min ${(msg.min_conf * 100).toFixed(0)}%)` : "";
     }
     liveTop5.innerHTML = "";
     (msg.top5 || []).forEach((row) => {

@@ -57,6 +57,11 @@
       "is_secret": false
     },
     {
+      "key": "BIRDPERCH_MIN_CONF",
+      "description": "Optional. Minimum confidence to show a single 'Current best match' during continuous listening (default 0.20). Below this, the UI shows 'No confident match' while still listing top-5.",
+      "is_secret": false
+    },
+    {
       "key": "BIRDPERCH_YAMNET",
       "description": "Optional. Set to 1 to run YAMNet background-sound labels and return them in the API/UI. Default 0 (off) to save CPU.",
       "is_secret": false
