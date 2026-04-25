@@ -57,6 +57,8 @@ def ensure_taxonomy_csv(path: str | None = None, url: str | None = None) -> tupl
                 headers={
                     "User-Agent": "Mozilla/5.0 (compatible; 216labs-birdperch/1.0)",
                     "Accept": "text/csv,text/plain,*/*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Referer": "https://www.birds.cornell.edu/clementschecklist/",
                 },
             )
             r.raise_for_status()
