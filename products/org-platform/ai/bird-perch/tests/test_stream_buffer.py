@@ -49,6 +49,13 @@ class TestChunkRing(unittest.TestCase):
         self.assertEqual(r.total, 0)
         self.assertEqual(r.concat_tail(10).size, 0)
 
+    def test_clear(self):
+        r = ChunkRing(1000)
+        r.append(np.ones(5, dtype=np.float32))
+        r.clear()
+        self.assertEqual(r.total, 0)
+        self.assertEqual(r.concat_tail(3).size, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

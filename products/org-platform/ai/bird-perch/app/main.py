@@ -23,6 +23,10 @@ MAX_BYTES = int(os.environ.get("BIRDPERCH_MAX_UPLOAD_BYTES", str(8 * 1024 * 1024
 STREAM_MAX_CHUNK = int(os.environ.get("BIRDPERCH_STREAM_MAX_CHUNK_BYTES", str(512 * 1024)))
 STREAM_INFER_SEC = float(os.environ.get("BIRDPERCH_STREAM_INFER_SEC", "1.5"))
 STREAM_RING_SEC = float(os.environ.get("BIRDPERCH_STREAM_RING_SEC", "22"))
+# MediaRecorder sends WebM fragments; only the first chunk usually includes the EBML init segment.
+# Accumulate raw bytes and decode the growing blob; append only the new PCM tail so the ring buffer
+# is not double-counted on each full-file re-decode.
+STREAM_MAX_WEBM_ACC = int(os.environ.get("BIRDPERCH_STREAM_MAX_WEBM_BYTES", str(15 * 1024 * 1024)))
 
 app = FastAPI(title="Bird Perch", version="0.1.0")
 
@@ -111,6 +115,8 @@ async def ws_listen(websocket: WebSocket):
     lock = asyncio.Lock()
     last_infer = 0.0
     infer_interval = max(0.35, STREAM_INFER_SEC)
+    webm_acc = bytearray()
+    last_decoded_samples = 0
     try:
         await websocket.send_json(
             {
@@ -140,12 +146,38 @@ async def ws_listen(websocket: WebSocket):
                 await websocket.send_json({"type": "error", "detail": "Audio chunk too large"})
                 continue
 
+            if len(webm_acc) + len(data) > STREAM_MAX_WEBM_ACC:
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "detail": "Live stream buffer full — stop and start continuous listening again.",
+                    }
+                )
+                continue
+
+            webm_acc.extend(data)
+
+            try:
+                y_full = await asyncio.to_thread(load_audio_mono, bytes(webm_acc), TARGET_SR)
+            except Exception:
+                # Typical while the accumulated WebM is still a truncated fragment (no init segment yet).
+                continue
+
+            y_full = np.asarray(y_full, dtype=np.float32).reshape(-1)
+            if y_full.size == 0:
+                continue
+
             y_infer: np.ndarray | None = None
             buf_samples = 0
             try:
                 async with lock:
-                    y = await asyncio.to_thread(load_audio_mono, data, TARGET_SR)
-                    buf.append(y)
+                    if y_full.size < last_decoded_samples:
+                        last_decoded_samples = 0
+                        buf.clear()
+                    delta = y_full[int(last_decoded_samples) :]
+                    last_decoded_samples = int(y_full.size)
+                    if delta.size > 0:
+                        buf.append(delta)
                     now = time.monotonic()
                     if now - last_infer < infer_interval:
                         y_infer = None

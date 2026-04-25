@@ -65,15 +65,25 @@ class TestWsListen(unittest.TestCase):
                 self.assertIn("too large", err["detail"])
 
     @patch("app.main.STREAM_INFER_SEC", 0.35)
-    @patch("app.main.load_audio_mono", side_effect=RuntimeError("bad audio"))
-    def test_decode_failure_returns_error_json(self, _decode):
-        with TestClient(app) as client:
-            with client.websocket_connect("/ws/listen") as ws:
-                self.assertEqual(ws.receive_json()["type"], "hello")
-                ws.send_bytes(b"not-audio")
-                err = ws.receive_json()
-                self.assertEqual(err["type"], "error")
-                self.assertIn("decode", err["detail"])
+    def test_decode_recovers_when_accumulated_webm_becomes_decodable(self):
+        """Incomplete fragments are ignored until decode succeeds (real WebM from MediaRecorder)."""
+        calls = {"n": 0}
+
+        def load_side(data: bytes, sr: int) -> np.ndarray:
+            calls["n"] += 1
+            if calls["n"] < 2:
+                raise RuntimeError("incomplete webm")
+            return _mono_chunk(12_000)
+
+        with patch("app.main.load_audio_mono", side_effect=load_side):
+            with TestClient(app) as client:
+                with client.websocket_connect("/ws/listen") as ws:
+                    self.assertEqual(ws.receive_json()["type"], "hello")
+                    ws.send_bytes(b"frag1")
+                    ws.send_bytes(b"frag2")
+                    msg = ws.receive_json()
+                    self.assertEqual(msg["type"], "tick")
+                    self.assertGreater(msg["buffer_samples"], 0)
 
 
 if __name__ == "__main__":

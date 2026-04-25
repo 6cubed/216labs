@@ -13,6 +13,10 @@ class ChunkRing:
         self.chunks: list[np.ndarray] = []
         self.total = 0
 
+    def clear(self) -> None:
+        self.chunks = []
+        self.total = 0
+
     def append(self, y: np.ndarray) -> None:
         y = np.asarray(y, dtype=np.float32).reshape(-1)
         if y.size == 0:
