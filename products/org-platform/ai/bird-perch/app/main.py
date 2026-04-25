@@ -50,7 +50,7 @@ def _env_float(key: str, default: float) -> float:
 TARGET_SR = _env_int("BIRDPERCH_SAMPLE_RATE", 48000)
 MAX_BYTES = _env_int("BIRDPERCH_MAX_UPLOAD_BYTES", 8 * 1024 * 1024)
 STREAM_MAX_CHUNK = _env_int("BIRDPERCH_STREAM_MAX_CHUNK_BYTES", 512 * 1024)
-STREAM_INFER_SEC = _env_float("BIRDPERCH_STREAM_INFER_SEC", 1.5)
+STREAM_INFER_SEC = _env_float("BIRDPERCH_STREAM_INFER_SEC", 2.0)
 STREAM_RING_SEC = _env_float("BIRDPERCH_STREAM_RING_SEC", 22.0)
 # MediaRecorder sends WebM fragments; only the first chunk usually includes the EBML init segment.
 # Accumulate raw bytes and decode the growing blob; append only the new PCM tail so the ring buffer

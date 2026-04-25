@@ -38,7 +38,7 @@
     },
     {
       "key": "BIRDPERCH_STREAM_INFER_SEC",
-      "description": "Optional. Minimum seconds between live /ws/listen classifier runs (default 1.5). Lower = snappier UI, higher CPU.",
+      "description": "Optional. Minimum seconds between live /ws/listen classifier runs (default 2.0). Lower = snappier UI, higher CPU.",
       "is_secret": false
     },
     {
