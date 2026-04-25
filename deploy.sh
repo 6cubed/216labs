@@ -7,9 +7,15 @@ set -euo pipefail
 # Reads 216labs.db (SQLite) to decide which apps to deploy.
 #
 # Images (default): pulled from GHCR after GitHub Actions "Publish images to GHCR" (main / workflow_dispatch).
-# Set DEPLOY_IMAGE_SOURCE=local to restore local docker build + ssh transfer (legacy; prefer CI + GHCR).
-# With local builds, DEPLOY_FORCE_LOCAL_REBUILD=1 ignores .deploy-hashes and rebuilds listed services anyway
-# (use when GHCR :latest is stale or the hash file skipped a needed image).
+# Set DEPLOY_IMAGE_SOURCE=local for docker build + ssh transfer (needed when GHCR :latest lags main).
+#
+# Reliability rules implemented in this script:
+# - DEPLOY_RUNTIME_APPS + local: always docker-build those apps (ignore .deploy-hashes) so a targeted
+#   deploy always matches your working tree.
+# - GHCR: after pull, force-recreate the compose services whose images were pulled so a new digest
+#   is not left running behind an old container.
+# - DEPLOY_FORCE_LOCAL_REBUILD=1 still forces every service in the current pull/build list to rebuild
+#   when using local mode (full or subset catalogue).
 # Operational note: run this script from your own shell or CI when rolling the droplet—agents default to push-only.
 # 216labs.db holds app state and env_vars (secrets); it is never overwritten by
 # this script. A timestamped backup is made on the server before each deploy.
@@ -303,6 +309,9 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
     if [ "${DEPLOY_FORCE_LOCAL_REBUILD:-0}" = "1" ]; then
       echo "  [build] $NAME (DEPLOY_FORCE_LOCAL_REBUILD=1)"
       SERVICES_TO_BUILD+=("$svc")
+    elif [ -n "${FILTERED_RUNTIME:-}" ] && [[ " $FILTERED_RUNTIME " == *" $NAME "* ]]; then
+      echo "  [build] $NAME (DEPLOY_RUNTIME_APPS subset — always rebuild from current tree)"
+      SERVICES_TO_BUILD+=("$svc")
     elif [ "$CTX_HASH" = "$STORED" ] && docker image inspect "$TAG" &>/dev/null 2>&1; then
       echo "  [skip]  $NAME (source unchanged)"
     else
@@ -317,6 +326,22 @@ else
     TAG="216labs/$NAME:latest"
     ALL_IMAGES+=("$TAG")
   done
+fi
+
+# Compose services to force-recreate after GHCR pulls when using a subset list (same :latest, new digest).
+# Omit for full-catalog GHCR deploys to avoid mass-recreate OOM spikes on small droplets.
+GHCR_RECREATE_B64=""
+if [ "$IMAGE_SOURCE" = "ghcr" ] && [ -n "$RUNTIME_RAW" ] && [ ${#ALL_IMAGES[@]} -gt 0 ]; then
+  ghcr_recreate_svcs=""
+  for tag in "${ALL_IMAGES[@]}"; do
+    short="${tag#216labs/}"
+    short="${short%%:*}"
+    ghcr_recreate_svcs="$ghcr_recreate_svcs $(compose_svc_name "$short")"
+  done
+  ghcr_recreate_svcs=$(echo "$ghcr_recreate_svcs" | tr -s ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  if [ -n "$ghcr_recreate_svcs" ]; then
+    GHCR_RECREATE_B64=$(printf '%s' "$ghcr_recreate_svcs" | base64 | tr -d '\n')
+  fi
 fi
 
 # ── Local build + ssh transfer (DEPLOY_IMAGE_SOURCE=local only) ─
@@ -513,8 +538,9 @@ if [ "$PULL_FROM_GHCR" = "1" ] && [ ${#ALL_IMAGES[@]} -gt 0 ]; then
 fi
 # Pass changed-services sentinel as $3, deploy-meta app ids as $4 (single arg), then compose services ($5+).
 # PULL_FROM_GHCR + GHCR_TAGS_B64: droplet pulls ghcr.io/…/short:latest and retags to 216labs/short:latest.
+# GHCR_RECREATE_B64: base64-encoded space-separated compose services to force-recreate after pulls.
 ssh "${SSH_OPTS[@]}" "$REMOTE" \
-  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" \
+  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" GHCR_RECREATE_B64="${GHCR_RECREATE_B64:-}" \
   bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$APPS_DEPLOY_META" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
@@ -658,6 +684,17 @@ else
   fi
   if [ ! -s .env.admin ]; then
     echo "==> No admin container running yet, using .env defaults only"
+  fi
+fi
+
+# After GHCR pulls, recreate containers for those images so :latest digest changes actually run.
+if [ "${PULL_FROM_GHCR:-0}" = "1" ] && [ -n "${GHCR_RECREATE_B64:-}" ]; then
+  GHCR_RECREATE_SVCS=$(printf '%s' "$GHCR_RECREATE_B64" | base64 -d 2>/dev/null || true)
+  GHCR_RECREATE_SVCS=$(echo "$GHCR_RECREATE_SVCS" | tr -s ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  if [ -n "$GHCR_RECREATE_SVCS" ]; then
+    echo "==> GHCR: force-recreate pulled services so containers use new image IDs: $GHCR_RECREATE_SVCS"
+    # shellcheck disable=SC2086
+    docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate $GHCR_RECREATE_SVCS || true
   fi
 fi
 

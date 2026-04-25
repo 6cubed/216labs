@@ -40,6 +40,22 @@ def _changed_files_from_env() -> set[str]:
     return {_norm_repo_path(line) for line in raw.splitlines() if _norm_repo_path(line)}
 
 
+def _always_include_compose_services() -> frozenset[str]:
+    """Service names from config/ghcr-always-include.txt (compose keys, lowercased)."""
+    p = Path("config/ghcr-always-include.txt")
+    if not p.is_file():
+        return frozenset()
+    out: set[str] = set()
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        name = line.split("#", 1)[0].strip().lower()
+        if name:
+            out.add(name)
+    return frozenset(out)
+
+
 def _service_paths(name: str, svc: dict) -> tuple[str, str]:
     build = svc.get("build")
     if isinstance(build, str):
@@ -114,6 +130,7 @@ def main() -> None:
 
     services = cfg.get("services", {})
     changed_files = _changed_files_from_env()
+    always_include = _always_include_compose_services()
     include: list[dict[str, str]] = []
     for name in sorted(services.keys()):
         if name == "caddy":
@@ -123,7 +140,7 @@ def main() -> None:
         svc = services[name]
         if "build" not in svc:
             continue
-        if not _service_changed(name, svc, changed_files):
+        if not _service_changed(name, svc, changed_files) and name.lower() not in always_include:
             continue
         img = _normalize_local_image(_service_image(svc))
         if not img.startswith("216labs/"):

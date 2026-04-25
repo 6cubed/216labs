@@ -38,6 +38,8 @@ To approximate a **minimal deploy surface** before that split:
 
 - Point `deploy.sh` at **your** Git remote and server checkout path without editing the script: `DEPLOY_REPO` and `DEPLOY_APP_DIR` (defaults remain `git@github.com:6cubed/216labs.git` and `/opt/216labs`).
 
+- **Deploy / GHCR:** With `DEPLOY_IMAGE_SOURCE=local`, any `DEPLOY_RUNTIME_APPS=…` subset **always rebuilds** those apps from the current tree (`.deploy-hashes` does not skip them). With default GHCR pulls plus a subset, the droplet **force-recreates** only those services after `docker pull` so a new digest under `:latest` actually runs. If a package’s `:latest` still lags `main`, add its compose service name to `config/ghcr-always-include.txt` so **Publish images to GHCR** always rebuilds it on every push (remove names you do not need — heavy images cost CI time).
+
 - Replace branding strings in `README.md` and manifests with your org name; keep the **mechanics** (manifests, deploy, admin) unchanged.
 
 ## Shared Python (HTTP)
