@@ -46,25 +46,37 @@ def ensure_taxonomy_csv(path: str | None = None, url: str | None = None) -> tupl
         return False, resolved
 
     try:
-        import httpx
-
         os.makedirs(os.path.dirname(resolved) or ".", exist_ok=True)
         tmp = f"{resolved}.tmp"
-        with httpx.Client(follow_redirects=True, timeout=60) as client:
-            # Cornell sometimes blocks "unknown" user agents; send a browser-ish UA.
-            r = client.get(
-                fetch_url,
-                headers={
-                    "User-Agent": "Mozilla/5.0",
-                    "Accept": "text/csv,text/plain,*/*",
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "Referer": "https://www.birds.cornell.edu/clementschecklist/",
-                },
-            )
-            r.raise_for_status()
-            # Write bytes as-is; CSV is UTF-8.
-            with open(tmp, "wb") as f:
-                f.write(r.content)
+
+        # Cornell can block some HTTP client fingerprints. Use stdlib urllib with headers that
+        # work in practice, falling back to httpx if needed.
+        data: bytes | None = None
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "text/csv,text/plain,*/*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://www.birds.cornell.edu/clementschecklist/",
+        }
+        try:
+            import urllib.request
+
+            req = urllib.request.Request(fetch_url, headers=headers)
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                data = resp.read()
+        except Exception:
+            data = None
+
+        if data is None:
+            import httpx
+
+            with httpx.Client(follow_redirects=True, timeout=60, headers=headers) as client:
+                r = client.get(fetch_url)
+                r.raise_for_status()
+                data = r.content
+
+        with open(tmp, "wb") as f:
+            f.write(data or b"")
         # Validate quickly before swapping into place.
         mapping = parse_ebird_taxonomy_csv(tmp)
         if not mapping:
