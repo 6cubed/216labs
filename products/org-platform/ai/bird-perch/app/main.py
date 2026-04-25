@@ -17,7 +17,12 @@ from starlette.websockets import WebSocketDisconnect
 from .audio_io import load_audio_mono, pad_or_crop
 from .model_runner import ensure_model_loaded, get_expected_samples, predict_waveform
 from .stream_buffer import ChunkRing
-from .taxonomy import ensure_taxonomy_csv, parse_ebird_taxonomy_csv, reset_taxonomy_cache
+from .taxonomy import (
+    ensure_taxonomy_csv,
+    last_taxonomy_ensure_error,
+    parse_ebird_taxonomy_csv,
+    reset_taxonomy_cache,
+)
 
 TARGET_SR = int(os.environ.get("BIRDPERCH_SAMPLE_RATE", "48000"))
 MAX_BYTES = int(os.environ.get("BIRDPERCH_MAX_UPLOAD_BYTES", str(8 * 1024 * 1024)))
@@ -95,7 +100,7 @@ def health():
 def taxonomy_status():
     """Whether a taxonomy CSV is present for human-readable species names."""
     present, resolved = ensure_taxonomy_csv(TAXONOMY_PATH)
-    return {"ok": True, "present": present, "path": resolved}
+    return {"ok": True, "present": present, "path": resolved, "ensure_error": last_taxonomy_ensure_error()}
 
 
 @app.post("/api/taxonomy")

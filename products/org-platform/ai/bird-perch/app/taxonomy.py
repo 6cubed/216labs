@@ -16,6 +16,7 @@ _DEFAULT_TAXONOMY_URL = "https://www.birds.cornell.edu/clementschecklist/wp-cont
 _cache_map: dict[str, str] | None = None
 _cache_path: str | None = None
 _cache_mtime: float | None = None
+_last_ensure_error: str | None = None
 
 
 def reset_taxonomy_cache() -> None:
@@ -31,11 +32,13 @@ def ensure_taxonomy_csv(path: str | None = None, url: str | None = None) -> tupl
 
     Returns (present, resolved_path). Never raises on download failure.
     """
+    global _last_ensure_error
     resolved = path or os.environ.get("BIRDPERCH_EBIRD_TAXONOMY_CSV", "").strip() or str(_DEFAULT_TAXONOMY)
     resolved = resolved.strip()
     if not resolved:
         return False, ""
     if os.path.isfile(resolved) and os.path.getsize(resolved) > 10_000:
+        _last_ensure_error = None
         return True, resolved
 
     fetch_url = (url or os.environ.get("BIRDPERCH_EBIRD_TAXONOMY_URL", "").strip() or _DEFAULT_TAXONOMY_URL).strip()
@@ -48,7 +51,14 @@ def ensure_taxonomy_csv(path: str | None = None, url: str | None = None) -> tupl
         os.makedirs(os.path.dirname(resolved) or ".", exist_ok=True)
         tmp = f"{resolved}.tmp"
         with httpx.Client(follow_redirects=True, timeout=60) as client:
-            r = client.get(fetch_url)
+            # Cornell sometimes blocks "unknown" user agents; send a browser-ish UA.
+            r = client.get(
+                fetch_url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (compatible; 216labs-birdperch/1.0)",
+                    "Accept": "text/csv,text/plain,*/*",
+                },
+            )
             r.raise_for_status()
             # Write bytes as-is; CSV is UTF-8.
             with open(tmp, "wb") as f:
@@ -63,9 +73,15 @@ def ensure_taxonomy_csv(path: str | None = None, url: str | None = None) -> tupl
             return False, resolved
         os.replace(tmp, resolved)
         reset_taxonomy_cache()
+        _last_ensure_error = None
         return True, resolved
-    except Exception:
+    except Exception as e:
+        _last_ensure_error = f"{type(e).__name__}: {e}"
         return False, resolved
+
+
+def last_taxonomy_ensure_error() -> str | None:
+    return _last_ensure_error
 
 
 def _norm_header(h: str) -> str:
