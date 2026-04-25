@@ -72,6 +72,11 @@
       "is_secret": false
     },
     {
+      "key": "BIRDPERCH_DISABLE_XLA",
+      "description": "Optional. Set to 1 to disable TF XLA JIT (tf.config.optimizer.set_jit(False)) if inference logs INVALID_ARGUMENT reshape errors on your host.",
+      "is_secret": false
+    },
+    {
       "key": "KAGGLE_USERNAME",
       "description": "Kaggle API username (with KAGGLE_KEY) for kagglehub model download on first request.",
       "is_secret": false

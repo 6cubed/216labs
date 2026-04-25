@@ -15,13 +15,16 @@ from typing import Any
 
 import numpy as np
 
+from .audio_io import pad_or_crop
 from .taxonomy import load_species_code_map, species_display
+from .tf_lock import TF_LOCK, tf_runtime_init
 
 _tf = None
 _model = None
 _infer_fn = None
 _labels: list[str] | None = None
 _expected_samples: int | None = None
+_waveform_key: str | None = None
 
 
 @dataclass
@@ -34,11 +37,47 @@ class PredictResult:
 def _lazy_tf():
     global _tf
     if _tf is None:
+        tf_runtime_init()
         import tensorflow as tf
 
         _tf = tf
-        os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
     return _tf
+
+
+def _pick_waveform_input(spec_in: dict[str, Any]) -> tuple[str | None, int | None]:
+    """Pick the primary waveform tensor when the SavedModel lists several inputs.
+
+    Dict iteration order used to pick the *first* tensor with a fixed width, which
+    can be an auxiliary buffer (e.g. 35200) smaller than the classifier window
+    (160000). Prefer name hints, then the largest fixed length.
+    """
+    best: tuple[float, int, str] | None = None
+    for name, tensor in spec_in.items():
+        sh = tensor.shape.as_list()
+        if len(sh) == 2 and sh[0] == 1 and sh[1] is not None:
+            try:
+                t = int(sh[1])
+            except (TypeError, ValueError):
+                continue
+            score = float(t)
+            nl = name.lower()
+            for pref in ("waveform", "wave", "audio", "speech", "signal", "input", "inputs"):
+                if pref in nl:
+                    score += 1_000_000_000
+                    break
+            cand = (score, t, name)
+            if best is None or cand[0] > best[0]:
+                best = cand
+    if best is None:
+        return None, None
+    return best[2], best[1]
+
+
+def _default_fill_tensor(tf: Any, tensor: Any) -> Any:
+    """Zeros / false-like fill for optional SavedModel inputs (training flags, etc.)."""
+    sh = tensor.shape.as_list()
+    static = [1 if d is None else int(d) for d in sh]
+    return tf.zeros(static, dtype=tensor.dtype)
 
 
 def model_handle() -> str:
@@ -131,30 +170,38 @@ def is_model_ready() -> bool:
 
 
 def ensure_model_loaded() -> None:
-    global _model, _infer_fn, _expected_samples
+    global _model, _infer_fn, _expected_samples, _waveform_key
     if _model is not None:
         return
     if os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes"):
         return
 
-    tf = _lazy_tf()
-    path = download_model_path()
-    _model = tf.saved_model.load(path)
-    infer = _model.signatures.get("serving_default")
-    if infer is None:
-        infer = next(iter(_model.signatures.values()))
+    with TF_LOCK:
+        if _model is not None:
+            return
 
-    structured_in = infer.structured_input_signature
-    for _name, tensor in (structured_in[1] or {}).items():
-        sh = tensor.shape.as_list()
-        if len(sh) >= 2 and sh[-1] is not None:
-            try:
-                _expected_samples = int(sh[-1])
-            except (TypeError, ValueError):
-                pass
-        break
+        tf = _lazy_tf()
+        path = download_model_path()
+        _model = tf.saved_model.load(path)
+        infer = _model.signatures.get("serving_default")
+        if infer is None:
+            infer = next(iter(_model.signatures.values()))
 
-    _infer_fn = infer
+        spec_in = infer.structured_input_signature[1] or {}
+        wkey, exp = _pick_waveform_input(spec_in)
+        if wkey is None and len(spec_in) == 1:
+            wkey = next(iter(spec_in.keys()))
+            t_tensor = spec_in[wkey]
+            sh = t_tensor.shape.as_list()
+            if len(sh) >= 2 and sh[-1] is not None:
+                try:
+                    exp = int(sh[-1])
+                except (TypeError, ValueError):
+                    exp = None
+        _waveform_key = wkey
+        _expected_samples = exp
+
+        _infer_fn = infer
 
 
 def _extract_logits(out: dict) -> np.ndarray:
@@ -260,42 +307,72 @@ def predict_waveform(waveform: np.ndarray) -> PredictResult:
     if os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes"):
         return _run_mock(waveform)
 
-    tf = _lazy_tf()
-    ensure_model_loaded()
-    assert _infer_fn is not None
+    with TF_LOCK:
+        tf = _lazy_tf()
+        ensure_model_loaded()
+        assert _infer_fn is not None
 
-    model_root = download_model_path()
+        model_root = download_model_path()
 
-    spec_in = _infer_fn.structured_input_signature[1] or {}
-    feed: dict[str, Any] = {}
-    w = waveform.astype(np.float32)
-    for _name, tensor in spec_in.items():
-        sh = tensor.shape.as_list()
-        if len(sh) == 2 and sh[0] == 1:
-            T = sh[1]
-            if T is not None and isinstance(T, int) and w.shape[0] != T:
-                from .audio_io import pad_or_crop
+        spec_in = _infer_fn.structured_input_signature[1] or {}
+        feed: dict[str, Any] = {}
+        w0 = np.asarray(waveform, dtype=np.float32).reshape(-1)
 
-                w = pad_or_crop(w, T)
-            feed[_name] = tf.constant(w[np.newaxis, :], dtype=tf.float32)
-        elif len(sh) == 1:
-            feed[_name] = tf.constant(w, dtype=tf.float32)
+        if _waveform_key and _waveform_key in spec_in and isinstance(_expected_samples, int) and _expected_samples > 0:
+            w = pad_or_crop(w0, int(_expected_samples))
+            feed[_waveform_key] = tf.constant(w[np.newaxis, :], dtype=tf.float32)
+            for k, tensor in spec_in.items():
+                if k == _waveform_key:
+                    continue
+                feed[k] = _default_fill_tensor(tf, tensor)
+        elif _waveform_key and _waveform_key in spec_in:
+            w = w0
+            tensor = spec_in[_waveform_key]
+            sh = tensor.shape.as_list()
+            if len(sh) == 2 and sh[0] == 1:
+                feed[_waveform_key] = tf.constant(w[np.newaxis, :], dtype=tf.float32)
+            else:
+                feed[_waveform_key] = tf.constant(w, dtype=tf.float32)
+            for k, t2 in spec_in.items():
+                if k == _waveform_key:
+                    continue
+                feed[k] = _default_fill_tensor(tf, t2)
+        elif len(spec_in) == 1:
+            name, tensor = next(iter(spec_in.items()))
+            sh = tensor.shape.as_list()
+            w = w0
+            if len(sh) == 2 and sh[0] == 1 and sh[1] is not None:
+                try:
+                    T = int(sh[1])
+                    if w.shape[0] != T:
+                        w = pad_or_crop(w, T)
+                except (TypeError, ValueError):
+                    pass
+            if len(sh) == 2 and sh[0] == 1:
+                feed[name] = tf.constant(w[np.newaxis, :], dtype=tf.float32)
+            elif len(sh) == 1:
+                feed[name] = tf.constant(w, dtype=tf.float32)
+            else:
+                feed[name] = tf.constant(w[np.newaxis, :], dtype=tf.float32)
         else:
-            feed[_name] = tf.constant(w[np.newaxis, :], dtype=tf.float32)
+            raise RuntimeError(
+                "Bird classifier SavedModel has multiple inputs but the waveform tensor "
+                f"could not be inferred; keys={list(spec_in.keys())!r}"
+            )
 
-    raw = _infer_fn(**feed)
-    logits = _extract_logits(dict(raw))
+        raw = _infer_fn(**feed)
+        logits = _extract_logits(dict(raw))
 
-    num_classes = int(logits.shape[0])
-    labels = _load_labels(model_root, num_classes)
-    species = _nearest_from_logits(logits, labels)
+        num_classes = int(logits.shape[0])
+        labels = _load_labels(model_root, num_classes)
+        species = _nearest_from_logits(logits, labels)
 
-    zn = _l2_norm(logits.astype(np.float64))
-    emb_out = zn.tolist()[: min(512, zn.size)]
+        zn = _l2_norm(logits.astype(np.float64))
+        emb_out = zn.tolist()[: min(512, zn.size)]
 
-    return PredictResult(
-        species=species,
-        embedding=emb_out,
-        note="Ranked by classifier softmax (k-NN over class directions in logit space). "
-        "Model: google/bird-vocalization-classifier TF2 on Kaggle.",
-    )
+        return PredictResult(
+            species=species,
+            embedding=emb_out,
+            note="Ranked by classifier softmax (k-NN over class directions in logit space). "
+            "Model: google/bird-vocalization-classifier TF2 on Kaggle.",
+        )
