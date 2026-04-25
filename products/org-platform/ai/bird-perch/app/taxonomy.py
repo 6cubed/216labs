@@ -138,8 +138,9 @@ def parse_ebird_taxonomy_csv(path: str) -> dict[str, str]:
             "commonname",
             "english_name",
             "primary_common_name",
+            "primary_com_name",
         ) or _fuzzy_pick(fn, "common", "name")
-        sci_col = _pick_field(fn, "scientific_name", "scientificname", "sci_name") or _fuzzy_pick(
+        sci_col = _pick_field(fn, "scientific_name", "scientificname", "sci_name", "sci_name") or _fuzzy_pick(
             fn, "scientific", "name"
         )
         cat_col = _pick_field(fn, "category")
