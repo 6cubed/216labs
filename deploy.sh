@@ -8,6 +8,8 @@ set -euo pipefail
 #
 # Images (default): pulled from GHCR after GitHub Actions "Publish images to GHCR" (main / workflow_dispatch).
 # Set DEPLOY_IMAGE_SOURCE=local to restore local docker build + ssh transfer (legacy; prefer CI + GHCR).
+# With local builds, DEPLOY_FORCE_LOCAL_REBUILD=1 ignores .deploy-hashes and rebuilds listed services anyway
+# (use when GHCR :latest is stale or the hash file skipped a needed image).
 # Operational note: run this script from your own shell or CI when rolling the droplet—agents default to push-only.
 # 216labs.db holds app state and env_vars (secrets); it is never overwritten by
 # this script. A timestamped backup is made on the server before each deploy.
@@ -298,7 +300,10 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
       echo "  [skip]  $NAME (DEPLOY_SKIP_BUILD=1)"
       continue
     fi
-    if [ "$CTX_HASH" = "$STORED" ] && docker image inspect "$TAG" &>/dev/null 2>&1; then
+    if [ "${DEPLOY_FORCE_LOCAL_REBUILD:-0}" = "1" ]; then
+      echo "  [build] $NAME (DEPLOY_FORCE_LOCAL_REBUILD=1)"
+      SERVICES_TO_BUILD+=("$svc")
+    elif [ "$CTX_HASH" = "$STORED" ] && docker image inspect "$TAG" &>/dev/null 2>&1; then
       echo "  [skip]  $NAME (source unchanged)"
     else
       echo "  [build] $NAME"
