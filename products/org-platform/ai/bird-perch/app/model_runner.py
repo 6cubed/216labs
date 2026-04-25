@@ -42,10 +42,10 @@ def _lazy_tf():
 
 
 def model_handle() -> str:
-    return os.environ.get(
-        "BIRDPERCH_MODEL_HANDLE",
-        "google/bird-vocalization-classifier/tensorFlow2/bird-vocalization-classifier/4",
-    )
+    default = "google/bird-vocalization-classifier/tensorFlow2/bird-vocalization-classifier/4"
+    v = os.environ.get("BIRDPERCH_MODEL_HANDLE", "")
+    v = v.strip() if isinstance(v, str) else ""
+    return v or default
 
 
 def download_model_path() -> str:

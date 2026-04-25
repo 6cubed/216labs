@@ -240,7 +240,7 @@ async def ws_listen(websocket: WebSocket):
         while True:
             try:
                 msg = await websocket.receive()
-            except WebSocketDisconnect:
+            except (WebSocketDisconnect, RuntimeError):
                 break
             if "text" in msg and msg["text"] is not None:
                 try:
