@@ -376,3 +376,16 @@ def predict_waveform(waveform: np.ndarray) -> PredictResult:
             note="Ranked by classifier softmax (k-NN over class directions in logit space). "
             "Model: google/bird-vocalization-classifier TF2 on Kaggle.",
         )
+
+
+def warmup_classifier() -> None:
+    """Run one forward pass after load so the first user request avoids cold-graph stalls."""
+    if os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes"):
+        return
+    ensure_model_loaded()
+    n = get_expected_samples()
+    if isinstance(n, int) and n > 0:
+        w = np.zeros(n, dtype=np.float32)
+    else:
+        w = np.zeros(96_000, dtype=np.float32)
+    predict_waveform(w)

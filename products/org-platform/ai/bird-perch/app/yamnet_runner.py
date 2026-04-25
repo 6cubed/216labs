@@ -166,3 +166,13 @@ def predict_background(y: np.ndarray, sr: int, topk: int = 8) -> list[dict[str, 
             )
         return out
 
+
+def warmup_yamnet(sample_rate: int) -> None:
+    """One YAMNet forward pass after load (same idea as warmup_classifier)."""
+    if os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes"):
+        return
+    sr = max(8000, int(sample_rate))
+    n = max(4000, min(24_000, int(sr * 0.25)))
+    y = np.zeros(n, dtype=np.float32)
+    predict_background(y, sr, topk=1)
+

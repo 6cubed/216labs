@@ -77,6 +77,11 @@
       "is_secret": false
     },
     {
+      "key": "BIRDPERCH_PRELOAD",
+      "description": "Optional. Set to 1 to load the bird classifier (and YAMNet if BIRDPERCH_YAMNET=1) during app startup and run one warmup inference so the first user request is faster. Compose defaults this to 1 for birdperch; set 0 for lazy load.",
+      "is_secret": false
+    },
+    {
       "key": "KAGGLE_USERNAME",
       "description": "Kaggle API username (with KAGGLE_KEY) for kagglehub model download on first request.",
       "is_secret": false

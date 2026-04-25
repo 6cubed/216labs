@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import time
 
@@ -15,7 +16,14 @@ from fastapi.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
 
 from .audio_io import load_audio_mono, pad_or_crop
-from .model_runner import ensure_model_loaded, get_expected_samples, model_handle, predict_waveform
+from .model_runner import (
+    ensure_model_loaded,
+    get_expected_samples,
+    is_model_ready,
+    model_handle,
+    predict_waveform,
+    warmup_classifier,
+)
 from .stream_buffer import ChunkRing
 from .taxonomy import (
     ensure_taxonomy_csv,
@@ -23,7 +31,7 @@ from .taxonomy import (
     parse_ebird_taxonomy_csv,
     reset_taxonomy_cache,
 )
-from .yamnet_runner import predict_background
+from .yamnet_runner import ensure_yamnet_loaded, predict_background, warmup_yamnet
 
 
 def _env_int(key: str, default: int) -> int:
@@ -77,11 +85,73 @@ TAXONOMY_PATH = os.environ.get("BIRDPERCH_EBIRD_TAXONOMY_CSV", "").strip() or os
     BASE_DIR, "data", "ebird_taxonomy.csv"
 )
 
+_PRELOAD_LOG = logging.getLogger("uvicorn.error")
+_PRELOAD_META: dict[str, object] = {
+    "enabled": False,
+    "finished": False,
+    "ok": None,
+    "seconds": None,
+    "error": None,
+    "detail": None,
+}
+
+
+def _preload_enabled() -> bool:
+    v = os.environ.get("BIRDPERCH_PRELOAD", "").strip().lower()
+    if not v:
+        return False
+    return v in ("1", "true", "yes", "on")
+
+
+def _sync_preload_models() -> None:
+    """Download/load TF models and run one warmup inference each (blocking thread)."""
+    ensure_model_loaded()
+    warmup_classifier()
+    yamnet_on = os.environ.get("BIRDPERCH_YAMNET", "").strip() in ("1", "true", "yes")
+    if yamnet_on:
+        ensure_yamnet_loaded()
+        warmup_yamnet(TARGET_SR)
+
 
 @app.on_event("startup")
-def _startup_taxonomy_prefetch():
-    # Best-effort: download a taxonomy CSV into /app/data if missing so results are human-readable.
+async def _startup_bird_perch():
+    # Best-effort: taxonomy CSV for human-readable names.
     ensure_taxonomy_csv(TAXONOMY_PATH)
+
+    mock = os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes")
+    if mock:
+        _PRELOAD_META.update(
+            enabled=False,
+            finished=True,
+            ok=True,
+            seconds=0.0,
+            error=None,
+            detail="mock",
+        )
+        return
+
+    if not _preload_enabled():
+        _PRELOAD_META.update(
+            enabled=False,
+            finished=True,
+            ok=True,
+            seconds=0.0,
+            error=None,
+            detail="disabled",
+        )
+        return
+
+    _PRELOAD_META["enabled"] = True
+    t0 = time.perf_counter()
+    try:
+        await asyncio.to_thread(_sync_preload_models)
+        dt = time.perf_counter() - t0
+        _PRELOAD_LOG.info("BIRDPERCH_PRELOAD finished in %.1fs", dt)
+        _PRELOAD_META.update(finished=True, ok=True, seconds=dt, error=None, detail=None)
+    except Exception as e:
+        dt = time.perf_counter() - t0
+        _PRELOAD_LOG.warning("BIRDPERCH_PRELOAD failed after %.1fs: %s", dt, e, exc_info=True)
+        _PRELOAD_META.update(finished=True, ok=False, seconds=dt, error=str(e), detail=None)
 
 
 def _identify_payload(y: np.ndarray) -> dict:
@@ -125,8 +195,13 @@ def healthz():
 @app.get("/api/health")
 def health():
     mock = os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes")
-    # Do not download the TF model on health checks — first /api/identify loads it.
-    return {"ok": True, "model": "mock" if mock else "lazy", "mock": mock}
+    if mock:
+        model_state = "mock"
+    elif is_model_ready():
+        model_state = "ready"
+    else:
+        model_state = "lazy"
+    return {"ok": True, "model": model_state, "mock": mock}
 
 
 @app.get("/api/info")
@@ -149,6 +224,14 @@ def info():
             "ring_sec": STREAM_RING_SEC,
             "max_chunk_bytes": STREAM_MAX_CHUNK,
             "max_webm_bytes": STREAM_MAX_WEBM_ACC,
+        },
+        "preload": {
+            "enabled": bool(_PRELOAD_META.get("enabled")),
+            "finished": bool(_PRELOAD_META.get("finished")),
+            "ok": _PRELOAD_META.get("ok"),
+            "seconds": _PRELOAD_META.get("seconds"),
+            "error": _PRELOAD_META.get("error"),
+            "detail": _PRELOAD_META.get("detail"),
         },
     }
 
