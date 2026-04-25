@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
 
 from .audio_io import load_audio_mono, pad_or_crop
-from .model_runner import ensure_model_loaded, get_expected_samples, predict_waveform
+from .model_runner import ensure_model_loaded, get_expected_samples, model_handle, predict_waveform
 from .stream_buffer import ChunkRing
 from .taxonomy import (
     ensure_taxonomy_csv,
@@ -104,6 +104,29 @@ def health():
     mock = os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes")
     # Do not download the TF model on health checks — first /api/identify loads it.
     return {"ok": True, "model": "mock" if mock else "lazy", "mock": mock}
+
+
+@app.get("/api/info")
+def info():
+    """Runtime info for debugging model/threshold/config issues."""
+    mock = os.environ.get("BIRDPERCH_MOCK", "").strip() in ("1", "true", "yes")
+    present, resolved = ensure_taxonomy_csv(TAXONOMY_PATH)
+    yamnet_on = os.environ.get("BIRDPERCH_YAMNET", "").strip() in ("1", "true", "yes")
+    return {
+        "ok": True,
+        "mock": mock,
+        "model_handle": model_handle(),
+        "expected_samples": get_expected_samples(),
+        "taxonomy_present": present,
+        "taxonomy_path": resolved,
+        "yamnet": yamnet_on,
+        "stream": {
+            "infer_sec": STREAM_INFER_SEC,
+            "ring_sec": STREAM_RING_SEC,
+            "max_chunk_bytes": STREAM_MAX_CHUNK,
+            "max_webm_bytes": STREAM_MAX_WEBM_ACC,
+        },
+    }
 
 
 @app.get("/api/taxonomy")
