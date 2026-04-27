@@ -1,0 +1,17 @@
+[This file uses a tiny run-length format.]
+
+Each non-empty line is: <count>:<char>
+
+Decode by repeating <char> count times and concatenating in order.
+
+1:t
+1:v
+1:_
+1:i
+1:s
+1:_
+1:l
+1:o
+1:u
+1:d
+

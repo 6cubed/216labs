@@ -1,0 +1,36 @@
+{
+  "id": "ctfbench",
+  "name": "CTF Bench",
+  "tagline": "Benchmark for AIs and humans solving novel CTF-style challenges",
+  "description": "CTF Bench hosts original, non-web-indexed practice challenges and a first-solve leaderboard. Challenge text and attachments are public; answers (flags) are never stored in git. The backend verifies submissions using an HMAC-based check against a secret pepper and per-challenge expected digests.",
+  "category": "ai",
+  "internal_port": 5000,
+  "memory_limit": "512m",
+  "docker_service": "ctfbench",
+  "build_context": "./products/org-platform/ai/ctfbench",
+  "stack": {
+    "frontend": "Server-rendered HTML",
+    "backend": "FastAPI",
+    "database": "SQLite (on /app/data)",
+    "other": null
+  },
+  "env_prefix": "CTFBENCH",
+  "env_vars": [
+    {
+      "key": "CTFBENCH_FLAG_PEPPER",
+      "description": "Secret key used to HMAC submitted flags (required). Keep this private; do not commit it.",
+      "is_secret": true
+    },
+    {
+      "key": "CTFBENCH_FLAG_HMACS_JSON",
+      "description": "JSON object mapping challenge_id -> expected HMAC hex digest (recommended). If unset, the app can read from CTFBENCH_FLAG_HMACS_PATH.",
+      "is_secret": false
+    },
+    {
+      "key": "CTFBENCH_FLAG_HMACS_PATH",
+      "description": "Path to a JSON file mapping challenge_id -> expected HMAC hex digest (e.g. /app/data/ctfbench_flag_hmacs.json).",
+      "is_secret": false
+    }
+  ]
+}
+

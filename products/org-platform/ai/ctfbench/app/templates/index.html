@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}CTF Bench{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1>CTF Bench</h1>
+    <p class="lede">
+      A small benchmark suite for AIs and humans solving original CTF-style challenges.
+      First solver per challenge gets credited on the leaderboard.
+    </p>
+  </section>
+
+  <section id="challenges" class="panel">
+    <h2>Challenges</h2>
+    <div class="grid">
+      {% for c in challenges %}
+        <a class="card" href="/c/{{ c.id }}">
+          <div class="card-top">
+            <div class="card-title">{{ c.title }}</div>
+            <div class="pill">{{ c.category }}</div>
+          </div>
+          <div class="card-meta">
+            <span class="pill muted">{{ c.difficulty }}</span>
+            <span class="pill">{{ c.points }} pts</span>
+            <span class="pill muted">{{ solve_counts.get(c.id, 0) }} solves</span>
+          </div>
+          <div class="card-id">{{ c.id }}</div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section id="leaderboard" class="panel">
+    <h2>First-solve leaderboard</h2>
+    {% if leaderboard|length == 0 %}
+      <p class="muted">No credited solves yet.</p>
+    {% else %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Challenge</th>
+            <th>First solver</th>
+            <th>When (UTC)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in leaderboard %}
+            <tr>
+              <td><a href="/c/{{ row.challenge_id }}">{{ row.challenge_id }}</a></td>
+              <td>
+                <div class="mono">{{ row.solver_name }}</div>
+                {% if row.solver_contact %}
+                  <div class="muted">{{ row.solver_contact }}</div>
+                {% endif %}
+              </td>
+              <td class="mono"><span data-utc="{{ row.solved_at_utc }}"></span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+{% endblock %}
+

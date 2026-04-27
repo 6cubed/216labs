@@ -1,0 +1,12 @@
+# Stack VM program
+# Instructions: PUSH n, ADD, XOR, MUL, MOD n
+#
+# Evaluate left to right using a stack. Operators pop 2, push result.
+
+PUSH 17
+PUSH 93
+XOR
+PUSH 11
+MUL
+MOD 1000
+

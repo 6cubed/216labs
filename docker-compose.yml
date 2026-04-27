@@ -959,6 +959,24 @@ services:
       - "8000"
     mem_limit: 2048m
 
+  # ── CTF Bench (original CTF benchmark + leaderboard) ───────────
+  ctfbench:
+    image: 216labs/ctfbench:latest
+    pull_policy: never
+    build: ./products/org-platform/ai/ctfbench
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - CTFBENCH_FLAG_PEPPER=${CTFBENCH_FLAG_PEPPER:-}
+      - CTFBENCH_FLAG_HMACS_JSON=${CTFBENCH_FLAG_HMACS_JSON:-}
+      - CTFBENCH_FLAG_HMACS_PATH=${CTFBENCH_FLAG_HMACS_PATH:-/app/data/ctfbench_flag_hmacs.json}
+      - CTFBENCH_DB_PATH=${CTFBENCH_DB_PATH:-/app/data/ctfbench.db}
+    volumes:
+      - ./products/org-platform/ai/ctfbench/data:/app/data
+    expose:
+      - "5000"
+    mem_limit: 512m
+
   # ── Avatar (LLM + TTS talking head) ────────────────────────────
   avatar:
     image: 216labs/avatar:latest

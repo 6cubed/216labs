@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}CTF Bench{% endblock %}</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wrap">
+        <a class="brand" href="/">CTF Bench</a>
+        <nav class="nav">
+          <a href="/#challenges">Challenges</a>
+          <a href="/#leaderboard">Leaderboard</a>
+          <a href="/api/challenges">API</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="foot wrap">
+      <div class="muted">
+        Challenge text is public. Flags are verified server-side and are not stored in git.
+      </div>
+    </footer>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+

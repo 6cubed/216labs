@@ -1,0 +1,12 @@
+[chunk:03]
+bench.
+
+[chunk:01]
+This transcript was torn for ctf
+
+[chunk:04]
+Reassemble then hash.
+
+[chunk:02]
+Then compute sha256 of the full message.
+

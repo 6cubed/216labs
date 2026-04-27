@@ -9,6 +9,7 @@ tortellini
 onefit
 aiart
 birdperch
+ctfbench
 activator
 cron-runner
 ytsync

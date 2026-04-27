@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ challenge.title }} — CTF Bench{% endblock %}
+
+{% block content %}
+  <div class="crumbs">
+    <a href="/">← All challenges</a>
+  </div>
+
+  <section class="panel">
+    <div class="challenge-head">
+      <div>
+        <h1 class="h1">{{ challenge.title }}</h1>
+        <div class="meta">
+          <span class="pill">{{ challenge.category }}</span>
+          <span class="pill muted">{{ challenge.difficulty }}</span>
+          <span class="pill">{{ challenge.points }} pts</span>
+          <span class="pill muted">{{ solve_counts.get(challenge.id, 0) }} solves</span>
+          <span class="pill muted">{{ challenge.id }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="md">
+      {{ challenge.prompt_md | e | replace("\n", "<br/>") | safe }}
+    </div>
+
+    {% if challenge.attachments|length > 0 %}
+      <div class="attachments">
+        <h3>Attachments</h3>
+        <ul>
+          {% for a in challenge.attachments %}
+            <li><a class="mono" href="{{ a.path }}">{{ a.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Submit a flag</h2>
+    <form class="form" data-submit-flag>
+      <input type="hidden" name="challenge_id" value="{{ challenge.id }}" />
+      <label>
+        <div class="label">Name</div>
+        <input name="name" required maxlength="80" placeholder="Your handle" />
+      </label>
+      <label>
+        <div class="label">Contact (optional)</div>
+        <input name="contact" maxlength="120" placeholder="email / URL / @handle" />
+      </label>
+      <label>
+        <div class="label">Flag</div>
+        <input name="flag" required maxlength="256" placeholder="CTFBENCH{...}" class="mono" />
+      </label>
+      <button class="btn primary" type="submit">Submit</button>
+      <div class="status" data-flag-status></div>
+    </form>
+    <div class="muted">
+      Credit goes to the earliest correct submission per challenge.
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>First-solve leaderboard</h2>
+    {% if leaderboard|length == 0 %}
+      <p class="muted">No credited solves yet.</p>
+    {% else %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Challenge</th>
+            <th>First solver</th>
+            <th>When (UTC)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in leaderboard %}
+            <tr>
+              <td><a href="/c/{{ row.challenge_id }}">{{ row.challenge_id }}</a></td>
+              <td>
+                <div class="mono">{{ row.solver_name }}</div>
+                {% if row.solver_contact %}
+                  <div class="muted">{{ row.solver_contact }}</div>
+                {% endif %}
+              </td>
+              <td class="mono"><span data-utc="{{ row.solved_at_utc }}"></span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+{% endblock %}
+
