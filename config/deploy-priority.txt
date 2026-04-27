@@ -15,6 +15,7 @@ angelwatcher
 landing
 aiart
 birdperch
+ctfbench
 bugbounty
 blog
 marketing
