@@ -378,10 +378,37 @@ def _tg_thread_kw() -> dict:
 
 
 def _set_tg_reply_thread_from_message(msg: dict | None) -> None:
+    """Track forum topic for outgoing sends.
+
+    Never set topic id to None just because ``message_thread_id`` is absent — Telegram
+    often omits it on some updates, which used to wipe ``.chat_thread_id`` and made
+    confirmation photos/messages fail or land in the wrong place.
+    """
     global tg_reply_thread_id
-    tid = msg.get("message_thread_id") if msg else None
-    tg_reply_thread_id = tid
-    _persist_tg_reply_thread()
+    if not msg:
+        return
+    chat = msg.get('chat') or {}
+    cid = chat.get('id')
+    ctype = chat.get('type')
+    tid = msg.get('message_thread_id')
+
+    with chat_id_lock:
+        prev_cid = chat_id
+
+    if prev_cid is not None and cid is not None and prev_cid != cid:
+        if tg_reply_thread_id is not None:
+            tg_reply_thread_id = None
+            _persist_tg_reply_thread()
+
+    if ctype == 'private' or (cid is not None and cid > 0):
+        if tg_reply_thread_id is not None:
+            tg_reply_thread_id = None
+            _persist_tg_reply_thread()
+        return
+
+    if tid is not None:
+        tg_reply_thread_id = int(tid)
+        _persist_tg_reply_thread()
 
 
 def _set_tg_reply_thread_from_callback(callback: dict | None) -> None:
@@ -389,8 +416,10 @@ def _set_tg_reply_thread_from_callback(callback: dict | None) -> None:
     m = (callback or {}).get("message") or {}
     if not m:
         return
-    tg_reply_thread_id = m.get("message_thread_id")
-    _persist_tg_reply_thread()
+    tid = m.get('message_thread_id')
+    if tid is not None:
+        tg_reply_thread_id = int(tid)
+        _persist_tg_reply_thread()
 
 
 def _clear_tg_reply_thread() -> None:
@@ -421,6 +450,36 @@ def tg_call(method, **params):
         code = result.get('error_code', '?')
         print(f"[telegram] API error: {method} -> {code} {desc}")
     return result
+
+
+def tg_call_with_backoff(method: str, *, max_attempts: int = 4, **params):
+    """JSON Telegram API calls with retries on network errors and 429 flood control."""
+    last = None
+    for attempt in range(max_attempts):
+        try:
+            last = tg_call(method, **params)
+        except Exception as e:
+            print(f"[telegram] API exception: {method} -> {e}", flush=True)
+            last = None
+            if attempt + 1 >= max_attempts:
+                return None
+            time.sleep(min(2 * (attempt + 1), 15))
+            continue
+        if isinstance(last, dict) and last.get('ok'):
+            return last
+        code = last.get('error_code') if isinstance(last, dict) else None
+        if code == 429 and attempt + 1 < max_attempts:
+            retry_after = 2
+            params_meta = last.get('parameters') if isinstance(last, dict) else None
+            if isinstance(params_meta, dict) and 'retry_after' in params_meta:
+                try:
+                    retry_after = int(params_meta['retry_after']) + 1
+                except (TypeError, ValueError):
+                    pass
+            time.sleep(min(max(retry_after, 1), 60))
+            continue
+        return last
+    return last
 
 
 def tg_typing(cid):
@@ -563,26 +622,48 @@ def tg_send_photo_bytes(cid, photo_bytes, filename='screenshot.png', caption=Non
 
 
 def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='screenshot.png', caption=None):
-    """Send photo with inline keyboard buttons."""
+    """Send photo with inline keyboard buttons (retries on 429 / transient errors)."""
     if not cid or not photo_bytes:
         return None
-    try:
-        data = {'chat_id': cid}
-        data.update(_tg_thread_kw())
-        if caption:
-            data['caption'] = caption[:1024]
-        data['reply_markup'] = json.dumps({'inline_keyboard': keyboard})
-        resp = requests.post(f"{TG_API}/sendPhoto", data=data,
-                             files={'photo': (filename, photo_bytes, 'image/png')}, timeout=30)
-        result = resp.json()
-        if not result.get('ok'):
-            desc = result.get('description', '?')
-            code = result.get('error_code', '?')
-            print(f"[telegram] sendPhoto+keyboard failed: {code} {desc}  ({len(photo_bytes)} bytes)")
-        return result
-    except Exception as e:
-        print(f"[telegram] sendPhoto+keyboard error: {e}")
-        return None
+    data_base = {'chat_id': cid}
+    data_base.update(_tg_thread_kw())
+    if caption:
+        data_base['caption'] = caption[:1024]
+    data_base['reply_markup'] = json.dumps({'inline_keyboard': keyboard})
+    last = None
+    for attempt in range(4):
+        try:
+            resp = requests.post(
+                f"{TG_API}/sendPhoto",
+                data=dict(data_base),
+                files={'photo': (filename, photo_bytes, 'image/png')},
+                timeout=30,
+            )
+            last = resp.json()
+        except Exception as e:
+            print(f"[telegram] sendPhoto+keyboard error: {e}")
+            last = None
+            if attempt + 1 >= 4:
+                return None
+            time.sleep(min(2 * (attempt + 1), 15))
+            continue
+        if isinstance(last, dict) and last.get('ok'):
+            return last
+        desc = last.get('description', '?') if isinstance(last, dict) else '?'
+        code = last.get('error_code', '?') if isinstance(last, dict) else '?'
+        print(f"[telegram] sendPhoto+keyboard failed: {code} {desc}  ({len(photo_bytes)} bytes)")
+        if code == 429 and attempt + 1 < 4:
+            params_meta = last.get('parameters') if isinstance(last, dict) else None
+            retry_after = 2
+            if isinstance(params_meta, dict) and 'retry_after' in params_meta:
+                try:
+                    retry_after = int(params_meta['retry_after']) + 1
+                except (TypeError, ValueError):
+                    pass
+            time.sleep(min(max(retry_after, 1), 60))
+            continue
+        return last
+    return last
 
 
 POCKET_CURSOR_COMMANDS = [
@@ -3351,21 +3432,31 @@ def monitor_thread():
                                 'text': btn['label'],
                                 'callback_data': f"btn_{btn['index']}:{callback_token}"
                             }])
-                        if png:
-                            print(f"[monitor] Forwarding CONFIRMATION with keyboard: {text}")
-                            result = tg_send_photo_bytes_with_keyboard(
-                                cid, png, keyboard,
-                                filename='confirmation.png', caption=f"⚡ {text}")
-                        else:
-                            print(f"[monitor] Forwarding CONFIRMATION as text: {text}")
-                            result = tg_call(
-                                'sendMessage',
-                                chat_id=cid,
-                                text=f"⚡ {text}",
-                                reply_markup={'inline_keyboard': keyboard},
-                                **_tg_thread_kw(),
-                            )
-                        ok = isinstance(result, dict) and result.get('ok')
+                        ok = False
+                        result = None
+                        try:
+                            if png:
+                                print(f"[monitor] Forwarding CONFIRMATION with keyboard: {text}")
+                                result = tg_send_photo_bytes_with_keyboard(
+                                    cid, png, keyboard,
+                                    filename='confirmation.png', caption=f"⚡ {text}")
+                            else:
+                                print(f"[monitor] Forwarding CONFIRMATION as text: {text}")
+                                result = tg_call_with_backoff(
+                                    'sendMessage',
+                                    chat_id=cid,
+                                    text=f"⚡ {text}",
+                                    reply_markup={'inline_keyboard': keyboard},
+                                    **_tg_thread_kw(),
+                                )
+                            ok = isinstance(result, dict) and result.get('ok')
+                        except Exception as e:
+                            print(f"[monitor] confirmation send exception: {e}", flush=True)
+                            ok = False
+                        finally:
+                            if not ok:
+                                with confirm_token_map_lock:
+                                    confirm_token_map.pop(callback_token, None)
                         if ok:
                             with pending_confirms_lock:
                                 pending_confirms[tool_id] = {
@@ -3373,8 +3464,6 @@ def monitor_thread():
                                     'buttons': buttons,
                                 }
                         else:
-                            with confirm_token_map_lock:
-                                confirm_token_map.pop(callback_token, None)
                             print(
                                 "[monitor] confirmation Telegram send failed; "
                                 "cleared callback token — will retry next tick",
