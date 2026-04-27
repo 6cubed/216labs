@@ -163,7 +163,7 @@ fi
 
 # Cap catalogue size (deploy_enabled apps considered after bootstrap). Override with DEPLOY_MAX_APPS.
 # See "Compose catalogue vs pull subset" below for DEPLOY_RUNTIME_APPS vs DEPLOY_SHOWROOM.
-MAX_APPS="${DEPLOY_MAX_APPS:-10}"
+MAX_APPS="${DEPLOY_MAX_APPS:-11}"
 # Priority order from config (scale: edit config/deploy-priority.txt, not this script)
 PRIORITY_FILE="config/deploy-priority.txt"
 if [ -f "$PRIORITY_FILE" ]; then
