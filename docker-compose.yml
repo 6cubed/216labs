@@ -194,6 +194,24 @@ services:
       - "3000"
     mem_limit: 256m
 
+  # ── WebGPU Trainer (mesh coordinator + worker page) ────────────
+  webgputrainer:
+    image: 216labs/webgputrainer:latest
+    pull_policy: never
+    build: ./products/org-platform/ai/webgputrainer
+    restart: unless-stopped
+    environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
+      - PORT=3000
+      - NODE_ENV=production
+      - WEBGPUTRAINER_ADMIN_KEY=${WEBGPUTRAINER_ADMIN_KEY:-}
+      - WEBGPUTRAINER_DATA_DIR=/app/data
+    volumes:
+      - ./products/org-platform/ai/webgputrainer/data:/app/data
+    expose:
+      - "3000"
+    mem_limit: 256m
+
   # ── PipeSecure ───────────────────────────────────────────────
   pipesecure:
     image: 216labs/pipesecure:latest

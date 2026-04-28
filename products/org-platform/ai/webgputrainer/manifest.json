@@ -1,0 +1,25 @@
+{
+  "id": "webgputrainer",
+  "name": "WebGPU Trainer",
+  "tagline": "Kick off training runs on a mesh of volunteer WebGPU workers",
+  "description": "Coordinator UI + API for orchestrating simple training/compute jobs across a mesh of browser workers exposing WebGPU. MVP: run creation, worker registration/heartbeats, task claiming and reporting.",
+  "category": "internal",
+  "internal_port": 3000,
+  "memory_limit": "256m",
+  "docker_service": "webgputrainer",
+  "build_context": "./products/org-platform/ai/webgputrainer",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": "Route handlers (JSON API)",
+    "database": "File-backed JSON (mounted volume)",
+    "other": "Browser workers + WebGPU"
+  },
+  "env_vars": [
+    {
+      "key": "WEBGPUTRAINER_ADMIN_KEY",
+      "description": "Optional Bearer token required for admin endpoints (creating runs, enqueuing tasks). If unset, admin endpoints are open (demo mode).",
+      "is_secret": true
+    }
+  ]
+}
+
