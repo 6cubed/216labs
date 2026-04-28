@@ -198,7 +198,9 @@ services:
   webgputrainer:
     image: 216labs/webgputrainer:latest
     pull_policy: never
-    build: ./products/org-platform/ai/webgputrainer
+    build:
+      context: .
+      dockerfile: ./products/org-platform/ai/webgputrainer/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

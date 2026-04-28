@@ -7,7 +7,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "webgputrainer",
-  "build_context": "./products/org-platform/ai/webgputrainer",
+  "build_context": ".",
+  "build_dockerfile": "products/org-platform/ai/webgputrainer/Dockerfile",
   "stack": {
     "frontend": "Next.js (App Router)",
     "backend": "Route handlers (JSON API)",

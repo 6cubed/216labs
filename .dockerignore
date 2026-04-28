@@ -1,0 +1,16 @@
+.git
+.github
+.cursor
+.vscode
+
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/build
+**/.DS_Store
+
+# App data volumes / local artifacts
+**/data
+quality-reports
+
