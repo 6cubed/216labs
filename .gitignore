@@ -17,3 +17,9 @@ __pycache__/
 .deploy-hashes
 client_secret.json
 .worktree-clean/
+
+# Local tooling / OS noise
+quality-reports/
+.trufflehog-history.jsonl
+._*
+internal/admin/pocket-cursor-bridge/.auto_approve_prompts

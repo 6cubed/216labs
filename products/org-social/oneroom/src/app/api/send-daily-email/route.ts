@@ -1,3 +1,5 @@
+import { AppError, isAppError } from "@216labs/errors";
+import { nextErrorResponse } from "@216labs/errors/next";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import OpenAI from "openai";
@@ -6,13 +8,23 @@ import { buildFashionLinks } from "@/lib/openai";
 
 function getOpenAI(): OpenAI {
   const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY is not configured");
+  if (!key) {
+    throw AppError.serviceUnavailable(
+      "OPENAI_CONFIG",
+      "OPENAI_API_KEY is not configured",
+    );
+  }
   return new OpenAI({ apiKey: key });
 }
 
 function getResend(): Resend {
   const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error("RESEND_API_KEY is not configured");
+  if (!key) {
+    throw AppError.serviceUnavailable(
+      "RESEND_CONFIG",
+      "RESEND_API_KEY is not configured",
+    );
+  }
   return new Resend(key);
 }
 
@@ -246,4 +258,10 @@ export async function POST(req: NextRequest) {
 
   const sent = results.filter((r) => r.success).length;
   return NextResponse.json({ sent, total: users.length, results });
+  } catch (e) {
+    if (isAppError(e)) {
+      return nextErrorResponse(e);
+    }
+    throw e;
+  }
 }

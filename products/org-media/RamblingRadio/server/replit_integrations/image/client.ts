@@ -1,3 +1,4 @@
+import { AppError } from "@216labs/errors";
 import { GoogleGenAI, Modality } from "@google/genai";
 
 // This is using Replit's AI Integrations service, which provides Gemini-compatible API access without requiring your own Gemini API key.
@@ -28,7 +29,7 @@ export async function generateImage(prompt: string): Promise<string> {
   );
 
   if (!imagePart?.inlineData?.data) {
-    throw new Error("No image data in response");
+    throw AppError.badGateway("NO_IMAGE_DATA", "No image data in model response");
   }
 
   const mimeType = imagePart.inlineData.mimeType || "image/png";

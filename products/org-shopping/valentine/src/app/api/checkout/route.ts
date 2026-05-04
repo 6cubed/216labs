@@ -1,3 +1,5 @@
+import { AppError, isAppError } from "@216labs/errors";
+import { nextErrorResponse } from "@216labs/errors/next";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { v4 as uuidv4 } from "uuid";
@@ -5,7 +7,12 @@ import { getCard, createOrder } from "@/lib/db";
 
 function getStripe(): Stripe {
   const key = process.env.VALENTINE_STRIPE_SECRET_KEY;
-  if (!key) throw new Error("VALENTINE_STRIPE_SECRET_KEY is not set");
+  if (!key) {
+    throw AppError.serviceUnavailable(
+      "STRIPE_CONFIG",
+      "VALENTINE_STRIPE_SECRET_KEY is not set",
+    );
+  }
   return new Stripe(key);
 }
 
@@ -69,6 +76,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
+    if (isAppError(err)) {
+      return nextErrorResponse(err);
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[checkout]", message);
     return NextResponse.json({ error: message }, { status: 500 });

@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@216labs/errors": "file:../../../packages/errors",
     "better-sqlite3": "^11.9.1",
     "next": "16.1.6",
     "react": "19.2.3",

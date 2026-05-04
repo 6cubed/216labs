@@ -13,7 +13,10 @@ from pathlib import Path
 
 import flask
 
+from http_errors import AppError, register_flask_error_handlers
+
 app = flask.Flask(__name__)
+register_flask_error_handlers(app)
 app.secret_key = os.environ.get("MEDIATE_SECRET_KEY") or "dev-insecure-change-me"
 
 DATA_DIR = os.environ.get("MEDIATE_DATA_DIR", "/app/data")
@@ -229,7 +232,7 @@ def create():
 def invite(token: str):
     token = (token or "").strip()
     if not re.fullmatch(r"[a-f0-9]+", token):
-        return flask.abort(404)
+        return flask.render_template("invite_missing.html"), 404
 
     with get_db() as conn:
         row = conn.execute(
@@ -289,16 +292,16 @@ def room(room_id: str):
 @app.route("/api/room/<room_id>/state")
 def api_state(room_id: str):
     if not re.fullmatch(r"[a-f0-9]{32}", room_id):
-        return flask.jsonify({"error": "bad id"}), 400
+        raise AppError.bad_request("BAD_ROOM_ID", "Invalid room id")
 
     party = _resolve_party(room_id)
     if not party:
-        return flask.jsonify({"error": "unauthorized"}), 401
+        raise AppError.unauthorized("NOT_IN_ROOM", "Not a member of this room")
 
     with get_db() as conn:
         row = _room_row(conn, room_id)
         if not row:
-            return flask.jsonify({"error": "not found"}), 404
+            raise AppError.not_found("ROOM_NOT_FOUND", "Room not found")
 
         rows = conn.execute(
             "SELECT id, from_party, raw_text, mediated_text, created_at FROM messages WHERE room_id = ? ORDER BY id ASC",
@@ -334,18 +337,18 @@ def api_state(room_id: str):
 @app.route("/api/room/<room_id>/send", methods=["POST"])
 def api_send(room_id: str):
     if not re.fullmatch(r"[a-f0-9]{32}", room_id):
-        return flask.jsonify({"error": "bad id"}), 400
+        raise AppError.bad_request("BAD_ROOM_ID", "Invalid room id")
 
     party = _resolve_party(room_id)
     if not party:
-        return flask.jsonify({"error": "unauthorized"}), 401
+        raise AppError.unauthorized("NOT_IN_ROOM", "Not a member of this room")
 
     body = flask.request.get_json(silent=True) or {}
     raw = (body.get("text") or "").strip()
     if not raw:
-        return flask.jsonify({"error": "empty text"}), 400
+        raise AppError.bad_request("EMPTY_TEXT", "Message text is required")
     if len(raw) > 8000:
-        return flask.jsonify({"error": "too long"}), 400
+        raise AppError.bad_request("TEXT_TOO_LONG", "Message exceeds maximum length")
 
     recipient = "b" if party == "a" else "a"
 
@@ -354,7 +357,7 @@ def api_send(room_id: str):
         with get_db() as conn:
             row = _room_row(conn, room_id)
             if not row:
-                return flask.jsonify({"error": "not found"}), 404
+                raise AppError.not_found("ROOM_NOT_FOUND", "Room not found")
 
             mediator_mode = (row["mediator_mode"] or "server").strip().lower()
             if mediator_mode not in ("server", "device"):
@@ -369,16 +372,14 @@ def api_send(room_id: str):
             if mediator_mode == "device":
                 mediated = (body.get("mediated_text") or "").strip()
                 if not mediated:
-                    return (
-                        flask.jsonify(
-                            {
-                                "error": "mediated_text required for on-device mediator rooms",
-                            }
-                        ),
-                        400,
+                    raise AppError.bad_request(
+                        "MEDIATED_TEXT_REQUIRED",
+                        "mediated_text is required for on-device mediator rooms",
                     )
                 if len(mediated) > 8000:
-                    return flask.jsonify({"error": "mediated text too long"}), 400
+                    raise AppError.bad_request(
+                        "MEDIATED_TEXT_TOO_LONG", "Mediated text exceeds maximum length"
+                    )
             else:
                 mediated = _openai_mediates(
                     goal=row["goal"],

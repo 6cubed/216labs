@@ -1,3 +1,5 @@
+import { AppError } from "@216labs/errors";
+import { nextErrorResponse } from "@216labs/errors/next";
 import { NextRequest, NextResponse } from "next/server";
 
 type WikipediaLink = {
@@ -8,7 +10,10 @@ type WikipediaLink = {
 function titleFromInput(seed: string): string {
   const trimmed = seed.trim();
   if (!trimmed) {
-    throw new Error("Provide a Wikipedia URL or page title.");
+    throw AppError.badRequest(
+      "MISSING_SEED",
+      "Provide a Wikipedia URL or page title.",
+    );
   }
 
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
@@ -16,19 +21,28 @@ function titleFromInput(seed: string): string {
     try {
       parsed = new URL(trimmed);
     } catch {
-      throw new Error("Invalid URL format.");
+      throw AppError.badRequest("INVALID_URL", "Invalid URL format.");
     }
     if (!parsed.hostname.endsWith("wikipedia.org")) {
-      throw new Error("Only wikipedia.org URLs are supported.");
+      throw AppError.badRequest(
+        "UNSUPPORTED_HOST",
+        "Only wikipedia.org URLs are supported.",
+      );
     }
     const marker = "/wiki/";
     const idx = parsed.pathname.indexOf(marker);
     if (idx === -1) {
-      throw new Error("Expected a /wiki/<title> URL.");
+      throw AppError.badRequest(
+        "WIKI_PATH_REQUIRED",
+        "Expected a /wiki/<title> URL.",
+      );
     }
     const raw = parsed.pathname.slice(idx + marker.length);
     if (!raw) {
-      throw new Error("Missing page title in URL.");
+      throw AppError.badRequest(
+        "MISSING_TITLE",
+        "Missing page title in URL.",
+      );
     }
     return decodeURIComponent(raw).replace(/_/g, " ");
   }
@@ -70,8 +84,7 @@ export async function GET(req: NextRequest) {
   try {
     seedTitle = titleFromInput(seed);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Invalid input";
-    return new NextResponse(message, { status: 400 });
+    return nextErrorResponse(err);
   }
 
   const queryUrl =

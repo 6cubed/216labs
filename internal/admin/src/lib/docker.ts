@@ -1,4 +1,5 @@
 import Dockerode from "dockerode";
+import { AppError } from "@216labs/errors";
 import { spawn } from "child_process";
 import { existsSync } from "fs";
 import { join } from "path";
@@ -216,22 +217,26 @@ export async function pullLatestGhcrForService(
 ): Promise<void> {
   const svc = dockerService.trim().toLowerCase();
   if (!svc) {
-    throw new Error("Missing docker service name");
+    throw AppError.badRequest("MISSING_SERVICE", "Missing docker service name");
   }
   if (isGhcrSyncExcludedService(svc)) {
-    throw new Error(
-      `${dockerService} is infrastructure — use a full deploy to change it`
+    throw AppError.conflict(
+      "INFRA_SERVICE",
+      `${dockerService} is infrastructure — use a full deploy to change it`,
     );
   }
   if (!existsSync(SOCKET_PATH)) {
-    throw new Error(
-      "Docker socket not available (run admin on the host stack with /var/run/docker.sock mounted)"
+    throw AppError.serviceUnavailable(
+      "NO_DOCKER_SOCKET",
+      "Docker socket not available (run admin on the host stack with /var/run/docker.sock mounted)",
     );
   }
   const root = syncProjectRoot();
   const script = join(root, "scripts/droplet-ghcr-sync.sh");
   if (!existsSync(script)) {
-    throw new Error(`GHCR sync script not found at ${script}`);
+    throw new AppError(500, "SCRIPT_MISSING", `GHCR sync script not found at ${script}`, {
+      exposeMessage: true,
+    });
   }
   await new Promise<void>((resolve, reject) => {
     let stdout = "";

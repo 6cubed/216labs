@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@216labs/errors": "file:../../../packages/errors",
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.6.2",

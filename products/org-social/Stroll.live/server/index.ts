@@ -1,3 +1,4 @@
+import { expressErrorHandler } from "@216labs/errors/express";
 import express from "express";
 import cors from "cors";
 import fs from "fs";
@@ -22,6 +23,8 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 
 registerRoutes(app);
+
+app.use(expressErrorHandler());
 
 if (process.env.NODE_ENV === "production") {
   const publicDir = path.resolve(__dirname, "../dist/public");

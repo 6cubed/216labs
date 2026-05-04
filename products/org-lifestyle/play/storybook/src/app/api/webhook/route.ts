@@ -1,3 +1,5 @@
+import { AppError, isAppError } from "@216labs/errors";
+import { nextErrorResponse } from "@216labs/errors/next";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { updateOrderStatus, getBook } from "@/lib/db";
@@ -41,7 +43,12 @@ async function sendOrderEmail(session: Stripe.Checkout.Session, bookTitle: strin
 
 function getStripe(): Stripe {
   const key = process.env.STORYBOOK_STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STORYBOOK_STRIPE_SECRET_KEY is not set");
+  if (!key) {
+    throw AppError.serviceUnavailable(
+      "STRIPE_CONFIG",
+      "STORYBOOK_STRIPE_SECRET_KEY is not set",
+    );
+  }
   return new Stripe(key);
 }
 
@@ -63,6 +70,9 @@ export async function POST(req: NextRequest) {
   try {
     event = getStripe().webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
+    if (isAppError(err)) {
+      return nextErrorResponse(err);
+    }
     const message = err instanceof Error ? err.message : "Webhook verification failed";
     console.error("[webhook] Signature verification failed:", message);
     return NextResponse.json({ error: message }, { status: 400 });

@@ -1,3 +1,5 @@
+import { isAppError } from "@216labs/errors";
+import { nextErrorResponse } from "@216labs/errors/next";
 import { NextRequest, NextResponse } from "next/server";
 import {
   analyzeAndDesign,
@@ -50,6 +52,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ analysis, schemes: schemesWithImages });
   } catch (err) {
+    if (isAppError(err)) {
+      return nextErrorResponse(err);
+    }
     console.error("Designer API error:", err);
     const message = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json({ error: message }, { status: 500 });

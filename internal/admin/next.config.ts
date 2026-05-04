@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  transpilePackages: ["@216labs/errors"],
   serverExternalPackages: ["dockerode", "docker-modem", "ssh2"],
   async headers() {
     return [

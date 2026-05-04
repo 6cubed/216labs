@@ -1,3 +1,4 @@
+import { AppError } from "@216labs/errors";
 import OpenAI, { toFile } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -9,13 +10,23 @@ function getActiveProvider(): LLMProvider {
 
 function getOpenAIClient(apiKey?: string): OpenAI {
   const key = apiKey || process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OpenAI API key is required. Please enter your key above.");
+  if (!key) {
+    throw AppError.badRequest(
+      "OPENAI_KEY_REQUIRED",
+      "OpenAI API key is required. Please enter your key above.",
+    );
+  }
   return new OpenAI({ apiKey: key });
 }
 
 function getGeminiClient(apiKey?: string): GoogleGenerativeAI {
   const key = apiKey || process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("Gemini API key is required. Please enter your key above.");
+  if (!key) {
+    throw AppError.badRequest(
+      "GEMINI_KEY_REQUIRED",
+      "Gemini API key is required. Please enter your key above.",
+    );
+  }
   return new GoogleGenerativeAI(key);
 }
 

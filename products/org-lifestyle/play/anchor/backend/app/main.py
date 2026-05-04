@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from .database import Base, engine
 from .routers import auth, posts
+from .http_errors import register_fastapi_exception_handlers
 
 
 @asynccontextmanager
@@ -33,6 +34,8 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(posts.router, prefix="/api/v1/posts", tags=["posts"])
+
+register_fastapi_exception_handlers(app)
 
 
 @app.get("/api/v1/health", tags=["health"])

@@ -1,3 +1,4 @@
+import { AppError } from "@216labs/errors";
 import { randomBytes } from "crypto";
 import { getProduct } from "./catalog";
 
@@ -35,10 +36,10 @@ export function checkoutDemo(input: {
 
   const product = getProduct(sku);
   if (!product) {
-    throw new Error("unknown_sku");
+    throw AppError.notFound("UNKNOWN_SKU", "Unknown product sku");
   }
   if (!product.inStock) {
-    throw new Error("out_of_stock");
+    throw AppError.conflict("OUT_OF_STOCK", "Product is out of stock");
   }
   const qty = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
   const lineTotal = product.price * qty;

@@ -1,3 +1,4 @@
+import { AppError } from "@216labs/errors";
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
@@ -14,8 +15,9 @@ function injectGa4IntoHtml(html: string): string {
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
   if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+    throw AppError.serviceUnavailable(
+      "MISSING_BUILD",
+      `Could not find the build directory: ${distPath}; build the client first`,
     );
   }
 

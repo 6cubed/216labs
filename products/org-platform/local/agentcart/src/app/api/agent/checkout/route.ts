@@ -1,4 +1,6 @@
 import { checkoutDemo } from "@/lib/orders";
+import { isAppError } from "@216labs/errors";
+import { nextErrorResponse } from "@216labs/errors/next";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -56,12 +58,8 @@ export async function POST(request: Request) {
       { status: 200 },
     );
   } catch (e) {
-    const code = e instanceof Error ? e.message : "error";
-    if (code === "unknown_sku") {
-      return NextResponse.json({ ok: false, error: "unknown_sku" }, { status: 404 });
-    }
-    if (code === "out_of_stock") {
-      return NextResponse.json({ ok: false, error: "out_of_stock" }, { status: 409 });
+    if (isAppError(e)) {
+      return nextErrorResponse(e);
     }
     return NextResponse.json({ ok: false, error: "checkout_failed" }, { status: 500 });
   }

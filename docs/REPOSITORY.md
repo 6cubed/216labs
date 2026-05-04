@@ -62,6 +62,8 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 
 **Images:** GitHub Actions builds and pushes `216labs/*` to **GHCR** on pushes to `main` (see `.github/workflows/ghcr-publish.yml`).
 
+**Email from GitHub Actions:** Workflows cannot turn off account email. To stop (or reduce) Actions mail, use GitHub **Settings → Notifications** (disable **Actions** email) and set the repo **Watch** menu to **Participating and @mentions** or **Ignore** instead of **All activity**.
+
 **VPS:** From the repo root, `./deploy.sh root@46.101.88.197` (or your host) pulls/retags images and brings Compose up. Enabled apps are driven by **`216labs.db`** (toggles in [admin](https://admin.6cubed.app)). Legacy `DEPLOY_IMAGE_SOURCE=local` builds on the machine running the script and streams images over SSH—use only when GHCR is not an option. Do not build images on the droplet (resource-limited).
 
 ### One-time droplet setup

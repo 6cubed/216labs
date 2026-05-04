@@ -1,3 +1,4 @@
+import { AppError } from "@216labs/errors";
 import { NextRequest, NextResponse } from "next/server";
 import { getAllParticipants, insertMatch, getMatchCount } from "@/lib/db";
 
@@ -73,7 +74,11 @@ Response format:
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`OpenRouter API error: ${response.status} ${text}`);
+    throw AppError.badGateway(
+      "OPENROUTER_ERROR",
+      `OpenRouter API error: ${response.status}`,
+      { body: text.slice(0, 500) },
+    );
   }
 
   const data = await response.json();

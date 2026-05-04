@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@216labs/errors": "file:../../../packages/errors",
     "better-sqlite3": "^12.6.2",
     "framer-motion": "^11.5.0",
     "lucide-react": "^0.575.0",

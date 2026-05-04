@@ -1,3 +1,5 @@
+import { AppError, isAppError } from "@216labs/errors";
+import { nextErrorResponse } from "@216labs/errors/next";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { getUserFeedback, getDailyLook, saveDailyLook } from "@/lib/db";
@@ -5,7 +7,12 @@ import OpenAI from "openai";
 
 function getClient(apiKey?: string): OpenAI {
   const key = apiKey || process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OpenAI API key is required");
+  if (!key) {
+    throw AppError.unauthorized(
+      "OPENAI_KEY_REQUIRED",
+      "OpenAI API key is required",
+    );
+  }
   return new OpenAI({ apiKey: key });
 }
 
@@ -125,6 +132,9 @@ export async function POST(req: NextRequest) {
       isNew: true,
     });
   } catch (err) {
+    if (isAppError(err)) {
+      return nextErrorResponse(err);
+    }
     console.error("Daily look error:", err);
     const message = err instanceof Error ? err.message : "Failed to generate daily look";
     return NextResponse.json({ error: message }, { status: 500 });
