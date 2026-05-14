@@ -60,9 +60,10 @@ jobs:
       - name: Docker compose config (JSON)
         run: docker compose --env-file .env --env-file .env.admin config --format json > compose.json
       - id: set-matrix
-        env:
-          GHCR_CHANGED_FILES: ${{ steps.changed.outputs.files }}
         run: |
+          # Do not pass multiline changed paths via job outputs (truncation risk). The changed step
+          # already wrote changed_files.txt on disk for this runner.
+          export GHCR_CHANGED_FILES="$(cat changed_files.txt)"
           python3 scripts/compose-ghcr-matrix.py compose.json > matrix.json
           echo "matrix<<GHA_JSON" >> "$GITHUB_OUTPUT"
           cat matrix.json >> "$GITHUB_OUTPUT"
