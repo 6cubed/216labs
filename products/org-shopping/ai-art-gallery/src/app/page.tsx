@@ -53,7 +53,11 @@ export default function GalleryPage({
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="font-display text-xl text-ink">{p.title}</h3>
+                  <h3 className="font-display text-xl text-ink">
+                    <Link href={`/p/${p.id}`} className="hover:underline">
+                      {p.title}
+                    </Link>
+                  </h3>
                   <p className="text-sm text-muted mt-1">{p.subtitle}</p>
                   <p className="text-xs text-muted mt-3">
                     {p.medium} · {p.dimensions}

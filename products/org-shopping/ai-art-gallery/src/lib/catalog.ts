@@ -16,6 +16,15 @@ export interface ArtPrint {
 
 export const PRINTS: ArtPrint[] = [
   {
+    id: "london-phone-booth-robot",
+    title: "Direct Line",
+    subtitle: "London cobbles · silver figure in a scarlet K6",
+    imageSrc: "/art/london-phone-booth-robot.png",
+    priceCents: 7900,
+    medium: "Archival giclée on cotton rag",
+    dimensions: '12 × 16" (30 × 40 cm)',
+  },
+  {
     id: "nebula-stitch",
     title: "Nebula Stitch",
     subtitle: "Diffusion study · indigo / coral",
