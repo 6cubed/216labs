@@ -1,5 +1,5 @@
 # Optional: docker compose service names (one per line) always included in the GHCR publish matrix,
 # even when no files under that service's build context changed in the push. Prevents :latest from
 # lagging main when a prior publish job failed or was skipped. Heavy images slow CI — remove lines
-# you do not need.
+# you do not need. Frame & Flux also has a dedicated workflow: .github/workflows/ghcr-publish-aiart.yml
 birdperch
