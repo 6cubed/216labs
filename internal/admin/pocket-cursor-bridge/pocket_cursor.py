@@ -5,6 +5,10 @@ Mirrors conversations between Cursor and Telegram in both directions:
   Telegram → Cursor:  messages from your phone are typed into Cursor
   Cursor → Telegram:  AI responses stream back to your phone in real time
 
+Optional Meta WhatsApp Cloud API (WHATSAPP_CLOUD_ENABLED): inbound text can be
+injected into Cursor with a [WhatsApp] prefix; replies still mirror to Telegram
+unless you extend the monitor.
+
 Connects to Cursor via Chrome DevTools Protocol (CDP).
 
 Usage: python -X utf8 pocket_cursor.py
@@ -1750,15 +1754,16 @@ def cursor_clear_input(conn=None):
         json.loads(c.recv())
 
 
-def cursor_send_message(text, raw=False):
+def cursor_send_message(text, raw=False, source_bracket: str = "Telegram"):
     """Focus the input editor, insert text, click send.
     Holds the CDP lock for the entire sequence to avoid monitor thread contention.
-    Auto-prepends [Telegram] and a timestamp unless raw=True.
+    Auto-prepends [source_bracket] and a timestamp unless raw=True.
     """
     incoming = text
     if not raw:
         timestamp = datetime.now().strftime('%a %Y-%m-%d %H:%M')
-        prefix = f"[{timestamp}] [Telegram] "
+        label = (source_bracket or "Telegram").strip() or "Telegram"
+        prefix = f"[{timestamp}] [{label}] "
         full_text = prefix + incoming
         # Only the user-authored part needs mention-typing; our prefix has no @.
         mention_typing = '@' in incoming
@@ -2317,7 +2322,7 @@ def tg_bridge_status_text():
     )
     lines.append(f"Verbosity: {get_bridge_verbosity()}")
     lines.append(
-        "\nMessages to Cursor are prefixed: [weekday date time] [Telegram] your text."
+        "\nMessages to Cursor are prefixed: [weekday date time] [Telegram|WhatsApp] your text."
     )
     lines.append(
         "Agent conversation: in groups, forwarding is OFF by default (/agentconversation ON to opt in). "
@@ -2972,7 +2977,7 @@ def sender_thread():
                     last_sent_text = text
                     last_tg_message_id = mid
 
-                # Send to Cursor with [Telegram] prefix + timestamp (day name helps resolve relative dates)
+                # Send to Cursor with [Telegram] prefix + timestamp (day name helps resolve relative dates); WhatsApp uses source_bracket.
                 tg_typing(cid)
                 result = cursor_send_message(text)
                 print(f"[sender] -> Cursor: {result}")
@@ -3994,6 +3999,27 @@ if tg_reply_thread_id is not None:
 if chat_id and tg_commands_need_update():
     print("[telegram] Command menu is outdated, asking user to update...")
     tg_ask_command_update(chat_id)
+
+
+def _whatsapp_cloud_on_text(from_wa_id: str, text: str) -> None:
+    print(f"[whatsapp] {from_wa_id}: {text[:200]!r}", flush=True)
+    try:
+        result = cursor_send_message(text, source_bracket="WhatsApp")
+        if isinstance(result, str) and result.startswith("ERROR"):
+            print(f"[whatsapp] cursor_send_message: {result}", flush=True)
+    except Exception as e:
+        print(f"[whatsapp] forward failed: {e}", flush=True)
+
+
+try:
+    from whatsapp_inbound import start_whatsapp_webhook_daemon, whatsapp_inbound_configured
+
+    if whatsapp_inbound_configured():
+        start_whatsapp_webhook_daemon(_whatsapp_cloud_on_text, ts_print)
+        ts_print("[whatsapp] Cloud API inbound webhook thread started.")
+        ts_print("[whatsapp] Meta callback URL path: /webhook — tunnel WHATSAPP_WEBHOOK_PORT to HTTPS.")
+except Exception as e:
+    ts_print(f"[whatsapp] optional inbound not started: {e}")
 
 print("Press Ctrl+C to stop.\n")
 

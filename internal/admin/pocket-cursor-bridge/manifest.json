@@ -2,7 +2,7 @@
   "id": "pocketcursor",
   "name": "PocketCursor Bridge",
   "tagline": "Bridge Telegram group chat to your Cursor workflow",
-  "description": "A self-hosted Telegram bridge service with multi-user group support and a web admin UI for authorization and verbosity controls. The Python CDP bridge (pocket_cursor.py, start_cursor.py, etc.) lives in this package for local development machines; the Docker image runs the Flask admin and Telegram polling worker.",
+  "description": "A self-hosted Telegram bridge service with multi-user group support and a web admin UI for authorization and verbosity controls. Optional Meta WhatsApp Cloud API inbound (env-gated) forwards WhatsApp text into the local CDP bridge with a [WhatsApp] prefix; replies still mirror to Telegram unless extended. The Python CDP bridge (pocket_cursor.py, start_cursor.py, etc.) lives in this package for local development machines; the Docker image runs the Flask admin and Telegram polling worker.",
   "category": "tool",
   "internal_port": 5000,
   "memory_limit": "128m",

@@ -14,6 +14,13 @@ alwaysApply: true
 - **Forum topics:** `.chat_thread_id` is updated when Telegram includes `message_thread_id` on an incoming message or callback. It is **not** cleared when a message omits `message_thread_id` in the same chat (that omission used to wipe the topic and break or misroute approvals). `/unpair` clears it; switching to a **private** chat clears it; switching **Telegram chat id** clears the old topic before applying the new message’s thread id.
 - **Per-user Cursor forwarding:** `/agentconversation ON` and `/agentconversation OFF`. **Groups/supergroups:** default is OFF for each user until they `/agentconversation ON` (persisted in `.agent_conversation_on_user_ids`). **Private chat with the bot:** default is ON until `/agentconversation OFF` (`.agent_conversation_off_user_ids`). Slash commands always work. `/agentconversation` alone shows mode for the current chat type.
 
+## WhatsApp (Meta Cloud API, optional inbound)
+
+- **Enable:** `WHATSAPP_CLOUD_ENABLED=1` plus `WHATSAPP_WEBHOOK_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ALLOWED_FROM` (comma-separated WA ids, digits only). See `internal/admin/pocket-cursor-bridge/.env.example`.
+- **Webhook:** stdlib HTTP server on `WHATSAPP_WEBHOOK_BIND` / `WHATSAPP_WEBHOOK_PORT` (default `127.0.0.1:8792`); Meta callback path **`/webhook`**. Use an HTTPS tunnel to that port for Meta to reach your machine.
+- **Behavior:** inbound WhatsApp text is injected into Cursor with a **`[WhatsApp]`** prefix (same CDP injection as Telegram). **Replies still mirror to Telegram** unless the monitor is extended for dual outbound.
+- **Helpers:** `lib/whatsapp_cloud.py` (verify, parse, outbound `send_text_message`); `whatsapp_inbound.py` starts the daemon thread when configured.
+
 ## Phone outbox ("send to phone", "phone outbox")
 
 - **Folder:** `internal/admin/pocket-cursor-bridge/_phone_outbox/`
