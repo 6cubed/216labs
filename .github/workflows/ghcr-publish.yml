@@ -103,7 +103,9 @@ jobs:
           if [ -n "${PLATFORM:-}" ]; then
             export DOCKER_DEFAULT_PLATFORM="$PLATFORM"
           fi
-          docker compose --env-file .env --env-file .env.admin build "$SERVICE"
+          docker compose --env-file .env --env-file .env.admin build \
+            --build-arg CACHEBUST="${GITHUB_SHA}" \
+            "$SERVICE"
           short="${SRC_IMAGE#216labs/}"
           short="${short%%:*}"
           DEST="${{ env.REGISTRY_PREFIX }}/${short}:latest"

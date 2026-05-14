@@ -1,5 +1,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
+ARG CACHEBUST=0
+RUN echo "cachebust=${CACHEBUST}"
 COPY package.json package-lock.json* ./
 RUN npm install
 COPY . .
