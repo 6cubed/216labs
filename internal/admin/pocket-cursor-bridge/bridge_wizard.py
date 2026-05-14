@@ -5,6 +5,10 @@ Interactive Telegram setup for PocketCursor. Used by scripts/pocket-cursor-bridg
 If a token is already set (env or merged .env files), the wizard prints a short summary
 and asks before changing token, pinned .chat_id (DM vs group), and allowlist.
 
+Optional WhatsApp (Meta Cloud API): after Telegram steps (or when skipping Telegram
+reconfigure), offers an interactive WHATSAPP_* writer; or run bridge_wizard.py --whatsapp /
+./scripts/pocket-cursor-bridge.sh --whatsapp for WhatsApp-only setup. See WHATSAPP.md.
+
 Precedence matches pocket_cursor.py: process env wins; then .env.admin-sync; then .env.
 """
 from __future__ import annotations
@@ -12,6 +16,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import os
+import secrets
 import sys
 import time
 from pathlib import Path
@@ -220,6 +225,116 @@ def _prompt_yes(prompt: str, default_no: bool = True) -> bool:
     return raw in ("y", "yes", "1", "true")
 
 
+def _whatsapp_env_value(merged: dict[str, str], key: str) -> str:
+    return os.environ.get(key, "").strip() or merged.get(key, "").strip()
+
+
+def whatsapp_inbound_ready(merged: dict[str, str] | None = None) -> bool:
+    """True when pocket_cursor would start the WhatsApp webhook thread."""
+    m = merged if merged is not None else _merged_env_files()
+    en = _whatsapp_env_value(m, "WHATSAPP_CLOUD_ENABLED").lower()
+    if en not in ("1", "true", "yes", "on"):
+        return False
+    for key in (
+        "WHATSAPP_WEBHOOK_APP_SECRET",
+        "WHATSAPP_VERIFY_TOKEN",
+        "WHATSAPP_ALLOWED_FROM",
+    ):
+        if not _whatsapp_env_value(m, key):
+            return False
+    return True
+
+
+def print_whatsapp_quick_path() -> None:
+    print(
+        "\n── WhatsApp (optional) — get keys from Meta ──\n"
+        "  • Create / open app: https://developers.facebook.com/apps\n"
+        "  • Add product “WhatsApp”, then use WhatsApp → API setup in the dashboard.\n"
+        "  • App secret: App settings → Basic → App secret (click Show).\n"
+        "  • Webhook needs HTTPS — tunnel default port 8792, path /webhook (e.g. ngrok http 8792).\n"
+        "  • Full checklist: WHATSAPP.md in this folder (same directory as bridge_wizard.py).\n"
+        "  • Guided .env:  ./scripts/pocket-cursor-bridge.sh --whatsapp   (from repo root)\n"
+    )
+
+
+def offer_whatsapp_setup_if_needed() -> None:
+    merged = _merged_env_files()
+    if whatsapp_inbound_ready(merged):
+        print(
+            "WhatsApp inbound: already configured (WHATSAPP_* in env or .env). "
+            "Restart the bridge after edits.\n"
+        )
+        return
+    print_whatsapp_quick_path()
+    if _prompt_yes("Write WhatsApp Cloud variables to .env now (interactive)?", default_no=True):
+        if run_whatsapp_env_wizard():
+            print(
+                "\nDone. Start an HTTPS tunnel to the port above, set Meta’s webhook URL to "
+                "https://<public-host>/webhook with the same verify token, then restart the bridge.\n"
+            )
+    else:
+        print("(Skipped — run later:  ./scripts/pocket-cursor-bridge.sh --whatsapp )\n")
+
+
+def run_whatsapp_env_wizard() -> bool:
+    """Prompt for Meta secrets and write WHATSAPP_* keys to .env."""
+    print("\n── WhatsApp Cloud — write .env ──\n")
+    guide = BRIDGE / "WHATSAPP.md"
+    if guide.is_file():
+        print(f"Reference: {guide}\n")
+
+    app_secret = getpass.getpass(
+        "WHATSAPP_WEBHOOK_APP_SECRET (Meta → App settings → Basic → App secret): "
+    ).strip()
+    if not app_secret:
+        print("App secret is required.", file=sys.stderr)
+        return False
+
+    verify = secrets.token_urlsafe(20)
+    print(
+        "\nWHATSAPP_VERIFY_TOKEN (auto-generated — copy this into Meta → WhatsApp → Configuration → Webhook):\n"
+        f"  {verify}\n"
+    )
+
+    raw_phones = input(
+        "WHATSAPP_ALLOWED_FROM — your WhatsApp number(s), digits only, comma-separated (e.g. 491701234567): "
+    ).strip()
+    allowed: list[str] = []
+    for part in raw_phones.split(","):
+        digits = "".join(c for c in part if c.isdigit())
+        if digits:
+            allowed.append(digits)
+    if not allowed:
+        print("Need at least one phone number (digits only).", file=sys.stderr)
+        return False
+    allowed_csv = ",".join(allowed)
+
+    port = input("WHATSAPP_WEBHOOK_PORT [8792]: ").strip() or "8792"
+    bind = input("WHATSAPP_WEBHOOK_BIND [127.0.0.1]: ").strip() or "127.0.0.1"
+
+    tok = input(
+        "WHATSAPP_CLOUD_ACCESS_TOKEN (optional — WhatsApp → API setup; for outbound API only, not required for inbound): "
+    ).strip()
+    phone_id = input(
+        "WHATSAPP_CLOUD_PHONE_NUMBER_ID (optional — same screen as token; for outbound only): "
+    ).strip()
+
+    updates: dict[str, str | None] = {
+        "WHATSAPP_CLOUD_ENABLED": "1",
+        "WHATSAPP_WEBHOOK_APP_SECRET": app_secret,
+        "WHATSAPP_VERIFY_TOKEN": verify,
+        "WHATSAPP_ALLOWED_FROM": allowed_csv,
+        "WHATSAPP_WEBHOOK_PORT": port,
+        "WHATSAPP_WEBHOOK_BIND": bind,
+        "WHATSAPP_CLOUD_ACCESS_TOKEN": tok or None,
+        "WHATSAPP_CLOUD_PHONE_NUMBER_ID": phone_id or None,
+    }
+    env_path = BRIDGE / ".env"
+    upsert_env_file(env_path, updates)
+    print(f"\nWrote WhatsApp keys to {env_path}\n")
+    return True
+
+
 def run_wizard(*, reconfigure: bool) -> bool:
     print("\n── PocketCursor — Telegram setup ──\n")
     token = ""
@@ -329,7 +444,18 @@ def main() -> int:
         action="store_true",
         help="Used by pocket-cursor-bridge.sh: first-time setup, or prompt to reconfigure if already set",
     )
-    parser.parse_args()
+    parser.add_argument(
+        "--whatsapp",
+        action="store_true",
+        help="WhatsApp Cloud only: print Meta key locations and optionally write WHATSAPP_* to .env",
+    )
+    args = parser.parse_args()
+
+    if args.whatsapp:
+        print_whatsapp_quick_path()
+        if not _prompt_yes("Write WhatsApp variables to .env now?", default_no=True):
+            return 0
+        return 0 if run_whatsapp_env_wizard() else 1
 
     tok = effective_telegram_token()
     if tok:
@@ -338,11 +464,16 @@ def main() -> int:
             "Reconfigure Telegram bridge settings (token, chat, allowlist)?",
             default_no=True,
         ):
+            offer_whatsapp_setup_if_needed()
             return 0
         ok = run_wizard(reconfigure=True)
+        if ok:
+            offer_whatsapp_setup_if_needed()
         return 0 if ok and effective_telegram_token() else 1
 
     ok = run_wizard(reconfigure=False)
+    if ok and effective_telegram_token():
+        offer_whatsapp_setup_if_needed()
     return 0 if ok and effective_telegram_token() else 1
 
 

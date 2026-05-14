@@ -7,6 +7,10 @@
 #   With a token already set, it prints a summary and asks whether to reconfigure.
 #   POCKET_SKIP_WIZARD=1  — skip wizard; fail fast (for CI / no TTY).
 #
+# WhatsApp (Meta Cloud API, optional): guided .env keys only — does not start the bridge.
+#   ./scripts/pocket-cursor-bridge.sh --whatsapp
+#   See internal/admin/pocket-cursor-bridge/WHATSAPP.md for Meta links and webhook tunneling.
+#
 # Needs Python 3.10+ (default `python3` on older Macs may be 3.7 and WILL fail to
 # install deps). Install: brew install python@3.12  OR set POCKETCURSOR_PYTHON to a 3.10+ binary.
 set -euo pipefail
@@ -66,6 +70,11 @@ fi
 
 "$PY" -m pip install -q --upgrade pip setuptools wheel
 "$PIP" install -q -r requirements.txt
+
+if [[ "${1:-}" == "--whatsapp" ]]; then
+  "$PY" -X utf8 bridge_wizard.py --whatsapp || exit 1
+  exit 0
+fi
 
 # Token: exported env, or .env.admin-sync / .env (merged in pocket_cursor.py; export wins).
 # Interactive wizard writes .env when nothing provides a token (unless POCKET_SKIP_WIZARD=1).

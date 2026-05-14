@@ -17,6 +17,8 @@ alwaysApply: true
 ## WhatsApp (Meta Cloud API, optional inbound)
 
 - **Enable:** `WHATSAPP_CLOUD_ENABLED=1` plus `WHATSAPP_WEBHOOK_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ALLOWED_FROM` (comma-separated WA ids, digits only). See `internal/admin/pocket-cursor-bridge/.env.example`.
+- **Plug-and-play setup:** from repo root run `./scripts/pocket-cursor-bridge.sh --whatsapp` (writes `.env`, generates verify token, prints Meta links). Or finish Telegram wizard and answer **y** when asked to configure WhatsApp.
+- **Meta “keys” walkthrough:** `internal/admin/pocket-cursor-bridge/WHATSAPP.md` (dashboard links: App ID list, Cloud API get-started, system-user tokens).
 - **Webhook:** stdlib HTTP server on `WHATSAPP_WEBHOOK_BIND` / `WHATSAPP_WEBHOOK_PORT` (default `127.0.0.1:8792`); Meta callback path **`/webhook`**. Use an HTTPS tunnel to that port for Meta to reach your machine.
 - **Behavior:** inbound WhatsApp text is injected into Cursor with a **`[WhatsApp]`** prefix (same CDP injection as Telegram). **Replies still mirror to Telegram** unless the monitor is extended for dual outbound.
 - **Helpers:** `lib/whatsapp_cloud.py` (verify, parse, outbound `send_text_message`); `whatsapp_inbound.py` starts the daemon thread when configured.
