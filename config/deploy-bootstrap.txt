@@ -17,3 +17,4 @@ ytsync
 webgputrainer
 # Live on droplet; needed when deploy.sh has no admin DB (toolkit cap must include it).
 tigertank
+rentstock
