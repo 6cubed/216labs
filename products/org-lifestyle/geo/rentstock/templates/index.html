@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  {% for m in markets %}
+  <article class="card">
+    <h2><a href="{{ url_for('market_page', slug=m.market.slug) }}">{{ m.market.name }}</a></h2>
+    <p class="criteria">{{ m.market.criteria_summary }}</p>
+    <div class="stat">{{ m.active_count }}</div>
+    <p class="delta {% if m.delta > 0 %}up{% elif m.delta < 0 %}down{% else %}flat{% endif %}">
+      {% if m.delta > 0 %}+{{ m.delta }} since last sync
+      {% elif m.delta < 0 %}{{ m.delta }} since last sync
+      {% else %}unchanged since last sync{% endif %}
+      {% if m.last_new or m.last_removed %}
+        · {{ m.last_new }} new, {{ m.last_removed }} removed
+      {% endif %}
+    </p>
+    {% if m.history %}
+    <div class="chart" aria-hidden="true">
+      {% set max_c = m.history|map(attribute='active_count')|max or 1 %}
+      {% for h in m.history %}
+      <div class="bar" style="height: {{ (h.active_count / max_c * 100)|int }}%" title="{{ h.counted_at }}: {{ h.active_count }}"></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if m.last_sync and m.last_sync.finished_at %}
+    <p class="criteria" style="margin-top:0.6rem">Last sync {{ m.last_sync.finished_at }} UTC · {{ m.last_sync.listings_matched }} matched</p>
+    {% else %}
+    <p class="criteria" style="margin-top:0.6rem">No sync yet — press Sync now</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('sync_now') }}" style="margin-top:0.75rem">
+      <input type="hidden" name="market" value="{{ m.market.slug }}">
+      <button class="btn" type="submit">Sync {{ m.market.slug }}</button>
+    </form>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

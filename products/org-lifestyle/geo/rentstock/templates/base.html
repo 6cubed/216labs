@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Rentstock{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a32;
+      --panel-2: #1a2544;
+      --text: #e8eeff;
+      --muted: #9aabcf;
+      --accent: #5eead4;
+      --accent-2: #60a5fa;
+      --danger: #fb7185;
+      --ok: #4ade80;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "SF Pro Text", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1e3a5f 0%, transparent 55%),
+                  radial-gradient(900px 500px at 90% 0%, #134e4a 0%, transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    header h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.02em; }
+    header p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.9rem; }
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0.55rem 0.9rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn:hover { border-color: rgba(94, 234, 212, 0.4); }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent), var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1rem 1.1rem;
+    }
+    .card h2 { margin: 0 0 0.35rem; font-size: 1.1rem; }
+    .criteria { color: var(--muted); font-size: 0.82rem; line-height: 1.4; margin-bottom: 0.8rem; }
+    .stat { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.03em; }
+    .delta { font-size: 0.85rem; margin-top: 0.2rem; }
+    .delta.up { color: var(--ok); }
+    .delta.down { color: var(--danger); }
+    .delta.flat { color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th, td { padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; }
+    .chart { display: flex; align-items: flex-end; gap: 4px; height: 72px; margin: 0.75rem 0 0.25rem; }
+    .bar {
+      flex: 1;
+      min-width: 4px;
+      background: linear-gradient(180deg, var(--accent), #2dd4bf55);
+      border-radius: 4px 4px 0 0;
+    }
+    .footnote { color: var(--muted); font-size: 0.78rem; margin-top: 1rem; line-height: 1.45; }
+    .badge { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 999px; background: var(--panel-2); font-size: 0.75rem; color: var(--muted); }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1><a href="{{ url_for('index') }}" style="color:inherit;text-decoration:none">Rentstock</a></h1>
+        <p>Live stock of Daft.ie rentals matching your Dublin &amp; Galway criteria</p>
+      </div>
+      <form method="post" action="{{ url_for('sync_now') }}">
+        <button class="btn" type="submit">Sync now</button>
+      </form>
+    </header>
+    {% block content %}{% endblock %}
+    <p class="footnote">
+      Data from Daft.ie search results (residential lets only). Stock = count of active listings matching
+      each market’s bed/size/price/geo rules. Sync runs on a schedule; use Sync now for an immediate refresh.
+      Not affiliated with Daft — verify listings on Daft before acting.
+    </p>
+  </div>
+</body>
+</html>

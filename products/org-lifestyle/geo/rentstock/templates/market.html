@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ market.name }} — Rentstock{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('index') }}">← All markets</a></p>
+<article class="card" style="margin-bottom:1rem">
+  <h2>{{ market.name }}</h2>
+  <p class="criteria">{{ market.criteria_summary }}</p>
+  <div class="stat">{{ active_count }} active listings</div>
+  <p class="delta {% if delta > 0 %}up{% elif delta < 0 %}down{% else %}flat{% endif %}">
+    {% if delta > 0 %}+{{ delta }}{% elif delta < 0 %}{{ delta }}{% else %}±0{% endif %} vs previous snapshot
+  </p>
+  {% if history %}
+  <div class="chart" aria-label="Stock history">
+    {% set max_c = history|map(attribute='active_count')|max or 1 %}
+    {% for h in history %}
+    <div class="bar" style="height: {{ (h.active_count / max_c * 100)|int }}%" title="{{ h.counted_at }}: {{ h.active_count }}"></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <form method="post" action="{{ url_for('sync_now') }}" style="margin-top:0.75rem">
+    <input type="hidden" name="market" value="{{ market.slug }}">
+    <button class="btn" type="submit">Sync this market</button>
+  </form>
+</article>
+
+{% if listings %}
+<div class="card">
+  <h2 style="margin-bottom:0.75rem">Current listings</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>€/mo</th>
+        <th>Beds</th>
+        <th>m²</th>
+        <th>Dist</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in listings %}
+      <tr>
+        <td><a href="{{ row.url }}" target="_blank" rel="noopener">{{ row.title }}</a><br><span class="badge">{{ row.property_type }}</span></td>
+        <td>{% if row.price_eur %}€{{ row.price_eur }}{% else %}—{% endif %}</td>
+        <td>{% if row.beds is not none %}{{ row.beds }}{% else %}—{% endif %}</td>
+        <td>{% if row.sqm %}{{ row.sqm }}{% else %}—{% endif %}</td>
+        <td>{{ row.distance_m }} m</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <p class="criteria">No listings in stock yet. Run a sync to pull matching Daft rentals.</p>
+</div>
+{% endif %}
+{% endblock %}

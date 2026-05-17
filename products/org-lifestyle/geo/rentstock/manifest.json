@@ -1,0 +1,34 @@
+{
+  "id": "rentstock",
+  "name": "Rentstock",
+  "tagline": "Track rental listing stock for Dublin and Galway search criteria",
+  "description": "Monitors Daft.ie rentals matching defined bed/size/price/geo rules near Temple Bar (Dublin) and Eyre Square (Galway). Shows active stock, history, and new/removed listings over time.",
+  "category": "consumer",
+  "internal_port": 5000,
+  "memory_limit": "256m",
+  "docker_service": "rentstock",
+  "build_context": "./products/org-lifestyle/geo/rentstock",
+  "stack": {
+    "frontend": "Flask templates",
+    "backend": "Flask + Gunicorn + APScheduler",
+    "database": "SQLite",
+    "other": ["Daft.ie search API"]
+  },
+  "env_vars": [
+    {
+      "key": "RENTSTOCK_DATA_DIR",
+      "description": "SQLite data directory (default /app/data in container)",
+      "is_secret": false
+    },
+    {
+      "key": "RENTSTOCK_SYNC_INTERVAL_HOURS",
+      "description": "Hours between automatic Daft syncs (default 6)",
+      "is_secret": false
+    },
+    {
+      "key": "RENTSTOCK_DISABLE_SCHEDULER",
+      "description": "Set to 1 to disable background sync scheduler",
+      "is_secret": false
+    }
+  ]
+}

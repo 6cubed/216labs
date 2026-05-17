@@ -251,21 +251,6 @@ birdperch.6cubed.app {
 	}
 }
 
-ctfbench.6cubed.app {
-	reverse_proxy ctfbench:5000 {
-		@cold status 502 503 504
-		handle_response @cold {
-			redir "https://activator.6cubed.app/warmup?app=ctfbench&dest=https%3A%2F%2Fctfbench.6cubed.app" 302
-		}
-	}
-	handle_errors {
-		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @dial {
-			redir "https://activator.6cubed.app/warmup?app=ctfbench&dest=https%3A%2F%2Fctfbench.6cubed.app" 302
-		}
-	}
-}
-
 blog.6cubed.app {
 	reverse_proxy blog:3000 {
 		@cold status 502 503 504
@@ -337,6 +322,21 @@ crowdbulk.6cubed.app {
 		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=crowdbulk&dest=https%3A%2F%2Fcrowdbulk.6cubed.app" 302
+		}
+	}
+}
+
+ctfbench.6cubed.app {
+	reverse_proxy ctfbench:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=ctfbench&dest=https%3A%2F%2Fctfbench.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=ctfbench&dest=https%3A%2F%2Fctfbench.6cubed.app" 302
 		}
 	}
 }
@@ -502,21 +502,6 @@ hivefind.6cubed.app {
 		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=hivefind&dest=https%3A%2F%2Fhivefind.6cubed.app" 302
-		}
-	}
-}
-
-webgputrainer.6cubed.app {
-	reverse_proxy webgputrainer:3000 {
-		@cold status 502 503 504
-		handle_response @cold {
-			redir "https://activator.6cubed.app/warmup?app=webgputrainer&dest=https%3A%2F%2Fwebgputrainer.6cubed.app" 302
-		}
-	}
-	handle_errors {
-		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
-		handle @dial {
-			redir "https://activator.6cubed.app/warmup?app=webgputrainer&dest=https%3A%2F%2Fwebgputrainer.6cubed.app" 302
 		}
 	}
 }
@@ -836,6 +821,21 @@ ramblingradio.6cubed.app {
 	}
 }
 
+rentstock.6cubed.app {
+	reverse_proxy rentstock:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=rentstock&dest=https%3A%2F%2Frentstock.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=rentstock&dest=https%3A%2F%2Frentstock.6cubed.app" 302
+		}
+	}
+}
+
 russiandaily.6cubed.app {
 	reverse_proxy russiandaily:5000 {
 		@cold status 502 503 504
@@ -997,6 +997,21 @@ vc.6cubed.app {
 		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
 		handle @dial {
 			redir "https://activator.6cubed.app/warmup?app=vc&dest=https%3A%2F%2Fvc.6cubed.app" 302
+		}
+	}
+}
+
+webgputrainer.6cubed.app {
+	reverse_proxy webgputrainer:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=webgputrainer&dest=https%3A%2F%2Fwebgputrainer.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=webgputrainer&dest=https%3A%2F%2Fwebgputrainer.6cubed.app" 302
 		}
 	}
 }
