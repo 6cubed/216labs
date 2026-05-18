@@ -4,9 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/auth_screen.dart';
 import 'screens/feed_screen.dart';
 import 'services/api_service.dart';
+import 'services/error_reporter.dart';
 import 'services/location_service.dart';
 
 void main() {
+  ErrorReporter.install();
   runApp(const AnchorApp());
 }
 

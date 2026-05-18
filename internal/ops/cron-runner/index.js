@@ -172,6 +172,18 @@ function ensureCronRunnerMigrations(db) {
       PRIMARY KEY (app_id, day_utc, visitor_hash)
     );
     CREATE INDEX IF NOT EXISTS idx_edge_visitor_day_app_day ON edge_visitor_day(app_id, day_utc);
+    CREATE TABLE IF NOT EXISTS client_error_event (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      app_id TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'client',
+      message TEXT NOT NULL,
+      stack TEXT,
+      url TEXT,
+      fingerprint TEXT NOT NULL,
+      occurred_at TEXT NOT NULL DEFAULT (datetime('now')),
+      day_utc TEXT NOT NULL DEFAULT (date('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_client_error_app_time ON client_error_event(app_id, occurred_at);
   `);
   db.exec(`
     INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled) VALUES
@@ -181,7 +193,8 @@ function ensureCronRunnerMigrations(db) {
     ('telegram-happypath-summary', 'Happy Path run summary', 'Last Happy Path results per app posted to Telegram.', '0 8 * * *', 0),
     ('telegram-group-hourly-reply', 'Group hourly AI reply', 'Polls Telegram updates for a configured group since last run, drafts a short reply with OpenAI, posts to that group.', '0 * * * *', 0),
     ('workforce-telegram-test', 'Workforce Telegram test', 'Hourly ping from the first digital employee bot (or main bot if registry empty). Chat: WORKFORCE_TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID.', '0 * * * *', 1),
-    ('edge-visitor-rollup', 'Edge visitor rollup (Caddy logs)', 'Reads Caddy JSON access logs and stores coarse daily unique visitors per app in edge_visitor_day.', '*/15 * * * *', 1);
+    ('edge-visitor-rollup', 'Edge visitor rollup (Caddy logs)', 'Reads Caddy JSON access logs and stores coarse daily unique visitors per app in edge_visitor_day.', '*/15 * * * *', 1),
+    ('client-error-prune', 'Prune old client error events', 'Deletes client_error_event rows older than 14 days.', '15 4 * * *', 1);
   `);
   ensureWorkforceCronEnabledOnce(db);
   return true;

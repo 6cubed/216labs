@@ -5,6 +5,7 @@ import {
   parseOccurredAtMs,
   type DbDeploymentEvent,
 } from "@/lib/db";
+import { listRecentClientErrorEvents } from "@/lib/client-error-store";
 
 const GITHUB_REPO = "6cubed/216labs";
 const GHCR_WORKFLOW_PATH = "ghcr-publish.yml";
@@ -17,7 +18,7 @@ const DEPLOY_OK = /completed successfully|deploy completed|compose \/ ghcr pull$
 
 export type AdminErrorItem = {
   id: string;
-  source: "runtime" | "deployment" | "ci";
+  source: "runtime" | "deployment" | "ci" | "client" | "server";
   severity: "error" | "warn";
   occurredAtMs: number;
   headline: string;
@@ -168,6 +169,23 @@ export async function getAdminErrorFeed(limit = 60): Promise<AdminErrorItem[]> {
 
   const ciItems = await fetchFailedGhcrRuns(Math.min(20, Math.ceil(limit / 2)));
   items.push(...ciItems);
+
+  const clientRows = listRecentClientErrorEvents(db, Math.min(100, limit * 2));
+  for (const row of clientRows) {
+    const ms = parseOccurredAtMs(row.occurred_at) || Date.now();
+    const kind = row.kind === "server" ? "server" : "client";
+    const detailParts = [row.stack?.trim(), row.url?.trim()].filter(Boolean);
+    items.push({
+      id: `reported:${row.id}`,
+      source: kind,
+      severity: "error",
+      occurredAtMs: ms,
+      headline: row.message,
+      detail: detailParts.join("\n\n") || row.message,
+      appId: row.app_id,
+      href: appPublicUrl(row.app_id),
+    });
+  }
 
   items.sort((a, b) => b.occurredAtMs - a.occurredAtMs);
   return items.slice(0, limit);

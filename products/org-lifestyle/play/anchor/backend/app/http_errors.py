@@ -83,7 +83,15 @@ def register_fastapi_exception_handlers(app: Any) -> None:
     from starlette.exceptions import HTTPException as StarletteHTTPException
 
     @app.exception_handler(AppError)
-    async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
+    async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+        if exc.status_code >= 500:
+            from .client_error_report import report_server_error
+
+            report_server_error(
+                exc.message,
+                stack=f"{exc.code}: {exc.message}",
+                url=str(request.url),
+            )
         return JSONResponse(status_code=exc.status_code, content=exc.to_dict())
 
     @app.exception_handler(StarletteHTTPException)

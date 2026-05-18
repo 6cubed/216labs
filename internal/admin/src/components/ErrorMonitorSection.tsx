@@ -18,6 +18,10 @@ function sourceLabel(source: AdminErrorItem["source"]): string {
       return "Deploy log";
     case "ci":
       return "GitHub Actions";
+    case "client":
+      return "Client (browser)";
+    case "server":
+      return "Server (app)";
     default:
       return source;
   }
@@ -41,7 +45,7 @@ export function ErrorMonitorSection({ items }: { items: AdminErrorItem[] }) {
       {items.length === 0 ? (
         <div className="rounded-xl border border-border bg-surface px-6 py-12 text-center">
           <p className="text-sm text-muted">
-            No activator errors, no suspicious deployment log lines, and no recent failed CI runs.
+            No reported client/server errors, activator failures, suspicious deploy lines, or recent failed CI runs.
           </p>
           <p className="text-xs text-muted/80 mt-2">
             If an app misbehaves, check{" "}

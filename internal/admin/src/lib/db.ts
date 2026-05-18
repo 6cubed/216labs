@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from "crypto";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { getDatabasePath, getProjectsRoot } from "./repo-paths";
+import { ensureClientErrorEventsTable } from "./client-error-store";
 
 const BOOTSTRAP_FILE = "config/deploy-bootstrap.txt";
 
@@ -235,6 +236,7 @@ function initSchema(db: Database.Database) {
     );
   `);
   ensureEdgeVisitorDayTable(db);
+  ensureClientErrorEventsTable(db);
   seedDefaultCronJobs(db);
   ensureTelegramGroupHourlyCronJob(db);
   ensureWorkforceTelegramTestCronJob(db);
@@ -996,11 +998,26 @@ function ensureCronJobsTable(db: Database.Database): void {
     );
   `);
   ensureEdgeVisitorDayTable(db);
+  ensureClientErrorEventsTable(db);
   seedDefaultCronJobs(db);
   ensureTelegramGroupHourlyCronJob(db);
   ensureWorkforceTelegramTestCronJob(db);
   ensureWorkforceTelegramCronBootstrapped(db);
   ensureEdgeVisitorRollupCronJob(db);
+  ensureClientErrorPruneCronJob(db);
+}
+
+function ensureClientErrorPruneCronJob(db: Database.Database): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+     VALUES (
+       'client-error-prune',
+       'Prune old client error events',
+       'Deletes client_error_event rows older than 14 days.',
+       '15 4 * * *',
+       1
+     )`
+  ).run();
 }
 
 /** Append-only log: VPS deploys (deploy.sh), per-app rollouts, optional CI rows. */

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../services/error_reporter.dart';
 import '../services/location_service.dart';
 import '../widgets/post_card.dart';
 import 'new_post_screen.dart';
@@ -84,7 +85,8 @@ class _FeedScreenState extends State<FeedScreen> {
         _page++;
         _error = null;
       });
-    } catch (e) {
+    } catch (e, st) {
+      ErrorReporter.report(e.toString(), stack: st.toString());
       setState(() => _error = e.toString());
     } finally {
       setState(() => _loading = false);

@@ -446,6 +446,17 @@ export async function edgeVisitorRollup(db) {
   return "";
 }
 
+/** Drop client/server error rows older than 14 days. */
+export async function clientErrorPrune(ctx) {
+  const db = ctx.db;
+  const r = db.prepare(
+    `DELETE FROM client_error_event WHERE datetime(occurred_at) < datetime('now', '-14 days')`
+  ).run();
+  const n = r.changes ?? 0;
+  if (n > 0) console.log(`[client-error-prune] deleted ${n} row(s)`);
+  return "";
+}
+
 export const HANDLERS = {
   "telegram-daily-digest": telegramDailyDigest,
   "telegram-happypath-summary": telegramHappypathSummary,
@@ -454,4 +465,5 @@ export const HANDLERS = {
   "telegram-group-hourly-reply": telegramGroupHourlyReply,
   "workforce-telegram-test": workforceTelegramTest,
   "edge-visitor-rollup": edgeVisitorRollup,
+  "client-error-prune": clientErrorPrune,
 };

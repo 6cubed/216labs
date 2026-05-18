@@ -90,6 +90,17 @@ Query example (rolling **7** days, app id = manifest id, e.g. `onefit`):
 
 On the droplet, point **`EDGE_UNIQUES_DB`** at the host’s `216labs.db` if you run the script from another directory.
 
+### Client/server error reporting
+
+Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`** (no basic auth on that path; Caddy routes it before the admin gate). Rows land in **`216labs.db`** table **`client_error_event`**. The admin **Errors** page and heartbeats can use:
+
+```bash
+./scripts/query_client_errors.sh anchor 24    # one app, last 24h
+./scripts/query_client_errors.sh '' 6         # summary all apps, 6h
+```
+
+Next.js: `<ClientErrorReporter />` from `@216labs/errors/react`. Browser: `installBrowserErrorReporting()` from `@216labs/errors/report-error`. Python: `internal/python/client_error_report.py` (`report_server_error`). Cron job **`client-error-prune`** drops events older than 14 days.
+
 ## Local development
 
 ```bash

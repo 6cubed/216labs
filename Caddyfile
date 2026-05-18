@@ -13,10 +13,15 @@ admin.6cubed.app {
 		}
 		format json
 	}
-	basicauth {
-		{env.ADMIN_USER} {env.ADMIN_PASSWORD_HASH}
+	handle /api/public/report-error* {
+		reverse_proxy admin:3000
 	}
-	reverse_proxy admin:3000
+	handle {
+		basicauth {
+			{env.ADMIN_USER} {env.ADMIN_PASSWORD_HASH}
+		}
+		reverse_proxy admin:3000
+	}
 }
 
 anchor.6cubed.app {
