@@ -5,6 +5,7 @@
   "description": "FastAPI + React Native app for anonymous geo-located posts and replies. Users register via device ID only; all posts are anchored to a physical location with a configurable radius feed.",
   "category": "consumer",
   "internal_port": 8000,
+  "health_path": "/api/v1/health",
   "memory_limit": "256m",
   "docker_service": "anchor-api",
   "build_context": "./products/org-lifestyle/play/anchor/backend",

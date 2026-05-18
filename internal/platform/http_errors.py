@@ -28,6 +28,7 @@ class AppError(Exception):
         super().__init__(message)
         self.status_code = int(status_code)
         self.code = code
+        self.message = message
         self.details = details
         if expose_message is None:
             expose_message = self.status_code < 500

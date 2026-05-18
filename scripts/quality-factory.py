@@ -250,7 +250,7 @@ def _check_live_one(app: AppManifest, domain: str, timeout_s: float, retries: in
     attempts = max(1, retries + 1)
     last_detail = ""
     for i in range(attempts):
-        url = f"https://{app.app_id}.{domain}"
+        url = f"https://{app.app_id}.{domain}{app.health_path}"
         code, body = _http_probe(url, timeout_s, follow_redirects=False)
         if code is None:
             last_detail = f"probe failed ({body})"
