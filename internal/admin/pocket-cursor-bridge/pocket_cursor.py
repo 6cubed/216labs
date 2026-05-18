@@ -2579,13 +2579,16 @@ def run_heartbeat_inject(*, manual: bool = False) -> tuple[bool, str]:
     mc_conn = _cdp_conn_for_telegram_send()
     if not manual and cfg.skip_when_generating and _monitor_cursor_is_generating(mc_conn):
         return False, "Cursor is still generating — try /heartbeat now in a moment"
-    msg = cfg.message
+    msg, reflect_line = heartbeat_harness.compose_message(cfg.message)
     with last_sent_lock:
         last_sent_text = msg
     try:
         result = cursor_send_message(msg, source_bracket="Heartbeat")
         label = "manual" if manual else "scheduled"
-        print(f"[heartbeat] ({label}) -> Cursor: {result}")
+        reflect_note = f" reflect={reflect_line[:80]!r}…" if reflect_line and len(reflect_line) > 80 else (
+            f" reflect={reflect_line!r}" if reflect_line else ""
+        )
+        print(f"[heartbeat] ({label}) -> Cursor: {result}{reflect_note}")
         ok = not (isinstance(result, str) and str(result).startswith("ERROR"))
         log_event(
             "heartbeat_sent",
@@ -2593,9 +2596,12 @@ def run_heartbeat_inject(*, manual: bool = False) -> tuple[bool, str]:
             manual=manual,
             result=str(result)[:200] if result else "",
             interval_sec=cfg.interval_sec,
+            reflect_prompt=reflect_line[:300] if reflect_line else "",
         )
         if ok and not manual and cfg.notify_telegram and chat_id and not muted:
-            preview = msg if len(msg) <= 160 else msg[:157] + "…"
+            preview = reflect_line if reflect_line else msg
+            if len(preview) > 160:
+                preview = preview[:157] + "…"
             tg_send(
                 chat_id,
                 f"⏰ Heartbeat sent to Cursor\n\n{preview}",

@@ -3,5 +3,24 @@
   "interval_sec": 1800,
   "first_run_delay_sec": 120,
   "skip_when_generating": true,
-  "notify_telegram": true
+  "notify_telegram": true,
+  "reflect_enabled": true,
+  "execution_floor": "Do at least one tangible thing this cycle (fix, commit, push, deploy, or doc)—not a status-only reply. If truly blocked, state the blocker and the next action.",
+  "reflect_prompts": [
+    "Reflect: what is the highest-leverage unfinished item right now, and what blocks it?",
+    "Prioritize: name your top three outcomes for the next 30 minutes—pick one and start.",
+    "Ideate: what one small change would compound across projects this week?",
+    "Execute: fix one concrete bug, ship one commit, or update one doc—smallest highest-value slice.",
+    "Reflect: what did the last heartbeat accomplish? If only status, what will this one change?",
+    "Prioritize: scan git status and open threads—move the single most important needle.",
+    "Ideate: what would a user notice if you shipped something in the next ten minutes?",
+    "Execute: pick the smallest shippable slice of in-repo work and finish it (commit or deploy).",
+    "Reflect: which assumptions from earlier today still hold? What changed?",
+    "Prioritize: what is stale (docs, manifest, deploy) versus the code on disk?",
+    "Ideate: what half-finished thread from Telegram or this chat should you close out?",
+    "Execute: advance one project with a real diff—not planning-only prose.",
+    "Reflect: where are you avoiding a hard decision? Make it and act.",
+    "Prioritize: if you could only ship one thing before the next heartbeat, what is it?",
+    "Ideate: what would you regret leaving uncommitted overnight?"
+  ]
 }

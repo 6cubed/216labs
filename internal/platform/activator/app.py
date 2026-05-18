@@ -277,8 +277,8 @@ def set_runtime_state(
         with db_connection() as conn:
             conn.execute(f"UPDATE apps SET {', '.join(fields)} WHERE id = ?", values)
             conn.commit()
-    except sqlite3.OperationalError:
-        # Older 216labs.db without activator columns — continue; in-memory status still works.
+    except sqlite3.Error:
+        # Corrupt/missing DB or older schema — in-memory status still works.
         pass
 
 
@@ -290,7 +290,7 @@ def touch_last_accessed_only(app_id: str) -> None:
                 (app_id,),
             )
             conn.commit()
-    except sqlite3.OperationalError:
+    except sqlite3.Error:
         pass
 
 
@@ -448,7 +448,7 @@ def docker_service_to_app_id(docker_service: str) -> Optional[str]:
                 (docker_service,),
             ).fetchone()
         return str(row["id"]) if row else None
-    except sqlite3.OperationalError:
+    except sqlite3.Error:
         return None
 
 
@@ -463,7 +463,7 @@ def get_last_accessed_at(app_id: str) -> Optional[str]:
             return None
         v = row["last_accessed_at"]
         return str(v) if v is not None else None
-    except sqlite3.OperationalError:
+    except sqlite3.Error:
         return None
 
 
@@ -584,7 +584,7 @@ def get_effective_ghcr_auth() -> Tuple[str, str, str]:
                 username = v or "token"
             elif k == "ACTIVATOR_REGISTRY_PREFIX" and not env_prefix:
                 prefix = v
-    except (sqlite3.OperationalError, OSError, TypeError):
+    except (sqlite3.Error, OSError, TypeError):
         pass
 
     if not prefix:
