@@ -24,3 +24,4 @@ quality-reports/
 ._*
 internal/admin/pocket-cursor-bridge/.auto_approve_prompts
 internal/admin/pocket-cursor-bridge/.heartbeat_enabled
+internal/admin/pocket-cursor-bridge/.env.admin-sync.tmp
