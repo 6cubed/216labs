@@ -9,22 +9,57 @@ from __future__ import annotations
 import json
 import sqlite3
 import sys
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
-import importlib.util
-
-_spec = importlib.util.spec_from_file_location(
-    "quality_factory", REPO_ROOT / "scripts" / "quality-factory.py"
-)
-_qf = importlib.util.module_from_spec(_spec)
-assert _spec.loader is not None
-_spec.loader.exec_module(_qf)
-discover_manifests = _qf.discover_manifests
-
 DB_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO_ROOT / "216labs.db"
+
+
+@dataclass(frozen=True)
+class ManifestRow:
+    app_id: str
+    rel_dir: str
+    docker_service: str
+    internal_port: int
+    abs_dir: Path
+
+
+def discover_manifests() -> list[ManifestRow]:
+    out: list[ManifestRow] = []
+    top_skip = {".git", ".cursor", "node_modules", ".venv", "venv", "__pycache__"}
+    for root in ("products", "internal"):
+        base = REPO_ROOT / root
+        if not base.is_dir():
+            continue
+        stack: list[tuple[Path, str]] = [(base, root)]
+        while stack:
+            abs_dir, rel = stack.pop()
+            if (abs_dir / "manifest.json").is_file():
+                data = json.loads((abs_dir / "manifest.json").read_text(encoding="utf-8"))
+                app_id = str(data.get("id", "")).strip()
+                svc = str(data.get("docker_service", app_id)).strip() or app_id
+                port = int(data.get("internal_port", 3000))
+                out.append(
+                    ManifestRow(
+                        app_id=app_id,
+                        rel_dir=rel,
+                        docker_service=svc,
+                        internal_port=port,
+                        abs_dir=abs_dir,
+                    )
+                )
+                continue
+            try:
+                entries = list(abs_dir.iterdir())
+            except OSError:
+                continue
+            for entry in entries:
+                if not entry.is_dir() or entry.name.startswith(".") or entry.name in top_skip:
+                    continue
+                stack.append((entry, f"{rel}/{entry.name}"))
+    return sorted(out, key=lambda m: m.app_id)
 
 
 def _stack_other(data: dict) -> str | None:
@@ -40,15 +75,13 @@ def main() -> int:
     if not DB_PATH.is_file():
         print(f"DB not found: {DB_PATH}", file=sys.stderr)
         return 1
-    apps = discover_manifests()
+    manifests = discover_manifests()
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
     today = date.today().isoformat()
     existing_ports = {
-        int(r["port"])
-        for r in conn.execute("SELECT port FROM apps WHERE port > 0").fetchall()
+        int(r[0]) for r in conn.execute("SELECT port FROM apps WHERE port > 0").fetchall()
     }
-    next_port = max([8000] + list(existing_ports)) + 1
+    next_port = max([8000, *existing_ports]) + 1
 
     insert_sql = """
         INSERT INTO apps (
@@ -74,17 +107,15 @@ def main() -> int:
         """
 
     added = updated = 0
-    for m in apps:
-        mp = m.abs_dir / "manifest.json"
-        data = json.loads(mp.read_text(encoding="utf-8"))
+    for m in manifests:
+        data = json.loads((m.abs_dir / "manifest.json").read_text(encoding="utf-8"))
         svc = m.docker_service
         img = f"216labs/{svc}:latest"
-        sf = (data.get("stack") or {}).get("frontend")
-        sb = (data.get("stack") or {}).get("backend")
-        sd = (data.get("stack") or {}).get("database")
+        stack = data.get("stack") or {}
+        sf, sb, sd = stack.get("frontend"), stack.get("backend"), stack.get("database")
         so = _stack_other(data)
         mem = str(data.get("memory_limit", "256m"))
-        row = conn.execute("SELECT id, port FROM apps WHERE id = ?", (m.app_id,)).fetchone()
+        row = conn.execute("SELECT id FROM apps WHERE id = ?", (m.app_id,)).fetchone()
         if row:
             conn.execute(
                 update_sql,
@@ -103,16 +134,15 @@ def main() -> int:
                     so,
                     mem,
                     m.app_id,
-                )
+                ),
             )
             updated += 1
         else:
-            port = int(data.get("internal_port", m.internal_port)) or next_port
+            port = m.internal_port if m.internal_port > 0 else next_port
             while port in existing_ports:
                 port = next_port
                 next_port += 1
             existing_ports.add(port)
-            deploy_on = 1 if m.app_id == "admin" else 0
             conn.execute(
                 insert_sql,
                 (
@@ -130,32 +160,27 @@ def main() -> int:
                     sb,
                     sd,
                     so,
-                    deploy_on,
+                    1 if m.app_id == "admin" else 0,
                     mem,
                     today,
                     today,
-                )
+                ),
             )
             added += 1
         for ev in data.get("env_vars") or []:
             if not isinstance(ev, dict):
                 continue
             key = str(ev.get("key", "")).strip()
-            if not key:
-                continue
-            conn.execute(
-                insert_env_sql,
-                (
-                    key,
-                    str(ev.get("description", "")),
-                    1 if ev.get("is_secret") else 0,
+            if key:
+                conn.execute(
+                    insert_env_sql,
+                    (key, str(ev.get("description", "")), 1 if ev.get("is_secret") else 0),
                 )
-            )
 
     conn.commit()
     total = conn.execute("SELECT COUNT(*) FROM apps").fetchone()[0]
     conn.close()
-    print(f"synced manifests: {len(apps)} ({added} inserted, {updated} updated); apps in DB: {total}")
+    print(f"synced manifests: {len(manifests)} ({added} inserted, {updated} updated); apps in DB: {total}")
     return 0
 
 
