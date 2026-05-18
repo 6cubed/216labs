@@ -19,12 +19,14 @@ _harness_mtime = 0.0
 _harness: dict = {}
 
 DEFAULT_MESSAGE = (
-    "fix outstanding issues, advance various projects, "
-    "make any other appropriate and helpful changes at this point"
+    "Drive the stack forward: fix what's broken, advance active projects, "
+    "and improve things that matter—even ideas outside the current thread "
+    "if they're clearly high leverage."
 )
 DEFAULT_EXECUTION_FLOOR = (
-    "Do at least one tangible thing this cycle (fix, commit, push, deploy, or doc)—"
-    "not a status-only reply. If truly blocked, state the blocker and the next action."
+    "Ship something real this cycle—fix, feature, refactor, commit, push, deploy, "
+    "or a doc that unlocks the next step. Status-only replies don't count. "
+    "When blocked, name the blocker and the next concrete move."
 )
 DEFAULT_INTERVAL_SEC = 1800
 DEFAULT_FIRST_RUN_DELAY_SEC = 120
@@ -34,20 +36,23 @@ MAX_FIRST_RUN_DELAY_SEC = 1800
 
 _DEFAULT_REFLECT_PROMPTS = [
     "Reflect: what is the highest-leverage unfinished item right now, and what blocks it?",
-    "Prioritize: name your top three outcomes for the next 30 minutes—pick one and start.",
-    "Ideate: what one small change would compound across projects this week?",
-    "Execute: fix one concrete bug, ship one commit, or update one doc—smallest highest-value slice.",
-    "Reflect: what did the last heartbeat accomplish? If only status, what will this one change?",
-    "Prioritize: scan git status and open threads—move the single most important needle.",
-    "Ideate: what would a user notice if you shipped something in the next ten minutes?",
-    "Execute: pick the smallest shippable slice of in-repo work and finish it (commit or deploy).",
+    "Prioritize: name your top three outcomes for the next 30 minutes—pick the boldest one you can still land and start.",
+    "Ideate: what change would compound across projects this week if you shipped it now?",
+    "Execute: land a meaningful slice—bugfix, feature, infra, or polish—not a planning monologue.",
+    "Reflect: what did the last heartbeat accomplish? If it was mostly status, what will you change in the repo this time?",
+    "Prioritize: scan git status, open issues, and Telegram threads—move the needle that matters most.",
+    "Ideate: what would a user notice if you shipped in the next ten minutes?",
+    "Execute: finish and commit (or deploy) the best shippable unit of work you can see—don't sand down scope until it's trivial.",
     "Reflect: which assumptions from earlier today still hold? What changed?",
-    "Prioritize: what is stale (docs, manifest, deploy) versus the code on disk?",
-    "Ideate: what half-finished thread from Telegram or this chat should you close out?",
-    "Execute: advance one project with a real diff—not planning-only prose.",
-    "Reflect: where are you avoiding a hard decision? Make it and act.",
-    "Prioritize: if you could only ship one thing before the next heartbeat, what is it?",
-    "Ideate: what would you regret leaving uncommitted overnight?",
+    "Prioritize: what is stale (docs, manifest, deploy, monitoring) versus the code on disk—close the gap.",
+    "Ideate: what half-finished thread from Telegram or this chat deserves a decisive close-out?",
+    "Execute: advance a project with a real diff; pairing a small fix with a slightly bolder improvement is welcome.",
+    "Reflect: where are you playing it safe? Pick the harder honest move and act.",
+    "Prioritize: if you could only ship one thing before the next heartbeat, what would move the product most?",
+    "Ideate: what outside-the-box improvement (DX, observability, UX, automation) is worth a bet this cycle?",
+    "Execute: try one improvement you haven't been asked for—if it's clearly good for the monorepo, ship it.",
+    "Reflect: what would you regret leaving uncommitted overnight?",
+    "Ideate: what's one experiment you could run in-repo in under 30 minutes that might pay off all week?",
 ]
 
 _bridge_dir: Path | None = None
@@ -155,7 +160,7 @@ def compose_message(base: str | None = None) -> tuple[str, str]:
     if _reflect_enabled():
         reflect_line = pick_reflect_prompt()
         parts.append(f"\n\n[Reflect] {reflect_line}")
-    parts.append(f"\n\n[Minimum] {_execution_floor()}")
+    parts.append(f"\n\n[Push] {_execution_floor()}")
     return "".join(parts), reflect_line
 
 
