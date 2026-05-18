@@ -3,3 +3,4 @@
 # lagging main when a prior publish job failed or was skipped. Heavy images slow CI — remove lines
 # you do not need. Frame & Flux also has a dedicated workflow: .github/workflows/ghcr-publish-aiart.yml
 birdperch
+blog
