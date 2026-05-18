@@ -9,6 +9,7 @@ import json
 import urllib.error
 import urllib.request
 from typing import Any
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 DEFAULT_USER_AGENT = "216labs-http/1.0 (+https://6cubed.app)"
 
@@ -45,17 +46,24 @@ def fetch_json(
         return default
 
 
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ARG002
+        return None
+
+
 def http_probe(
     url: str,
     timeout_s: float,
     *,
     max_bytes: int = 5000,
     user_agent: str = "quality-factory/1.0",
+    follow_redirects: bool = True,
 ) -> tuple[int | None, str]:
     """GET *url*; return (status_code, body_prefix) or (None, error_message). Handles HTTP errors with body."""
-    req = urllib.request.Request(url, headers={"User-Agent": user_agent})
+    req = Request(url, headers={"User-Agent": user_agent})
+    opener = urllib.request.build_opener() if follow_redirects else build_opener(_NoRedirect())
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+        with opener.open(req, timeout=timeout_s) as resp:
             body = resp.read(max_bytes).decode("utf-8", errors="replace")
             return int(resp.getcode()), body
     except urllib.error.HTTPError as e:

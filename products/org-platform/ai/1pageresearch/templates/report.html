@@ -378,11 +378,12 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.5/dist/purify.min.js" crossorigin="anonymous"></script>
 <script>
-  // Minimal markdown renderer for the report body
+  // Minimal markdown renderer for the report body (sanitize before innerHTML)
   const el = document.getElementById('reportBody');
   const raw = el.textContent;
-  el.innerHTML = renderMd(raw);
+  el.innerHTML = DOMPurify.sanitize(renderMd(raw));
 
   function renderMd(md) {
     const lines = md.split('\n');

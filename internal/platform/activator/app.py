@@ -141,12 +141,15 @@ def db_connection() -> sqlite3.Connection:
 
 
 def get_app_row(app_id: str):
-    with db_connection() as conn:
-        row = conn.execute(
-            "SELECT id, docker_service FROM apps WHERE id = ?",
-            (app_id,),
-        ).fetchone()
-    return row
+    try:
+        with db_connection() as conn:
+            row = conn.execute(
+                "SELECT id, docker_service FROM apps WHERE id = ?",
+                (app_id,),
+            ).fetchone()
+        return row
+    except sqlite3.Error:
+        return None
 
 
 def _manifest_search_dirs() -> List[str]:

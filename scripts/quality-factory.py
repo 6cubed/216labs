@@ -117,9 +117,13 @@ def discover_manifests() -> list[AppManifest]:
             internal_port = int(data.get("internal_port", 3000))
         except Exception as exc:
             raise RuntimeError(f"{mp}: internal_port must be int") from exc
-        build_context = _norm_rel(str(data.get("build_context", f"./{rel_dir}")))
-        if not build_context:
-            build_context = rel_dir
+        raw_build_context = str(data.get("build_context", f"./{rel_dir}")).strip()
+        if raw_build_context in (".", "./"):
+            build_context = "."
+        else:
+            build_context = _norm_rel(raw_build_context)
+            if not build_context:
+                build_context = rel_dir
         build_dockerfile = str(data.get("build_dockerfile", "Dockerfile")).strip() or "Dockerfile"
         health_path = str(data.get("health_path", "/health")).strip() or "/health"
         if not health_path.startswith("/"):
@@ -233,8 +237,13 @@ def check_compose(selected: list[AppManifest], service_names: set[str]) -> list[
     return errs
 
 
-def _http_probe(url: str, timeout_s: float) -> tuple[int | None, str]:
-    return http_probe(url, timeout_s, user_agent="quality-factory/1.0")
+def _http_probe(url: str, timeout_s: float, *, follow_redirects: bool = True) -> tuple[int | None, str]:
+    return http_probe(
+        url,
+        timeout_s,
+        user_agent="quality-factory/1.0",
+        follow_redirects=follow_redirects,
+    )
 
 
 def _check_live_one(app: AppManifest, domain: str, timeout_s: float, retries: int) -> CheckReport:
@@ -242,11 +251,13 @@ def _check_live_one(app: AppManifest, domain: str, timeout_s: float, retries: in
     last_detail = ""
     for i in range(attempts):
         url = f"https://{app.app_id}.{domain}"
-        code, body = _http_probe(url, timeout_s)
+        code, body = _http_probe(url, timeout_s, follow_redirects=False)
         if code is None:
             last_detail = f"probe failed ({body})"
         elif code >= 500:
             last_detail = f"live probe returned {code}"
+        elif 300 <= code < 400:
+            return CheckReport(status="pass", detail=f"ok (redirect {code})")
         elif "unknown app" in body.lower() and "not in admin db" in body.lower():
             last_detail = "live probe shows activator unknown-app page"
         else:

@@ -56,7 +56,13 @@
           return;
         }
         if (action === 'approve' && data.slug) {
-          statusEl.innerHTML = 'Approved. <a href="' + '{{ base_url }}/report/' + data.slug + '" class="btn" style="margin-left: 0.5rem;">View report →</a>';
+          statusEl.textContent = 'Approved. ';
+          const link = document.createElement('a');
+          link.href = '{{ base_url }}/report/' + data.slug;
+          link.className = 'btn';
+          link.style.marginLeft = '0.5rem';
+          link.textContent = 'View report →';
+          statusEl.appendChild(link);
           statusEl.style.color = 'var(--green)';
         } else if (action === 'deny') {
           statusEl.textContent = 'Denied.';
