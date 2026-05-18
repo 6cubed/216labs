@@ -1,0 +1,7 @@
+{
+  "message": "fix outstanding issues, advance various projects, make any other appropriate and helpful changes at this point",
+  "interval_sec": 1800,
+  "first_run_delay_sec": 120,
+  "skip_when_generating": true,
+  "notify_telegram": true
+}

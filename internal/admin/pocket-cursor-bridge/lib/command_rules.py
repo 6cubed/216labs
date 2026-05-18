@@ -17,7 +17,21 @@ _rules = {'allow': [], 'deny': []}
 
 # Button priority: most conservative first. "Allow" grants broader
 # permission (whole directory) -- deliberately excluded for now.
-_ACCEPT_KEYWORDS = ('accept', 'run', 'fetch')
+_ACCEPT_KEYWORDS = ('accept', 'confirm', 'run', 'fetch', 'continue', 'execute', 'approve')
+
+# Never auto-click these (Cancel is often buttons[0] — do not fall back to it).
+_DENY_KEYWORDS = (
+    'cancel',
+    'skip',
+    'reject',
+    'deny',
+    'no',
+    'always ask',
+    'switch',
+    'plan mode',
+    'dismiss',
+    'close',
+)
 
 
 def _flatten_patterns(entries):
@@ -87,14 +101,43 @@ def match(command_text):
     return None
 
 
+def _label_lower(btn: dict) -> str:
+    return (btn.get('label') or '').lower().strip()
+
+
+def is_deny_button(btn: dict) -> bool:
+    low = _label_lower(btn)
+    if not low:
+        return True
+    return any(kw in low for kw in _DENY_KEYWORDS)
+
+
 def find_accept_button(buttons):
     """Find the most conservative accept button.
 
-    Priority: accept > run > fetch.
+    Priority: accept > confirm > run > fetch > …
     "Allow" is deliberately excluded (grants broader directory permission).
     """
     for keyword in _ACCEPT_KEYWORDS:
         for btn in buttons:
-            if keyword in btn['label'].lower():
+            if is_deny_button(btn):
+                continue
+            if keyword in _label_lower(btn):
                 return btn['index'], btn['label']
     return None, None
+
+
+def find_fallback_approval_button(buttons):
+    """Last resort: rightmost non-deny button (never buttons[0] if it is Cancel)."""
+    for btn in reversed(buttons):
+        if not is_deny_button(btn):
+            return btn['index'], btn['label']
+    return None, None
+
+
+def pick_approval_button(buttons):
+    """Best button for auto-approve, or (None, None) if unsafe to guess."""
+    idx, label = find_accept_button(buttons)
+    if idx is not None:
+        return idx, label
+    return find_fallback_approval_button(buttons)

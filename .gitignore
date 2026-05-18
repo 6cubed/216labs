@@ -23,3 +23,4 @@ quality-reports/
 .trufflehog-history.jsonl
 ._*
 internal/admin/pocket-cursor-bridge/.auto_approve_prompts
+internal/admin/pocket-cursor-bridge/.heartbeat_enabled

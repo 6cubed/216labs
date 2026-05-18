@@ -50,6 +50,7 @@ init_bridge_logging(BRIDGE_DIR)
 from start_cursor import get_used_ports
 import chat_detection as _cd
 from lib import command_rules
+from lib import heartbeat_harness
 
 _cd.ts_print = wrap_ts_print(_cd.ts_print)
 _cd.print = _cd.ts_print
@@ -264,6 +265,9 @@ elif _ap_env in ('0', 'false', 'no', 'off'):
     auto_approve_prompts_file.unlink(missing_ok=True)
 auto_approve_prompts = auto_approve_prompts_file.exists()
 
+heartbeat_harness.init(BRIDGE_DIR)
+heartbeat_harness.apply_env_on_startup()
+
 # Private chat (chat_id > 0): default forward ON; this set opts out.
 agent_conversation_off_file = BRIDGE_DIR / ".agent_conversation_off_user_ids"
 # Group/supergroup (chat_id < 0): default forward OFF; this set opts in.
@@ -442,6 +446,54 @@ def _save_active_chat(workspace, chat_name, pc_id):
         }))
     except Exception:
         pass
+
+
+def _restore_mirrored_chat_from_disk(*, log: bool = True) -> bool:
+    """Set mirrored_chat from .active_chat when unset (e.g. list_chats empty at connect)."""
+    global mirrored_chat, active_instance_id, ws
+    if mirrored_chat:
+        return True
+    if not active_chat_file.exists():
+        return False
+    try:
+        saved = json.loads(active_chat_file.read_text(encoding='utf-8'))
+    except Exception:
+        return False
+    saved_pc_id = (saved.get('pc_id') or '').strip()
+    saved_name = (saved.get('chat_name') or '').strip() or saved_pc_id
+    if not saved_pc_id:
+        return False
+    saved_ws = saved.get('workspace')
+
+    def _instance_matches(info: dict) -> bool:
+        return info.get('workspace') == saved_ws
+
+    candidates: list[tuple[str, dict]] = [
+        (wid, info) for wid, info in instance_registry.items() if _instance_matches(info)
+    ]
+    if not candidates:
+        if active_instance_id and active_instance_id in instance_registry:
+            candidates = [(active_instance_id, instance_registry[active_instance_id])]
+        elif len(instance_registry) == 1:
+            wid = next(iter(instance_registry))
+            candidates = [(wid, instance_registry[wid])]
+
+    for wid, info in candidates:
+        for pc_id, conv in info.get('convs', {}).items():
+            if pc_id == saved_pc_id or conv.get('name') == saved_name:
+                mirrored_chat = (wid, pc_id, conv['name'])
+                active_instance_id = wid
+                ws = info['ws']
+                if log:
+                    print(f"[cdp] Mirrored chat restored: {conv['name']}")
+                return True
+        mirrored_chat = (wid, saved_pc_id, saved_name)
+        active_instance_id = wid
+        ws = info['ws']
+        if log:
+            print(f"[cdp] Mirrored chat restored from disk: {saved_name}")
+        return True
+    return False
 
 
 # ── Telegram helpers ─────────────────────────────────────────────────────────
@@ -681,6 +733,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'pause', 'description': 'Pause Cursor to Telegram forwarding'},
     {'command': 'play', 'description': 'Resume forwarding'},
     {'command': 'autoprompt', 'description': 'Auto-click Run/confirm (on|off|status)'},
+    {'command': 'heartbeat', 'description': 'Agent nudge: on|off|now|status'},
     {'command': 'agentconversation', 'description': 'Opt in/out: groups default off, DMs default on'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
     {'command': 'verbose', 'description': 'Mirror agent thinking live (Telegram edits)'},
@@ -1029,29 +1082,9 @@ def cdp_connect():
             except Exception:
                 pass
 
-    # Set active instance: (1) persisted state, (2) first with workspace
+    # Set active instance, then restore mirrored chat from .active_chat (pc_id on disk).
     active_instance_id = None
     mirrored_chat = None
-
-    if active_chat_file.exists():
-        try:
-            saved = json.loads(active_chat_file.read_text())
-            saved_ws = saved.get('workspace')
-            saved_pc_id = saved.get('pc_id')
-            saved_name = saved.get('chat_name')
-            for wid, info in instance_registry.items():
-                if info['workspace'] == saved_ws:
-                    for pc_id, conv in info.get('convs', {}).items():
-                        if pc_id == saved_pc_id or conv['name'] == saved_name:
-                            active_instance_id = wid
-                            mirrored_chat = (wid, pc_id, conv['name'])
-                            print(f"[cdp] Active (restored): {info['workspace']} -- {conv['name']}")
-                            break
-                if active_instance_id:
-                    break
-        except Exception:
-            pass
-
     if not active_instance_id:
         active_instance_id = next(
             (wid for wid, info in instance_registry.items() if info['workspace']),
@@ -1059,6 +1092,7 @@ def cdp_connect():
         )
         active_name = instance_registry[active_instance_id]['workspace'] or '(no workspace)'
         print(f"[cdp] Active (default): {active_name}")
+    _restore_mirrored_chat_from_disk(log=True)
     ws = instance_registry[active_instance_id]['ws']
 
 
@@ -1066,20 +1100,111 @@ msg_id_counter = 0
 msg_id_lock = threading.Lock()
 
 
-def cdp_eval_on(conn, expression):
+def _ws_alive(conn) -> bool:
+    if conn is None:
+        return False
+    try:
+        if hasattr(conn, "connected"):
+            return bool(conn.connected)
+        sock = getattr(conn, "sock", None)
+        return sock is not None
+    except Exception:
+        return False
+
+
+def _reconnect_instance_ws(iid: str) -> bool:
+    """Replace a dead CDP WebSocket for one Cursor target. Returns True on success."""
+    global ws, active_instance_id
+    info = instance_registry.get(iid)
+    if not info:
+        return False
+    label = info.get("workspace") or iid[:8]
+    ws_url = info.get("ws_url")
+    port = detect_cdp_port(exit_on_fail=False)
+    if port:
+        for inst in cdp_list_instances(port):
+            if inst["id"] == iid:
+                ws_url = inst["ws_url"]
+                info["ws_url"] = ws_url
+                break
+    if not ws_url:
+        return False
+    try:
+        old = info.get("ws")
+        if old:
+            try:
+                old.close()
+            except Exception:
+                pass
+        conn = websocket.create_connection(ws_url)
+        info["ws"] = conn
+        if active_instance_id == iid:
+            ws = conn
+        print(f"[cdp] Reconnected: {label}  [{iid[:8]}]")
+        return True
+    except Exception as e:
+        print(f"[cdp] Reconnect failed for {label}: {e}")
+        return False
+
+
+def _ensure_conn(conn, iid: str | None = None):
+    """Return a live CDP WebSocket, reconnecting the registry entry if needed."""
+    if _ws_alive(conn):
+        return conn
+    if iid and _reconnect_instance_ws(iid):
+        return instance_registry[iid]["ws"]
+    if conn is not None:
+        for iid2, info in instance_registry.items():
+            if info.get("ws") is conn and _reconnect_instance_ws(iid2):
+                return instance_registry[iid2]["ws"]
+    return None
+
+
+def _health_check_all_cdp_connections() -> None:
+    """Overview/monitor: refresh any dead main CDP sockets (not just listener WS)."""
+    for iid in list(instance_registry.keys()):
+        info = instance_registry.get(iid)
+        if not info:
+            continue
+        conn = info.get("ws")
+        if _ws_alive(conn):
+            try:
+                cdp_eval_on(conn, "1", _iid=iid, _retry=False)
+            except Exception:
+                _reconnect_instance_ws(iid)
+        else:
+            _reconnect_instance_ws(iid)
+
+
+def cdp_eval_on(conn, expression, *, _iid: str | None = None, _retry: bool = True):
     """Evaluate JS on a specific WebSocket connection. Thread-safe via cdp_lock."""
     global msg_id_counter
+    conn = _ensure_conn(conn, _iid)
+    if not conn:
+        raise RuntimeError("CDP connection unavailable")
     with msg_id_lock:
         msg_id_counter += 1
         mid = msg_id_counter
-    with cdp_lock:
-        conn.send(json.dumps({
-            'id': mid,
-            'method': 'Runtime.evaluate',
-            'params': {'expression': expression, 'returnByValue': True}
-        }))
-        result = json.loads(conn.recv())
-    return result.get('result', {}).get('result', {}).get('value')
+    try:
+        with cdp_lock:
+            conn.send(json.dumps({
+                'id': mid,
+                'method': 'Runtime.evaluate',
+                'params': {'expression': expression, 'returnByValue': True}
+            }))
+            result = json.loads(conn.recv())
+        return result.get('result', {}).get('result', {}).get('value')
+    except Exception as e:
+        err = str(e).lower()
+        if _retry and _iid and ("closed" in err or "socket" in err):
+            if _reconnect_instance_ws(_iid):
+                return cdp_eval_on(
+                    instance_registry[_iid]["ws"],
+                    expression,
+                    _iid=_iid,
+                    _retry=False,
+                )
+        raise
 
 
 def active_conn():
@@ -1135,9 +1260,88 @@ def _cdp_activate_mirrored_tab(conn, pc_id: str | None) -> str:
     return out if isinstance(out, str) else 'OK'
 
 
-def cdp_eval(expression):
-    """Evaluate JS on the active instance. Thread-safe via cdp_lock."""
-    return cdp_eval_on(active_conn(), expression)
+def cdp_eval(expression, conn=None, iid=None):
+    """Evaluate JS on conn (or active instance). Thread-safe via cdp_lock."""
+    c = _ensure_conn(conn or active_conn(), iid or active_instance_id)
+    return cdp_eval_on(c, expression, _iid=iid or active_instance_id)
+
+
+# Buttons inside a confirmation bubble (scoped query — avoids global index races).
+_CONFIRM_SCOPE_BUTTONS = (
+    'button.ui-button, [data-click-ready="true"], .ui-shell-tool-call__run-btn'
+)
+_AUTO_CONFIRM_DEDUP_SECS = 45
+
+
+def _normalize_confirm_text(text: str) -> str:
+    return re.sub(r'\s+', ' ', (text or '').strip().lower())[:240]
+
+
+def _confirm_dedup_key(text: str, sec_id: str) -> str:
+    norm = _normalize_confirm_text(text)
+    return norm if norm else (sec_id or '')
+
+
+def cdp_click_approval_button(
+    btns_selector: str,
+    accept_label: str,
+    *,
+    scope_selector: str | None = None,
+    accept_idx: int | None = None,
+    conn=None,
+    iid=None,
+) -> str:
+    """Click Run/Confirm inside scope when possible; match by label, then index."""
+    scope_js = json.dumps(scope_selector or '')
+    sel_js = json.dumps(btns_selector or '')
+    rel_js = json.dumps(_CONFIRM_SCOPE_BUTTONS)
+    label_js = json.dumps(accept_label or '')
+    idx = accept_idx if accept_idx is not None else -1
+    expr = f"""
+    (function() {{
+        const scopeSel = {scope_js};
+        const btnSel = {sel_js};
+        const relSel = {rel_js};
+        const wantLabel = {label_js};
+        const wantIdx = {idx};
+        const norm = (s) => (s || '').trim().replace(/\\s+/g, ' ').toLowerCase();
+        const want = norm(wantLabel);
+        let nodes;
+        const root = scopeSel ? document.querySelector(scopeSel) : null;
+        if (root) {{
+            try {{ nodes = root.querySelectorAll(relSel); }} catch (e) {{ nodes = []; }}
+            if (!nodes.length && btnSel) {{
+                try {{ nodes = root.querySelectorAll(btnSel); }} catch (e) {{ nodes = []; }}
+            }}
+        }} else if (btnSel) {{
+            try {{ nodes = document.querySelectorAll(btnSel); }} catch (e) {{
+                return 'ERROR: invalid selector';
+            }}
+        }} else {{
+            return 'ERROR: no selector';
+        }}
+        for (let i = 0; i < nodes.length; i++) {{
+            if (want && norm(nodes[i].innerText) === want) {{
+                nodes[i].click();
+                return 'OK';
+            }}
+        }}
+        if (wantIdx >= 0 && nodes[wantIdx]) {{
+            nodes[wantIdx].click();
+            return 'OK';
+        }}
+        for (let i = 0; i < nodes.length; i++) {{
+            const t = norm(nodes[i].innerText);
+            if (want && t && (t.includes(want) || want.includes(t))) {{
+                nodes[i].click();
+                return 'OK';
+            }}
+        }}
+        return 'ERROR: button not found (' + nodes.length + ' in scope)';
+    }})();
+    """
+    out = cdp_eval(expr, conn=conn, iid=iid)
+    return (out or '').strip() if isinstance(out, str) else str(out)
 
 
 # Monitor: must run on the same CDP session as cursor_get_turn_info (mirrored chat), not
@@ -1375,7 +1579,7 @@ def cdp_hover_file_path(filename_selector):
         return None
 
 
-def cdp_try_expand(selector):
+def cdp_try_expand(selector, conn=None, iid=None):
     """Expand a collapsed element by clicking its expand chevron (if any).
 
     Works for file edits, terminal commands, and any tool-call container
@@ -1396,7 +1600,7 @@ def cdp_try_expand(selector):
                 btn.click();
                 return 'expanded';
             }})();
-        """)
+        """, conn=conn, iid=iid)
         if result == 'expanded':
             time.sleep(0.5)
             return True
@@ -1408,7 +1612,7 @@ def cdp_try_expand(selector):
         return False
 
 
-def cdp_try_collapse(selector):
+def cdp_try_collapse(selector, conn=None, iid=None):
     """Collapse an expanded element back by clicking its chevron-up button."""
     try:
         cdp_eval(f"""
@@ -1422,18 +1626,19 @@ def cdp_try_collapse(selector):
                 if (icon && icon.classList.contains('codicon-chevron-up')) btn.click();
                 return 'ok';
             }})();
-        """)
+        """, conn=conn, iid=iid)
         time.sleep(0.3)
     except Exception as e:
         print(f"[screenshot] try_collapse error: {e}")
 
 
-def cdp_screenshot_element(selector):
+def cdp_screenshot_element(selector, conn=None, iid=None):
     """Screenshot a specific DOM element by CSS selector. Returns PNG bytes or None.
     
     Takes a full screenshot (which works reliably), then crops the element
     region using Pillow. Sidesteps CDP clip coordinate/DPR issues entirely.
     """
+    conn = _ensure_conn(conn or active_conn(), iid or active_instance_id)
     # Step 1: Scroll the element into view
     found = cdp_eval(f"""
         (function() {{
@@ -1442,7 +1647,7 @@ def cdp_screenshot_element(selector):
             el.scrollIntoView({{ block: 'center', behavior: 'instant' }});
             return 'ok';
         }})();
-    """)
+    """, conn=conn, iid=iid)
     if not found:
         print(f"[screenshot] Element NOT found: {selector}")
         return None
@@ -1467,7 +1672,7 @@ def cdp_screenshot_element(selector):
                 viewport_h: window.innerHeight
             }});
         }})();
-    """)
+    """, conn=conn, iid=iid)
     if not rect:
         return None
     try:
@@ -1479,7 +1684,7 @@ def cdp_screenshot_element(selector):
         return None
 
     # Step 4: Take full screenshot
-    full_png = cdp_screenshot()
+    full_png = cdp_screenshot_on(conn) if conn else cdp_screenshot()
     if not full_png:
         print("[screenshot] Full screenshot failed")
         return None
@@ -1979,7 +2184,7 @@ def cursor_delete_old_chats(conn=None):
         return {'closed': 0, 'kept': 0, 'total': 0}
 
 
-def cursor_get_turn_info(composer_prefix='', conn=None):
+def cursor_get_turn_info(composer_prefix='', conn=None, iid=None):
     """Get the last turn's user message and all AI response sections.
     
     Uses composer-human-ai-pair-container which groups one user message
@@ -2059,15 +2264,43 @@ def cursor_get_turn_info(composer_prefix='', conn=None):
                 const msgId = msg.getAttribute('data-message-id') || '';
                 const bubbleSuffix = msgId.split('-').pop();
                 const kind = msg.getAttribute('data-message-kind');
+                const toolCallId = msg.getAttribute('data-tool-call-id') || '';
                 // Counter for generating fallback IDs when the DOM doesn't
                 // provide one (tables lack a DOM id; code blocks inherit
                 // from their parent markdown-section).
                 let subIdx = 0;
 
+                // Shell tool-call row (Run outside sandbox) — often in AI bubbles, not kind=tool
+                const shellCall = msg.querySelector('.ui-shell-tool-call');
+                if (shellCall) {
+                    const shellBtnEls = shellCall.querySelectorAll(
+                        'button.ui-button, [data-click-ready="true"], .ui-shell-tool-call__run-btn'
+                    );
+                    if (shellBtnEls.length > 0) {
+                        const buttons = Array.from(shellBtnEls).map((btn, idx) => ({
+                            label: btn.innerText.trim().replace(/\\s+/g, ' '),
+                            index: idx
+                        }));
+                        let cleanText = 'Run pending';
+                        const desc = shellCall.querySelector('.ui-shell-tool-call__description-row');
+                        if (desc) cleanText = desc.innerText.trim().replace(/\\s+/g, ' ');
+                        const bubbleSelector = '#bubble-' + bubbleSuffix;
+                        sections.push({
+                            text: cleanText,
+                            type: 'confirmation',
+                            id: toolCallId || ('shell:' + msgId + ':' + subIdx),
+                            selector: bubbleSelector + ' .ui-shell-tool-call',
+                            buttons_selector: bubbleSelector + ' .ui-shell-tool-call button.ui-button, '
+                                + bubbleSelector + ' .ui-shell-tool-call [data-click-ready="true"]',
+                            buttons: buttons
+                        });
+                        return;
+                    }
+                }
+
                 // --- Tool messages (file edits, confirmations, etc.) ---
                 if (kind === 'tool') {
                     const toolStatus = msg.getAttribute('data-tool-status');
-                    const toolCallId = msg.getAttribute('data-tool-call-id') || '';
                     // Pending confirmation: find action buttons (may be in status row
                     // for file edits, or in menu controls for WebFetch/other tools)
                     const actionBtns = msg.querySelectorAll('[data-click-ready="true"]');
@@ -2280,6 +2513,39 @@ def cursor_get_turn_info(composer_prefix='', conn=None):
                 }
             });
 
+            // Shell Run rows in composer (streaming) — may not be inside a finalized bubble yet
+            const shellSeen = new Set(sections.filter(s => s.type === 'confirmation').map(s => s.id));
+            last.querySelectorAll('.ui-shell-tool-call').forEach((shellCall, shellIdx) => {
+                const shellBtnEls = shellCall.querySelectorAll(
+                    'button.ui-button, [data-click-ready="true"], .ui-shell-tool-call__run-btn'
+                );
+                if (shellBtnEls.length === 0) return;
+                const parentMsg = shellCall.closest('[data-message-id]');
+                const shellId = parentMsg
+                    ? ('shell:' + (parentMsg.getAttribute('data-message-id') || shellIdx))
+                    : ('shell:composer:' + shellIdx);
+                if (shellSeen.has(shellId)) return;
+                shellSeen.add(shellId);
+                const buttons = Array.from(shellBtnEls).map((btn, idx) => ({
+                    label: btn.innerText.trim().replace(/\\s+/g, ' '),
+                    index: idx
+                }));
+                let cleanText = 'Run pending';
+                const desc = shellCall.querySelector('.ui-shell-tool-call__description-row');
+                if (desc) cleanText = desc.innerText.trim().replace(/\\s+/g, ' ');
+                const bubble = shellCall.closest('[id^="bubble-"]');
+                const bubbleSelector = bubble ? ('#' + bubble.id) : '[data-composer-id]';
+                sections.push({
+                    text: cleanText,
+                    type: 'confirmation',
+                    id: shellId,
+                    selector: bubbleSelector + ' .ui-shell-tool-call',
+                    buttons_selector: bubbleSelector + ' .ui-shell-tool-call button.ui-button, '
+                        + bubbleSelector + ' .ui-shell-tool-call [data-click-ready="true"]',
+                    buttons: buttons
+                });
+            });
+
             // Active conversation name from the checked tab (scoped to agent-tabs to avoid terminal tabs)
             const convTab = document.querySelector('[class*="agent-tabs"] li[class*="checked"] a[aria-id="chat-horizontal-tab"]');
             const convName = convTab ? convTab.getAttribute('aria-label') : '';
@@ -2287,11 +2553,76 @@ def cursor_get_turn_info(composer_prefix='', conn=None):
             return JSON.stringify({ turn_id: turnId, user_full: userFull, sections: sections, images: images, conv: convName });
         })();
     """.replace('__COMPOSER_PREFIX__', composer_prefix)
-    result = cdp_eval_on(conn, js) if conn else cdp_eval(js)
+    if conn:
+        result = cdp_eval_on(conn, js, _iid=iid)
+    else:
+        result = cdp_eval(js, iid=iid)
     try:
         return json.loads(result) if result else {'turn_id': '', 'user_full': '', 'sections': [], 'images': [], 'conv': ''}
     except json.JSONDecodeError:
         return {'turn_id': '', 'user_full': '', 'sections': [], 'images': [], 'conv': ''}
+
+
+# ── Thread: Heartbeat harness (periodic Cursor nudge) ─────────────────────────
+
+def run_heartbeat_inject(*, manual: bool = False) -> tuple[bool, str]:
+    """Inject harness prompt. Returns (ok, telegram_status_line)."""
+    global last_sent_text
+    cfg = heartbeat_harness.get_config()
+    if not manual and not heartbeat_harness.is_enabled():
+        return False, "Heartbeat is OFF — use /heartbeat on or /heartbeat now"
+    if not manual and muted:
+        return False, "Bridge is paused — /play first, or /heartbeat now"
+    _restore_mirrored_chat_from_disk(log=True)
+    if not mirrored_chat:
+        return False, "No mirrored chat — open a chat in Cursor or use /chats"
+    mc_conn = _cdp_conn_for_telegram_send()
+    if not manual and cfg.skip_when_generating and _monitor_cursor_is_generating(mc_conn):
+        return False, "Cursor is still generating — try /heartbeat now in a moment"
+    msg = cfg.message
+    with last_sent_lock:
+        last_sent_text = msg
+    try:
+        result = cursor_send_message(msg, source_bracket="Heartbeat")
+        label = "manual" if manual else "scheduled"
+        print(f"[heartbeat] ({label}) -> Cursor: {result}")
+        ok = not (isinstance(result, str) and str(result).startswith("ERROR"))
+        log_event(
+            "heartbeat_sent",
+            ok=ok,
+            manual=manual,
+            result=str(result)[:200] if result else "",
+            interval_sec=cfg.interval_sec,
+        )
+        if ok and not manual and cfg.notify_telegram and chat_id and not muted:
+            preview = msg if len(msg) <= 160 else msg[:157] + "…"
+            tg_send(
+                chat_id,
+                f"⏰ Heartbeat sent to Cursor\n\n{preview}",
+            )
+        if ok:
+            return True, "Heartbeat sent to Cursor."
+        return False, f"Heartbeat failed: {result}"
+    except Exception as e:
+        print(f"[heartbeat] inject failed: {e}")
+        log_event("heartbeat_sent", ok=False, manual=manual, error=str(e)[:200])
+        return False, f"Heartbeat failed: {e}"
+
+
+def heartbeat_thread():
+    """Inject a harness prompt into the mirrored chat on a fixed interval."""
+    print("[heartbeat] thread started")
+    first_run = True
+    while True:
+        cfg = heartbeat_harness.get_config()
+        wait_sec = cfg.first_run_delay_sec if first_run else cfg.interval_sec
+        first_run = False
+        time.sleep(wait_sec)
+        if not heartbeat_harness.is_enabled():
+            continue
+        ok, line = run_heartbeat_inject(manual=False)
+        if not ok:
+            print(f"[heartbeat] (scheduled) skipped: {line}")
 
 
 # ── Thread 1: Telegram → Cursor (sender) ────────────────────────────────────
@@ -2308,17 +2639,19 @@ def tg_bridge_status_text():
     conv_name = cursor_get_active_conv()
     status_line = "⏸ Paused" if muted else "▶ Active"
     ap_line = "⚡ Auto-approve prompts: ON" if auto_approve_prompts else "⛔ Auto-approve prompts: OFF"
+    hb_line = "⏰ Heartbeat: ON" if heartbeat_harness.is_enabled() else "💤 Heartbeat: OFF"
     instances = len(instance_registry)
     lines = [
         f"PocketCursor is running. {status_line}",
         ap_line,
+        hb_line,
         f"{instances} workspace{'s' if instances != 1 else ''} connected.",
     ]
     if conv_name:
         lines.append(f"💬 {conv_name}")
     lines.append(
         "\n/newchat /chats /deleteoldchats /commands /logs /logevents /status /pause /play /autoprompt "
-        "/screenshot /verbose /reasoning /normal /quiet /unpair"
+        "/heartbeat /screenshot /verbose /reasoning /normal /quiet /unpair"
     )
     lines.append(f"Verbosity: {get_bridge_verbosity()}")
     lines.append(
@@ -2553,14 +2886,16 @@ def sender_thread():
                         btns_selector = selectors.get('buttons_selector', '')
                         btn_label = next((b['label'] for b in selectors.get('buttons', []) if b['index'] == btn_index), f'Button {btn_index}')
                         print(f"[sender] Callback: click button [{btn_index}] '{btn_label}' for tool {tool_id[:12]}...")
-                        click_result = cdp_eval(f"""
-                            (function() {{
-                                const btns = document.querySelectorAll('{btns_selector}');
-                                if (!btns[{btn_index}]) return 'ERROR: button ' + {btn_index} + ' not found (' + btns.length + ' buttons)';
-                                btns[{btn_index}].click();
-                                return 'OK';
-                            }})();
-                        """)
+                        cb_iid = selectors.get('instance_id') or active_instance_id
+                        cb_conn = instance_registry.get(cb_iid, {}).get('ws') if cb_iid else None
+                        click_result = cdp_click_approval_button(
+                            btns_selector,
+                            btn_label,
+                            scope_selector=selectors.get('scope_selector') or None,
+                            accept_idx=btn_index,
+                            conn=cb_conn,
+                            iid=cb_iid,
+                        )
                         print(f"[sender] Click result: {click_result}")
                         tg_call('answerCallbackQuery', callback_query_id=cb_id, text=btn_label)
                     else:
@@ -2829,6 +3164,36 @@ def sender_thread():
                         )
                     continue
 
+                if cmd == '/heartbeat' or cmd.startswith('/heartbeat '):
+                    parts = text.strip().split(maxsplit=1)
+                    arg = parts[1].strip().lower() if len(parts) > 1 else ''
+                    if arg in ('on', '1', 'true', 'yes'):
+                        heartbeat_harness.set_enabled(True)
+                        cfg = heartbeat_harness.get_config()
+                        tg_send(
+                            cid,
+                            "✅ Heartbeat: ON\n"
+                            f"Every {cfg.interval_sec // 60} minutes the bridge sends your harness "
+                            "prompt into the mirrored Cursor chat (when not paused and not busy).\n"
+                            "Use /heartbeat off to stop, /heartbeat now to run once.",
+                        )
+                        print("[sender] Heartbeat ON")
+                    elif arg in ('off', '0', 'false', 'no'):
+                        heartbeat_harness.set_enabled(False)
+                        tg_send(cid, "💤 Heartbeat: OFF\nUse /heartbeat on to resume periodic nudges.")
+                        print("[sender] Heartbeat OFF")
+                    elif arg in ('now', 'run', 'trigger', 'fire'):
+                        ok, line = run_heartbeat_inject(manual=True)
+                        tg_send(cid, f"{'✅' if ok else '⚠️'} {line}")
+                        print(f"[sender] Heartbeat now: {line}")
+                    else:
+                        tg_send(
+                            cid,
+                            heartbeat_harness.status_summary()
+                            + "\n\n/heartbeat now — run once immediately",
+                        )
+                    continue
+
                 if cmd == '/screenshot':
                     print(f"[sender] Taking screenshot of {active_instance_id and active_instance_id[:8]}...")
                     try:
@@ -3029,6 +3394,7 @@ def monitor_thread():
     section_stable = {}         # {section_id: consecutive_stable_ticks}
     STABLE_THRESHOLD = 2        # Forward section after 2s of no change
     thinking_stream_state = {}  # sec_key -> {msg_id, last_text} for verbose live thinking
+    recent_auto_confirms = {}   # dedup_key -> monotonic time (duplicate bubbles / shared selectors)
     initialized = False
     marked_done = False         # Whether we've sent ✅ for this turn
 
@@ -3044,16 +3410,21 @@ def monitor_thread():
             # Get the last turn's info (scoped to mirrored chat's composer-id)
             # Use mirrored_chat's instance connection — not active_conn()
             mc = mirrored_chat
+            mc_iid = mc[0] if mc else None
             cp = _composer_prefix_from_pcid(mc[1]) if mc else ''
-            mc_conn = instance_registry.get(mc[0], {}).get('ws') if mc else None
-            turn = cursor_get_turn_info(cp, conn=mc_conn)
+            mc_conn = instance_registry.get(mc_iid, {}).get('ws') if mc_iid else None
+            mc_conn = _ensure_conn(mc_conn, mc_iid)
+            if mc_iid and not mc_conn:
+                print("[monitor] No live CDP connection for mirrored chat; skipping tick")
+                continue
+            turn = cursor_get_turn_info(cp, conn=mc_conn, iid=mc_iid)
 
             # Composer not in expected instance — search others (chat may have moved)
             if cp and not turn['turn_id']:
                 found_iid = None
                 for iid, info in instance_registry.items():
                     try:
-                        turn = cursor_get_turn_info(cp, conn=info['ws'])
+                        turn = cursor_get_turn_info(cp, conn=info['ws'], iid=iid)
                         if turn['turn_id']:
                             found_iid = iid
                             break
@@ -3355,23 +3726,41 @@ def monitor_thread():
                             continue
                     buttons = sec.get('buttons', [])
                     btns_selector = sec.get('buttons_selector', '')
+                    scope_sel = sec_selector or ''
+
+                    dedup_key = _confirm_dedup_key(text, tool_id)
+                    dedup_ts = recent_auto_confirms.get(dedup_key)
+                    if dedup_ts is not None:
+                        if time.monotonic() - dedup_ts <= _AUTO_CONFIRM_DEDUP_SECS:
+                            print(
+                                f"[auto-prompt] Skipping duplicate confirmation: {text[:72]!r}",
+                            )
+                            if sec_key:
+                                forwarded_ids.add(sec_key)
+                            section_stable.pop(sec_key, None)
+                            continue
+                        recent_auto_confirms.pop(dedup_key, None)
 
                     # Auto-accept: check command text against allow/deny rules
                     rule_result = command_rules.match(text) if COMMAND_RULES else None
                     if rule_result == 'accept' and btns_selector:
-                        accept_idx, accept_label = command_rules.find_accept_button(buttons)
+                        accept_idx, accept_label = command_rules.pick_approval_button(buttons)
                         if accept_idx is not None:
                             # Screenshot BEFORE click (click changes DOM)
-                            png = cdp_screenshot_element(sec_selector) if sec_selector else None
-                            click_result = cdp_eval(f"""
-                                (function() {{
-                                    const btns = document.querySelectorAll('{btns_selector}');
-                                    if (!btns[{accept_idx}]) return 'ERROR: button not found';
-                                    btns[{accept_idx}].click();
-                                    return 'OK';
-                                }})();
-                            """)
-                            if click_result and click_result.strip() == 'OK':
+                            png = (
+                                cdp_screenshot_element(sec_selector, conn=mc_conn, iid=mc_iid)
+                                if sec_selector
+                                else None
+                            )
+                            click_result = cdp_click_approval_button(
+                                btns_selector,
+                                accept_label,
+                                scope_selector=scope_sel or None,
+                                accept_idx=accept_idx,
+                                conn=mc_conn,
+                                iid=mc_iid,
+                            )
+                            if click_result == 'OK':
                                 print(f"[command-rules] Auto-accepted: {text} -> {accept_label}")
                                 if not muted and cid:
                                     if png:
@@ -3384,63 +3773,113 @@ def monitor_thread():
                                 if sec_key:
                                     forwarded_ids.add(sec_key)
                                 section_stable.pop(sec_key, None)
+                                recent_auto_confirms[dedup_key] = time.monotonic()
                                 continue
                             else:
                                 print(f"[command-rules] Auto-accept click failed ({click_result}), falling back to keyboard")
 
-                    # Auto-approve all confirmations (toggle: /autoprompt or .auto_approve_prompts; env POCKET_AUTO_APPROVE_PROMPTS)
+                    # Auto-approve (toggle: /autoprompt). Unsafe guess → Telegram keyboard instead.
                     if auto_approve_prompts and btns_selector and buttons:
-                        accept_idx, accept_label = command_rules.find_accept_button(buttons)
-                        if accept_idx is None:
-                            accept_idx = buttons[0]['index']
-                            accept_label = buttons[0].get('label', '?')
-                        png_ap = cdp_screenshot_element(sec_selector) if sec_selector else None
-                        click_result = cdp_eval(f"""
+                        accept_idx, accept_label = command_rules.pick_approval_button(buttons)
+                        if accept_idx is not None:
+                            png_ap = (
+                                cdp_screenshot_element(sec_selector, conn=mc_conn, iid=mc_iid)
+                                if sec_selector
+                                else None
+                            )
+                            click_result = cdp_click_approval_button(
+                                btns_selector,
+                                accept_label,
+                                scope_selector=scope_sel or None,
+                                accept_idx=accept_idx,
+                                conn=mc_conn,
+                                iid=mc_iid,
+                            )
+                            if click_result == 'OK':
+                                print(f"[auto-prompt] Auto-approved: {text} -> {accept_label}")
+                                if not muted and cid:
+                                    cap = f"✅ Auto-approved ({accept_label}): {text}"
+                                    if png_ap:
+                                        tg_send_photo_bytes(
+                                            cid,
+                                            png_ap,
+                                            filename='auto_approve.png',
+                                            caption=cap[:1024],
+                                        )
+                                    else:
+                                        tg_send(cid, cap)
+                                with pending_confirms_lock:
+                                    pending_confirms.pop(tool_id, None)
+                                if sec_key:
+                                    forwarded_ids.add(sec_key)
+                                section_stable.pop(sec_key, None)
+                                recent_auto_confirms[dedup_key] = time.monotonic()
+                                for j in range(i + 1, len(sections)):
+                                    s2 = sections[j]
+                                    if not isinstance(s2, dict) or s2.get('type') != 'confirmation':
+                                        continue
+                                    if _confirm_dedup_key(s2.get('text', ''), s2.get('id', '')) == dedup_key:
+                                        sk2 = s2.get('id', '')
+                                        if sk2:
+                                            forwarded_ids.add(sk2)
+                                continue
+                            print(
+                                f"[auto-prompt] Auto-approve click failed ({click_result}), "
+                                "falling back to keyboard",
+                            )
+                        else:
+                            print(
+                                f"[auto-prompt] No safe approval button for {text!r} "
+                                f"({[b.get('label') for b in buttons]!r}) — sending to Telegram",
+                            )
+
+                    if not buttons and btns_selector and mc_conn:
+                        live_btns = cdp_eval(f"""
                             (function() {{
                                 const btns = document.querySelectorAll('{btns_selector}');
-                                if (!btns[{accept_idx}]) return 'ERROR: button not found';
-                                btns[{accept_idx}].click();
-                                return 'OK';
+                                return JSON.stringify(Array.from(btns).map((btn, idx) => ({{
+                                    label: btn.innerText.trim().replace(/\\s+/g, ' '),
+                                    index: idx
+                                }})));
                             }})();
-                        """)
-                        if click_result and click_result.strip() == 'OK':
-                            print(f"[auto-prompt] Auto-approved: {text} -> {accept_label}")
-                            if not muted and cid:
-                                if png_ap:
-                                    tg_send_photo_bytes(
-                                        cid,
-                                        png_ap,
-                                        filename='auto_approve.png',
-                                        caption=f"✅ Auto-approved: {text}",
-                                    )
-                                else:
-                                    tg_send(cid, f"✅ Auto-approved: {text}")
-                            with pending_confirms_lock:
-                                pending_confirms.pop(tool_id, None)
-                            if sec_key:
-                                forwarded_ids.add(sec_key)
-                            section_stable.pop(sec_key, None)
-                            continue
-                        print(f"[auto-prompt] Auto-approve click failed ({click_result}), falling back to keyboard")
+                        """, conn=mc_conn, iid=mc_iid)
+                        try:
+                            if live_btns:
+                                buttons = json.loads(live_btns)
+                        except (json.JSONDecodeError, TypeError):
+                            pass
 
                     if not muted:
                         tg_typing(cid)
                         png = None
                         if sec_selector:
-                            png = cdp_screenshot_element(sec_selector)
+                            png = cdp_screenshot_element(sec_selector, conn=mc_conn, iid=mc_iid)
                         keyboard = []
                         callback_token = base64.urlsafe_b64encode(os.urandom(6)).decode('ascii').rstrip('=')
                         with confirm_token_map_lock:
                             confirm_token_map[callback_token] = tool_id
                         for btn in buttons:
                             keyboard.append([{
-                                'text': btn['label'],
+                                'text': btn['label'][:64],
                                 'callback_data': f"btn_{btn['index']}:{callback_token}"
                             }])
                         ok = False
                         result = None
                         try:
-                            if png:
+                            if not keyboard:
+                                print(f"[monitor] CONFIRMATION (no buttons): {text}")
+                                if png:
+                                    result = tg_send_photo_bytes(
+                                        cid, png, filename='confirmation.png', caption=f"⚡ {text}"
+                                    )
+                                else:
+                                    result = tg_call_with_backoff(
+                                        'sendMessage',
+                                        chat_id=cid,
+                                        text=f"⚡ {text}\n\n(Open Cursor to approve — buttons not detected.)",
+                                        **_tg_thread_kw(),
+                                    )
+                            elif png:
                                 print(f"[monitor] Forwarding CONFIRMATION with keyboard: {text}")
                                 result = tg_send_photo_bytes_with_keyboard(
                                     cid, png, keyboard,
@@ -3467,6 +3906,8 @@ def monitor_thread():
                                 pending_confirms[tool_id] = {
                                     'buttons_selector': btns_selector,
                                     'buttons': buttons,
+                                    'scope_selector': scope_sel,
+                                    'instance_id': mc_iid,
                                 }
                         else:
                             print(
@@ -3572,6 +4013,8 @@ def monitor_thread():
 
         except Exception as e:
             print(f"[monitor] Error: {e}", flush=True)
+            if "closed" in str(e).lower() or "socket" in str(e).lower():
+                _health_check_all_cdp_connections()
             time.sleep(2)
 
 
@@ -3592,6 +4035,7 @@ def overview_thread():
     """Periodically rescan CDP targets. Detect new/closed Cursor instances."""
     global ws, active_instance_id, mirrored_chat
     print("[overview] Starting instance monitor...")
+    _restore_mirrored_chat_from_disk(log=True)
     if not mirrored_chat and active_instance_id and active_instance_id in instance_registry:
         info = instance_registry[active_instance_id]
         for pc_id, conv in info.get('convs', {}).items():
@@ -3606,6 +4050,9 @@ def overview_thread():
         try:
             time.sleep(SCAN_INTERVAL)
             _scan_cycle += 1
+
+            if not mirrored_chat:
+                _restore_mirrored_chat_from_disk(log=False)
 
             if _scan_cycle % _HEARTBEAT_CYCLES == 0:
                 uptime_s = int(time.time() - _overview_start)
@@ -3623,6 +4070,7 @@ def overview_thread():
             if _cdp_miss_count > 0:
                 print(f"[overview] CDP port recovered after {_cdp_miss_count} missed cycles")
                 _cdp_miss_count = 0
+            _health_check_all_cdp_connections()
             current = cdp_list_instances(port)
             current_ids = {inst['id'] for inst in current}
             known_ids = set(instance_registry.keys())
@@ -3729,8 +4177,6 @@ def overview_thread():
             scan_summary = {}
             for iid, info in list(instance_registry.items()):
                 ws_name = info['workspace']
-                if not ws_name:
-                    continue
                 try:
                     convs = list_chats(lambda js, c=info['ws']: cdp_eval_on(c, js))
                 except Exception:
@@ -3738,7 +4184,7 @@ def overview_thread():
 
                 current_convs = {c['pc_id']: c for c in convs}
                 known_convs = info['convs']
-                ws_label = ws_name.removesuffix(' (Workspace)')
+                ws_label = (ws_name or '(no workspace)').removesuffix(' (Workspace)')
                 if SCAN_VERBOSE:
                     for c in convs:
                         mid = c.get('msg_id', '-')
@@ -3989,6 +4435,14 @@ if chat_id:
         )
 if muted:
     print("Status: PAUSED (restored from previous session)")
+if heartbeat_harness.is_enabled():
+    _hb_cfg = heartbeat_harness.get_config()
+    print(
+        f"[heartbeat] ON — every {_hb_cfg.interval_sec // 60} min "
+        f"(edit lib/heartbeat_harness.json or /heartbeat off)"
+    )
+else:
+    print("[heartbeat] OFF — /heartbeat on or POCKET_HEARTBEAT_ENABLED=1 to enable")
 if tg_reply_thread_id is not None:
     print(
         f"[telegram] Forum topic id {tg_reply_thread_id}: replies go to this topic "
@@ -4026,9 +4480,11 @@ print("Press Ctrl+C to stop.\n")
 t1 = threading.Thread(target=sender_thread, daemon=True)
 t2 = threading.Thread(target=monitor_thread, daemon=True)
 t3 = threading.Thread(target=overview_thread, daemon=True)
+t4 = threading.Thread(target=heartbeat_thread, daemon=True, name="heartbeat")
 t1.start()
 t2.start()
 t3.start()
+t4.start()
 
 try:
     while True:
