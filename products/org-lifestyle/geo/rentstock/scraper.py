@@ -1,7 +1,7 @@
 """
 Daft.ie rental listing ingest for rentstock markets.
 
-Uses the public search API (gateway.daft.ie) that powers daft.ie search results.
+Uses Daft's gateway search API (v2 listings endpoint) that powers daft.ie search results.
 """
 
 from __future__ import annotations
@@ -19,7 +19,8 @@ from database import get_db, init_db
 
 logger = logging.getLogger(__name__)
 
-DAFT_LISTINGS_URL = "https://gateway.daft.ie/old/v1/listings"
+DAFT_LISTINGS_URL = "https://gateway.daft.ie/api/v2/ads/listings"
+# Detail still served on v1 path; v2 listing URLs 404 for some ids.
 DAFT_DETAIL_URL = "https://gateway.daft.ie/old/v1/listing/{daft_id}"
 
 HEADERS = {
@@ -28,7 +29,7 @@ HEADERS = {
     "platform": "web",
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     ),
     "Accept": "application/json",
     "Origin": "https://www.daft.ie",
@@ -150,22 +151,21 @@ def matches_market(
     return True, dist
 
 
-def _search_payload(*, from_offset: int, price_max: int | None) -> dict:
-    filters: list[dict] = []
-    if price_max is not None:
-        filters.append({"name": "rentalPrice", "values": ["0", str(price_max)]})
+def _search_payload(*, from_offset: int) -> dict:
+    # Price/geo filters in the Daft API payload are unreliable (wrong counts or
+    # empty subsets). We paginate national rent results and filter in Python.
     return {
         "section": "rent",
-        "filters": filters,
+        "filters": [],
         "paging": {"from": str(from_offset), "pageSize": str(PAGE_SIZE)},
     }
 
 
-def fetch_listings_page(from_offset: int, price_max: int | None) -> dict:
+def fetch_listings_page(from_offset: int) -> dict:
     resp = requests.post(
         DAFT_LISTINGS_URL,
         headers=HEADERS,
-        json=_search_payload(from_offset=from_offset, price_max=price_max),
+        json=_search_payload(from_offset=from_offset),
         timeout=TIMEOUT,
     )
     resp.raise_for_status()
@@ -241,7 +241,7 @@ def sync_market(market_slug: str) -> dict:
         from_offset = 0
         total_results = None
         while True:
-            data = fetch_listings_page(from_offset, market.max_price_eur)
+            data = fetch_listings_page(from_offset)
             pages += 1
             paging = data.get("paging") or {}
             if total_results is None:
@@ -258,7 +258,7 @@ def sync_market(market_slug: str) -> dict:
                 if not coords:
                     continue
                 lat, lon = coords
-                if market.max_price_eur is None and not in_scan_region(lat, lon, market):
+                if not in_scan_region(lat, lon, market):
                     continue
                 daft_id = int(listing["id"])
                 beds, sqm, price_eur = enrich_listing(listing, market)

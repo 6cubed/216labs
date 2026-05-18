@@ -27,8 +27,8 @@ MARKETS: dict[str, MarketCriteria] = {
         radius_m=3000,
         min_beds=3,
         min_sqm=90,
-        max_price_eur=600,
-        criteria_summary="3+ beds or 90+ m² · within 3 km of Temple Bar · asking ≤ €600",
+        max_price_eur=600_000,
+        criteria_summary="3+ beds or 90+ m² · within 3 km of Temple Bar · asking ≤ €600k",
     ),
     "galway": MarketCriteria(
         slug="galway",

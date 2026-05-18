@@ -12,7 +12,7 @@
     "frontend": "Flask templates",
     "backend": "Flask + Gunicorn + APScheduler",
     "database": "SQLite",
-    "other": ["Daft.ie search API"]
+    "other": ["Daft.ie gateway API (v2 listings)"]
   },
   "env_vars": [
     {
