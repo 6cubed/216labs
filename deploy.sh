@@ -123,13 +123,26 @@ ADMIN_CTR=$(ssh "${SSH_OPTS[@]}" "$REMOTE" \
   "docker ps --filter name=216labs-admin-1 --format '{{.Names}}'" 2>/dev/null | head -1 || true)
 
 if [ -n "$ADMIN_CTR" ]; then
+  set +e
   ENABLED_APPS=$(ssh "${SSH_OPTS[@]}" "$REMOTE" \
     "docker exec $ADMIN_CTR node -e \"
 const db = require('better-sqlite3')('/app/216labs.db');
 const rows = db.prepare(\\\"SELECT id FROM apps WHERE deploy_enabled = 1 OR id = 'admin' ORDER BY port\\\").all();
 rows.forEach(r => process.stdout.write(r.id + ' '));
 \"" 2>/dev/null | tr -s ' ')
-  echo "==> Deploy config (from server DB): $ENABLED_APPS"
+  _db_rc=$?
+  set -e
+  echo "==> Deploy config (from server DB): ${ENABLED_APPS:-<empty>}"
+  if [ "$_db_rc" -ne 0 ] || [ -z "$ENABLED_APPS" ]; then
+    echo "==> WARN: server admin DB query failed or returned no apps; falling back to toolkit defaults"
+    TOOLKIT_DEFAULTS="config/toolkit-default-enabled.txt"
+    if [ -f "$TOOLKIT_DEFAULTS" ]; then
+      ENABLED_APPS=$(grep -v '^[[:space:]]*#' "$TOOLKIT_DEFAULTS" | sed '/^[[:space:]]*$/d' | tr '\n' ' ')
+    else
+      ENABLED_APPS="admin activator landing hello-nextjs hello-flask"
+    fi
+    echo "==> Fallback enabled apps: $ENABLED_APPS"
+  fi
 elif [ -f "$DB_FILE" ]; then
   ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1 OR id = 'admin'" | tr '\n' ' ')
   echo "==> Deploy config (from local DB): $ENABLED_APPS"

@@ -14,11 +14,11 @@ shannonairport
 explore
 angelwatcher
 landing
+blog
 aiart
 birdperch
 ctfbench
 bugbounty
-blog
 marketing
 onefitblog
 emailgpt
