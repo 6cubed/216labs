@@ -8,6 +8,64 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'pocket-cursor-heartbeat-harness',
+    title: 'Pocket Cursor heartbeat: periodic agent nudges from your phone',
+    excerpt:
+      'A small harness in the Telegram bridge injects a configurable prompt into your mirrored Cursor chat every 30 minutes — so the agent keeps moving on outstanding work even when you are not at the desk.',
+    date: '2026-05-18',
+    body: `
+You can vibe-code from your phone with **Pocket Cursor** — Telegram messages land in the same Composer thread as your laptop. The missing piece was **continuity when you walk away**: the agent finishes a task, then waits. **Heartbeat** closes that gap with a **scheduled harness prompt** that nudges the agent on a timer, the same way you might ping yourself to “check the backlog.”
+
+**What it is**
+
+Heartbeat is a **daemon thread** in \`pocket_cursor.py\` plus a tiny config module (\`lib/heartbeat_harness.json\`). On a fixed interval it:
+
+1. Restores the **mirrored chat** from \`.active_chat\` (so it still works when Cursor has no workspace folder open).
+2. Injects your harness text into that chat via **CDP** — the same path as a Telegram message, with a \`[Heartbeat]\` timestamp prefix.
+3. Optionally pings Telegram when a scheduled run succeeds (\`notify_telegram\` in the JSON).
+
+Default harness text:
+
+> fix outstanding issues, advance various projects, make any other appropriate and helpful changes at this point
+
+You edit that sentence in \`heartbeat_harness.json\`; the bridge **hot-reloads** the file without a restart.
+
+**Timing**
+
+| Knob | Default | Meaning |
+|------|---------|---------|
+| \`interval_sec\` | 1800 | Repeat every 30 minutes |
+| \`first_run_delay_sec\` | 120 | First nudge ~2 minutes after bridge start (so you do not wait a full half-hour after a restart) |
+| \`skip_when_generating\` | true | Skip scheduled runs while Cursor shows Stop (agent still busy) |
+
+Env overrides: \`POCKET_HEARTBEAT_ENABLED\`, \`POCKET_HEARTBEAT_INTERVAL_SEC\`, \`POCKET_HEARTBEAT_FIRST_DELAY_SEC\`, \`POCKET_HEARTBEAT_MESSAGE\`.
+
+**Telegram controls**
+
+- \`/heartbeat on\` / \`/heartbeat off\` — persist in \`.heartbeat_enabled\`
+- \`/heartbeat now\` — run once immediately (works even when paused or periodic heartbeat is off)
+- \`/heartbeat\` — status summary
+
+**Why mirrored chat matters**
+
+Early versions skipped heartbeats with “no mirrored chat” when \`list_chats\` returned empty at connect — common on **no-workspace** Cursor windows. The fix: trust the **persisted \`pc_id\`** in \`.active_chat\` and restore \`mirrored_chat\` from disk before each inject. Overview scans now include no-workspace instances too.
+
+**Manual vs scheduled**
+
+Logs distinguish \`(manual)\` (from \`/heartbeat now\`) and \`(scheduled)\`. If scheduled runs are skipped, you will see \`(scheduled) skipped: …\` in \`logs/pocket-bridge.log\` (paused, generating, no chat on disk).
+
+**How it fits the factory**
+
+Heartbeat does not run a second agent. It is **one more message** into the chat you already mirror to Telegram — so replies still stream to your phone, auto-approve still applies, and your journals/context monitor behave as usual. It is the vibe-code factory’s answer to “keep the loop warm” without leaving a laptop open.
+
+**Try it**
+
+From the repo root: \`./scripts/pocket-cursor-bridge.sh\`, then in Telegram: \`/heartbeat on\`. Watch for \`[Heartbeat]\` in Cursor or \`⏰ Heartbeat sent\` on the bot.
+
+Pocket Cursor itself is documented in the bridge README and \`.cursor/rules/pocket-cursor.mdc\` in the monorepo.
+    `.trim(),
+  },
+  {
     slug: 'six-dollar-droplet-price-sheet-and-scaling-thousands-of-demos',
     title:
       'The $6 droplet price sheet: what this whole setup costs and how thousands of demos still fit',
