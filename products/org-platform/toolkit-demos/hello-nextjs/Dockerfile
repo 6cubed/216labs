@@ -8,11 +8,10 @@ RUN sh /tmp/docker-build-errors-package.sh
 COPY products/org-platform/toolkit-demos/hello-nextjs ./products/org-platform/toolkit-demos/hello-nextjs
 
 WORKDIR /repo/products/org-platform/toolkit-demos/hello-nextjs
-RUN npm ci --no-audit --no-fund
-RUN npm install \
-  && rm -rf node_modules/@216labs \
-  && mkdir -p node_modules/@216labs \
+RUN mkdir -p node_modules/@216labs \
   && cp -a /repo/packages/errors node_modules/@216labs/errors
+RUN npm ci --no-audit --no-fund
+ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
 
 FROM node:20-bookworm-slim
