@@ -7,7 +7,7 @@
 **/.next
 **/.turbo
 **/dist
-**/build
+**/build/
 **/.DS_Store
 
 # App data volumes / local artifacts (not TypeScript source under src/data/)
