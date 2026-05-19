@@ -4,21 +4,27 @@
   "private": true,
   "type": "module",
   "sideEffects": false,
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./express": {
       "types": "./src/express.ts",
       "import": "./src/express.ts",
-      "default": "./src/express.ts"
+      "require": "./dist/express.cjs",
+      "default": "./dist/express.cjs"
     },
     "./next": {
       "types": "./src/next.ts",
       "import": "./src/next.ts",
-      "default": "./src/next.ts"
+      "require": "./dist/next.cjs",
+      "default": "./dist/next.cjs"
     },
     "./report-error": {
       "types": "./src/report-error.ts",
@@ -49,6 +55,7 @@
     "next": "^14.2.15 || ^15.0.0 || ^16.0.0"
   },
   "devDependencies": {
+    "esbuild": "^0.25.0",
     "typescript": "^5"
   }
 }

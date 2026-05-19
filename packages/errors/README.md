@@ -40,6 +40,8 @@ report_server_error(app_id="anchor", message="...", kind="server")
 
 Ingest: `POST https://admin.6cubed.app/api/public/report-error` (see `docs/REPOSITORY.md`).
 
-**Vite / Express apps** (RamblingRadio, Stroll): call `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`; Docker needs repo-root context (see `products/org-social/Stroll.live/Dockerfile`). If the server is bundled with esbuild and most deps are externalized, add `@216labs/errors` to the **allowlist** and set **`packages: "bundle"`** in `script/build.ts` (see RamblingRadio). Without `packages: "bundle"`, esbuild still emits `require("@216labs/errors/express")` at runtime and the container crashes.
+**Vite / Express apps** (RamblingRadio, Stroll): call `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`; Docker needs repo-root context (see `products/org-social/Stroll.live/Dockerfile`). **Docker / Node server:** run `npm run build` in `packages/errors` before copying into `node_modules` (see RamblingRadio `Dockerfile`). That emits `dist/*.cjs` so Express can `require()` the package even when the app bundle leaves it external. Vite/Next can keep using `import` from `src/` via `transpilePackages`.
+
+Vite+Express apps with esbuild server bundles: add `@216labs/errors` to the allowlist and `packages: "bundle"` in `script/build.ts` (see RamblingRadio).
 
 **Heartbeat:** `./scripts/heartbeat-error-summary.sh 6` — per-app error counts.

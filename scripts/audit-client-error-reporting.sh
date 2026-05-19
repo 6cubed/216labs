@@ -58,6 +58,19 @@ esbuild_errors_ok() {
   return 0
 }
 
+errors_pkg_built_in_docker() {
+  local app_dir="$1"
+  local build_ts="$app_dir/script/build.ts"
+  [[ -f "$build_ts" ]] && grep -q 'const allowlist' "$build_ts" || return 0
+  local rel="${app_dir#$ROOT/}"
+  local df=""
+  df="$(find "$ROOT" -path "*/Dockerfile" -exec grep -l "$rel" {} \; 2>/dev/null | head -1)"
+  [[ -z "$df" ]] && return 0
+  grep -q 'packages/errors' "$df" || return 0
+  grep -qE 'WORKDIR /repo/packages/errors' "$df" && grep -q 'npm run build' "$df" || return 1
+  return 0
+}
+
 echo "=== Client error reporting audit ==="
 echo "Ingest: $INGEST_URL"
 echo
@@ -83,6 +96,11 @@ while IFS= read -r pkg; do
   if ! esbuild_errors_ok "$app_dir"; then
     status="GAP"
     notes+=("script/build.ts: add @216labs/errors to allowlist and packages:\"bundle\"")
+    missing=$((missing + 1))
+  fi
+  if ! errors_pkg_built_in_docker "$app_dir"; then
+    status="GAP"
+    notes+=("Dockerfile: build packages/errors before app (npm run build)")
     missing=$((missing + 1))
   fi
 
