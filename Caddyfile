@@ -13,7 +13,7 @@ admin.6cubed.app {
 		}
 		format json
 	}
-	handle /api/public/report-error* {
+	handle /api/public/* {
 		reverse_proxy admin:3000
 	}
 	handle {

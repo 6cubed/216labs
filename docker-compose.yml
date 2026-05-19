@@ -865,7 +865,9 @@ services:
   hello-flask:
     image: 216labs/hello-flask:latest
     pull_policy: never
-    build: ./products/org-platform/toolkit-demos/hello-flask
+    build:
+      context: .
+      dockerfile: ./products/org-platform/toolkit-demos/hello-flask/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
@@ -1300,7 +1302,9 @@ services:
   mediate:
     image: 216labs/mediate:latest
     pull_policy: never
-    build: ./products/org-social/mediate
+    build:
+      context: .
+      dockerfile: ./products/org-social/mediate/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

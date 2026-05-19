@@ -165,31 +165,25 @@ anchor_rep="no"
 [[ -f "$ANCHOR_MAIN" ]] && grep -q 'ErrorReporter.install' "$ANCHOR_MAIN" && anchor_rep="yes"
 audit_extra_app "anchor" "products/org-lifestyle/play/anchor/frontend" "$anchor_rep"
 
-MEDIATE_ERRORS="$ROOT/products/org-social/mediate"
-mediate_rep="no"
-if grep -rqE 'report_server_error|client_error_report' "$MEDIATE_ERRORS" 2>/dev/null; then
-  mediate_rep="yes"
-fi
-mediate_client="no"
-if grep -rqE 'admin\.6cubed\.app/api/public/report-error|report-error' \
-  "$ROOT/products/org-social/mediate/templates" 2>/dev/null; then
-  mediate_client="yes"
-fi
-if [[ "$mediate_rep" == "yes" || "$mediate_client" == "yes" ]]; then
-  audit_extra_app "mediate" "products/org-social/mediate" "yes"
-else
-  ylw "mediate (products/org-social/mediate): reporter=no → backlog [add client_error_report + templates or http_errors hook]"
-  missing=$((missing + 1))
-fi
-
 HELLO_FLASK="$ROOT/products/org-platform/toolkit-demos/hello-flask"
 hello_flask_rep="no"
-if [[ -f "$HELLO_FLASK/client_error_report.py" ]] \
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
   && grep -q 'report_server_error' "$HELLO_FLASK/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$HELLO_FLASK/Dockerfile" 2>/dev/null \
   && grep -q 'report-error' "$HELLO_FLASK/app.py" 2>/dev/null; then
   hello_flask_rep="yes"
 fi
 audit_extra_app "hello-flask" "products/org-platform/toolkit-demos/hello-flask" "$hello_flask_rep"
+
+MEDIATE_DIR="$ROOT/products/org-social/mediate"
+mediate_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'report_server_error' "$MEDIATE_DIR/http_errors.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$MEDIATE_DIR/Dockerfile" 2>/dev/null \
+  && grep -rq 'report-error' "$MEDIATE_DIR/templates" 2>/dev/null; then
+  mediate_rep="yes"
+fi
+audit_extra_app "mediate" "products/org-social/mediate" "$mediate_rep"
 
 LANDING="$ROOT/products/org-growth/ads/landing"
 landing_rep="no"

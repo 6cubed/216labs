@@ -94,7 +94,7 @@ On the droplet, point **`EDGE_UNIQUES_DB`** at the host’s `216labs.db` if you 
 
 ### Client/server error reporting
 
-Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`** (no basic auth on that path; Caddy routes it before the admin gate). Rows land in **`216labs.db`** table **`client_error_event`**. **Admin Overview** shows a rolling **24h error signals** metric (reported client/server events + apps with activator runtime failures); the **Errors** nav tab shows a badge when the count is > 0. **Applications** (and Overview app table) show **Signals** per app (reported 24h count + **RT** when activator reports a runtime failure), with links to **`/errors?app=<id>`**. The **Errors** page lists ingest rows plus runtime, deploy, and CI items (optionally filtered by `?app=`). Heartbeats and CLI:
+Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`** (and read **`/api/public/live-apps`**, **`/api/public/recent-deploys`**) — Caddy serves **`/api/public/*`** without basic auth before the admin gate. Rows land in **`216labs.db`** table **`client_error_event`**. **Admin Overview** shows a rolling **24h error signals** metric (reported client/server events + apps with activator runtime failures); the **Errors** nav tab shows a badge when the count is > 0. **Applications** (and Overview app table) show **Signals** per app (reported 24h count + **RT** when activator reports a runtime failure), with links to **`/errors?app=<id>`**. The **Errors** page lists ingest rows plus runtime, deploy, and CI items (optionally filtered by `?app=`). Heartbeats and CLI:
 
 ```bash
 ./scripts/query_client_errors.sh anchor 24    # one app, last 24h

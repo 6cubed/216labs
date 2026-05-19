@@ -42,7 +42,7 @@ lines = [
     "",
     f"admin.{domain} {{",
     *ACCESS_LOG_BLOCK,
-    "\thandle /api/public/report-error* {",
+    "\thandle /api/public/* {",
     "\t\treverse_proxy admin:3000",
     "\t}",
     "\thandle {",

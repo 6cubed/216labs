@@ -64,7 +64,7 @@ class AppError(Exception):
         return AppError(503, code, message, details=details)
 
 
-def register_flask_error_handlers(app: Any) -> None:
+def register_flask_error_handlers(app: Any, *, app_id: str = "mediate") -> None:
     """Register AppError handler on a Flask app (JSON API errors only)."""
 
     import flask
@@ -75,6 +75,7 @@ def register_flask_error_handlers(app: Any) -> None:
             from client_error_report import report_server_error
 
             report_server_error(
+                app_id,
                 e.message,
                 stack=f"{e.code}: {e.message}",
                 url=str(flask.request.url) if flask.request else "",
