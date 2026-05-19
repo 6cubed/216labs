@@ -67,6 +67,20 @@ export function insertClientErrorEvent(
   return Number(result.lastInsertRowid);
 }
 
+/** Count rows in the last N hours (for nav badge / overview). */
+export function countClientErrorEventsSinceHours(
+  db: Database.Database,
+  hours: number,
+): number {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM client_error_event
+       WHERE datetime(occurred_at) >= datetime('now', ?)`,
+    )
+    .get(`-${hours} hours`) as { c: number };
+  return row?.c ?? 0;
+}
+
 export function listRecentClientErrorEvents(
   db: Database.Database,
   limit: number,

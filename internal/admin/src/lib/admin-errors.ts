@@ -5,7 +5,10 @@ import {
   parseOccurredAtMs,
   type DbDeploymentEvent,
 } from "@/lib/db";
-import { listRecentClientErrorEvents } from "@/lib/client-error-store";
+import {
+  countClientErrorEventsSinceHours,
+  listRecentClientErrorEvents,
+} from "@/lib/client-error-store";
 
 const GITHUB_REPO = "6cubed/216labs";
 const GHCR_WORKFLOW_PATH = "ghcr-publish.yml";
@@ -106,6 +109,20 @@ async function fetchFailedGhcrRuns(limit: number): Promise<AdminErrorItem[]> {
   } catch {
     return [];
   }
+}
+
+/** Open signals in the last 24h: reported client/server errors + apps with runtime failures. */
+export function getErrorSignalCount24h(): number {
+  const db = getDb();
+  const reported = countClientErrorEventsSinceHours(db, 24);
+  const runtime = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM apps
+       WHERE (last_runtime_error IS NOT NULL AND TRIM(last_runtime_error) != '')
+          OR TRIM(COALESCE(runtime_status, '')) = 'failed'`,
+    )
+    .get() as { c: number };
+  return reported + (runtime?.c ?? 0);
 }
 
 /**

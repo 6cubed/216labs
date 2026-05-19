@@ -19,7 +19,12 @@ const NAV_ITEMS = [
   { href: "/architecture", label: "Architecture" },
 ] as const;
 
-export function AdminNav() {
+type AdminNavProps = {
+  /** Reported + runtime error signals in the last 24h (badge on Errors tab). */
+  errorSignalCount?: number;
+};
+
+export function AdminNav({ errorSignalCount = 0 }: AdminNavProps) {
   const pathname = usePathname();
 
   return (
@@ -30,17 +35,23 @@ export function AdminNav() {
             href === "/"
               ? pathname === "/"
               : pathname === href || pathname?.startsWith(href + "/");
+          const showBadge = href === "/errors" && errorSignalCount > 0;
           return (
             <Link
               key={href}
               href={href}
-              className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${
                 isActive
                   ? "border-accent text-foreground"
                   : "border-transparent text-muted hover:text-foreground"
               }`}
             >
               {label}
+              {showBadge ? (
+                <span className="min-w-[1.25rem] rounded-full bg-red-500/90 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                  {errorSignalCount > 99 ? "99+" : errorSignalCount}
+                </span>
+              ) : null}
             </Link>
           );
         })}

@@ -7,6 +7,9 @@ import { getUnifiedDeploymentFeed } from "@/lib/deployment-feed";
 import { AppsOverviewTable } from "@/components/AppsOverviewTable";
 import { ProjectOverviewBanner } from "@/components/ProjectOverviewBanner";
 import { getRunningServices } from "@/lib/docker";
+import { getErrorSignalCount24h } from "@/lib/admin-errors";
+import { countClientErrorEventsSinceHours } from "@/lib/client-error-store";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +32,17 @@ export default async function DashboardPage() {
         <ProjectOverviewBanner appCount={apps.length} renderedAtIso={renderedAtIso} />
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
         <MetricCard
           label="Applications"
           value={apps.length}
           sublabel={`${enabledCount} deploy-enabled`}
+        />
+        <MetricCard
+          label="Error signals"
+          value={errorSignals24h}
+          sublabel={errorSublabel}
+          href="/errors"
         />
         <MetricCard
           label="Monthly Cost"
