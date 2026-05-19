@@ -132,8 +132,11 @@ def _service_changed(name: str, svc: dict, changed_files: set[str]) -> bool:
 
 
 def main() -> None:
-    if len(sys.argv) > 1:
-        with open(sys.argv[1], encoding="utf-8") as f:
+    argv = [a for a in sys.argv[1:] if a != "--split"]
+    write_split = "--split" in sys.argv[1:]
+
+    if argv:
+        with open(argv[0], encoding="utf-8") as f:
             cfg = json.load(f)
     else:
         cfg = json.load(sys.stdin)
@@ -184,6 +187,16 @@ def main() -> None:
             file=sys.stderr,
         )
         raise SystemExit(2)
+
+    if write_split:
+        critical = [r for r in include if r.get("required") == "true"]
+        optional = [r for r in include if r.get("required") != "true"]
+        Path("matrix-critical.json").write_text(
+            json.dumps(critical), encoding="utf-8"
+        )
+        Path("matrix-optional.json").write_text(
+            json.dumps(optional), encoding="utf-8"
+        )
 
     print(json.dumps(include))
 

@@ -65,18 +65,11 @@ jobs:
         run: |
           # Do not pass multiline changed paths via job outputs (truncation risk). The changed step
           # already wrote changed_files.txt on disk for this runner.
+          set -euo pipefail
           export GHCR_CHANGED_FILES="$(cat changed_files.txt)"
-          python3 scripts/compose-ghcr-matrix.py compose.json > matrix.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          rows = json.loads(Path("matrix.json").read_text(encoding="utf-8"))
-          critical = [r for r in rows if r.get("required") == "true"]
-          optional = [r for r in rows if r.get("required") != "true"]
-          Path("matrix-critical.json").write_text(json.dumps(critical), encoding="utf-8")
-          Path("matrix-optional.json").write_text(json.dumps(optional), encoding="utf-8")
-          PY
+          python3 scripts/compose-ghcr-matrix.py compose.json --split > matrix.json
+          test -s matrix-critical.json
+          test -s matrix-optional.json
           # Each multiline output needs a unique delimiter (reusing one drops earlier outputs).
           echo "matrix_critical<<MATRIX_CRITICAL_JSON" >> "$GITHUB_OUTPUT"
           cat matrix-critical.json >> "$GITHUB_OUTPUT"
