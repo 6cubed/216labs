@@ -1,14 +1,20 @@
 FROM node:20-alpine AS deps
 RUN apk add --no-cache python3 make g++ libc6-compat
-WORKDIR /app
-COPY package*.json ./
+WORKDIR /repo
+
+COPY packages/errors ./packages/errors
+COPY products/org-social/thezurichdatinggame ./products/org-social/thezurichdatinggame
+
+WORKDIR /repo/products/org-social/thezurichdatinggame
 RUN npm ci
+RUN rm -rf node_modules/@216labs \
+  && mkdir -p node_modules/@216labs \
+  && cp -a /repo/packages/errors node_modules/@216labs/errors
 
 FROM node:20-alpine AS builder
 RUN apk add --no-cache python3 make g++ libc6-compat
+COPY --from=deps /repo/products/org-social/thezurichdatinggame /app
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
 RUN npm run build
 
 FROM node:20-alpine AS runner

@@ -97,6 +97,8 @@ Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`**
 ```bash
 ./scripts/query_client_errors.sh anchor 24    # one app, last 24h
 ./scripts/query_client_errors.sh '' 6         # summary all apps, 6h
+./scripts/audit-client-error-reporting.sh     # layout + Docker gaps
+./scripts/audit-client-error-reporting.sh --live  # + POST ingest probe per app
 ```
 
 Next.js: `<ClientErrorReporter appId="manifest-id" />` from `@216labs/errors/react` in root layout (see `packages/errors/README.md`). Wired on **onefit**, **valentine**, **euromaxxers**, **thezurichdatinggame**, **webgputrainer**, **anchor** (Flutter). Browser: `installBrowserErrorReporting()` from `@216labs/errors/report-error`. Python: `internal/python/client_error_report.py` (`report_server_error`). Cron job **`client-error-prune`** drops events older than 14 days. Successful ingest returns **201** with `{ ok, id, fingerprint }`.

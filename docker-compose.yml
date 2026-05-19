@@ -486,7 +486,9 @@ services:
   thezurichdatinggame:
     image: 216labs/thezurichdatinggame:latest
     pull_policy: never
-    build: ./products/org-social/thezurichdatinggame
+    build:
+      context: .
+      dockerfile: ./products/org-social/thezurichdatinggame/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
@@ -741,7 +743,9 @@ services:
   euromaxxers:
     image: 216labs/euromaxxers:latest
     pull_policy: never
-    build: ./products/org-lifestyle/geo/euromaxxers
+    build:
+      context: .
+      dockerfile: ./products/org-lifestyle/geo/euromaxxers/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
