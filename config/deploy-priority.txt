@@ -3,13 +3,13 @@
 # change order; no code changes in deploy.sh needed.
 admin
 activator
+hello-nextjs
+hello-flask
 webgputrainer
 ytsync
 tortellini
 onefit
 groundtruth
-hello-nextjs
-hello-flask
 shannonairport
 explore
 angelwatcher
