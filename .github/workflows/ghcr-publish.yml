@@ -29,10 +29,8 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
       matrix_critical: ${{ steps.set-matrix.outputs.matrix_critical }}
       matrix_optional: ${{ steps.set-matrix.outputs.matrix_optional }}
-      count: ${{ steps.set-matrix.outputs.count }}
       count_critical: ${{ steps.set-matrix.outputs.count_critical }}
       count_optional: ${{ steps.set-matrix.outputs.count_optional }}
     steps:
@@ -79,19 +77,15 @@ jobs:
           Path("matrix-critical.json").write_text(json.dumps(critical), encoding="utf-8")
           Path("matrix-optional.json").write_text(json.dumps(optional), encoding="utf-8")
           PY
-          echo "matrix<<GHA_JSON" >> "$GITHUB_OUTPUT"
-          cat matrix.json >> "$GITHUB_OUTPUT"
-          echo "GHA_JSON" >> "$GITHUB_OUTPUT"
-          echo "matrix_critical<<GHA_JSON" >> "$GITHUB_OUTPUT"
+          # Each multiline output needs a unique delimiter (reusing one drops earlier outputs).
+          echo "matrix_critical<<MATRIX_CRITICAL_JSON" >> "$GITHUB_OUTPUT"
           cat matrix-critical.json >> "$GITHUB_OUTPUT"
-          echo "GHA_JSON" >> "$GITHUB_OUTPUT"
-          echo "matrix_optional<<GHA_JSON" >> "$GITHUB_OUTPUT"
+          echo "MATRIX_CRITICAL_JSON" >> "$GITHUB_OUTPUT"
+          echo "matrix_optional<<MATRIX_OPTIONAL_JSON" >> "$GITHUB_OUTPUT"
           cat matrix-optional.json >> "$GITHUB_OUTPUT"
-          echo "GHA_JSON" >> "$GITHUB_OUTPUT"
-          COUNT=$(python3 -c "import json; print(len(json.load(open('matrix.json'))))")
+          echo "MATRIX_OPTIONAL_JSON" >> "$GITHUB_OUTPUT"
           CRIT=$(python3 -c "import json; print(len(json.load(open('matrix-critical.json'))))")
           OPT=$(python3 -c "import json; print(len(json.load(open('matrix-optional.json'))))")
-          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           echo "count_critical=$CRIT" >> "$GITHUB_OUTPUT"
           echo "count_optional=$OPT" >> "$GITHUB_OUTPUT"
       - name: Matrix size
