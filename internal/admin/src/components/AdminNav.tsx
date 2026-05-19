@@ -22,9 +22,14 @@ const NAV_ITEMS = [
 type AdminNavProps = {
   /** Reported + runtime error signals in the last 24h (badge on Errors tab). */
   errorSignalCount?: number;
+  /** When set, the Errors tab links here (e.g. /errors?app=blog). */
+  errorsHref?: string;
 };
 
-export function AdminNav({ errorSignalCount = 0 }: AdminNavProps) {
+export function AdminNav({
+  errorSignalCount = 0,
+  errorsHref = "/errors",
+}: AdminNavProps) {
   const pathname = usePathname();
 
   return (
@@ -36,10 +41,11 @@ export function AdminNav({ errorSignalCount = 0 }: AdminNavProps) {
               ? pathname === "/"
               : pathname === href || pathname?.startsWith(href + "/");
           const showBadge = href === "/errors" && errorSignalCount > 0;
+          const linkHref = href === "/errors" ? errorsHref : href;
           return (
             <Link
               key={href}
-              href={href}
+              href={linkHref}
               className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${
                 isActive
                   ? "border-accent text-foreground"

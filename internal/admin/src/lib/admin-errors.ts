@@ -8,7 +8,9 @@ import {
 import {
   countClientErrorEventsSinceHours,
   listRecentClientErrorEvents,
+  topReportedErrorAppSinceHours,
 } from "@/lib/client-error-store";
+import type Database from "better-sqlite3";
 
 const GITHUB_REPO = "6cubed/216labs";
 const GHCR_WORKFLOW_PATH = "ghcr-publish.yml";
@@ -122,6 +124,15 @@ export function listAppsWithRuntimeFailure(): string[] {
     )
     .all() as Array<{ id: string }>;
   return rows.map((r) => r.id).filter(Boolean);
+}
+
+/** Best /errors URL: filtered to the noisiest reported app, else first runtime failure. */
+export function resolveErrorsFeedHref(db: Database.Database = getDb()): string {
+  const top = topReportedErrorAppSinceHours(db, 24);
+  if (top) return `/errors?app=${encodeURIComponent(top.appId)}`;
+  const runtime = listAppsWithRuntimeFailure();
+  if (runtime[0]) return `/errors?app=${encodeURIComponent(runtime[0])}`;
+  return "/errors";
 }
 
 /** Open signals in the last 24h: reported client/server errors + apps with runtime failures. */

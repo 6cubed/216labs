@@ -1,7 +1,7 @@
 import { AdminNav } from "@/components/AdminNav";
 import { infrastructure } from "@/data/apps";
-import { getErrorSignalCount24h } from "@/lib/admin-errors";
-import { getAllApps } from "@/lib/db";
+import { getErrorSignalCount24h, resolveErrorsFeedHref } from "@/lib/admin-errors";
+import { getAllApps, getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,7 @@ export default async function AdminLayout({
     (r) => r.deploy_enabled === 1 || r.id === "admin"
   ).length;
   const errorSignalCount = getErrorSignalCount24h();
+  const errorsHref = resolveErrorsFeedHref(getDb());
 
   return (
     <div className="min-h-screen">
@@ -42,7 +43,7 @@ export default async function AdminLayout({
             </div>
           </div>
         </div>
-        <AdminNav errorSignalCount={errorSignalCount} />
+        <AdminNav errorSignalCount={errorSignalCount} errorsHref={errorsHref} />
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6">{children}</main>

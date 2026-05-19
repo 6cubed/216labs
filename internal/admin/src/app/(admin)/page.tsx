@@ -10,6 +10,7 @@ import { getRunningServices } from "@/lib/docker";
 import {
   getErrorSignalCount24h,
   listAppsWithRuntimeFailure,
+  resolveErrorsFeedHref,
 } from "@/lib/admin-errors";
 import {
   countClientErrorEventsByAppSinceHours,
@@ -46,11 +47,7 @@ export default async function DashboardPage() {
       errorSublabel += ` · ${topRuntimeId} (RT)`;
     }
   }
-  const errorHref = topReported
-    ? `/errors?app=${encodeURIComponent(topReported.appId)}`
-    : topRuntimeId
-      ? `/errors?app=${encodeURIComponent(topRuntimeId)}`
-      : "/errors";
+  const errorHref = resolveErrorsFeedHref(getDb());
   const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
   const renderedAtIso = new Date().toISOString();
 
