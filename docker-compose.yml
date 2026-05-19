@@ -1302,6 +1302,7 @@ services:
       - MEDIATE_OPENAI_API_KEY=${OPENAI_API_KEY:-${MEDIATE_OPENAI_API_KEY:-}}
       - MEDIATE_MODEL=${MEDIATE_MODEL:-gpt-4o-mini}
       - MEDIATE_BASE_URL=${MEDIATE_BASE_URL:-https://mediate.6cubed.app}
+      - CLIENT_ERROR_REPORT_URL=${CLIENT_ERROR_REPORT_URL:-http://admin:3000/api/public/report-error}
     volumes:
       - ./products/org-social/mediate/data:/app/data
     expose:

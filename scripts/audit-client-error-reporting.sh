@@ -170,10 +170,16 @@ mediate_rep="no"
 if grep -rqE 'report_server_error|client_error_report' "$MEDIATE_ERRORS" 2>/dev/null; then
   mediate_rep="yes"
 fi
-if [[ "$mediate_rep" == "yes" ]]; then
-  audit_extra_app "mediate" "products/org-social/mediate" "$mediate_rep"
+mediate_client="no"
+if grep -rqE 'admin\.6cubed\.app/api/public/report-error|report-error' \
+  "$ROOT/products/org-social/mediate/templates" 2>/dev/null; then
+  mediate_client="yes"
+fi
+if [[ "$mediate_rep" == "yes" || "$mediate_client" == "yes" ]]; then
+  audit_extra_app "mediate" "products/org-social/mediate" "yes"
 else
-  ylw "mediate (products/org-social/mediate): reporter=no → backlog [Python: copy anchor client_error_report + http_errors hook]"
+  ylw "mediate (products/org-social/mediate): reporter=no → backlog [add client_error_report + templates or http_errors hook]"
+  missing=$((missing + 1))
 fi
 
 echo

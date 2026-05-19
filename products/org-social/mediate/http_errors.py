@@ -71,6 +71,14 @@ def register_flask_error_handlers(app: Any) -> None:
 
     @app.errorhandler(AppError)
     def handle_app_error(e: AppError):
+        if e.status_code >= 500:
+            from client_error_report import report_server_error
+
+            report_server_error(
+                e.message,
+                stack=f"{e.code}: {e.message}",
+                url=str(flask.request.url) if flask.request else "",
+            )
         return flask.jsonify(e.to_dict()), e.status_code
 
 
