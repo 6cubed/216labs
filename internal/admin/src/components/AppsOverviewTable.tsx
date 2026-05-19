@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { categoryLabels, type AppInfo } from "@/data/apps";
 import { useMemo, useState, useTransition, useEffect } from "react";
 import { DeployToggle } from "./DeployToggle";
@@ -156,9 +157,12 @@ function PullLatestCell({
 export function AppsOverviewTable({
   apps,
   runningServiceNames,
+  errorCounts24h = {},
 }: {
   apps: AppInfo[];
   runningServiceNames: string[];
+  /** Reported client/server errors per app id in the last 24h. */
+  errorCounts24h?: Record<string, number>;
 }) {
   const running = useMemo(
     () => new Set(runningServiceNames),
@@ -214,6 +218,7 @@ export function AppsOverviewTable({
               <th className="px-4 py-3 font-medium">Deploy</th>
               <th className="px-4 py-3 font-medium">Pull latest</th>
               <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Errors (24h)</th>
               <th className="px-4 py-3 font-medium">Last deploy</th>
               <th className="px-4 py-3 font-medium">Image size</th>
               <th className="px-4 py-3 font-medium">Open</th>
@@ -225,6 +230,7 @@ export function AppsOverviewTable({
               const isRunning = running.has(app.dockerService);
               const url = appUrl(app.id);
               const deployOn = app.deployEnabled || app.id === "admin";
+              const errCount = errorCounts24h[app.id] ?? 0;
               return (
                 <tr
                   key={app.id}
@@ -269,6 +275,18 @@ export function AppsOverviewTable({
                     >
                       {isRunning ? "Running" : "Stopped"}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs whitespace-nowrap">
+                    {errCount > 0 ? (
+                      <Link
+                        href={`/errors?app=${encodeURIComponent(app.id)}`}
+                        className="font-mono text-amber-400/90 hover:text-amber-300 hover:underline"
+                      >
+                        {errCount}
+                      </Link>
+                    ) : (
+                      <span className="text-muted font-mono">0</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted whitespace-nowrap">
                     {formatShortDate(app.lastDeployedAt)}

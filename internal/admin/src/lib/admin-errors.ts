@@ -128,8 +128,12 @@ export function getErrorSignalCount24h(): number {
 /**
  * Aggregates activator runtime errors, suspicious deployment_events rows, and failed GHCR workflow runs.
  */
-export async function getAdminErrorFeed(limit = 60): Promise<AdminErrorItem[]> {
+export async function getAdminErrorFeed(
+  limit = 60,
+  appId?: string,
+): Promise<AdminErrorItem[]> {
   const items: AdminErrorItem[] = [];
+  const appFilter = appId?.trim().toLowerCase() || "";
   const db = getDb();
 
   const runtimeRows = db
@@ -205,5 +209,8 @@ export async function getAdminErrorFeed(limit = 60): Promise<AdminErrorItem[]> {
   }
 
   items.sort((a, b) => b.occurredAtMs - a.occurredAtMs);
-  return items.slice(0, limit);
+  const filtered = appFilter
+    ? items.filter((i) => i.appId?.toLowerCase() === appFilter)
+    : items;
+  return filtered.slice(0, limit);
 }

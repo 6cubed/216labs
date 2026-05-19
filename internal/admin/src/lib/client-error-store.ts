@@ -68,6 +68,25 @@ export function insertClientErrorEvent(
 }
 
 /** Count rows in the last N hours (for nav badge / overview). */
+/** Per-app reported error counts in the last N hours (for Applications table). */
+export function countClientErrorEventsByAppSinceHours(
+  db: Database.Database,
+  hours: number,
+): Record<string, number> {
+  const rows = db
+    .prepare(
+      `SELECT app_id, COUNT(*) AS c FROM client_error_event
+       WHERE datetime(occurred_at) >= datetime('now', ?)
+       GROUP BY app_id`,
+    )
+    .all(`-${hours} hours`) as { app_id: string; c: number }[];
+  const out: Record<string, number> = {};
+  for (const r of rows) {
+    if (r.app_id) out[r.app_id] = r.c;
+  }
+  return out;
+}
+
 export function countClientErrorEventsSinceHours(
   db: Database.Database,
   hours: number,

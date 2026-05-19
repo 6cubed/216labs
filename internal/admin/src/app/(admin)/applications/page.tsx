@@ -1,4 +1,5 @@
-import { getAllApps } from "@/lib/db";
+import { countClientErrorEventsByAppSinceHours } from "@/lib/client-error-store";
+import { getAllApps, getDb } from "@/lib/db";
 import { dbRowToAppInfo } from "@/data/apps";
 import { AppsOverviewTable } from "@/components/AppsOverviewTable";
 import { ProjectOverviewBanner } from "@/components/ProjectOverviewBanner";
@@ -11,6 +12,7 @@ export default async function ApplicationsPage() {
   const apps = rows.map(dbRowToAppInfo);
   const runningServices = await getRunningServices();
   const runningList = [...runningServices];
+  const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
   const renderedAtIso = new Date().toISOString();
 
   return (
@@ -25,7 +27,11 @@ export default async function ApplicationsPage() {
           Deploy toggle updates SQLite and starts or stops the container when possible.
           “Running” reflects Docker; “Deploy” is the intended shipped set.
         </p>
-        <AppsOverviewTable apps={apps} runningServiceNames={runningList} />
+        <AppsOverviewTable
+          apps={apps}
+          runningServiceNames={runningList}
+          errorCounts24h={errorCounts24h}
+        />
       </div>
     </section>
   );

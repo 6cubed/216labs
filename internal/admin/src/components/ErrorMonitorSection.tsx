@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { AdminErrorItem } from "@/lib/admin-errors";
 
 function formatWhen(ms: number): string {
@@ -27,12 +28,25 @@ function sourceLabel(source: AdminErrorItem["source"]): string {
   }
 }
 
-export function ErrorMonitorSection({ items }: { items: AdminErrorItem[] }) {
+export function ErrorMonitorSection({
+  items,
+  appFilter,
+}: {
+  items: AdminErrorItem[];
+  appFilter?: string;
+}) {
   return (
     <section className="animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Errors &amp; alerts</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            Errors &amp; alerts
+            {appFilter ? (
+              <span className="text-muted font-normal text-base ml-2 font-mono">
+                · {appFilter}
+              </span>
+            ) : null}
+          </h2>
           <p className="text-xs text-muted mt-1 max-w-2xl">
             Centralized client/server reports (POST{" "}
             <span className="font-mono text-foreground/90">/api/public/report-error</span>),
@@ -42,6 +56,14 @@ export function ErrorMonitorSection({ items }: { items: AdminErrorItem[] }) {
             higher GitHub API rate limits.
           </p>
         </div>
+        {appFilter ? (
+          <Link
+            href="/errors"
+            className="text-xs text-accent hover:underline shrink-0"
+          >
+            Clear filter
+          </Link>
+        ) : null}
       </div>
 
       {items.length === 0 ? (

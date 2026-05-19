@@ -8,7 +8,10 @@ import { AppsOverviewTable } from "@/components/AppsOverviewTable";
 import { ProjectOverviewBanner } from "@/components/ProjectOverviewBanner";
 import { getRunningServices } from "@/lib/docker";
 import { getErrorSignalCount24h } from "@/lib/admin-errors";
-import { countClientErrorEventsSinceHours } from "@/lib/client-error-store";
+import {
+  countClientErrorEventsByAppSinceHours,
+  countClientErrorEventsSinceHours,
+} from "@/lib/client-error-store";
 import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +34,7 @@ export default async function DashboardPage() {
     errorSignals24h > 0
       ? `${reportedErrors24h} reported · ${runtimeFailures24h} runtime (24h)`
       : "No signals in last 24h";
+  const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
   const renderedAtIso = new Date().toISOString();
 
   return (
@@ -64,7 +68,11 @@ export default async function DashboardPage() {
       </section>
 
       <section className="animate-fade-in mt-8">
-        <AppsOverviewTable apps={apps} runningServiceNames={runningList} />
+        <AppsOverviewTable
+          apps={apps}
+          runningServiceNames={runningList}
+          errorCounts24h={errorCounts24h}
+        />
       </section>
 
       <section className="animate-fade-in mt-8">
