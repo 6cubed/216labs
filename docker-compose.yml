@@ -93,7 +93,9 @@ services:
   stroll:
     image: 216labs/stroll:latest
     pull_policy: never
-    build: ./products/org-social/Stroll.live
+    build:
+      context: .
+      dockerfile: ./products/org-social/Stroll.live/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
