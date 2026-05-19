@@ -86,6 +86,24 @@ export function countClientErrorEventsByAppSinceHours(
   return out;
 }
 
+/** App with the most reported errors in the window (for Overview deep link). */
+export function topReportedErrorAppSinceHours(
+  db: Database.Database,
+  hours: number,
+): { appId: string; count: number } | null {
+  const row = db
+    .prepare(
+      `SELECT app_id, COUNT(*) AS c FROM client_error_event
+       WHERE datetime(occurred_at) >= datetime('now', ?)
+       GROUP BY app_id
+       ORDER BY c DESC
+       LIMIT 1`,
+    )
+    .get(`-${hours} hours`) as { app_id: string; c: number } | undefined;
+  if (!row?.app_id || !row.c) return null;
+  return { appId: row.app_id, count: row.c };
+}
+
 export function countClientErrorEventsSinceHours(
   db: Database.Database,
   hours: number,

@@ -14,6 +14,7 @@ import {
 import {
   countClientErrorEventsByAppSinceHours,
   countClientErrorEventsSinceHours,
+  topReportedErrorAppSinceHours,
 } from "@/lib/client-error-store";
 import { getDb } from "@/lib/db";
 
@@ -33,12 +34,24 @@ export default async function DashboardPage() {
   const errorSignals24h = getErrorSignalCount24h();
   const reportedErrors24h = countClientErrorEventsSinceHours(getDb(), 24);
   const runtimeFailures24h = Math.max(0, errorSignals24h - reportedErrors24h);
-  const errorSublabel =
-    errorSignals24h > 0
-      ? `${reportedErrors24h} reported · ${runtimeFailures24h} runtime (24h)`
-      : "No signals in last 24h";
-  const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
+  const topReported = topReportedErrorAppSinceHours(getDb(), 24);
   const runtimeFailedAppIds = listAppsWithRuntimeFailure();
+  const topRuntimeId = runtimeFailedAppIds[0];
+  let errorSublabel = "No signals in last 24h";
+  if (errorSignals24h > 0) {
+    errorSublabel = `${reportedErrors24h} reported · ${runtimeFailures24h} runtime (24h)`;
+    if (topReported) {
+      errorSublabel += ` · top: ${topReported.appId} (${topReported.count})`;
+    } else if (topRuntimeId) {
+      errorSublabel += ` · ${topRuntimeId} (RT)`;
+    }
+  }
+  const errorHref = topReported
+    ? `/errors?app=${encodeURIComponent(topReported.appId)}`
+    : topRuntimeId
+      ? `/errors?app=${encodeURIComponent(topRuntimeId)}`
+      : "/errors";
+  const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
   const renderedAtIso = new Date().toISOString();
 
   return (
@@ -57,7 +70,7 @@ export default async function DashboardPage() {
           label="Error signals"
           value={errorSignals24h}
           sublabel={errorSublabel}
-          href="/errors"
+          href={errorHref}
         />
         <MetricCard
           label="Monthly Cost"
