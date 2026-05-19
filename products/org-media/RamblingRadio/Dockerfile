@@ -6,6 +6,9 @@ COPY packages/errors ./packages/errors
 WORKDIR /repo/packages/errors
 RUN npm install && npm run build
 
+# Bust stale COPY cache when compose context was sent incrementally (empty app tree).
+ARG APP_CONTEXT_BUST=1
+COPY products/org-media/RamblingRadio/package.json products/org-media/RamblingRadio/package-lock.json ./products/org-media/RamblingRadio/
 COPY products/org-media/RamblingRadio ./products/org-media/RamblingRadio
 
 WORKDIR /repo/products/org-media/RamblingRadio
