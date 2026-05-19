@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Ga4Script } from "@/components/ga4/Ga4Script";
+import { ClientErrorReporter } from "@216labs/errors/react";
 
 export const metadata: Metadata = {
   title: "Euromaxxers | Wikipedia Network Explorer",
@@ -30,6 +31,7 @@ export default function RootLayout({
         }}
       >
         <Ga4Script />
+        <ClientErrorReporter appId="euromaxxers" />
         {children}
       </body>
     </html>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Ga4Script } from "@/components/ga4/Ga4Script";
+import { ClientErrorReporter } from "@216labs/errors/react";
 
 export const metadata: Metadata = {
   title: "HeartInk — AI Valentine's Cards",
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen bg-heart-cream font-body antialiased text-heart-ink">
         <Ga4Script />
+        <ClientErrorReporter appId="valentine" />
         {children}
       </body>
     </html>

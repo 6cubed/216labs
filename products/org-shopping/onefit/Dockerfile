@@ -1,20 +1,23 @@
-FROM node:20-bookworm-slim AS deps
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci --no-audit --no-fund
-
 FROM node:20-bookworm-slim AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+WORKDIR /repo
+
+COPY packages/errors ./packages/errors
+COPY products/org-shopping/onefit ./products/org-shopping/onefit
+
+WORKDIR /repo/products/org-shopping/onefit
+RUN npm ci --no-audit --no-fund
 ENV NODE_OPTIONS=--max-old-space-size=6144
+RUN npm install \
+  && rm -rf node_modules/@216labs \
+  && mkdir -p node_modules/@216labs \
+  && cp -a /repo/packages/errors node_modules/@216labs/errors
 RUN npm run build
 
 FROM node:20-bookworm-slim
 WORKDIR /app
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+COPY --from=builder /repo/products/org-shopping/onefit/.next/standalone ./
+COPY --from=builder /repo/products/org-shopping/onefit/.next/static ./.next/static
+COPY --from=builder /repo/products/org-shopping/onefit/public ./public
 ENV NODE_ENV=production
 EXPOSE 3000
 CMD ["node", "server.js"]

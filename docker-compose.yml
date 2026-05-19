@@ -138,7 +138,9 @@ services:
   onefit:
     image: 216labs/onefit:latest
     pull_policy: never
-    build: ./products/org-shopping/onefit
+    build:
+      context: .
+      dockerfile: ./products/org-shopping/onefit/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
