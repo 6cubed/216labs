@@ -212,6 +212,7 @@
   <footer>
     Seeded demo data — expanding toward full coverage. Experiences are illustrative; verify locally.
   </footer>
+  {{ client_error_script_html | safe }}
   <script>
     const params = new URLSearchParams(window.location.search);
     let lat = parseFloat(params.get("lat"));

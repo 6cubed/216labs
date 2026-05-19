@@ -4,13 +4,20 @@ from __future__ import annotations
 import math
 import os
 import sqlite3
+import traceback
 from pathlib import Path
 
 import flask
+from client_error_report import client_error_script, report_server_error
 
 from seed_data import SEED
 
 app = flask.Flask(__name__)
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("explore")}
 
 _DEFAULT_DATA = Path(__file__).resolve().parent / "data"
 DATA_DIR = os.environ.get("EXPLORE_DATA_DIR", str(_DEFAULT_DATA))
@@ -154,6 +161,17 @@ def api_nearby():
 @app.route("/")
 def index():
     return flask.render_template("index.html")
+
+
+@app.errorhandler(500)
+def internal_error(exc: Exception):
+    report_server_error(
+        "explore",
+        str(exc),
+        stack=traceback.format_exc(),
+        url=flask.request.url if flask.request else "",
+    )
+    return "Internal Server Error", 500
 
 
 init_db()

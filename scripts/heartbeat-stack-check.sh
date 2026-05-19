@@ -19,6 +19,7 @@ else
   "$ROOT/scripts/audit-client-error-reporting.sh"
 fi
 AUDIT_EXIT=$?
+HTML_FAIL=0
 
 echo
 HOURS="${HEARTBEAT_ERROR_HOURS:-6}"
@@ -42,6 +43,37 @@ if [[ "$INGEST_CODE" == "201" || "$INGEST_CODE" == "204" ]]; then
   echo "report-error ingest: $INGEST_CODE"
 else
   echo "WARN: report-error ingest returned HTTP $INGEST_CODE (expect 201)" >&2
+fi
+
+HTML_CFG="$ROOT/config/errors-html-probe-apps.txt"
+if [[ -f "$HTML_CFG" ]]; then
+  echo
+  echo "=== Live HTML (client error reporter) ==="
+  HTML_FAIL=0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    id="${line%%#*}"
+    id="$(echo "$id" | tr -d '[:space:]')"
+    [[ -z "$id" ]] && continue
+    host="${id}.6cubed.app"
+    [[ "$id" == "landing" ]] && host="6cubed.app"
+    code=$(curl -sS -o /tmp/heartbeat-probe-$$.html -w '%{http_code}' --max-time 15 -L \
+      "https://${host}/" 2>/dev/null || echo "000")
+    if [[ "$code" != "200" ]]; then
+      echo "  WARN: $id (https://${host}/): HTTP $code" >&2
+      HTML_FAIL=$((HTML_FAIL + 1))
+      continue
+    fi
+    if grep -q 'report-error' "/tmp/heartbeat-probe-$$.html" 2>/dev/null; then
+      echo "  $id (https://${host}/): reporter in HTML"
+    else
+      echo "  WARN: $id (https://${host}/): HTTP 200 but no report-error in body (stale image?)" >&2
+      HTML_FAIL=$((HTML_FAIL + 1))
+    fi
+  done <"$HTML_CFG"
+  rm -f "/tmp/heartbeat-probe-$$.html"
+  if ((HTML_FAIL > 0)); then
+    echo "heartbeat-stack-check: $HTML_FAIL app(s) missing live client reporter in HTML" >&2
+  fi
 fi
 
 CFG="$ROOT/config/errors-runtime-services.txt"
@@ -70,4 +102,8 @@ if [[ -f "$CFG" ]] && command -v docker >/dev/null 2>&1; then
   fi
 fi
 
-exit "${AUDIT_EXIT:-0}"
+EXIT_CODE="${AUDIT_EXIT:-0}"
+if ((HTML_FAIL > 0)); then
+  EXIT_CODE=1
+fi
+exit "$EXIT_CODE"

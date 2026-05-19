@@ -1,0 +1,8 @@
+# App IDs whose public homepage HTML should include the admin report-error ingest URL.
+# Used by scripts/heartbeat-stack-check.sh to catch stale GHCR images after reporter wiring.
+# landing is served at the root domain, not landing.6cubed.app.
+landing
+ctfbench
+avatar
+hello-flask
+explore

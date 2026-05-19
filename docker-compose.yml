@@ -1132,7 +1132,9 @@ services:
   explore:
     image: 216labs/explore:latest
     pull_policy: never
-    build: ./products/org-platform/local/explore
+    build:
+      context: .
+      dockerfile: ./products/org-platform/local/explore/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

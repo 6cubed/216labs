@@ -3,3 +3,4 @@
 # Override at runtime: ACTIVATOR_ERRORS_RUNTIME_SERVICES=ramblingradio,stroll
 ramblingradio
 stroll
+ytsync

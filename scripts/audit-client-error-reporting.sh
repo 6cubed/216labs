@@ -226,6 +226,16 @@ if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
 fi
 audit_extra_app "avatar" "products/org-lifestyle/play/avatar" "$avatar_rep"
 
+EXPLORE="$ROOT/products/org-platform/local/explore"
+explore_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$EXPLORE/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$EXPLORE/Dockerfile" 2>/dev/null \
+  && grep -q 'client_error_script_html' "$EXPLORE/templates/index.html" 2>/dev/null; then
+  explore_rep="yes"
+fi
+audit_extra_app "explore" "products/org-platform/local/explore" "$explore_rep"
+
 echo
 if ((missing > 0)); then
   red "$missing app(s) need error reporting wired (see packages/errors/README.md)"
