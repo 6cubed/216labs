@@ -118,6 +118,16 @@ def _service_changed(name: str, svc: dict, changed_files: set[str]) -> bool:
         return True
     if context and any(f == context or f.startswith(f"{context}/") for f in changed_files):
         return True
+    # Repo-root build context (compose `context: .`) normalizes to "" — match Dockerfile tree deps.
+    if not context:
+        repo_root_prefixes = ("internal/admin", "packages/errors", ".dockerignore")
+        if any(
+            f in repo_root_prefixes
+            or f.startswith("internal/admin/")
+            or f.startswith("packages/errors/")
+            for f in changed_files
+        ):
+            return True
     return False
 
 

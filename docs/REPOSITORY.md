@@ -101,7 +101,7 @@ Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`**
 
 Next.js: `<ClientErrorReporter />` from `@216labs/errors/react`. Browser: `installBrowserErrorReporting()` from `@216labs/errors/report-error`. Python: `internal/python/client_error_report.py` (`report_server_error`). Cron job **`client-error-prune`** drops events older than 14 days. Successful ingest returns **201** with `{ ok, id, fingerprint }`.
 
-**Admin Docker build:** compose uses **repo-root** `build.context` and `internal/admin/Dockerfile` (not `internal/admin` alone) because admin imports `@216labs/errors` from `packages/errors`. Root `.dockerignore` excludes `**/data` but keeps `**/src/data` for `@/data/apps`.
+**Admin Docker build:** compose uses **repo-root** `build.context` and `internal/admin/Dockerfile` (not `internal/admin` alone) because admin imports `@216labs/errors` from `packages/errors`. Root `.dockerignore` excludes `**/data` but keeps `**/src/data` for `@/data/apps`. **`admin`** is listed in `config/ghcr-always-include.txt` so GHCR `:latest` is not skipped when only the Dockerfile or `packages/errors` changes.
 
 ## Local development
 
