@@ -2,10 +2,12 @@
 # required=true in the GHCR matrix (build step must pass; optional rows use continue-on-error).
 # Heavy images slow CI — remove
 # lines you do not need. Frame & Flux: .github/workflows/ghcr-publish-aiart.yml
-# Spine: admin API, error reporting, and high-traffic Node apps.
+# Spine: admin API, error reporting, high-traffic Node apps, and toolkit reference demos.
 admin
 storybook
 ramblingradio
 stroll
 birdperch
 blog
+hello-nextjs
+hello-flask
