@@ -804,7 +804,9 @@ services:
   ytsync:
     image: 216labs/ytsync:latest
     pull_policy: never
-    build: ./products/org-social/ytsync
+    build:
+      context: .
+      dockerfile: ./products/org-social/ytsync/Dockerfile
     restart: unless-stopped
     environment:
       - PORT=5000

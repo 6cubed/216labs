@@ -24,9 +24,16 @@ def _inject_ga_context():
 
 
 def _fetch_live_apps():
+    """Live app list from admin (Docker network) with public URL fallback."""
     base = os.environ.get("ADMIN_INTERNAL_URL", "http://admin:3000").rstrip("/")
     url = f"{base}/api/public/live-apps"
     data = fetch_json(url, timeout=4, default=None)
+    if not isinstance(data, dict):
+        public = os.environ.get(
+            "ADMIN_PUBLIC_LIVE_APPS_URL",
+            "https://admin.6cubed.app/api/public/live-apps",
+        ).strip()
+        data = fetch_json(public, timeout=4, default=None)
     if not isinstance(data, dict):
         return []
     items = data.get("items") or []
