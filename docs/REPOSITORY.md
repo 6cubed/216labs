@@ -100,6 +100,8 @@ Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`**
 ./scripts/audit-client-error-reporting.sh     # layout + Docker gaps
 ./scripts/audit-client-error-reporting.sh --live  # + POST ingest probe per app
 ./scripts/heartbeat-error-summary.sh 6        # heartbeat: errors by app (last 6h)
+./scripts/heartbeat-stack-check.sh          # audit + summary + local runtime image probes
+./scripts/heartbeat-stack-check.sh --live   # + ingest POST per app
 ```
 
 Next.js: `<ClientErrorReporter appId="manifest-id" />` from `@216labs/errors/react` in root layout. Vite/Express: `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`. Flutter **anchor** uses `ErrorReporter`. Python: `internal/python/client_error_report.py` (`report_server_error`). See `packages/errors/README.md` for Docker and esbuild notes.
