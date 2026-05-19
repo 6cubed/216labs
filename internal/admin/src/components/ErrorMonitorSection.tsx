@@ -34,8 +34,10 @@ export function ErrorMonitorSection({ items }: { items: AdminErrorItem[] }) {
         <div>
           <h2 className="text-lg font-semibold text-foreground">Errors &amp; alerts</h2>
           <p className="text-xs text-muted mt-1 max-w-2xl">
-            Runtime failures from the activator (per app), deployment log lines that look like errors,
-            and failed or cancelled GHCR CI runs. Use{" "}
+            Centralized client/server reports (POST{" "}
+            <span className="font-mono text-foreground/90">/api/public/report-error</span>),
+            activator runtime failures, suspicious deploy log lines, and failed GHCR CI runs.
+            Overview shows a 24h signal count. Set{" "}
             <span className="font-mono text-foreground/90">ADMIN_GITHUB_TOKEN</span> in Env for
             higher GitHub API rate limits.
           </p>

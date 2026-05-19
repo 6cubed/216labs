@@ -553,7 +553,7 @@ fi
 # PULL_FROM_GHCR + GHCR_TAGS_B64: droplet pulls ghcr.io/…/short:latest and retags to 216labs/short:latest.
 # GHCR_RECREATE_B64: base64-encoded space-separated compose services to force-recreate after pulls.
 ssh "${SSH_OPTS[@]}" "$REMOTE" \
-  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" GHCR_RECREATE_B64="${GHCR_RECREATE_B64:-}" \
+  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" GHCR_RECREATE_B64="${GHCR_RECREATE_B64:-}" DEPLOY_SHOWROOM="$SHOWROOM" \
   bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$APPS_DEPLOY_META" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
@@ -589,13 +589,16 @@ fi
 
 git pull --ff-only 2>/dev/null || true
 
-# Stop compose services we are not deploying (saves memory and allows image prune to free disk)
-for svc in $(docker compose config --services 2>/dev/null || true); do
-  if [[ " $COMPOSE_SERVICES " != *" $svc "* ]]; then
-    echo "==> Stopping unused service: $svc"
-    docker compose --env-file .env --env-file .env.admin stop "$svc" 2>/dev/null || true
-  fi
-done
+# Showroom only: stop services outside the hot pool (see docs/SCALING.md). Subset pull/build
+# without DEPLOY_SHOWROOM=1 must not stop unrelated running containers.
+if [ "${DEPLOY_SHOWROOM:-0}" = "1" ]; then
+  for svc in $(docker compose config --services 2>/dev/null || true); do
+    if [[ " $COMPOSE_SERVICES " != *" $svc "* ]]; then
+      echo "==> Stopping unused service (showroom): $svc"
+      docker compose --env-file .env --env-file .env.admin stop "$svc" 2>/dev/null || true
+    fi
+  done
+fi
 
 if [ ! -f .env ]; then
   cp .env.example .env
