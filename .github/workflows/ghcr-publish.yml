@@ -107,6 +107,10 @@ jobs:
           docker compose --env-file .env --env-file .env.admin build \
             --build-arg CACHEBUST="${GITHUB_SHA}" \
             "$SERVICE"
+          if grep -qx "$SERVICE" config/errors-runtime-services.txt; then
+            chmod +x scripts/verify-image-errors-runtime.sh
+            ./scripts/verify-image-errors-runtime.sh "$SRC_IMAGE"
+          fi
           short="${SRC_IMAGE#216labs/}"
           short="${short%%:*}"
           DEST="${{ env.REGISTRY_PREFIX }}/${short}:latest"

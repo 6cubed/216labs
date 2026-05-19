@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sqlite3
+from pathlib import Path
 import tempfile
 import threading
 import unittest
@@ -165,6 +166,17 @@ class ActivatorTests(unittest.TestCase):
     def test_registry_image_short_falls_back_to_service_name(self):
         with patch.object(activator, "_compose_service_images", return_value={}):
             self.assertEqual(activator.registry_image_short_for_service("pocket"), "pocket")
+
+    def test_errors_runtime_shorts_from_config_file(self):
+        repo_root = Path(__file__).resolve().parents[4]
+        cfg = repo_root / "config/errors-runtime-services.txt"
+        self.assertTrue(cfg.is_file(), "config/errors-runtime-services.txt missing")
+        with patch.object(activator, "PROJECT_ROOT", str(repo_root)), patch.dict(
+            os.environ, {"ACTIVATOR_ERRORS_RUNTIME_SERVICES": ""}, clear=False
+        ):
+            shorts = activator._load_errors_runtime_shorts()
+        self.assertIn("ramblingradio", shorts)
+        self.assertIn("stroll", shorts)
 
     def test_registry_pull_keeps_local_when_ghcr_lacks_errors_runtime(self):
         with patch.object(

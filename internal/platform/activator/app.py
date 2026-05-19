@@ -50,14 +50,24 @@ _pbc_raw = os.environ.get("ACTIVATOR_PULL_BEFORE_COLD_START", "true").strip().lo
 PULL_BEFORE_COLD_START = _pbc_raw not in ("0", "false", "no", "off")
 
 # Node apps that require compiled @216labs/errors in the image (see packages/errors).
-_ERRORS_RUNTIME_SHORTS = frozenset(
-    s.strip().lower()
-    for s in os.environ.get(
-        "ACTIVATOR_ERRORS_RUNTIME_SERVICES",
-        "ramblingradio,stroll",
-    ).split(",")
-    if s.strip()
-)
+def _load_errors_runtime_shorts() -> frozenset:
+    env_raw = os.environ.get("ACTIVATOR_ERRORS_RUNTIME_SERVICES", "").strip()
+    if env_raw:
+        return frozenset(s.strip().lower() for s in env_raw.split(",") if s.strip())
+    path = os.path.join(PROJECT_ROOT, "config/errors-runtime-services.txt")
+    shorts: List[str] = []
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                row = line.split("#", 1)[0].strip().lower()
+                if row:
+                    shorts.append(row)
+    if shorts:
+        return frozenset(shorts)
+    return frozenset({"ramblingradio", "stroll"})
+
+
+_ERRORS_RUNTIME_SHORTS = _load_errors_runtime_shorts()
 _ERRORS_RUNTIME_PROBE = (
     "test -f node_modules/@216labs/errors/dist/express.cjs "
     '&& node -e "require(\'@216labs/errors/express\')"'
