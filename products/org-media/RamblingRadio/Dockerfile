@@ -1,6 +1,7 @@
 FROM node:20-alpine AS builder
 RUN apk add --no-cache python3 make g++
 WORKDIR /repo
+COPY scripts/verify-errors-node-runtime.sh /tmp/verify-errors-node-runtime.sh
 
 COPY packages/errors ./packages/errors
 WORKDIR /repo/packages/errors
@@ -15,7 +16,8 @@ RUN npm install \
   && mkdir -p node_modules/@216labs \
   && cp -a /repo/packages/errors node_modules/@216labs/errors
 ENV NODE_ENV=production
-RUN npm run build
+RUN npm run build \
+  && sh /tmp/verify-errors-node-runtime.sh .
 
 FROM node:20-alpine
 WORKDIR /app

@@ -1,7 +1,12 @@
 FROM node:20-alpine AS builder
 WORKDIR /repo
+COPY scripts/verify-errors-node-runtime.sh /tmp/verify-errors-node-runtime.sh
 
 COPY packages/errors ./packages/errors
+WORKDIR /repo/packages/errors
+RUN npm install && npm run build
+
+WORKDIR /repo
 COPY products/org-social/Stroll.live ./products/org-social/Stroll.live
 
 WORKDIR /repo/products/org-social/Stroll.live
@@ -13,7 +18,8 @@ RUN npm run build
 RUN npx esbuild server/index.ts --bundle --platform=node --format=esm \
     --outfile=dist/server.mjs \
     --alias:@shared=./shared \
-    --external:express --external:cors --external:@libsql/client --external:drizzle-orm
+    --external:express --external:cors --external:@libsql/client --external:drizzle-orm \
+  && sh /tmp/verify-errors-node-runtime.sh .
 
 FROM node:20-alpine
 WORKDIR /app

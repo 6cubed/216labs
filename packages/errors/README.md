@@ -40,7 +40,7 @@ report_server_error(app_id="anchor", message="...", kind="server")
 
 Ingest: `POST https://admin.6cubed.app/api/public/report-error` (see `docs/REPOSITORY.md`).
 
-**Vite / Express apps** (RamblingRadio, Stroll): call `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`; Docker needs repo-root context (see `products/org-social/Stroll.live/Dockerfile`). **Docker / Node server:** run `npm run build` in `packages/errors` before copying into `node_modules` (see RamblingRadio `Dockerfile`). That emits `dist/*.cjs` so Express can `require()` the package even when the app bundle leaves it external. Vite/Next can keep using `import` from `src/` via `transpilePackages`.
+**Vite / Express apps** (RamblingRadio, Stroll): call `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`; Docker needs repo-root context (see `products/org-social/Stroll.live/Dockerfile`). **Docker / Node server:** run `npm run build` in `packages/errors` before copying into `node_modules` (see RamblingRadio `Dockerfile`). That emits `dist/*.cjs` so Express can `require()` the package even when the app bundle leaves it external. Vite/Next can keep using `import` from `src/` via `transpilePackages`. Docker builds run `scripts/verify-errors-node-runtime.sh` so a bad image fails in CI, not at runtime. The activator cold-starts pull `ghcr.io/…/ramblingradio:latest` over local tags — keep GHCR current (`config/ghcr-always-include.txt` includes `ramblingradio`).
 
 Vite+Express apps with esbuild server bundles: add `@216labs/errors` to the allowlist and `packages: "bundle"` in `script/build.ts` (see RamblingRadio).
 
