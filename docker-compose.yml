@@ -1001,7 +1001,9 @@ services:
   birdperch:
     image: 216labs/birdperch:latest
     pull_policy: never
-    build: ./products/org-platform/ai/bird-perch
+    build:
+      context: .
+      dockerfile: ./products/org-platform/ai/bird-perch/Dockerfile
     restart: unless-stopped
     environment:
       - PORT=8000
@@ -1032,7 +1034,9 @@ services:
   ctfbench:
     image: 216labs/ctfbench:latest
     pull_policy: never
-    build: ./products/org-platform/ai/ctfbench
+    build:
+      context: .
+      dockerfile: ./products/org-platform/ai/ctfbench/Dockerfile
     restart: unless-stopped
     environment:
       - PORT=5000

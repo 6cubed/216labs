@@ -7,11 +7,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY internal/python/client_error_report.py /app/client_error_report.py
+
+COPY products/org-platform/ai/bird-perch/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
-COPY static ./static
+COPY products/org-platform/ai/bird-perch/app ./app
+COPY products/org-platform/ai/bird-perch/static ./static
 
 ENV PORT=8000
 ENV PYTHONUNBUFFERED=1

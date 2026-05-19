@@ -7,11 +7,14 @@ import json
 import logging
 import os
 import time
+import traceback
 
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket
+from client_error_report import client_error_script, report_server_error
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile, WebSocket
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
 
@@ -183,7 +186,12 @@ async def index():
     index_path = os.path.join(BASE_DIR, "static", "index.html")
     if not os.path.isfile(index_path):
         return {"service": "bird-perch", "hint": "static/index.html missing"}
-    return FileResponse(index_path)
+    with open(index_path, encoding="utf-8") as f:
+        html = f.read()
+    marker = "<!-- CLIENT_ERRORS -->"
+    if marker in html:
+        html = html.replace(marker, client_error_script("birdperch"), 1)
+    return HTMLResponse(html)
 
 
 @app.get("/healthz")
@@ -445,3 +453,16 @@ async def ws_listen(websocket: WebSocket):
             await websocket.close()
         except Exception:
             pass
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception(request: Request, exc: Exception):
+    if isinstance(exc, (HTTPException, RequestValidationError)):
+        raise exc
+    report_server_error(
+        "birdperch",
+        str(exc),
+        stack=traceback.format_exc(),
+        url=str(request.url),
+    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})

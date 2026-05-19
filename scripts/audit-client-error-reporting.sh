@@ -60,10 +60,13 @@ esbuild_errors_ok() {
 
 errors_pkg_built_in_docker() {
   local app_dir="$1"
-  local rel="${app_dir#$ROOT/}"
-  local df=""
-  df="$(find "$ROOT" -path "*/Dockerfile" -exec grep -l "$rel" {} \; 2>/dev/null | head -1)"
-  [[ -z "$df" ]] && return 0
+  local df="$app_dir/Dockerfile"
+  if [[ ! -f "$df" ]]; then
+    local rel="${app_dir#$ROOT/}"
+    df="$(find "$ROOT/products" "$ROOT/internal" -maxdepth 5 -name Dockerfile -print 2>/dev/null \
+      | while read -r f; do grep -q "$rel" "$f" 2>/dev/null && echo "$f" && break; done | head -1)"
+  fi
+  [[ -z "$df" || ! -f "$df" ]] && return 0
   grep -q 'packages/errors' "$df" || return 0
   if grep -q 'docker-build-errors-package.sh' "$df"; then
     return 0
@@ -123,11 +126,9 @@ while IFS= read -r pkg; do
     line+=" [$(IFS='; '; echo "${notes[*]}")]"
   fi
   if [[ "$status" == "OK" ]]; then grn "$line"; elif [[ "$status" == "GAP" ]]; then red "$line"; else ylw "$line"; fi
-done < <(find "$ROOT/products" -name package.json \
-  -not -path '*/node_modules/*' \
-  -not -path '*/.next/*' \
-  -not -path '*/dist/*' \
-  2>/dev/null | while read -r p; do
+done < <(find "$ROOT/products" \
+  \( -path '*/node_modules' -o -path '*/.next' -o -path '*/dist' -o -path '*/.venv' -o -path '*/__pycache__' \) -prune \
+  -o -name package.json -print 2>/dev/null | while read -r p; do
   has_errors_dep "$(dirname "$p")" && echo "$p"
 done)
 
@@ -194,6 +195,26 @@ if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
   landing_rep="yes"
 fi
 audit_extra_app "landing" "products/org-growth/ads/landing" "$landing_rep"
+
+BIRDPERCH="$ROOT/products/org-platform/ai/bird-perch"
+birdperch_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$BIRDPERCH/app/main.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$BIRDPERCH/Dockerfile" 2>/dev/null \
+  && grep -q 'CLIENT_ERRORS' "$BIRDPERCH/static/index.html" 2>/dev/null; then
+  birdperch_rep="yes"
+fi
+audit_extra_app "birdperch" "products/org-platform/ai/bird-perch" "$birdperch_rep"
+
+CTFBENCH="$ROOT/products/org-platform/ai/ctfbench"
+ctfbench_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$CTFBENCH/app/main.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$CTFBENCH/Dockerfile" 2>/dev/null \
+  && grep -q 'client_error_script' "$CTFBENCH/app/templates/base.html" 2>/dev/null; then
+  ctfbench_rep="yes"
+fi
+audit_extra_app "ctfbench" "products/org-platform/ai/ctfbench" "$ctfbench_rep"
 
 echo
 if ((missing > 0)); then

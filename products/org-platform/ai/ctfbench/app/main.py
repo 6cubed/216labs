@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import traceback
 from typing import Any
 
+from client_error_report import client_error_script, report_server_error
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -17,6 +20,7 @@ from .flags import FlagConfigError, solver_fingerprint, verify_flag
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "app", "templates"))
+templates.env.globals["client_error_script"] = lambda: client_error_script("ctfbench")
 
 app = FastAPI(title="CTF Bench", version="0.1.0")
 
@@ -200,4 +204,17 @@ async def api_submit(request: Request):
         con.close()
 
     return {"ok": True, "correct": True, "credited": credited, "message": "Correct flag!"}
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception(request: Request, exc: Exception):
+    if isinstance(exc, (HTTPException, RequestValidationError)):
+        raise exc
+    report_server_error(
+        "ctfbench",
+        str(exc),
+        stack=traceback.format_exc(),
+        url=str(request.url),
+    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
