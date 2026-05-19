@@ -46,6 +46,18 @@ docker_ok() {
   fi
 }
 
+# Vite+Express apps that externalize most deps need packages:"bundle" + @216labs/errors allowlist.
+esbuild_errors_ok() {
+  local app_dir="$1"
+  local build_ts="$app_dir/script/build.ts"
+  [[ -f "$build_ts" ]] || return 0
+  grep -rq '@216labs/errors' "$app_dir/server" 2>/dev/null || return 0
+  grep -q 'const allowlist' "$build_ts" || return 0
+  grep -q '@216labs/errors' "$build_ts" || return 1
+  grep -qE 'packages:\s*["'\'']bundle["'\'']' "$build_ts" || return 1
+  return 0
+}
+
 echo "=== Client error reporting audit ==="
 echo "Ingest: $INGEST_URL"
 echo
@@ -68,6 +80,11 @@ while IFS= read -r pkg; do
   notes=()
   [[ "$rep" != "yes" ]] && { status="GAP"; notes+=("add ClientErrorReporter to layout"); missing=$((missing + 1)); }
   [[ "$dk" == "subdir" ]] && notes+=("Docker build context not repo-root — GHCR may miss @216labs/errors")
+  if ! esbuild_errors_ok "$app_dir"; then
+    status="GAP"
+    notes+=("script/build.ts: add @216labs/errors to allowlist and packages:\"bundle\"")
+    missing=$((missing + 1))
+  fi
 
   if [[ "$LIVE" == 1 && "$rep" == "yes" ]]; then
     origin="https://${id}.6cubed.app"
@@ -87,7 +104,11 @@ while IFS= read -r pkg; do
     line+=" [$(IFS='; '; echo "${notes[*]}")]"
   fi
   if [[ "$status" == "OK" ]]; then grn "$line"; elif [[ "$status" == "GAP" ]]; then red "$line"; else ylw "$line"; fi
-done < <(find "$ROOT/products" -name package.json 2>/dev/null | while read -r p; do
+done < <(find "$ROOT/products" -name package.json \
+  -not -path '*/node_modules/*' \
+  -not -path '*/.next/*' \
+  -not -path '*/dist/*' \
+  2>/dev/null | while read -r p; do
   has_errors_dep "$(dirname "$p")" && echo "$p"
 done)
 

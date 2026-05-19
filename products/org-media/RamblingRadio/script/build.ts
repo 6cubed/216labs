@@ -51,6 +51,8 @@ async function buildAll() {
     entryPoints: ["server/index.ts"],
     platform: "node",
     bundle: true,
+    // Default packages:"external" leaves @216labs/errors/express as runtime require().
+    packages: "bundle",
     format: "cjs",
     outfile: "dist/index.cjs",
     define: {
