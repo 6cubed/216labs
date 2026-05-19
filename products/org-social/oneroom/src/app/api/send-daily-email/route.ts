@@ -224,6 +224,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  try {
   const resend = getResend();
   const fromAddress = process.env.EMAIL_FROM ?? "OneFit Daily <daily@onefit.app>";
   const date = new Date().toISOString().split("T")[0];
