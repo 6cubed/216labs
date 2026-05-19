@@ -191,6 +191,15 @@ if [[ -f "$HELLO_FLASK/client_error_report.py" ]] \
 fi
 audit_extra_app "hello-flask" "products/org-platform/toolkit-demos/hello-flask" "$hello_flask_rep"
 
+LANDING="$ROOT/products/org-growth/ads/landing"
+landing_rep="no"
+if [[ -f "$LANDING/client_error_report.py" ]] \
+  && grep -q 'report_server_error' "$LANDING/app.py" 2>/dev/null \
+  && grep -q 'report-error' "$LANDING/templates/_client_errors.html" 2>/dev/null; then
+  landing_rep="yes"
+fi
+audit_extra_app "landing" "products/org-growth/ads/landing" "$landing_rep"
+
 echo
 if ((missing > 0)); then
   red "$missing app(s) need error reporting wired (see packages/errors/README.md)"

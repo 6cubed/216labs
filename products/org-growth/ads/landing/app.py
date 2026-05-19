@@ -1,9 +1,11 @@
 # 216labs landing — 6cubed.app / www
 import os
 import re
+import traceback
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
+from client_error_report import report_server_error
 from labs_http import fetch_json, normalize_blog_items
 
 app = Flask(__name__)
@@ -48,3 +50,13 @@ def index():
     live_apps = _fetch_live_apps()
     blog_posts = _fetch_blog_feed()
     return render_template("index.html", live_apps=live_apps, blog_posts=blog_posts)
+
+
+@app.errorhandler(500)
+def internal_error(exc: Exception):
+    report_server_error(
+        str(exc),
+        stack=traceback.format_exc(),
+        url=request.url if request else "",
+    )
+    return "Internal Server Error", 500
