@@ -3,25 +3,43 @@
 # Usage:
 #   ./scripts/query_client_errors.sh [app_id] [hours]
 #   ./scripts/query_client_errors.sh --summary [hours]
+#   ./scripts/query_client_errors.sh --remote [user@host] --summary [hours]
 # Examples:
 #   ./scripts/query_client_errors.sh anchor 24
 #   ./scripts/query_client_errors.sh --summary 24
+#   ./scripts/query_client_errors.sh --remote root@46.101.88.197 --summary 6
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DB="${CLIENT_ERRORS_DB:-$ROOT/216labs.db}"
+REMOTE_HOST=""
+
+ARGS=("$@")
+if [[ "${ARGS[0]:-}" == "--remote" ]]; then
+  REMOTE_HOST="${ARGS[1]:-root@46.101.88.197}"
+  ARGS=("${ARGS[@]:2}")
+  REMOTE_DB="${QUERY_REMOTE_DB:-/opt/216labs/216labs.db}"
+  REMOTE_DIR="${QUERY_REMOTE_DIR:-/opt/216labs}"
+  REMOTE_ARGS=()
+  for a in "${ARGS[@]}"; do
+    REMOTE_ARGS+=("$(printf '%q' "$a")")
+  done
+  # shellcheck disable=SC2029
+  ssh "$REMOTE_HOST" "cd $(printf '%q' "$REMOTE_DIR") && CLIENT_ERRORS_DB=$(printf '%q' "$REMOTE_DB") ./scripts/query_client_errors.sh ${REMOTE_ARGS[*]}"
+  exit $?
+fi
 
 SUMMARY=0
 APP_ID=""
 HOURS=24
 
-if [[ "${1:-}" == "--summary" ]]; then
+if [[ "${ARGS[0]:-}" == "--summary" ]]; then
   SUMMARY=1
-  HOURS="${2:-24}"
+  HOURS="${ARGS[1]:-24}"
 else
-  APP_ID="${1:-}"
-  HOURS="${2:-24}"
+  APP_ID="${ARGS[0]:-}"
+  HOURS="${ARGS[1]:-24}"
 fi
 
 if ! [[ "$HOURS" =~ ^[0-9]+$ ]] || [ "$HOURS" -lt 1 ] || [ "$HOURS" -gt 720 ]; then
@@ -53,12 +71,12 @@ run_sql() {
       return
     fi
   fi
-  echo "Need sqlite3 or a running admin container with $DB mounted at /app/216labs.db" >&2
+  echo "Need sqlite3, a local DB at $DB, or: ./scripts/query_client_errors.sh --remote user@host --summary $HOURS" >&2
   exit 1
 }
 
 if [ ! -f "$DB" ]; then
-  echo "DB not found: $DB" >&2
+  echo "DB not found: $DB (try --remote user@droplet)" >&2
   exit 1
 fi
 

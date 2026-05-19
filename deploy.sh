@@ -589,6 +589,11 @@ fi
 
 git pull --ff-only 2>/dev/null || true
 
+if command -v python3 >/dev/null 2>&1 && [ -f scripts/generate-caddyfile.py ]; then
+  echo "==> Regenerating Caddyfile from manifests..."
+  python3 scripts/generate-caddyfile.py
+fi
+
 # Showroom only: stop services outside the hot pool (see docs/SCALING.md). Subset pull/build
 # without DEPLOY_SHOWROOM=1 must not stop unrelated running containers.
 if [ "${DEPLOY_SHOWROOM:-0}" = "1" ]; then
@@ -714,8 +719,8 @@ if [ "${PULL_FROM_GHCR:-0}" = "1" ] && [ -n "${GHCR_RECREATE_B64:-}" ]; then
   fi
 fi
 
-# Force Caddy to reload so it picks up Caddyfile changes (e.g. new app vhosts like blog).
-echo "==> Reloading Caddy (pick up Caddyfile changes)..."
+# Recreate Caddy so new Caddyfile routes apply (reload alone may not update matchers).
+echo "==> Recreating Caddy (pick up Caddyfile changes)..."
 docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate caddy 2>/dev/null || true
 
 # Activator must stay up: other vhosts redirect cold traffic here. If a later compose up fails

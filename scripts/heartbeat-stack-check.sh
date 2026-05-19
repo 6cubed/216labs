@@ -24,6 +24,26 @@ echo
 HOURS="${HEARTBEAT_ERROR_HOURS:-6}"
 "$ROOT/scripts/heartbeat-error-summary.sh" "$HOURS" || true
 
+echo
+echo "=== Public admin APIs ==="
+LIVE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 12 \
+  "https://admin.6cubed.app/api/public/live-apps" 2>/dev/null || echo "000")
+if [[ "$LIVE_CODE" == "200" ]]; then
+  echo "live-apps: $LIVE_CODE"
+else
+  echo "WARN: admin /api/public/live-apps returned HTTP $LIVE_CODE (expect 200; restart caddy after Caddyfile route changes)" >&2
+fi
+INGEST_CODE=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 12 \
+  -X POST "https://admin.6cubed.app/api/public/report-error" \
+  -H 'Content-Type: application/json' \
+  -H 'Origin: https://hello-nextjs.6cubed.app' \
+  -d '{"app_id":"hello-nextjs","kind":"client","message":"heartbeat-stack-check probe"}' 2>/dev/null || echo "000")
+if [[ "$INGEST_CODE" == "201" || "$INGEST_CODE" == "204" ]]; then
+  echo "report-error ingest: $INGEST_CODE"
+else
+  echo "WARN: report-error ingest returned HTTP $INGEST_CODE (expect 201)" >&2
+fi
+
 CFG="$ROOT/config/errors-runtime-services.txt"
 if [[ -f "$CFG" ]] && command -v docker >/dev/null 2>&1; then
   echo

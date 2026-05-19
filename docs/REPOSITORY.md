@@ -99,6 +99,8 @@ Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`**
 ```bash
 ./scripts/query_client_errors.sh anchor 24    # one app, last 24h
 ./scripts/query_client_errors.sh --summary 24 # per-app reported + runtime failures
+./scripts/query_client_errors.sh --remote root@46.101.88.197 --summary 6  # droplet DB from laptop
+./scripts/heartbeat-stack-check.sh              # audit + error summary + public API probes
 ./scripts/audit-client-error-reporting.sh     # layout + Docker gaps
 ./scripts/audit-client-error-reporting.sh --live  # + POST ingest probe per app
 ./scripts/heartbeat-error-summary.sh 6        # heartbeat: errors by app (last 6h)
