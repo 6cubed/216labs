@@ -1,15 +1,21 @@
 FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
+WORKDIR /repo
+
+COPY packages/errors ./packages/errors
+COPY products/org-platform/local/agentcart ./products/org-platform/local/agentcart
+
+WORKDIR /repo/products/org-platform/local/agentcart
 RUN npm ci
-COPY . .
+RUN rm -rf node_modules/@216labs \
+  && mkdir -p node_modules/@216labs \
+  && cp -a /repo/packages/errors node_modules/@216labs/errors
 RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+COPY --from=builder /repo/products/org-platform/local/agentcart/.next/standalone ./
+COPY --from=builder /repo/products/org-platform/local/agentcart/.next/static ./.next/static
+RUN mkdir -p ./public
 EXPOSE 3000
 CMD ["node", "server.js"]

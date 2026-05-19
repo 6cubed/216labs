@@ -24,7 +24,13 @@ has_errors_dep() {
 
 has_reporter() {
   local layout="$1"
-  [[ -f "$layout" ]] && grep -q 'ClientErrorReporter' "$layout"
+  local app_dir="$2"
+  if [[ -f "$layout" ]] && grep -q 'ClientErrorReporter' "$layout"; then
+    return 0
+  fi
+  local main
+  main="$(find "$app_dir" \( -path '*/client/src/main.tsx' -o -path '*/src/main.tsx' \) 2>/dev/null | head -1)"
+  [[ -n "$main" && -f "$main" ]] && grep -q 'installBrowserErrorReporting' "$main"
 }
 
 docker_ok() {
@@ -55,7 +61,7 @@ while IFS= read -r pkg; do
   [[ -z "$id" ]] && id="$(basename "$app_dir")"
   layout="$(find_layout "$app_dir")"
   rep="no"
-  has_reporter "${layout:-}" && rep="yes"
+  has_reporter "${layout:-}" "$app_dir" && rep="yes"
   dk="$(docker_ok "$id" 2>/dev/null || echo unknown)"
 
   status="OK"

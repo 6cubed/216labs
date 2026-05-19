@@ -107,7 +107,9 @@ services:
   oneroom:
     image: 216labs/oneroom:latest
     pull_policy: never
-    build: ./products/org-social/oneroom
+    build:
+      context: .
+      dockerfile: ./products/org-social/oneroom/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
