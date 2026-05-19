@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sqlite3
 import tempfile
 import threading
@@ -164,6 +165,25 @@ class ActivatorTests(unittest.TestCase):
     def test_registry_image_short_falls_back_to_service_name(self):
         with patch.object(activator, "_compose_service_images", return_value={}):
             self.assertEqual(activator.registry_image_short_for_service("pocket"), "pocket")
+
+    def test_registry_pull_keeps_local_when_ghcr_lacks_errors_runtime(self):
+        with patch.object(
+            activator, "get_effective_ghcr_auth", return_value=("tok", "u", "ghcr.io/x")
+        ), patch.object(
+            activator, "registry_image_short_for_service", return_value="ramblingradio"
+        ), patch.object(activator, "image_has_errors_node_runtime", side_effect=[False, True]
+        ), patch.object(activator, "_local_image_exists", return_value=True), patch.object(
+            subprocess, "run", return_value=DummyProc(returncode=0)
+        ) as mock_run:
+            ok, msg = activator.try_registry_pull("ramblingradio")
+        self.assertTrue(ok)
+        self.assertIn("keeping local", msg)
+        tagged = [
+            c
+            for c in mock_run.call_args_list
+            if c[0][0][:2] == ["docker", "tag"]
+        ]
+        self.assertEqual(tagged, [])
 
     def test_ghcr_auth_reads_token_from_db_when_env_empty(self):
         fd, path = tempfile.mkstemp(suffix=".db")

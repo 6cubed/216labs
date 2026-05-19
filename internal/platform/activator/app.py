@@ -49,6 +49,20 @@ GHCR_USERNAME = os.environ.get("GHCR_USERNAME", "token").strip() or "token"
 _pbc_raw = os.environ.get("ACTIVATOR_PULL_BEFORE_COLD_START", "true").strip().lower()
 PULL_BEFORE_COLD_START = _pbc_raw not in ("0", "false", "no", "off")
 
+# Node apps that require compiled @216labs/errors in the image (see packages/errors).
+_ERRORS_RUNTIME_SHORTS = frozenset(
+    s.strip().lower()
+    for s in os.environ.get(
+        "ACTIVATOR_ERRORS_RUNTIME_SERVICES",
+        "ramblingradio,stroll",
+    ).split(",")
+    if s.strip()
+)
+_ERRORS_RUNTIME_PROBE = (
+    "test -f node_modules/@216labs/errors/dist/express.cjs "
+    '&& node -e "require(\'@216labs/errors/express\')"'
+)
+
 
 def _parse_protected_services() -> Set[str]:
     raw = os.environ.get("ACTIVATOR_PROTECTED_SERVICES", "caddy,activator,admin,landing")
@@ -632,11 +646,50 @@ def _try_docker_login_ghcr(token: str, username: str) -> Tuple[bool, str]:
     return proc.returncode == 0, detail[:800]
 
 
+def image_has_errors_node_runtime(image_ref: str, env: Optional[Dict[str, str]] = None) -> bool:
+    """True when the image can require() compiled @216labs/errors/express (dist/*.cjs)."""
+    proc = subprocess.run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--entrypoint",
+            "sh",
+            image_ref,
+            "-c",
+            _ERRORS_RUNTIME_PROBE,
+        ],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env or os.environ.copy(),
+        timeout=120,
+    )
+    return proc.returncode == 0
+
+
+def _local_image_exists(local: str, env: Dict[str, str]) -> bool:
+    inspect = subprocess.run(
+        ["docker", "image", "inspect", local],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+        timeout=30,
+    )
+    return inspect.returncode == 0
+
+
 def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
     """Pull ACTIVATOR_REGISTRY_PREFIX/<short>:latest and retag to 216labs/<short>:latest.
 
     Short name comes from compose image when possible (service name may differ from image repo).
     Returns (ok, diagnostic). On failure, diagnostic includes docker output and auth hints when needed.
+
+    For ACTIVATOR_ERRORS_RUNTIME_SERVICES, stale GHCR images missing compiled @216labs/errors
+    do not overwrite a working local tag.
     """
     _token, _user, registry_prefix = get_effective_ghcr_auth()
     if not registry_prefix:
@@ -701,6 +754,23 @@ def try_registry_pull(docker_service: str) -> Tuple[bool, str]:
             if attempt < 4:
                 time.sleep(1.2 + attempt * 0.6)
             continue
+
+        if image_short in _ERRORS_RUNTIME_SHORTS:
+            remote_ok = image_has_errors_node_runtime(remote, env)
+            if not remote_ok:
+                local_ok = _local_image_exists(local, env) and image_has_errors_node_runtime(
+                    local, env
+                )
+                if local_ok:
+                    return (
+                        True,
+                        f"GHCR {remote} lacks compiled @216labs/errors; keeping local {local}.",
+                    )
+                return (
+                    False,
+                    f"GHCR {remote} missing node_modules/@216labs/errors/dist/express.cjs "
+                    f"(and no working local {local}). Publish a fresh image from main.",
+                )
 
         tag = subprocess.run(
             ["docker", "tag", remote, local],
