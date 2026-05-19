@@ -102,7 +102,15 @@ Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`**
 ./scripts/heartbeat-error-summary.sh 6        # heartbeat: errors by app (last 6h)
 ```
 
-Next.js: `<ClientErrorReporter appId="manifest-id" />` from `@216labs/errors/react` in root layout (see `packages/errors/README.md`). Wired on **onefit**, **valentine**, **euromaxxers**, **thezurichdatinggame**, **webgputrainer**, **anchor** (Flutter). Browser: `installBrowserErrorReporting()` from `@216labs/errors/report-error`. Python: `internal/python/client_error_report.py` (`report_server_error`). Cron job **`client-error-prune`** drops events older than 14 days. Successful ingest returns **201** with `{ ok, id, fingerprint }`.
+Next.js: `<ClientErrorReporter appId="manifest-id" />` from `@216labs/errors/react` in root layout. Vite/Express: `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`. Flutter **anchor** uses `ErrorReporter`. Python: `internal/python/client_error_report.py` (`report_server_error`). See `packages/errors/README.md` for Docker and esbuild notes.
+
+**Coverage:** run `./scripts/audit-client-error-reporting.sh` for the current app list (do not maintain a hand-edited manifest here). As of 2026-05-19 that includes **onefit**, **valentine**, **euromaxxers**, **thezurichdatinggame**, **webgputrainer**, **oneroom**, **storybook**, **agentcart**, **ramblingradio**, **stroll**, and **anchor** (Flutter).
+
+**Docker (all apps with `@216labs/errors`):** repo-root `build.context`, then `scripts/docker-build-errors-package.sh` (emits `packages/errors/dist/*.cjs`) before app `npm install`. Vite+Express server bundles: allowlist + `packages: "bundle"` in `script/build.ts` (see RamblingRadio). Build-time check: `scripts/verify-errors-node-runtime.sh` in the app image; CI also runs `scripts/verify-image-errors-runtime.sh` before GHCR push.
+
+**GHCR + activator:** `config/errors-runtime-services.txt` lists Node services that must ship compiled errors (**ramblingradio**, **stroll**). GHCR CI fails the job if the image cannot `require('@216labs/errors/express')`. The activator will not retag broken GHCR `:latest` over a working local image. **`ramblingradio`** and **`stroll`** are in `config/ghcr-always-include.txt` so publishes are not skipped on unrelated diffs. Private GHCR pulls need **`GHCR_TOKEN`** in admin Env (`GET /healthz` on activator: `ghcr_auth_configured`).
+
+Cron job **`client-error-prune`** drops events older than 14 days. Successful ingest returns **201** with `{ ok, id, fingerprint }`.
 
 **Admin Docker build:** compose uses **repo-root** `build.context` and `internal/admin/Dockerfile` (not `internal/admin` alone) because admin imports `@216labs/errors` from `packages/errors`. Root `.dockerignore` excludes `**/data` but keeps `**/src/data` for `@/data/apps`. **`admin`** is listed in `config/ghcr-always-include.txt` so GHCR `:latest` is not skipped when only the Dockerfile or `packages/errors` changes.
 
