@@ -7,7 +7,10 @@ import { getUnifiedDeploymentFeed } from "@/lib/deployment-feed";
 import { AppsOverviewTable } from "@/components/AppsOverviewTable";
 import { ProjectOverviewBanner } from "@/components/ProjectOverviewBanner";
 import { getRunningServices } from "@/lib/docker";
-import { getErrorSignalCount24h } from "@/lib/admin-errors";
+import {
+  getErrorSignalCount24h,
+  listAppsWithRuntimeFailure,
+} from "@/lib/admin-errors";
 import {
   countClientErrorEventsByAppSinceHours,
   countClientErrorEventsSinceHours,
@@ -35,6 +38,7 @@ export default async function DashboardPage() {
       ? `${reportedErrors24h} reported · ${runtimeFailures24h} runtime (24h)`
       : "No signals in last 24h";
   const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
+  const runtimeFailedAppIds = listAppsWithRuntimeFailure();
   const renderedAtIso = new Date().toISOString();
 
   return (
@@ -72,6 +76,7 @@ export default async function DashboardPage() {
           apps={apps}
           runningServiceNames={runningList}
           errorCounts24h={errorCounts24h}
+          runtimeFailedAppIds={runtimeFailedAppIds}
         />
       </section>
 

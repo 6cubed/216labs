@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
+import { ClientErrorReporter } from "@216labs/errors/react";
 import "./globals.css";
 import { Ga4Script } from "@/components/ga4/Ga4Script";
 
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body className={nunito.className}>
         <Ga4Script />
+        <ClientErrorReporter appId="tortellini" />
         {children}</body>
     </html>
   );

@@ -111,6 +111,19 @@ async function fetchFailedGhcrRuns(limit: number): Promise<AdminErrorItem[]> {
   }
 }
 
+/** App ids with an activator runtime failure (current state, not time-bounded). */
+export function listAppsWithRuntimeFailure(): string[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT id FROM apps
+       WHERE (last_runtime_error IS NOT NULL AND TRIM(last_runtime_error) != '')
+          OR TRIM(COALESCE(runtime_status, '')) = 'failed'`,
+    )
+    .all() as Array<{ id: string }>;
+  return rows.map((r) => r.id).filter(Boolean);
+}
+
 /** Open signals in the last 24h: reported client/server errors + apps with runtime failures. */
 export function getErrorSignalCount24h(): number {
   const db = getDb();

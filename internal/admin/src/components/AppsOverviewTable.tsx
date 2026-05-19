@@ -158,15 +158,22 @@ export function AppsOverviewTable({
   apps,
   runningServiceNames,
   errorCounts24h = {},
+  runtimeFailedAppIds = [],
 }: {
   apps: AppInfo[];
   runningServiceNames: string[];
   /** Reported client/server errors per app id in the last 24h. */
   errorCounts24h?: Record<string, number>;
+  /** Apps with activator runtime_status=failed or last_runtime_error set. */
+  runtimeFailedAppIds?: string[];
 }) {
   const running = useMemo(
     () => new Set(runningServiceNames),
     [runningServiceNames]
+  );
+  const runtimeFailed = useMemo(
+    () => new Set(runtimeFailedAppIds),
+    [runtimeFailedAppIds]
   );
   const [q, setQ] = useState("");
 
@@ -218,7 +225,12 @@ export function AppsOverviewTable({
               <th className="px-4 py-3 font-medium">Deploy</th>
               <th className="px-4 py-3 font-medium">Pull latest</th>
               <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Errors (24h)</th>
+              <th
+                className="px-4 py-3 font-medium"
+                title="Reported client/server errors in the last 24h; RT = activator runtime failure"
+              >
+                Signals
+              </th>
               <th className="px-4 py-3 font-medium">Last deploy</th>
               <th className="px-4 py-3 font-medium">Image size</th>
               <th className="px-4 py-3 font-medium">Open</th>
@@ -231,6 +243,7 @@ export function AppsOverviewTable({
               const url = appUrl(app.id);
               const deployOn = app.deployEnabled || app.id === "admin";
               const errCount = errorCounts24h[app.id] ?? 0;
+              const hasRuntime = runtimeFailed.has(app.id);
               return (
                 <tr
                   key={app.id}
@@ -277,16 +290,27 @@ export function AppsOverviewTable({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs whitespace-nowrap">
-                    {errCount > 0 ? (
-                      <Link
-                        href={`/errors?app=${encodeURIComponent(app.id)}`}
-                        className="font-mono text-amber-400/90 hover:text-amber-300 hover:underline"
-                      >
-                        {errCount}
-                      </Link>
-                    ) : (
-                      <span className="text-muted font-mono">0</span>
-                    )}
+                    <span className="inline-flex items-center gap-1.5 font-mono">
+                      {errCount > 0 ? (
+                        <Link
+                          href={`/errors?app=${encodeURIComponent(app.id)}`}
+                          className="text-amber-400/90 hover:text-amber-300 hover:underline"
+                        >
+                          {errCount}
+                        </Link>
+                      ) : (
+                        <span className="text-muted">0</span>
+                      )}
+                      {hasRuntime ? (
+                        <Link
+                          href={`/errors?app=${encodeURIComponent(app.id)}`}
+                          className="text-[10px] uppercase tracking-wide text-rose-400/90 hover:text-rose-300 hover:underline"
+                          title="Activator runtime failure"
+                        >
+                          RT
+                        </Link>
+                      ) : null}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted whitespace-nowrap">
                     {formatShortDate(app.lastDeployedAt)}

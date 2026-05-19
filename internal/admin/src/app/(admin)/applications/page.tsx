@@ -1,3 +1,4 @@
+import { listAppsWithRuntimeFailure } from "@/lib/admin-errors";
 import { countClientErrorEventsByAppSinceHours } from "@/lib/client-error-store";
 import { getAllApps, getDb } from "@/lib/db";
 import { dbRowToAppInfo } from "@/data/apps";
@@ -13,6 +14,7 @@ export default async function ApplicationsPage() {
   const runningServices = await getRunningServices();
   const runningList = [...runningServices];
   const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
+  const runtimeFailedAppIds = listAppsWithRuntimeFailure();
   const renderedAtIso = new Date().toISOString();
 
   return (
@@ -31,6 +33,7 @@ export default async function ApplicationsPage() {
           apps={apps}
           runningServiceNames={runningList}
           errorCounts24h={errorCounts24h}
+          runtimeFailedAppIds={runtimeFailedAppIds}
         />
       </div>
     </section>
