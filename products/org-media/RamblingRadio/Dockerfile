@@ -6,6 +6,7 @@ COPY packages/errors ./packages/errors
 WORKDIR /repo/packages/errors
 RUN npm install && npm run build
 
+WORKDIR /repo
 COPY products/org-media/RamblingRadio ./products/org-media/RamblingRadio
 
 WORKDIR /repo/products/org-media/RamblingRadio
