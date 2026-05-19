@@ -76,7 +76,9 @@ services:
   ramblingradio:
     image: 216labs/ramblingradio:latest
     pull_policy: never
-    build: ./products/org-media/RamblingRadio
+    build:
+      context: .
+      dockerfile: ./products/org-media/RamblingRadio/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
