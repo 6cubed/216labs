@@ -10,7 +10,8 @@
 **/build
 **/.DS_Store
 
-# App data volumes / local artifacts
+# App data volumes / local artifacts (not TypeScript source under src/data/)
 **/data
+!**/src/data
 quality-reports
 

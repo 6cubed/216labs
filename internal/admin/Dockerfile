@@ -6,6 +6,9 @@ WORKDIR /repo
 COPY packages/errors ./packages/errors
 COPY internal/admin ./internal/admin
 
+WORKDIR /repo/packages/errors
+RUN npm install --omit=dev
+
 WORKDIR /repo/internal/admin
 RUN npm install
 RUN npm run build
