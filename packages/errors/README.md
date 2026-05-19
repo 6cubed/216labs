@@ -40,6 +40,6 @@ report_server_error(app_id="anchor", message="...", kind="server")
 
 Ingest: `POST https://admin.6cubed.app/api/public/report-error` (see `docs/REPOSITORY.md`).
 
-**Vite / Express apps** (RamblingRadio, Stroll): call `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`; Docker needs repo-root context (see `products/org-social/Stroll.live/Dockerfile`).
+**Vite / Express apps** (RamblingRadio, Stroll): call `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`; Docker needs repo-root context (see `products/org-social/Stroll.live/Dockerfile`). If the server is bundled with esbuild and most deps are externalized, add `@216labs/errors` to the **allowlist** (RamblingRadio `script/build.ts`) or bundle it in a dedicated server step—otherwise Node loads raw `.ts` from `node_modules` and crashes at startup.
 
 **Heartbeat:** `./scripts/heartbeat-error-summary.sh 6` — per-app error counts.
