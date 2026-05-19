@@ -38,7 +38,24 @@ If the app has a critical user flow (e.g. model load, chat, form submit), add a 
 
 Without this, basic failures (e.g. model load error, broken button) can ship until someone manually tests.
 
-## 5. Build your app, commit, and ship
+## 5. Wire centralized error reporting
+
+Production apps POST client/server errors to **`https://admin.6cubed.app/api/public/report-error`** (see **`docs/REPOSITORY.md`**). Copy from the toolkit demos:
+
+| Stack | Reference |
+|-------|-----------|
+| **Next.js** | `products/org-platform/toolkit-demos/hello-nextjs` — `@216labs/errors`, `<ClientErrorReporter appId="…" />`, repo-root Docker build via `scripts/docker-build-errors-package.sh` |
+| **Flask** | `products/org-platform/toolkit-demos/hello-flask` — `client_error_report.py`, browser `onerror`, `@app.errorhandler(500)` |
+| **Flutter** | `products/org-lifestyle/play/anchor/frontend` — `ErrorReporter` |
+| **Other** | `products/org-social/mediate` (Flask + HTML pages) |
+
+Verify:
+
+```bash
+./scripts/audit-client-error-reporting.sh
+```
+
+## 6. Build your app, commit, and ship
 
 ```bash
 git add .

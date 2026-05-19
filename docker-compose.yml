@@ -844,7 +844,9 @@ services:
   hello-nextjs:
     image: 216labs/hello-nextjs:latest
     pull_policy: never
-    build: ./products/org-platform/toolkit-demos/hello-nextjs
+    build:
+      context: .
+      dockerfile: ./products/org-platform/toolkit-demos/hello-nextjs/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

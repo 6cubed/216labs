@@ -182,6 +182,15 @@ else
   missing=$((missing + 1))
 fi
 
+HELLO_FLASK="$ROOT/products/org-platform/toolkit-demos/hello-flask"
+hello_flask_rep="no"
+if [[ -f "$HELLO_FLASK/client_error_report.py" ]] \
+  && grep -q 'report_server_error' "$HELLO_FLASK/app.py" 2>/dev/null \
+  && grep -q 'report-error' "$HELLO_FLASK/app.py" 2>/dev/null; then
+  hello_flask_rep="yes"
+fi
+audit_extra_app "hello-flask" "products/org-platform/toolkit-demos/hello-flask" "$hello_flask_rep"
+
 echo
 if ((missing > 0)); then
   red "$missing app(s) need error reporting wired (see packages/errors/README.md)"

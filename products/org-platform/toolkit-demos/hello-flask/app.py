@@ -1,7 +1,10 @@
 import os
 import re
+import traceback
 
-from flask import Flask
+from flask import Flask, request
+
+from client_error_report import report_server_error
 
 app = Flask(__name__)
 
@@ -22,9 +25,10 @@ def _ga_snippet() -> str:
 @app.get("/")
 def home():
     ga = _ga_snippet()
+    err = _client_error_snippet()
     return (
         "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>"
-        f"<title>Hello Flask</title>{ga}</head><body>"
+        f"<title>Hello Flask</title>{ga}{err}</head><body>"
         "<h1>Hello from Flask</h1>"
         "<p>Minimal demo app — same manifest, compose, and Caddy routing as other services. "
         "Delete or replace when you ship real products.</p></body></html>"
@@ -34,3 +38,13 @@ def home():
 @app.get("/healthz")
 def healthz():
     return {"ok": True}
+
+
+@app.errorhandler(500)
+def internal_error(exc: Exception):
+    report_server_error(
+        str(exc),
+        stack=traceback.format_exc(),
+        url=request.url if request else "",
+    )
+    return "Internal Server Error", 500
