@@ -1,6 +1,6 @@
 # Compose service names (one per line) always in the GHCR matrix when anything changes, and marked
-# required=true so .github/workflows/ghcr-publish.yml builds them in build-push-critical (workflow
-# fails if these fail). Optional matrix jobs use continue-on-error. Heavy images slow CI — remove
+# required=true in the GHCR matrix (build step must pass; optional rows use continue-on-error).
+# Heavy images slow CI — remove
 # lines you do not need. Frame & Flux: .github/workflows/ghcr-publish-aiart.yml
 # Spine: admin API, error reporting, and high-traffic Node apps.
 admin
