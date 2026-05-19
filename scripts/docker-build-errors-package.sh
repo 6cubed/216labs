@@ -5,7 +5,11 @@
 set -eu
 ROOT="${ERRORS_BUILD_ROOT:-/repo}"
 cd "$ROOT/packages/errors"
-npm install
+if [ -f package-lock.json ]; then
+  npm ci
+else
+  npm install
+fi
 npm run build
 test -f dist/express.cjs
 echo "docker-build-errors-package: ok ($(wc -c < dist/express.cjs) bytes express.cjs)"
