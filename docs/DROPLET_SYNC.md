@@ -1,6 +1,6 @@
 # Droplet: stay current with CI (GHCR)
 
-GitHub Actions (`.github/workflows/ghcr-publish.yml`) pushes `ghcr.io/<org>/216labs/<service>:latest` on each qualifying push to `main`. Two mechanisms keep the VPS close to CI without running `./deploy.sh` from a laptop:
+GitHub Actions (`.github/workflows/ghcr-publish.yml`) pushes `ghcr.io/<org>/216labs/<service>:latest` on each qualifying push to `main`. Services in `config/ghcr-always-include.txt` build in **build-push-critical** (workflow fails if they fail); other matrix rows run as **build-push-optional** (`continue-on-error`) so a flaky login on an unrelated app does not block spine images. Two mechanisms keep the VPS close to CI without running `./deploy.sh` from a laptop:
 
 1. **Activator cold start** — On a cold app, `ACTIVATOR_PULL_BEFORE_COLD_START` (default `true`) pulls GHCR before the first `docker compose up`. See [`internal/platform/activator/README.md`](../internal/platform/activator/README.md).
 

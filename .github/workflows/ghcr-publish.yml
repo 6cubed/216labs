@@ -30,7 +30,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      matrix_critical: ${{ steps.set-matrix.outputs.matrix_critical }}
+      matrix_optional: ${{ steps.set-matrix.outputs.matrix_optional }}
       count: ${{ steps.set-matrix.outputs.count }}
+      count_critical: ${{ steps.set-matrix.outputs.count_critical }}
+      count_optional: ${{ steps.set-matrix.outputs.count_optional }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,23 +69,44 @@ jobs:
           # already wrote changed_files.txt on disk for this runner.
           export GHCR_CHANGED_FILES="$(cat changed_files.txt)"
           python3 scripts/compose-ghcr-matrix.py compose.json > matrix.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          rows = json.loads(Path("matrix.json").read_text(encoding="utf-8"))
+          critical = [r for r in rows if r.get("required") == "true"]
+          optional = [r for r in rows if r.get("required") != "true"]
+          Path("matrix-critical.json").write_text(json.dumps(critical), encoding="utf-8")
+          Path("matrix-optional.json").write_text(json.dumps(optional), encoding="utf-8")
+          PY
           echo "matrix<<GHA_JSON" >> "$GITHUB_OUTPUT"
           cat matrix.json >> "$GITHUB_OUTPUT"
           echo "GHA_JSON" >> "$GITHUB_OUTPUT"
+          echo "matrix_critical<<GHA_JSON" >> "$GITHUB_OUTPUT"
+          cat matrix-critical.json >> "$GITHUB_OUTPUT"
+          echo "GHA_JSON" >> "$GITHUB_OUTPUT"
+          echo "matrix_optional<<GHA_JSON" >> "$GITHUB_OUTPUT"
+          cat matrix-optional.json >> "$GITHUB_OUTPUT"
+          echo "GHA_JSON" >> "$GITHUB_OUTPUT"
           COUNT=$(python3 -c "import json; print(len(json.load(open('matrix.json'))))")
+          CRIT=$(python3 -c "import json; print(len(json.load(open('matrix-critical.json'))))")
+          OPT=$(python3 -c "import json; print(len(json.load(open('matrix-optional.json'))))")
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "count_critical=$CRIT" >> "$GITHUB_OUTPUT"
+          echo "count_optional=$OPT" >> "$GITHUB_OUTPUT"
       - name: Matrix size
-        run: python3 -c "import json; print('services:', len(json.load(open('matrix.json'))))"
+        run: |
+          python3 -c "import json; m=json.load(open('matrix.json')); c=json.load(open('matrix-critical.json')); o=json.load(open('matrix-optional.json')); print('services:', len(m), 'critical:', len(c), 'optional:', len(o))"
 
-  build-push:
+  build-push-critical:
     needs: setup
-    if: needs.setup.outputs.count != '0'
+    if: needs.setup.outputs.count_critical != '0'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       max-parallel: 5
       matrix:
-        include: ${{ fromJson(needs.setup.outputs.matrix) }}
+        include: ${{ fromJson(needs.setup.outputs.matrix_critical) }}
     steps:
       - uses: actions/checkout@v4
       - name: Ensure compose env files
@@ -89,30 +114,60 @@ jobs:
           test -f .env || cp .env.example .env
           touch .env.admin
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - name: Login to GHCR
+        uses: nick-fields/retry@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          timeout_minutes: 5
+          max_attempts: 5
+          retry_wait_seconds: 20
+          uses: docker/login-action@v3
+          with: |
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
         env:
           SERVICE: ${{ matrix.service }}
           SRC_IMAGE: ${{ matrix.image }}
           PLATFORM: ${{ matrix.platform }}
+          GITHUB_SHA: ${{ github.sha }}
+          REGISTRY_PREFIX: ${{ env.REGISTRY_PREFIX }}
+        run: chmod +x scripts/ghcr-build-push.sh && ./scripts/ghcr-build-push.sh
+
+  # Non-spine images: flakes here must not fail the workflow (activator uses critical :latest).
+  build-push-optional:
+    needs: setup
+    if: needs.setup.outputs.count_optional != '0'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include: ${{ fromJson(needs.setup.outputs.matrix_optional) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure compose env files
         run: |
-          set -euo pipefail
-          if [ -n "${PLATFORM:-}" ]; then
-            export DOCKER_DEFAULT_PLATFORM="$PLATFORM"
-          fi
-          docker compose --env-file .env --env-file .env.admin build \
-            --build-arg CACHEBUST="${GITHUB_SHA}" \
-            "$SERVICE"
-          if grep -qx "$SERVICE" config/errors-runtime-services.txt; then
-            chmod +x scripts/verify-image-errors-runtime.sh
-            ./scripts/verify-image-errors-runtime.sh "$SRC_IMAGE"
-          fi
-          short="${SRC_IMAGE#216labs/}"
-          short="${short%%:*}"
-          DEST="${{ env.REGISTRY_PREFIX }}/${short}:latest"
-          docker tag "$SRC_IMAGE" "$DEST"
-          docker push "$DEST"
+          test -f .env || cp .env.example .env
+          touch .env.admin
+      - uses: docker/setup-buildx-action@v3
+      - name: Login to GHCR
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 5
+          retry_wait_seconds: 20
+          uses: docker/login-action@v3
+          with: |
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        env:
+          SERVICE: ${{ matrix.service }}
+          SRC_IMAGE: ${{ matrix.image }}
+          PLATFORM: ${{ matrix.platform }}
+          GITHUB_SHA: ${{ github.sha }}
+          REGISTRY_PREFIX: ${{ env.REGISTRY_PREFIX }}
+        run: chmod +x scripts/ghcr-build-push.sh && ./scripts/ghcr-build-push.sh

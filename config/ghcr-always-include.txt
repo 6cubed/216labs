@@ -1,8 +1,8 @@
-# Optional: docker compose service names (one per line) always included in the GHCR publish matrix,
-# even when no files under that service's build context changed in the push. Prevents :latest from
-# lagging main when a prior publish job failed or was skipped. Heavy images slow CI — remove lines
-# you do not need. Frame & Flux also has a dedicated workflow: .github/workflows/ghcr-publish-aiart.yml
-# Spine: keep :latest in sync with error reporting / admin API changes.
+# Compose service names (one per line) always in the GHCR matrix when anything changes, and marked
+# required=true so .github/workflows/ghcr-publish.yml builds them in build-push-critical (workflow
+# fails if these fail). Optional matrix jobs use continue-on-error. Heavy images slow CI — remove
+# lines you do not need. Frame & Flux: .github/workflows/ghcr-publish-aiart.yml
+# Spine: admin API, error reporting, and high-traffic Node apps.
 admin
 storybook
 ramblingradio

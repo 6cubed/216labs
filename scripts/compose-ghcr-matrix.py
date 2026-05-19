@@ -155,7 +155,13 @@ def main() -> None:
         img = _normalize_local_image(_service_image(svc))
         if not img.startswith("216labs/"):
             continue
-        row: dict[str, str] = {"service": name, "image": img, "platform": ""}
+        row: dict[str, str] = {
+            "service": name,
+            "image": img,
+            "platform": "",
+            # GHCR workflow splits critical (always-include) vs optional matrix jobs.
+            "required": "true" if name.lower() in always_include else "false",
+        }
         if name == "cron-runner":
             row["platform"] = "linux/amd64"
         include.append(row)
