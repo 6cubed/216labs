@@ -67,7 +67,6 @@ export function insertClientErrorEvent(
   return Number(result.lastInsertRowid);
 }
 
-/** Count rows in the last N hours (for nav badge / overview). */
 /** Per-app reported error counts in the last N hours (for Applications table). */
 export function countClientErrorEventsByAppSinceHours(
   db: Database.Database,
