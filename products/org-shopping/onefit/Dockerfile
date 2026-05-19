@@ -17,7 +17,8 @@ FROM node:20-bookworm-slim
 WORKDIR /app
 COPY --from=builder /repo/products/org-shopping/onefit/.next/standalone ./
 COPY --from=builder /repo/products/org-shopping/onefit/.next/static ./.next/static
-COPY --from=builder /repo/products/org-shopping/onefit/public ./public
+# public/ is optional for this app
+RUN mkdir -p ./public
 ENV NODE_ENV=production
 EXPOSE 3000
 CMD ["node", "server.js"]
