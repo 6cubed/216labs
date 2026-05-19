@@ -1,7 +1,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /repo
+COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
 
 COPY packages/errors ./packages/errors
+RUN sh /tmp/docker-build-errors-package.sh
+
 COPY products/org-lifestyle/geo/euromaxxers ./products/org-lifestyle/geo/euromaxxers
 
 WORKDIR /repo/products/org-lifestyle/geo/euromaxxers

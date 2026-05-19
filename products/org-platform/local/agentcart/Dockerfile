@@ -1,7 +1,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /repo
+COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
 
 COPY packages/errors ./packages/errors
+RUN sh /tmp/docker-build-errors-package.sh
+
 COPY products/org-platform/local/agentcart ./products/org-platform/local/agentcart
 
 WORKDIR /repo/products/org-platform/local/agentcart

@@ -3,11 +3,11 @@ RUN apk add --no-cache python3 make g++
 WORKDIR /repo
 
 # Monorepo local dependency @216labs/errors + admin app
+COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
 COPY packages/errors ./packages/errors
-COPY internal/admin ./internal/admin
+RUN sh /tmp/docker-build-errors-package.sh
 
-WORKDIR /repo/packages/errors
-RUN npm install --omit=dev
+COPY internal/admin ./internal/admin
 
 WORKDIR /repo/internal/admin
 # Turbopack does not resolve symlinks outside the app tree; copy the workspace package.

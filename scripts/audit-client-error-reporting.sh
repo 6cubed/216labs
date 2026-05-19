@@ -60,13 +60,14 @@ esbuild_errors_ok() {
 
 errors_pkg_built_in_docker() {
   local app_dir="$1"
-  local build_ts="$app_dir/script/build.ts"
-  [[ -f "$build_ts" ]] && grep -q 'const allowlist' "$build_ts" || return 0
   local rel="${app_dir#$ROOT/}"
   local df=""
   df="$(find "$ROOT" -path "*/Dockerfile" -exec grep -l "$rel" {} \; 2>/dev/null | head -1)"
   [[ -z "$df" ]] && return 0
   grep -q 'packages/errors' "$df" || return 0
+  if grep -q 'docker-build-errors-package.sh' "$df"; then
+    return 0
+  fi
   grep -qE 'WORKDIR /repo/packages/errors' "$df" && grep -q 'npm run build' "$df" || return 1
   return 0
 }

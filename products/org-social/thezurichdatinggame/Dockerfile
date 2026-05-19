@@ -1,8 +1,11 @@
 FROM node:20-alpine AS deps
 RUN apk add --no-cache python3 make g++ libc6-compat
 WORKDIR /repo
+COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
 
 COPY packages/errors ./packages/errors
+RUN sh /tmp/docker-build-errors-package.sh
+
 COPY products/org-social/thezurichdatinggame ./products/org-social/thezurichdatinggame
 
 WORKDIR /repo/products/org-social/thezurichdatinggame

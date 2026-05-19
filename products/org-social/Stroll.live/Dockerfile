@@ -1,10 +1,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /repo
 COPY scripts/verify-errors-node-runtime.sh /tmp/verify-errors-node-runtime.sh
+COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
 
 COPY packages/errors ./packages/errors
-WORKDIR /repo/packages/errors
-RUN npm install && npm run build
+RUN sh /tmp/docker-build-errors-package.sh
 
 WORKDIR /repo
 COPY products/org-social/Stroll.live ./products/org-social/Stroll.live

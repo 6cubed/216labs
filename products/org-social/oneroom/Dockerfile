@@ -1,7 +1,10 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /repo
+COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
 
 COPY packages/errors ./packages/errors
+RUN sh /tmp/docker-build-errors-package.sh
+
 COPY products/org-social/oneroom ./products/org-social/oneroom
 
 WORKDIR /repo/products/org-social/oneroom

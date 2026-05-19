@@ -1,7 +1,10 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /repo
+COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
 
 COPY packages/errors ./packages/errors
+RUN sh /tmp/docker-build-errors-package.sh
+
 COPY products/org-shopping/onefit ./products/org-shopping/onefit
 
 WORKDIR /repo/products/org-shopping/onefit
