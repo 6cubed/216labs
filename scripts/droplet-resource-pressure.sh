@@ -17,6 +17,13 @@ set -euo pipefail
 ROOT="${SYNC_PROJECT_ROOT:-/opt/216labs}"
 cd "$ROOT"
 
+run_ensure_spine() {
+  if [ -f "$ROOT/scripts/droplet-ensure-spine.sh" ]; then
+    SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/droplet-ensure-spine.sh" || true
+  fi
+}
+trap run_ensure_spine EXIT
+
 if [ ! -f .env ]; then
   echo "ERROR: $ROOT/.env missing" >&2
   exit 1

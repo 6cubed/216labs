@@ -30,6 +30,9 @@ fi
 if [ -f "$ROOT/scripts/droplet-resource-pressure.sh" ]; then
   SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/droplet-resource-pressure.sh" || true
 fi
+if [ -f "$ROOT/scripts/droplet-ensure-spine.sh" ]; then
+  SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/droplet-ensure-spine.sh" || true
+fi
 
 set -a
 # shellcheck disable=SC1091
