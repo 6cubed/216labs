@@ -17,6 +17,34 @@ fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DB="${CLIENT_ERRORS_DB:-$ROOT/216labs.db}"
 
+run_sql() {
+  local sql="$1"
+  if command -v sqlite3 >/dev/null 2>&1; then
+    sqlite3 -header -column "$DB" "$sql"
+    return
+  fi
+  if [ -f "$DB" ] && command -v docker >/dev/null 2>&1; then
+    local admin_cid
+    admin_cid="$(docker ps --filter 'name=admin' --format '{{.Names}}' 2>/dev/null | head -1)"
+    if [ -n "$admin_cid" ]; then
+      docker exec -i "$admin_cid" node -e "
+        const Database = require('better-sqlite3');
+        const db = new Database('/app/216labs.db', { readonly: true });
+        const rows = db.prepare(process.argv[1]).all();
+        if (!rows.length) process.exit(0);
+        const cols = Object.keys(rows[0]);
+        const w = cols.map((c) => Math.max(c.length, ...rows.map((r) => String(r[c] ?? '').length)));
+        const line = (cells) => cells.map((cell, i) => String(cell ?? '').padEnd(w[i])).join('  ');
+        console.log(line(cols));
+        for (const r of rows) console.log(line(cols.map((c) => r[c])));
+      " "$sql"
+      return
+    fi
+  fi
+  echo "Need sqlite3 or a running admin container with $DB mounted at /app/216labs.db" >&2
+  exit 1
+}
+
 if [ ! -f "$DB" ]; then
   echo "DB not found: $DB" >&2
   exit 1
@@ -27,16 +55,14 @@ if [ -n "$APP_ID" ]; then
     echo "Invalid app_id" >&2
     exit 1
   fi
-  sqlite3 -header -column "$DB" \
-    "SELECT occurred_at, kind, substr(message,1,80) AS message, url
+  run_sql "SELECT occurred_at, kind, substr(message,1,80) AS message, url
      FROM client_error_event
      WHERE app_id = '$APP_ID'
        AND datetime(occurred_at) >= datetime('now', '-$HOURS hours')
      ORDER BY datetime(occurred_at) DESC
      LIMIT 50;"
 else
-  sqlite3 -header -column "$DB" \
-    "SELECT occurred_at, app_id, kind, substr(message,1,60) AS message, COUNT(*) AS n
+  run_sql "SELECT occurred_at, app_id, kind, substr(message,1,60) AS message, COUNT(*) AS n
      FROM client_error_event
      WHERE datetime(occurred_at) >= datetime('now', '-$HOURS hours')
      GROUP BY app_id, kind, substr(message,1,60)
