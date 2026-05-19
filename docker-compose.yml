@@ -547,7 +547,9 @@ services:
   valentine:
     image: 216labs/valentine:latest
     pull_policy: never
-    build: ./products/org-shopping/valentine
+    build:
+      context: .
+      dockerfile: ./products/org-shopping/valentine/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
