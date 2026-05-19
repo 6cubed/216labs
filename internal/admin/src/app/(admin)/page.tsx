@@ -24,6 +24,13 @@ export default async function DashboardPage() {
   );
   const enabledCount = enabledApps.size;
   const totalCommits = apps.reduce((sum, a) => sum + a.totalCommits, 0);
+  const errorSignals24h = getErrorSignalCount24h();
+  const reportedErrors24h = countClientErrorEventsSinceHours(getDb(), 24);
+  const runtimeFailures24h = Math.max(0, errorSignals24h - reportedErrors24h);
+  const errorSublabel =
+    errorSignals24h > 0
+      ? `${reportedErrors24h} reported · ${runtimeFailures24h} runtime (24h)`
+      : "No signals in last 24h";
   const renderedAtIso = new Date().toISOString();
 
   return (
