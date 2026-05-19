@@ -662,7 +662,9 @@ services:
   blog:
     image: 216labs/blog:latest
     pull_policy: never
-    build: ./products/org-media/blog
+    build:
+      context: .
+      dockerfile: ./products/org-media/blog/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

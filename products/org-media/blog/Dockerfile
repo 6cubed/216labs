@@ -1,16 +1,25 @@
-# CACHEBUST: heartbeat post 2026-05-18
 FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
+WORKDIR /repo
+COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
+
+COPY packages/errors ./packages/errors
+RUN sh /tmp/docker-build-errors-package.sh
+
+COPY products/org-media/blog ./products/org-media/blog
+
+WORKDIR /repo/products/org-media/blog
+RUN npm install --no-audit --no-fund
+RUN rm -rf node_modules/@216labs \
+  && mkdir -p node_modules/@216labs \
+  && cp -a /repo/packages/errors node_modules/@216labs/errors
+ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:20-alpine
 WORKDIR /app
+COPY --from=builder /repo/products/org-media/blog/.next/standalone ./
+COPY --from=builder /repo/products/org-media/blog/.next/static ./.next/static
+COPY --from=builder /repo/products/org-media/blog/public ./public
 ENV NODE_ENV=production
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 EXPOSE 3000
 CMD ["node", "server.js"]

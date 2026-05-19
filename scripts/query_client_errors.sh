@@ -1,21 +1,33 @@
 #!/usr/bin/env bash
 # Recent client/server errors ingested into 216labs.db (client_error_event).
-# Usage: ./scripts/query_client_errors.sh [app_id] [hours]
-# Example: ./scripts/query_client_errors.sh anchor 24
-# All apps last 6h: ./scripts/query_client_errors.sh '' 6
+# Usage:
+#   ./scripts/query_client_errors.sh [app_id] [hours]
+#   ./scripts/query_client_errors.sh --summary [hours]
+# Examples:
+#   ./scripts/query_client_errors.sh anchor 24
+#   ./scripts/query_client_errors.sh --summary 24
 
 set -euo pipefail
 
-APP_ID="${1:-}"
-HOURS="${2:-24}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DB="${CLIENT_ERRORS_DB:-$ROOT/216labs.db}"
+
+SUMMARY=0
+APP_ID=""
+HOURS=24
+
+if [[ "${1:-}" == "--summary" ]]; then
+  SUMMARY=1
+  HOURS="${2:-24}"
+else
+  APP_ID="${1:-}"
+  HOURS="${2:-24}"
+fi
 
 if ! [[ "$HOURS" =~ ^[0-9]+$ ]] || [ "$HOURS" -lt 1 ] || [ "$HOURS" -gt 720 ]; then
   echo "hours must be 1–720" >&2
   exit 1
 fi
-
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DB="${CLIENT_ERRORS_DB:-$ROOT/216labs.db}"
 
 run_sql() {
   local sql="$1"
@@ -48,6 +60,30 @@ run_sql() {
 if [ ! -f "$DB" ]; then
   echo "DB not found: $DB" >&2
   exit 1
+fi
+
+if [ "$SUMMARY" -eq 1 ]; then
+  echo "Per-app error signals (reported last ${HOURS}h + current runtime failures)"
+  run_sql "SELECT a.id AS app_id,
+     COALESCE(e.reported, 0) AS reported,
+     CASE
+       WHEN (a.last_runtime_error IS NOT NULL AND TRIM(a.last_runtime_error) != '')
+         OR TRIM(COALESCE(a.runtime_status, '')) = 'failed'
+       THEN 'yes'
+       ELSE ''
+     END AS runtime_fail
+   FROM apps a
+   LEFT JOIN (
+     SELECT app_id, COUNT(*) AS reported
+     FROM client_error_event
+     WHERE datetime(occurred_at) >= datetime('now', '-${HOURS} hours')
+     GROUP BY app_id
+   ) e ON e.app_id = a.id
+   WHERE COALESCE(e.reported, 0) > 0
+      OR (a.last_runtime_error IS NOT NULL AND TRIM(a.last_runtime_error) != '')
+      OR TRIM(COALESCE(a.runtime_status, '')) = 'failed'
+   ORDER BY reported DESC, a.id ASC;"
+  exit 0
 fi
 
 if [ -n "$APP_ID" ]; then
