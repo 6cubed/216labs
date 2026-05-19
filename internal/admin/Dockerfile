@@ -10,7 +10,10 @@ WORKDIR /repo/packages/errors
 RUN npm install --omit=dev
 
 WORKDIR /repo/internal/admin
-RUN npm install
+RUN npm install \
+  && rm -rf node_modules/@216labs/errors \
+  && mkdir -p node_modules/@216labs \
+  && ln -sf /repo/packages/errors node_modules/@216labs/errors
 RUN npm run build
 
 FROM node:20-alpine
