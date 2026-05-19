@@ -2,8 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Shared stdlib HTTP helpers (repo-root build context)
+# Shared stdlib helpers (repo-root build context)
 COPY internal/python/labs_http /app/labs_http
+COPY internal/python/client_error_report.py /app/client_error_report.py
 
 COPY products/org-growth/ads/landing/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

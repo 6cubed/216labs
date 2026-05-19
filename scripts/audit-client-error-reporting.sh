@@ -193,8 +193,9 @@ audit_extra_app "hello-flask" "products/org-platform/toolkit-demos/hello-flask" 
 
 LANDING="$ROOT/products/org-growth/ads/landing"
 landing_rep="no"
-if [[ -f "$LANDING/client_error_report.py" ]] \
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
   && grep -q 'report_server_error' "$LANDING/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$LANDING/Dockerfile" 2>/dev/null \
   && grep -q 'report-error' "$LANDING/templates/_client_errors.html" 2>/dev/null; then
   landing_rep="yes"
 fi

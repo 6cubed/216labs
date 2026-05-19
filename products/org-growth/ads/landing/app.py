@@ -55,6 +55,7 @@ def index():
 @app.errorhandler(500)
 def internal_error(exc: Exception):
     report_server_error(
+        "landing",
         str(exc),
         stack=traceback.format_exc(),
         url=request.url if request else "",

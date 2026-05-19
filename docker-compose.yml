@@ -326,7 +326,9 @@ services:
   groundtruth:
     image: 216labs/groundtruth:latest
     pull_policy: never
-    build: ./internal/admin/groundtruth
+    build:
+      context: .
+      dockerfile: ./internal/admin/groundtruth/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
