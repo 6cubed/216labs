@@ -4,5 +4,6 @@
 # you do not need. Frame & Flux also has a dedicated workflow: .github/workflows/ghcr-publish-aiart.yml
 # Spine: keep :latest in sync with error reporting / admin API changes.
 admin
+storybook
 birdperch
 blog

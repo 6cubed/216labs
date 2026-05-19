@@ -173,7 +173,9 @@ services:
   agentcart:
     image: 216labs/agentcart:latest
     pull_policy: never
-    build: ./products/org-platform/local/agentcart
+    build:
+      context: .
+      dockerfile: ./products/org-platform/local/agentcart/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
@@ -525,7 +527,9 @@ services:
   storybook:
     image: 216labs/storybook:latest
     pull_policy: never
-    build: ./products/org-lifestyle/play/storybook
+    build:
+      context: .
+      dockerfile: ./products/org-lifestyle/play/storybook/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
