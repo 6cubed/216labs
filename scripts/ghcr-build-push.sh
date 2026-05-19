@@ -7,6 +7,24 @@ set -euo pipefail
 : "${GITHUB_SHA:?GITHUB_SHA required}"
 : "${REGISTRY_PREFIX:=ghcr.io/6cubed/216labs}"
 
+login_ghcr() {
+  : "${GITHUB_TOKEN:?GITHUB_TOKEN required for GHCR login}"
+  : "${GITHUB_ACTOR:?GITHUB_ACTOR required for GHCR login}"
+  echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+}
+
+for attempt in 1 2 3 4 5; do
+  if login_ghcr; then
+    break
+  fi
+  if (( attempt == 5 )); then
+    echo "ghcr-build-push: docker login failed after 5 attempts" >&2
+    exit 1
+  fi
+  echo "ghcr-build-push: login retry $((attempt + 1))/5" >&2
+  sleep 20
+done
+
 PLATFORM="${PLATFORM:-}"
 if [[ -n "$PLATFORM" ]]; then
   export DOCKER_DEFAULT_PLATFORM="$PLATFORM"
