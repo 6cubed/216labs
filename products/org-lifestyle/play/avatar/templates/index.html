@@ -64,6 +64,7 @@
       <div class="status" id="status"></div>
     </div>
 
+    {{ client_error_script_html | safe }}
     <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>
 </html>

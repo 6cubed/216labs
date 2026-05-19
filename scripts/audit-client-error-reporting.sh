@@ -216,6 +216,16 @@ if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
 fi
 audit_extra_app "ctfbench" "products/org-platform/ai/ctfbench" "$ctfbench_rep"
 
+AVATAR="$ROOT/products/org-lifestyle/play/avatar"
+avatar_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$AVATAR/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$AVATAR/Dockerfile" 2>/dev/null \
+  && grep -q 'client_error_script_html' "$AVATAR/templates/index.html" 2>/dev/null; then
+  avatar_rep="yes"
+fi
+audit_extra_app "avatar" "products/org-lifestyle/play/avatar" "$avatar_rep"
+
 echo
 if ((missing > 0)); then
   red "$missing app(s) need error reporting wired (see packages/errors/README.md)"

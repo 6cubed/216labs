@@ -117,6 +117,14 @@ compose_svc_name() {
   echo "$1"
 }
 
+# True when docker-compose.yml defines the service (subset deploy can target running apps outside the cap).
+compose_service_exists() {
+  local id="$1"
+  local svc
+  svc="$(compose_svc_name "$id")"
+  grep -qE "^  ${svc}:" docker-compose.yml 2>/dev/null
+}
+
 # The server's admin container is the authoritative source for which apps are enabled.
 # Fall back to the local DB (legacy), then to a hardcoded list.
 ADMIN_CTR=$(ssh "${SSH_OPTS[@]}" "$REMOTE" \
@@ -233,8 +241,11 @@ if [ -n "$RUNTIME_RAW" ]; then
     [ -z "$wanted" ] && continue
     if [[ " $ENABLED_APPS " == *" $wanted "* ]]; then
       FILTERED_RUNTIME="$FILTERED_RUNTIME $wanted"
+    elif compose_service_exists "$wanted"; then
+      echo "==> NOTE: '$wanted' is outside the deploy catalogue cap but has a compose service; including for image pull/recreate only." >&2
+      FILTERED_RUNTIME="$FILTERED_RUNTIME $wanted"
     else
-      echo "==> WARN: runtime list includes '$wanted' but it is not in the enabled/capped set; skipping." >&2
+      echo "==> WARN: runtime list includes '$wanted' but it is not in the enabled/capped set and has no compose service; skipping." >&2
     fi
   done
   FILTERED_RUNTIME=$(echo "$FILTERED_RUNTIME" | tr -s ' ')

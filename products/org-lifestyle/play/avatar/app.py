@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import base64
 import os
+import traceback
 
 import flask
+from client_error_report import client_error_script, report_server_error
 
 app = flask.Flask(__name__)
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("avatar")}
 
 SYSTEM_PROMPT = """You are Avatar, a warm, perceptive conversational companion shown as a friendly face on screen.
 Keep replies concise and natural for speech: usually 2–4 short sentences. Sound human: vary rhythm, use contractions,
@@ -120,4 +127,15 @@ def api_turn():
                 "tts_error": str(e),
             }
         )
+
+
+@app.errorhandler(500)
+def internal_error(exc: Exception):
+    report_server_error(
+        "avatar",
+        str(exc),
+        stack=traceback.format_exc(),
+        url=flask.request.url if flask.request else "",
+    )
+    return "Internal Server Error", 500
 

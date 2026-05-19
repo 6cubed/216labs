@@ -1054,7 +1054,9 @@ services:
   avatar:
     image: 216labs/avatar:latest
     pull_policy: never
-    build: ./products/org-lifestyle/play/avatar
+    build:
+      context: .
+      dockerfile: ./products/org-lifestyle/play/avatar/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
