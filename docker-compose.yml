@@ -261,7 +261,9 @@ services:
   admin:
     image: 216labs/admin:latest
     pull_policy: never
-    build: ./internal/admin
+    build:
+      context: .
+      dockerfile: ./internal/admin/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
