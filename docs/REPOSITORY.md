@@ -60,7 +60,9 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 
 ## Deploy
 
-**Images:** GitHub Actions builds and pushes `216labs/*` to **GHCR** on pushes to `main` (see `.github/workflows/ghcr-publish.yml`).
+**Images:** GitHub Actions builds and pushes `216labs/*` to **GHCR** on pushes to `main` (see `.github/workflows/ghcr-publish.yml`). Compose services in **`config/ghcr-always-include.txt`** are **required** matrix rows (build must pass; a **`gate`** job fails the workflow if any required row fails). Other changed services build with **`continue-on-error`** on the build step so a flaky login on an unrelated app does not block spine `:latest` tags. Login and push retry inside **`scripts/ghcr-build-push.sh`**. See **`docs/DROPLET_SYNC.md`**.
+
+**Subset vs showroom (`deploy.sh`):** **`DEPLOY_RUNTIME_APPS=onefit`** (without **`DEPLOY_SHOWROOM=1`**) limits **GHCR pull / local build** to those app IDs only; **`docker compose up` still targets the full enabled catalogue** and **does not stop** other running containers. **`DEPLOY_SHOWROOM=1`** keeps only the hot pool running and **stops** compose services outside that pool (cold-start via activator). Details: **`docs/SCALING.md`**.
 
 **Email from GitHub Actions:** Workflows cannot turn off account email. To stop (or reduce) Actions mail, use GitHub **Settings → Notifications** (disable **Actions** email) and set the repo **Watch** menu to **Participating and @mentions** or **Ignore** instead of **All activity**.
 
@@ -92,7 +94,7 @@ On the droplet, point **`EDGE_UNIQUES_DB`** at the host’s `216labs.db` if you 
 
 ### Client/server error reporting
 
-Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`** (no basic auth on that path; Caddy routes it before the admin gate). Rows land in **`216labs.db`** table **`client_error_event`**. The admin **Errors** page and heartbeats can use:
+Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`** (no basic auth on that path; Caddy routes it before the admin gate). Rows land in **`216labs.db`** table **`client_error_event`**. **Admin Overview** shows a rolling **24h error signals** metric (reported client/server events + apps with activator runtime failures); the **Errors** nav tab shows a badge when the count is > 0. The **Errors** page lists ingest rows plus runtime, deploy, and CI items. Heartbeats and CLI:
 
 ```bash
 ./scripts/query_client_errors.sh anchor 24    # one app, last 24h
@@ -110,7 +112,7 @@ Next.js: `<ClientErrorReporter appId="manifest-id" />` from `@216labs/errors/rea
 
 **Docker (all apps with `@216labs/errors`):** repo-root `build.context`, then `scripts/docker-build-errors-package.sh` (emits `packages/errors/dist/*.cjs`) before app `npm install`. Vite+Express server bundles: allowlist + `packages: "bundle"` in `script/build.ts` (see RamblingRadio). Build-time check: `scripts/verify-errors-node-runtime.sh` in the app image; CI also runs `scripts/verify-image-errors-runtime.sh` before GHCR push.
 
-**GHCR + activator:** `config/errors-runtime-services.txt` lists Node services that must ship compiled errors (**ramblingradio**, **stroll**). GHCR CI fails the job if the image cannot `require('@216labs/errors/express')`. The activator will not retag broken GHCR `:latest` over a working local image. **`ramblingradio`** and **`stroll`** are in `config/ghcr-always-include.txt` so publishes are not skipped on unrelated diffs. Private GHCR pulls need **`GHCR_TOKEN`** in admin Env (`GET /healthz` on activator: `ghcr_auth_configured`).
+**GHCR + activator:** `config/errors-runtime-services.txt` lists Node services that run **`scripts/verify-image-errors-runtime.sh`** before push (must `require('@216labs/errors/express')`). That check runs for listed services on every matrix build; only **required** rows (see **`config/ghcr-always-include.txt`**: **admin**, **storybook**, **ramblingradio**, **stroll**, **birdperch**, **blog**) can fail the workflow. The activator will not retag broken GHCR `:latest` over a working local image. Private GHCR pulls need **`GHCR_TOKEN`** in admin Env (`GET /healthz` on activator: `ghcr_auth_configured`).
 
 Cron job **`client-error-prune`** drops events older than 14 days. Successful ingest returns **201** with `{ ok, id, fingerprint }`.
 
