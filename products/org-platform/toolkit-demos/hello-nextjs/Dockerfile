@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim AS builder
+FROM node:20-alpine AS builder
 WORKDIR /repo
 COPY scripts/docker-build-errors-package.sh /tmp/docker-build-errors-package.sh
 
@@ -8,13 +8,14 @@ RUN sh /tmp/docker-build-errors-package.sh
 COPY products/org-platform/toolkit-demos/hello-nextjs ./products/org-platform/toolkit-demos/hello-nextjs
 
 WORKDIR /repo/products/org-platform/toolkit-demos/hello-nextjs
-RUN mkdir -p node_modules/@216labs \
+RUN npm install --no-audit --no-fund
+RUN rm -rf node_modules/@216labs \
+  && mkdir -p node_modules/@216labs \
   && cp -a /repo/packages/errors node_modules/@216labs/errors
-RUN npm ci --no-audit --no-fund
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
 
-FROM node:20-bookworm-slim
+FROM node:20-alpine
 WORKDIR /app
 COPY --from=builder /repo/products/org-platform/toolkit-demos/hello-nextjs/.next/standalone ./
 COPY --from=builder /repo/products/org-platform/toolkit-demos/hello-nextjs/.next/static ./.next/static
