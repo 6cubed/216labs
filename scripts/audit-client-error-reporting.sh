@@ -132,8 +132,53 @@ done < <(find "$ROOT/products" -name package.json \
 done)
 
 echo
+echo "=== Stack-specific (not @216labs/errors npm) ==="
+
+audit_extra_app() {
+  local id="$1"
+  local rel="$2"
+  local rep="$3"
+  local status="OK"
+  local notes=()
+  [[ "$rep" != "yes" ]] && { status="GAP"; notes+=("wire client error reporter"); missing=$((missing + 1)); }
+  if [[ "$LIVE" == 1 && "$rep" == "yes" ]]; then
+    origin="https://${id}.6cubed.app"
+    code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$INGEST_URL" \
+      -H 'Content-Type: application/json' -H "Origin: $origin" \
+      -d "{\"message\":\"audit probe\",\"kind\":\"client\",\"app_id\":\"$id\"}" || echo "000")
+    if [[ "$code" == "201" || "$code" == "204" ]]; then
+      notes+=("ingest ${code}")
+    else
+      status="WARN"
+      notes+=("ingest HTTP ${code}")
+    fi
+  fi
+  line="$id ($rel): reporter=$rep → $status"
+  if ((${#notes[@]})); then
+    line+=" [$(IFS='; '; echo "${notes[*]}")]"
+  fi
+  if [[ "$status" == "OK" ]]; then grn "$line"; elif [[ "$status" == "GAP" ]]; then red "$line"; else ylw "$line"; fi
+}
+
+ANCHOR_MAIN="$ROOT/products/org-lifestyle/play/anchor/frontend/lib/main.dart"
+anchor_rep="no"
+[[ -f "$ANCHOR_MAIN" ]] && grep -q 'ErrorReporter.install' "$ANCHOR_MAIN" && anchor_rep="yes"
+audit_extra_app "anchor" "products/org-lifestyle/play/anchor/frontend" "$anchor_rep"
+
+MEDIATE_ERRORS="$ROOT/products/org-social/mediate"
+mediate_rep="no"
+if grep -rqE 'report_server_error|client_error_report' "$MEDIATE_ERRORS" 2>/dev/null; then
+  mediate_rep="yes"
+fi
+if [[ "$mediate_rep" == "yes" ]]; then
+  audit_extra_app "mediate" "products/org-social/mediate" "$mediate_rep"
+else
+  ylw "mediate (products/org-social/mediate): reporter=no → backlog [Python: copy anchor client_error_report + http_errors hook]"
+fi
+
+echo
 if ((missing > 0)); then
-  red "$missing app(s) need ClientErrorReporter in layout (see packages/errors/README.md)"
+  red "$missing app(s) need error reporting wired (see packages/errors/README.md)"
   exit 1
 fi
-grn "All @216labs/errors apps have ClientErrorReporter wired in code."
+grn "All audited apps have client/server error reporting wired in code."

@@ -106,7 +106,7 @@ Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`**
 
 Next.js: `<ClientErrorReporter appId="manifest-id" />` from `@216labs/errors/react` in root layout. Vite/Express: `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`. Flutter **anchor** uses `ErrorReporter`. Python: `internal/python/client_error_report.py` (`report_server_error`). See `packages/errors/README.md` for Docker and esbuild notes.
 
-**Coverage:** run `./scripts/audit-client-error-reporting.sh` for the current app list (do not maintain a hand-edited manifest here). As of 2026-05-19 that includes **onefit**, **valentine**, **euromaxxers**, **thezurichdatinggame**, **webgputrainer**, **oneroom**, **storybook**, **agentcart**, **ramblingradio**, **stroll**, and **anchor** (Flutter).
+**Coverage:** `./scripts/audit-client-error-reporting.sh` scans every `products/**/package.json` with `@216labs/errors`, then **anchor** (Flutter `ErrorReporter`) and flags **mediate** as backlog if still unwired. Do not duplicate app lists in this doc — run the audit after adding reporters.
 
 **Docker (all apps with `@216labs/errors`):** repo-root `build.context`, then `scripts/docker-build-errors-package.sh` (emits `packages/errors/dist/*.cjs`) before app `npm install`. Vite+Express server bundles: allowlist + `packages: "bundle"` in `script/build.ts` (see RamblingRadio). Build-time check: `scripts/verify-errors-node-runtime.sh` in the app image; CI also runs `scripts/verify-image-errors-runtime.sh` before GHCR push.
 
