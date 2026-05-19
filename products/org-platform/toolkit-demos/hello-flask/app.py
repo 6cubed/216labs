@@ -22,6 +22,30 @@ def _ga_snippet() -> str:
     )
 
 
+def _client_error_snippet() -> str:
+    return """<script>
+(function () {
+  var endpoint = "https://admin.6cubed.app/api/public/report-error";
+  function send(kind, message, stack) {
+    try {
+      fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({ app_id: "hello-flask", kind: kind, message: message, stack: stack || "" })
+      });
+    } catch (e) {}
+  }
+  window.addEventListener("error", function (e) {
+    send("client", e.message || String(e.error), e.error && e.error.stack);
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    send("client", String((e.reason && e.reason.message) || e.reason), e.reason && e.reason.stack);
+  });
+})();
+</script>"""
+
+
 @app.get("/")
 def home():
     ga = _ga_snippet()
