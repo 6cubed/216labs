@@ -10,10 +10,11 @@ WORKDIR /repo/packages/errors
 RUN npm install --omit=dev
 
 WORKDIR /repo/internal/admin
+# Turbopack does not resolve symlinks outside the app tree; copy the workspace package.
 RUN npm install \
-  && rm -rf node_modules/@216labs/errors \
+  && rm -rf node_modules/@216labs \
   && mkdir -p node_modules/@216labs \
-  && ln -sf /repo/packages/errors node_modules/@216labs/errors
+  && cp -a /repo/packages/errors node_modules/@216labs/errors
 RUN npm run build
 
 FROM node:20-alpine
