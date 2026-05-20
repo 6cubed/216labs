@@ -20,3 +20,5 @@ ytsync
 avatar
 explore
 pipesecure
+hivefind
+pocket
