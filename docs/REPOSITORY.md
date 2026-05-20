@@ -100,17 +100,16 @@ Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`**
 ./scripts/query_client_errors.sh anchor 24    # one app, last 24h
 ./scripts/query_client_errors.sh --summary 24 # per-app reported + runtime failures
 ./scripts/query_client_errors.sh --remote root@46.101.88.197 --summary 6  # droplet DB from laptop
-./scripts/heartbeat-stack-check.sh              # audit + error summary + public API probes
-./scripts/audit-client-error-reporting.sh     # layout + Docker gaps
-./scripts/audit-client-error-reporting.sh --live  # + POST ingest probe per app
-./scripts/heartbeat-error-summary.sh 6        # heartbeat: errors by app (last 6h)
-./scripts/heartbeat-stack-check.sh          # audit + summary + local runtime image probes
-./scripts/heartbeat-stack-check.sh --live   # + ingest POST per app
+./scripts/audit-client-error-reporting.sh     # code: layout + Docker + stack-specific apps
+./scripts/audit-client-error-reporting.sh --live  # + POST ingest probe per npm app
+./scripts/heartbeat-stack-check.sh            # audit + summary + live HTML/JS/droplet probes
+./scripts/heartbeat-error-summary.sh 6        # errors by app only (last 6h)
+./scripts/probe-droplet-reporters.sh root@46.101.88.197  # in-container reporter check
 ```
 
-Next.js: `<ClientErrorReporter appId="manifest-id" />` from `@216labs/errors/react` in root layout. Vite/Express: `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`. Flutter **anchor** uses `ErrorReporter`. Python: `internal/python/client_error_report.py` (`report_server_error`). See `packages/errors/README.md` for Docker and esbuild notes.
+**Patterns:** Next.js → `<ClientErrorReporter appId="…" />`. Vite/Express → `installBrowserErrorReporting`. Python → `client_error_script()` + `report_server_error()` from `internal/python/client_error_report.py`. Flutter **anchor** → `ErrorReporter`. See `packages/errors/README.md` and `scripts/ADDING_AN_APP.md` §5.
 
-**Coverage:** `./scripts/audit-client-error-reporting.sh` scans every `products/**/package.json` with `@216labs/errors`, then **anchor** (Flutter) and **mediate** (Flask + browser `onerror`). Do not duplicate app lists in this doc — run the audit after adding reporters.
+**Coverage:** `./scripts/audit-client-error-reporting.sh` scans `products/**` with `@216labs/errors`, then a **stack-specific** block (anchor, hello-flask, mediate, landing, birdperch, ctfbench, avatar, explore, pipesecure). **Live monitoring** lists live in `config/README-errors-reporting.md` — update those when you add reporters; do not duplicate app IDs here.
 
 **Docker (all apps with `@216labs/errors`):** repo-root `build.context`, then `scripts/docker-build-errors-package.sh` (emits `packages/errors/dist/*.cjs`) before app `npm install`. Vite+Express server bundles: allowlist + `packages: "bundle"` in `script/build.ts` (see RamblingRadio). Build-time check: `scripts/verify-errors-node-runtime.sh` in the app image; CI also runs `scripts/verify-image-errors-runtime.sh` before GHCR push.
 

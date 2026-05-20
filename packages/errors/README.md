@@ -25,12 +25,32 @@ export default function RootLayout({ children }) {
 
 Docker: use **repo-root** `build.context` and copy `packages/errors` (see `products/org-shopping/onefit/Dockerfile` or `internal/admin/Dockerfile`).
 
-## Python (server)
+## Python (Flask / FastAPI / static HTML)
+
+COPY `internal/python/client_error_report.py` into the image (repo-root Docker `build.context`).
+
+**Browser (preferred — one source of truth):**
 
 ```python
-from client_error_report import report_server_error  # copy or import from internal/python/
-report_server_error(app_id="anchor", message="...", kind="server")
+from client_error_report import client_error_script, report_server_error
+
+# Flask context processor → templates
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("your-manifest-id")}
 ```
+
+Template: `{{ client_error_script_html | safe }}` before `</body>`.
+
+FastAPI static HTML: replace `<!-- CLIENT_ERRORS -->` in `index.html` with `client_error_script("app-id")` in the index route.
+
+**Server 500s:**
+
+```python
+report_server_error("your-manifest-id", str(exc), stack=traceback.format_exc(), url=request.url)
+```
+
+Node-only UIs (e.g. PipeSecure): copy the same ingest URL into `src/error-report.ts` (see `internal/security/pipesecure/src/error-report.ts`).
 
 ## Query (heartbeats)
 
@@ -44,6 +64,6 @@ Ingest: `POST https://admin.6cubed.app/api/public/report-error` (see `docs/REPOS
 
 Vite+Express apps with esbuild server bundles: add `@216labs/errors` to the allowlist and `packages: "bundle"` in `script/build.ts` (see RamblingRadio).
 
-**Heartbeat:** `./scripts/heartbeat-stack-check.sh` (audit + DB summary + live HTML/JS reporter probes via `config/errors-html-probe-*.txt` + runtime image verify); `./scripts/heartbeat-error-summary.sh 6` for counts only.
+**Heartbeat / monitoring:** `./scripts/heartbeat-stack-check.sh` — audit, DB summary, public admin APIs, then live probes from `config/errors-html-probe-*.txt` (see **`config/README-errors-reporting.md`**). Droplet in-container checks: `./scripts/probe-droplet-reporters.sh root@46.101.88.197`. Rollup only: `./scripts/heartbeat-error-summary.sh 6`.
 
 **Flutter (anchor):** `ErrorReporter.install()` in `lib/main.dart`; server uses `app/client_error_report.py` (not `@216labs/errors` npm).

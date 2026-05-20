@@ -44,17 +44,23 @@ Production apps POST client/server errors to **`https://admin.6cubed.app/api/pub
 
 | Stack | Reference |
 |-------|-----------|
-| **Next.js** | `products/org-platform/toolkit-demos/hello-nextjs` — `@216labs/errors`, `<ClientErrorReporter appId="…" />`, repo-root Docker build via `scripts/docker-build-errors-package.sh` |
-| **Flask** | `products/org-growth/ads/landing` — `internal/python/client_error_report.py` (COPY in Dockerfile), `templates/_client_errors.html`, `@app.errorhandler(500)` calling `report_server_error("<app-id>", …)` |
+| **Next.js** | `products/org-platform/toolkit-demos/hello-nextjs` — `@216labs/errors`, `<ClientErrorReporter appId="…" />`, repo-root Docker + `scripts/docker-build-errors-package.sh` |
+| **Vite + Express** | `products/org-social/ytsync` or `products/org-media/RamblingRadio` — `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`; esbuild allowlist + `packages: "bundle"` when bundling the server |
+| **Flask / Jinja** | `products/org-growth/ads/landing`, `products/org-lifestyle/play/avatar`, `products/org-platform/local/explore` — COPY `internal/python/client_error_report.py`, `client_error_script("app-id")` in template with `client_error_script_html` (Jinja safe filter), `@app.errorhandler(500)` → `report_server_error` |
+| **FastAPI** | `products/org-platform/ai/bird-perch`, `products/org-platform/ai/ctfbench` — same Python module; Jinja `client_error_script()` or inject at `<!-- CLIENT_ERRORS -->` in static HTML |
+| **Node status UI** | `internal/security/pipesecure` — `src/error-report.ts` (`clientErrorScript` + `reportServerError`) embedded in `status.ts` HTML |
 | **Flutter** | `products/org-lifestyle/play/anchor/frontend` — `ErrorReporter` |
-| **Other** | `products/org-social/mediate` (Flask + HTML pages) |
+| **Legacy inline** | `products/org-social/mediate` — inline `onerror` in templates (still valid) |
 
-**GHCR:** If the app is in **`config/deploy-bootstrap.txt`** or you rely on it being rebuilt on every push, add its compose service name to **`config/ghcr-always-include.txt`**. Otherwise CI may skip the image and the droplet will keep an old digest after you only change app code.
+**GHCR:** Add the compose **service name** to **`config/ghcr-always-include.txt`** when the app is in **`config/deploy-bootstrap.txt`** or you need every push to refresh `:latest`.
+
+**Monitoring:** After wiring, add the app to the right file in **`config/README-errors-reporting.md`** (public HTML, SPA chunk, and/or droplet internal probe).
 
 Verify:
 
 ```bash
 ./scripts/audit-client-error-reporting.sh
+./scripts/heartbeat-stack-check.sh
 ```
 
 ## 6. Build your app, commit, and ship
