@@ -11,7 +11,10 @@ set -euo pipefail
 #
 # Reliability rules implemented in this script:
 # - DEPLOY_RUNTIME_APPS + local: always docker-build those apps (ignore .deploy-hashes) so a targeted
-#   deploy always matches your working tree.
+#   deploy always matches your working tree. Use a **space-separated** list (e.g. germandaily russiandaily),
+#   not commas.
+# - If the remote deploy SSH session dies after images load, the script retries `compose up` for
+#   **changed services only** (subset deploys / local transfer).
 # - GHCR: after pull, force-recreate the compose services whose images were pulled so a new digest
 #   is not left running behind an old container.
 # - DEPLOY_FORCE_LOCAL_REBUILD=1 still forces every service in the current pull/build list to rebuild
@@ -606,7 +609,8 @@ fi
 # Pass changed-services sentinel as $3, deploy-meta app ids as $4 (single arg), then compose services ($5+).
 # PULL_FROM_GHCR + GHCR_TAGS_B64: droplet pulls ghcr.io/…/short:latest and retags to 216labs/short:latest.
 # GHCR_RECREATE_B64: base64-encoded space-separated compose services to force-recreate after pulls.
-ssh "${SSH_OPTS[@]}" "$REMOTE" \
+REMOTE_DEPLOY_OK=1
+if ! ssh_retry "Apply deploy on droplet" ssh "${SSH_OPTS[@]}" "$REMOTE" \
   env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" GHCR_RECREATE_B64="${GHCR_RECREATE_B64:-}" DEPLOY_SHOWROOM="$SHOWROOM" \
   bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$APPS_DEPLOY_META" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
@@ -914,6 +918,38 @@ fi
 
 echo "==> Done."
 REMOTE_SCRIPT
+then
+  REMOTE_DEPLOY_OK=0
+fi
+
+if [ "$REMOTE_DEPLOY_OK" -eq 0 ]; then
+  RECOVER_SVCS="$(echo "${CHANGED_COMPOSE_SVCS:-}" | tr -s ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+  if [ -n "$RECOVER_SVCS" ]; then
+    echo "==> Remote deploy interrupted — recovering changed services: $RECOVER_SVCS" >&2
+    RECOVER_CMD="set -euo pipefail
+cd '$APP_DIR'
+git pull --ff-only -q 2>/dev/null || true
+test -f .env || cp .env.example .env
+: > .env.admin
+if [ -f 216labs.db ] && command -v python3 >/dev/null && [ -f scripts/export-env-admin-from-db.py ]; then
+  python3 scripts/export-env-admin-from-db.py 216labs.db >> .env.admin 2>/dev/null || true
+fi
+docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate $RECOVER_SVCS
+docker compose ps $RECOVER_SVCS"
+    if ssh_retry "Recover changed containers on droplet" ssh "${SSH_OPTS[@]}" "$REMOTE" "$RECOVER_CMD"; then
+      echo "==> Recovery succeeded for: $RECOVER_SVCS"
+      REMOTE_DEPLOY_OK=1
+    else
+      echo "ERROR: deploy recovery failed. Images may already be on the server; run:" >&2
+      echo "  ssh $REMOTE 'cd $APP_DIR && docker compose up -d --pull never --no-build --force-recreate $RECOVER_SVCS'" >&2
+    fi
+  else
+    echo "ERROR: remote deploy failed (no changed-service list for recovery)." >&2
+  fi
+  if [ "$REMOTE_DEPLOY_OK" -eq 0 ]; then
+    exit 1
+  fi
+fi
 
 # ── Collect startup times from container logs ─────────────────
 if [ -f "$DB_FILE" ]; then
