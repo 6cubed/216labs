@@ -9,7 +9,13 @@ Paid flows read secrets from **admin Env** (`https://admin.6cubed.app/env`), syn
 | **1pageresearch** | `ONEPAGE_STRIPE_SECRET_KEY`, `ONEPAGE_STRIPE_WEBHOOK_SECRET`; optional `ONEPAGE_ADMIN_SECRET`, `ONEPAGE_BASE_URL` | €1 Stripe checkout on https://1pageresearch.6cubed.app/generate |
 | **onefit** / **emailgpt** | Product-specific keys in each manifest | Subscriptions and paid tiers |
 
-**Droplet check** (keys must appear inside running containers):
+**Checkout readiness** (no SSH required):
+
+```bash
+./scripts/check-revenue-env-http.sh
+```
+
+**Droplet check** (keys inside running containers; falls back to HTTP if SSH fails):
 
 ```bash
 ./scripts/check-revenue-env-droplet.sh

@@ -14,6 +14,10 @@ LIVE=0
 echo "=== Heartbeat stack check ==="
 echo
 
+echo "=== Manifest build spec (repo-root Docker) ==="
+"$ROOT/scripts/validate-manifest-build-spec.sh" || exit 1
+echo
+
 if [[ "$LIVE" == 1 ]]; then
   "$ROOT/scripts/audit-client-error-reporting.sh" --live
 else

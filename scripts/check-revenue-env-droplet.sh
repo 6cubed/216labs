@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 # Report whether paid-app containers have revenue env vars set (admin Env → compose → container).
+# Falls back to HTTP probes when SSH is unavailable.
 # Usage: ./scripts/check-revenue-env-droplet.sh [user@host]
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REMOTE="${1:-root@46.101.88.197}"
+
+if ! ssh -o ConnectTimeout=12 -o BatchMode=yes "$REMOTE" 'echo ok' 2>/dev/null | grep -q ok; then
+  echo "SSH to $REMOTE unavailable — using HTTP checkout probes instead." >&2
+  exec "$ROOT/scripts/check-revenue-env-http.sh"
+fi
 
 ssh -o ConnectTimeout=25 -o BatchMode=yes "$REMOTE" 'set -euo pipefail
 probe() {
