@@ -74,7 +74,24 @@ function initSchema(db: Database.Database) {
       created_at TEXT NOT NULL,
       FOREIGN KEY (book_id) REFERENCES books(id)
     );
+
+    CREATE TABLE IF NOT EXISTS print_interest (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      book_id TEXT NOT NULL,
+      email TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (book_id) REFERENCES books(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_print_interest_book ON print_interest(book_id);
   `);
+}
+
+export function createPrintInterest(bookId: string, email: string): void {
+  getDb()
+    .prepare(
+      `INSERT INTO print_interest (book_id, email, created_at) VALUES (?, ?, ?)`
+    )
+    .run(bookId, email.trim().toLowerCase(), new Date().toISOString());
 }
 
 export function saveBook(story: Story): void {

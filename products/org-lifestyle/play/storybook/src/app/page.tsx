@@ -43,6 +43,9 @@ export default function HomePage() {
   const [progressSteps, setProgressSteps] = useState<GenerationProgress[]>([]);
   const [checkoutReady, setCheckoutReady] = useState<boolean | null>(null);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+  const [interestEmail, setInterestEmail] = useState("");
+  const [interestSent, setInterestSent] = useState(false);
+  const [interestLoading, setInterestLoading] = useState(false);
 
   useEffect(() => {
     if (step !== "preview") return;
@@ -153,6 +156,29 @@ export default function HomePage() {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg);
       setStep("form");
+    }
+  }
+
+  async function handlePrintInterest() {
+    if (!bookId || !interestEmail.trim()) return;
+    setInterestLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/print-interest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookId, email: interestEmail.trim() }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Could not save your email");
+      }
+      setInterestSent(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+    } finally {
+      setInterestLoading(false);
     }
   }
 
@@ -499,6 +525,39 @@ export default function HomePage() {
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <span>{checkoutMessage}</span>
                   </div>
+                )}
+
+                {checkoutReady === false && !interestSent && (
+                  <div className="mb-6 max-w-md mx-auto text-left">
+                    <p className="text-white/90 text-sm mb-3 font-medium">
+                      Reserve your printed book — we&apos;ll email you when checkout opens.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="email"
+                        value={interestEmail}
+                        onChange={(e) => setInterestEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="flex-1 px-4 py-3 rounded-xl text-gray-900 text-sm border-0"
+                        autoComplete="email"
+                      />
+                      <button
+                        type="button"
+                        onClick={handlePrintInterest}
+                        disabled={interestLoading || !interestEmail.trim()}
+                        className="px-6 py-3 bg-story-yellow text-story-purple rounded-xl font-bold text-sm
+                          hover:bg-story-yellow-light disabled:opacity-60 whitespace-nowrap"
+                      >
+                        {interestLoading ? "Saving…" : "Notify me"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {interestSent && (
+                  <p className="text-story-yellow-light text-sm font-medium mb-4">
+                    You&apos;re on the list — we&apos;ll email you when printed checkout is live.
+                  </p>
                 )}
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
