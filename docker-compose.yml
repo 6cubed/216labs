@@ -561,6 +561,7 @@ services:
       - STORYBOOK_ADMIN_EMAIL=${STORYBOOK_ADMIN_EMAIL:-}
       - STORYBOOK_FROM_EMAIL=${STORYBOOK_FROM_EMAIL:-}
       - DATA_DIR=/app/data
+      - CLIENT_ERROR_REPORT_URL=${CLIENT_ERROR_REPORT_URL:-http://admin:3000/api/public/report-error}
     volumes:
       - ./products/org-lifestyle/play/storybook/data:/app/data
     expose:

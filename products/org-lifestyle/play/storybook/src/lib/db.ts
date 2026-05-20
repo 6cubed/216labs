@@ -86,12 +86,49 @@ function initSchema(db: Database.Database) {
   `);
 }
 
+export interface PrintInterest {
+  id: number;
+  bookId: string;
+  email: string;
+  createdAt: string;
+  bookTitle: string;
+  bookChildName: string;
+}
+
 export function createPrintInterest(bookId: string, email: string): void {
   getDb()
     .prepare(
       `INSERT INTO print_interest (book_id, email, created_at) VALUES (?, ?, ?)`
     )
     .run(bookId, email.trim().toLowerCase(), new Date().toISOString());
+}
+
+export function getAllPrintInterests(): PrintInterest[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT p.id, p.book_id, p.email, p.created_at, b.title AS book_title, b.child_name AS book_child_name
+       FROM print_interest p
+       LEFT JOIN books b ON p.book_id = b.id
+       ORDER BY p.created_at DESC
+       LIMIT 200`
+    )
+    .all() as Array<{
+      id: number;
+      book_id: string;
+      email: string;
+      created_at: string;
+      book_title: string | null;
+      book_child_name: string | null;
+    }>;
+
+  return rows.map((r) => ({
+    id: r.id,
+    bookId: r.book_id,
+    email: r.email,
+    createdAt: r.created_at,
+    bookTitle: r.book_title ?? "—",
+    bookChildName: r.book_child_name ?? "",
+  }));
 }
 
 export function saveBook(story: Story): void {
