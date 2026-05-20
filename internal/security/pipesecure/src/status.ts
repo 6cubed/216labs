@@ -1,6 +1,7 @@
 import { createServer } from "http";
 import { getStatusData } from "./db";
 import { config, githubToken, scanTargets } from "./config";
+import { clientErrorScript, reportServerError } from "./error-report";
 
 const SEVERITY_COLOR: Record<string, string> = {
   critical: "#dc2626",
@@ -170,6 +171,9 @@ export function startStatusServer(port: number): void {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(html);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const stack = err instanceof Error ? err.stack ?? "" : "";
+      reportServerError("pipesecure", msg, stack, "/");
       res.writeHead(500);
       res.end("Error rendering status page");
     }

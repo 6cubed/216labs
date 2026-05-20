@@ -1,3 +1,4 @@
+import { reportServerError } from "./error-report";
 import { runScan } from "./scan";
 import { startStatusServer } from "./status";
 import { scanTargets } from "./config";
@@ -28,6 +29,9 @@ async function main(): Promise<void> {
       await runScan();
     } catch (err) {
       console.error("[pipesecure] Scan error:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      const stack = err instanceof Error ? err.stack ?? "" : "";
+      reportServerError("pipesecure", `scan: ${msg}`, stack);
     }
     console.log(
       `[pipesecure] Next scan in ${process.env.SCAN_INTERVAL_HOURS || "24"}h`

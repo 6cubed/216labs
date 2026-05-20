@@ -236,6 +236,15 @@ if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
 fi
 audit_extra_app "explore" "products/org-platform/local/explore" "$explore_rep"
 
+PIPESECURE="$ROOT/internal/security/pipesecure"
+pipesecure_rep="no"
+if grep -q 'clientErrorScript' "$PIPESECURE/src/status.ts" 2>/dev/null \
+  && grep -q 'reportServerError' "$PIPESECURE/src/main.ts" 2>/dev/null \
+  && [[ -f "$PIPESECURE/src/error-report.ts" ]]; then
+  pipesecure_rep="yes"
+fi
+audit_extra_app "pipesecure" "internal/security/pipesecure" "$pipesecure_rep"
+
 echo
 if ((missing > 0)); then
   red "$missing app(s) need error reporting wired (see packages/errors/README.md)"

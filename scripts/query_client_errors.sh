@@ -82,25 +82,41 @@ fi
 
 if [ "$SUMMARY" -eq 1 ]; then
   echo "Per-app error signals (reported last ${HOURS}h + current runtime failures)"
-  run_sql "SELECT a.id AS app_id,
-     COALESCE(e.reported, 0) AS reported,
-     CASE
-       WHEN (a.last_runtime_error IS NOT NULL AND TRIM(a.last_runtime_error) != '')
-         OR TRIM(COALESCE(a.runtime_status, '')) = 'failed'
-       THEN 'yes'
-       ELSE ''
-     END AS runtime_fail
-   FROM apps a
-   LEFT JOIN (
-     SELECT app_id, COUNT(*) AS reported
+  HAS_RUNTIME_COLS=0
+  if command -v sqlite3 >/dev/null 2>&1 && [ -f "$DB" ]; then
+    if sqlite3 "$DB" "SELECT 1 FROM pragma_table_info('apps') WHERE name='last_runtime_error' LIMIT 1;" 2>/dev/null | grep -q 1; then
+      HAS_RUNTIME_COLS=1
+    fi
+  fi
+  if [ "$HAS_RUNTIME_COLS" -eq 1 ]; then
+    run_sql "SELECT a.id AS app_id,
+       COALESCE(e.reported, 0) AS reported,
+       CASE
+         WHEN (a.last_runtime_error IS NOT NULL AND TRIM(a.last_runtime_error) != '')
+           OR TRIM(COALESCE(a.runtime_status, '')) = 'failed'
+         THEN 'yes'
+         ELSE ''
+       END AS runtime_fail
+     FROM apps a
+     LEFT JOIN (
+       SELECT app_id, COUNT(*) AS reported
+       FROM client_error_event
+       WHERE datetime(occurred_at) >= datetime('now', '-${HOURS} hours')
+       GROUP BY app_id
+     ) e ON e.app_id = a.id
+     WHERE COALESCE(e.reported, 0) > 0
+        OR (a.last_runtime_error IS NOT NULL AND TRIM(a.last_runtime_error) != '')
+        OR TRIM(COALESCE(a.runtime_status, '')) = 'failed'
+     ORDER BY reported DESC, a.id ASC;"
+  else
+    run_sql "SELECT app_id,
+       COUNT(*) AS reported,
+       '' AS runtime_fail
      FROM client_error_event
      WHERE datetime(occurred_at) >= datetime('now', '-${HOURS} hours')
      GROUP BY app_id
-   ) e ON e.app_id = a.id
-   WHERE COALESCE(e.reported, 0) > 0
-      OR (a.last_runtime_error IS NOT NULL AND TRIM(a.last_runtime_error) != '')
-      OR TRIM(COALESCE(a.runtime_status, '')) = 'failed'
-   ORDER BY reported DESC, a.id ASC;"
+     ORDER BY reported DESC, app_id ASC;"
+  fi
   exit 0
 fi
 
