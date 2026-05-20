@@ -126,6 +126,29 @@ if [[ -f "$HTML_CFG" || -f "$SPA_CFG" ]]; then
   fi
 fi
 
+DROPLET_CFG="$ROOT/config/errors-html-probe-droplet.txt"
+DROPLET_HOST="${HEARTBEAT_PROBE_REMOTE:-root@46.101.88.197}"
+if [[ -f "$DROPLET_CFG" ]] && command -v ssh >/dev/null 2>&1; then
+  echo
+  echo "=== Droplet internal HTML (client error reporter) ==="
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"
+    id="$(echo "${line%%|*}" | tr -d '[:space:]')"
+    [[ -z "$id" ]] && continue
+    port="$(echo "${line##*|}" | tr -d '[:space:]')"
+    [[ "$port" == "$id" || -z "$port" ]] && port="5000"
+    ctr="216labs-${id}-1"
+    probe_js="const http=require('http');http.get('http://127.0.0.1:${port}/',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>process.exit(d.includes('report-error')?0:1));}).on('error',()=>process.exit(2));"
+    if ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
+      "docker exec $ctr node -e $(printf '%q' "$probe_js")" >/dev/null 2>&1; then
+      echo "  $id (container :${port}): reporter in HTML"
+    else
+      echo "  WARN: $id ($ctr :${port}): no report-error or container down" >&2
+      HTML_FAIL=$((HTML_FAIL + 1))
+    fi
+  done <"$DROPLET_CFG"
+fi
+
 CFG="$ROOT/config/errors-runtime-services.txt"
 if [[ -f "$CFG" ]] && command -v docker >/dev/null 2>&1; then
   echo
