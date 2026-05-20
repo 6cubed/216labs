@@ -68,17 +68,20 @@ if [[ -f "$HTML_CFG" || -f "$SPA_CFG" ]]; then
       id="$(echo "$id" | tr -d '[:space:]')"
       [[ -z "$id" ]] && continue
       host="$(_probe_public_host "$id")"
-      code=$(curl -sS -o "$PROBE_HTML" -w '%{http_code}' --max-time 15 -L \
-        "https://${host}/" 2>/dev/null || echo "000")
-      if [[ "$code" != "200" ]]; then
-        echo "  WARN: $id (https://${host}/): HTTP $code" >&2
-        HTML_FAIL=$((HTML_FAIL + 1))
-        continue
-      fi
-      if grep -q 'report-error' "$PROBE_HTML" 2>/dev/null; then
+      ok=0
+      for attempt in 1 2 3; do
+        code=$(curl -sS -o "$PROBE_HTML" -w '%{http_code}' --max-time 15 -L \
+          "https://${host}/" 2>/dev/null || echo "000")
+        if [[ "$code" == "200" ]] && grep -q 'report-error' "$PROBE_HTML" 2>/dev/null; then
+          ok=1
+          break
+        fi
+        [[ "$attempt" -lt 3 ]] && sleep 4
+      done
+      if ((ok)); then
         echo "  $id (https://${host}/): reporter in HTML"
       else
-        echo "  WARN: $id (https://${host}/): HTTP 200 but no report-error in HTML (stale image?)" >&2
+        echo "  WARN: $id (https://${host}/): no report-error in HTML after retries (HTTP $code)" >&2
         HTML_FAIL=$((HTML_FAIL + 1))
       fi
     done <"$HTML_CFG"
@@ -138,16 +141,22 @@ if [[ -f "$DROPLET_CFG" ]] && command -v ssh >/dev/null 2>&1; then
     port="$(echo "${line##*|}" | tr -d '[:space:]')"
     [[ "$port" == "$id" || -z "$port" ]] && port="5000"
     ctr="216labs-${id}-1"
-    probe_py="import urllib.request,sys; h=urllib.request.urlopen('http://127.0.0.1:${port}/',timeout=8).read().decode(); sys.exit(0 if 'report-error' in h else 1)"
+    probe_py="import urllib.request,sys; h=urllib.request.urlopen('http://127.0.0.1:${port}/',timeout=20).read().decode(); sys.exit(0 if 'report-error' in h else 1)"
     probe_js="const http=require('http');http.get('http://127.0.0.1:${port}/',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>process.exit(d.includes('report-error')?0:1));}).on('error',()=>process.exit(2));"
     ok=0
-    if ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
-      "docker exec $ctr python3 -c $(printf '%q' "$probe_py")" >/dev/null 2>&1; then
-      ok=1
-    elif ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
-      "docker exec $ctr node -e $(printf '%q' "$probe_js")" >/dev/null 2>&1; then
-      ok=1
-    fi
+    for attempt in 1 2 3; do
+      if ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
+        "docker exec $ctr python3 -c $(printf '%q' "$probe_py")" >/dev/null 2>&1; then
+        ok=1
+        break
+      fi
+      if ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
+        "docker exec $ctr node -e $(printf '%q' "$probe_js")" >/dev/null 2>&1; then
+        ok=1
+        break
+      fi
+      [[ "$attempt" -lt 3 ]] && sleep 5
+    done
     if ((ok)); then
       echo "  $id (container :${port}): reporter in HTML"
     else
