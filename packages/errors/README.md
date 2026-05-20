@@ -44,6 +44,6 @@ Ingest: `POST https://admin.6cubed.app/api/public/report-error` (see `docs/REPOS
 
 Vite+Express apps with esbuild server bundles: add `@216labs/errors` to the allowlist and `packages: "bundle"` in `script/build.ts` (see RamblingRadio).
 
-**Heartbeat:** `./scripts/heartbeat-stack-check.sh` (audit + DB summary + runtime image probes); `./scripts/heartbeat-error-summary.sh 6` for counts only.
+**Heartbeat:** `./scripts/heartbeat-stack-check.sh` (audit + DB summary + live HTML/JS reporter probes via `config/errors-html-probe-*.txt` + runtime image verify); `./scripts/heartbeat-error-summary.sh 6` for counts only.
 
 **Flutter (anchor):** `ErrorReporter.install()` in `lib/main.dart`; server uses `app/client_error_report.py` (not `@216labs/errors` npm).
