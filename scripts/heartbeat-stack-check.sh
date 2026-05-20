@@ -45,34 +45,84 @@ else
   echo "WARN: report-error ingest returned HTTP $INGEST_CODE (expect 201)" >&2
 fi
 
+_probe_public_host() {
+  local id="$1"
+  if [[ "$id" == "landing" ]]; then
+    echo "6cubed.app"
+  else
+    echo "${id}.6cubed.app"
+  fi
+}
+
 HTML_CFG="$ROOT/config/errors-html-probe-apps.txt"
-if [[ -f "$HTML_CFG" ]]; then
+SPA_CFG="$ROOT/config/errors-html-probe-spa-apps.txt"
+if [[ -f "$HTML_CFG" || -f "$SPA_CFG" ]]; then
   echo
-  echo "=== Live HTML (client error reporter) ==="
+  echo "=== Live client error reporters ==="
   HTML_FAIL=0
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    id="${line%%#*}"
-    id="$(echo "$id" | tr -d '[:space:]')"
-    [[ -z "$id" ]] && continue
-    host="${id}.6cubed.app"
-    [[ "$id" == "landing" ]] && host="6cubed.app"
-    code=$(curl -sS -o /tmp/heartbeat-probe-$$.html -w '%{http_code}' --max-time 15 -L \
-      "https://${host}/" 2>/dev/null || echo "000")
-    if [[ "$code" != "200" ]]; then
-      echo "  WARN: $id (https://${host}/): HTTP $code" >&2
-      HTML_FAIL=$((HTML_FAIL + 1))
-      continue
-    fi
-    if grep -q 'report-error' "/tmp/heartbeat-probe-$$.html" 2>/dev/null; then
-      echo "  $id (https://${host}/): reporter in HTML"
-    else
-      echo "  WARN: $id (https://${host}/): HTTP 200 but no report-error in body (stale image?)" >&2
-      HTML_FAIL=$((HTML_FAIL + 1))
-    fi
-  done <"$HTML_CFG"
-  rm -f "/tmp/heartbeat-probe-$$.html"
+  PROBE_HTML="/tmp/heartbeat-probe-$$.html"
+  PROBE_JS="/tmp/heartbeat-probe-$$.js"
+  if [[ -f "$HTML_CFG" ]]; then
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      id="${line%%#*}"
+      id="$(echo "$id" | tr -d '[:space:]')"
+      [[ -z "$id" ]] && continue
+      host="$(_probe_public_host "$id")"
+      code=$(curl -sS -o "$PROBE_HTML" -w '%{http_code}' --max-time 15 -L \
+        "https://${host}/" 2>/dev/null || echo "000")
+      if [[ "$code" != "200" ]]; then
+        echo "  WARN: $id (https://${host}/): HTTP $code" >&2
+        HTML_FAIL=$((HTML_FAIL + 1))
+        continue
+      fi
+      if grep -q 'report-error' "$PROBE_HTML" 2>/dev/null; then
+        echo "  $id (https://${host}/): reporter in HTML"
+      else
+        echo "  WARN: $id (https://${host}/): HTTP 200 but no report-error in HTML (stale image?)" >&2
+        HTML_FAIL=$((HTML_FAIL + 1))
+      fi
+    done <"$HTML_CFG"
+  fi
+  if [[ -f "$SPA_CFG" ]]; then
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      id="${line%%#*}"
+      id="$(echo "$id" | tr -d '[:space:]')"
+      [[ -z "$id" ]] && continue
+      host="$(_probe_public_host "$id")"
+      code=$(curl -sS -o "$PROBE_HTML" -w '%{http_code}' --max-time 15 -L \
+        "https://${host}/" 2>/dev/null || echo "000")
+      if [[ "$code" != "200" ]]; then
+        echo "  WARN: $id (https://${host}/): HTTP $code" >&2
+        HTML_FAIL=$((HTML_FAIL + 1))
+        continue
+      fi
+      js_path="$(grep -oE '/assets/[a-zA-Z0-9_.-]+\.js' "$PROBE_HTML" 2>/dev/null | head -1)"
+      if [[ -z "$js_path" ]]; then
+        js_path="$(grep -oE 'src="(/[^"]+\.js)"' "$PROBE_HTML" 2>/dev/null | head -1 | sed 's/src="//;s/"$//')"
+      fi
+      if [[ -z "$js_path" ]]; then
+        echo "  WARN: $id (https://${host}/): no JS bundle path in index HTML" >&2
+        HTML_FAIL=$((HTML_FAIL + 1))
+        continue
+      fi
+      js_code=$(curl -sS -o "$PROBE_JS" -w '%{http_code}' --max-time 20 -L \
+        "https://${host}${js_path}" 2>/dev/null || echo "000")
+      if [[ "$js_code" != "200" ]]; then
+        echo "  WARN: $id (https://${host}${js_path}): HTTP $js_code" >&2
+        HTML_FAIL=$((HTML_FAIL + 1))
+        continue
+      fi
+      if grep -q 'report-error' "$PROBE_JS" 2>/dev/null; then
+        echo "  $id (https://${host}${js_path}): reporter in JS bundle"
+      else
+        echo "  WARN: $id: bundle has no report-error (stale image?)" >&2
+        HTML_FAIL=$((HTML_FAIL + 1))
+      fi
+    done <"$SPA_CFG"
+  fi
+  rm -f "$PROBE_HTML" "$PROBE_JS"
   if ((HTML_FAIL > 0)); then
-    echo "heartbeat-stack-check: $HTML_FAIL app(s) missing live client reporter in HTML" >&2
+    echo "heartbeat-stack-check: $HTML_FAIL app(s) missing live client reporter" >&2
   fi
 fi
 
