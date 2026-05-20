@@ -1,9 +1,16 @@
 import os
 import re
 
-from flask import Flask, abort, render_template
+from flask import Flask, abort, jsonify, render_template
+
+from client_error_report import client_error_script
 
 app = Flask(__name__)
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("labshq")}
 
 _GA_MEASUREMENT_ID_RE = re.compile(r"^G-[A-Z0-9]+$")
 
@@ -16,6 +23,12 @@ def _ga_measurement_id() -> str:
 @app.context_processor
 def _inject_ga_context():
     return {"ga_measurement_id": _ga_measurement_id()}
+
+
+@app.route("/healthz")
+def healthz():
+    return jsonify({"ok": True})
+
 
 PUBLICATIONS = [
     {

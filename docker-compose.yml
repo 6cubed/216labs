@@ -938,7 +938,9 @@ services:
   labshq:
     image: 216labs/labshq:latest
     pull_policy: never
-    build: ./products/org-lifestyle/play/labshq
+    build:
+      context: .
+      dockerfile: products/org-lifestyle/play/labshq/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

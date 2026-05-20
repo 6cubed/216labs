@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>216labs HQ</title>
   {% include '_ga.html' %}
+  {{ client_error_script_html | safe }}
   <style>
     :root {
       --bg: #07090f;
@@ -97,6 +98,25 @@
       <div class="meta">Published {{ item.published_on }} · {{ item.authors|join(", ") }}</div>
     </a>
     {% endfor %}
+
+    <h2 class="section-title" style="margin-top: 2.5rem;">Products from 216Labs</h2>
+    <p class="lead" style="font-size: 0.95rem; margin-bottom: 1rem;">
+      Research-backed tools and paid reports on the same stack as this site.
+    </p>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+      <a class="card" href="https://storybook.6cubed.app" target="_blank" rel="noopener noreferrer" style="flex: 1 1 200px;">
+        <h3>StoryMagic</h3>
+        <p>AI children's storybooks · printed via Stripe</p>
+      </a>
+      <a class="card" href="https://1pageresearch.6cubed.app" target="_blank" rel="noopener noreferrer" style="flex: 1 1 200px;">
+        <h3>1PageResearch</h3>
+        <p>€1 AI research reports from community discourse</p>
+      </a>
+      <a class="card" href="https://merch.6cubed.app" target="_blank" rel="noopener noreferrer" style="flex: 1 1 200px;">
+        <h3>216Labs Merch</h3>
+        <p>Branded apparel and stationery</p>
+      </a>
+    </div>
   </main>
 </body>
 </html>
