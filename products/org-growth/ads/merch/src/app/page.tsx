@@ -159,7 +159,14 @@ export default function MerchPage() {
                           Buy
                         </a>
                       ) : (
-                        <span className="text-xs text-zinc-500 italic">Checkout URL not configured</span>
+                        <a
+                          href="https://storybook.6cubed.app"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center rounded-lg border border-cyan-500/30 bg-cyan-950/40 px-4 py-2 text-sm font-medium text-cyan-200 hover:border-cyan-400/50 transition-colors"
+                        >
+                          Shop StoryMagic
+                        </a>
                       )}
                     </div>
                   </div>

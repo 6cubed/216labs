@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
@@ -41,6 +41,28 @@ export default function HomePage() {
   const [bookSubtitle, setBookSubtitle] = useState("");
   const [pages, setPages] = useState<BookPage[]>([]);
   const [progressSteps, setProgressSteps] = useState<GenerationProgress[]>([]);
+  const [checkoutReady, setCheckoutReady] = useState<boolean | null>(null);
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (step !== "preview") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/checkout/ready");
+        const data = (await res.json()) as { ready: boolean; message?: string };
+        if (!cancelled) {
+          setCheckoutReady(data.ready);
+          setCheckoutMessage(data.message ?? null);
+        }
+      } catch {
+        if (!cancelled) setCheckoutReady(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [step]);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -472,10 +494,17 @@ export default function HomePage() {
                   </div>
                 )}
 
+                {checkoutReady === false && checkoutMessage && (
+                  <div className="flex items-start gap-2 bg-amber-500/15 border border-amber-400/30 rounded-xl p-3 mb-4 text-white/90 text-sm text-left max-w-lg mx-auto">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>{checkoutMessage}</span>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <button
                     onClick={handleOrder}
-                    disabled={isOrdering}
+                    disabled={isOrdering || checkoutReady === false}
                     className="flex items-center gap-3 px-8 py-4 bg-white text-story-purple rounded-2xl font-bold text-lg
                       hover:bg-story-yellow-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-lg"
                   >
