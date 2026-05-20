@@ -107,6 +107,14 @@ while IFS= read -r pkg; do
     notes+=("Dockerfile: build packages/errors before app (npm run build)")
     missing=$((missing + 1))
   fi
+  if has_errors_dep "$app_dir/package.json" 2>/dev/null; then
+    nc="$(find "$app_dir" -maxdepth 1 -name 'next.config.*' 2>/dev/null | head -1)"
+    if [[ -n "$nc" ]] && ! grep -q '@216labs/errors' "$nc" 2>/dev/null; then
+      status="GAP"
+      notes+=('next.config: transpilePackages must include "@216labs/errors"')
+      missing=$((missing + 1))
+    fi
+  fi
 
   if [[ "$LIVE" == 1 && "$rep" == "yes" ]]; then
     origin="https://${id}.6cubed.app"

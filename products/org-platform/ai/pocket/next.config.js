@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ['@216labs/errors'],
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Prevent bundling WebGPU-only packages on the server
