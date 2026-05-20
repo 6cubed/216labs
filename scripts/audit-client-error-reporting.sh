@@ -169,9 +169,9 @@ audit_extra_app "anchor" "products/org-lifestyle/play/anchor/frontend" "$anchor_
 HELLO_FLASK="$ROOT/products/org-platform/toolkit-demos/hello-flask"
 hello_flask_rep="no"
 if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
-  && grep -q 'report_server_error' "$HELLO_FLASK/app.py" 2>/dev/null \
+  && grep -q 'client_error_script' "$HELLO_FLASK/app.py" 2>/dev/null \
   && grep -q 'client_error_report' "$HELLO_FLASK/Dockerfile" 2>/dev/null \
-  && grep -q 'report-error' "$HELLO_FLASK/app.py" 2>/dev/null; then
+  && grep -q 'report_server_error' "$HELLO_FLASK/app.py" 2>/dev/null; then
   hello_flask_rep="yes"
 fi
 audit_extra_app "hello-flask" "products/org-platform/toolkit-demos/hello-flask" "$hello_flask_rep"

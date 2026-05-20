@@ -4,7 +4,7 @@ import traceback
 
 from flask import Flask, request
 
-from client_error_report import report_server_error
+from client_error_report import client_error_script, report_server_error
 
 app = Flask(__name__)
 
@@ -22,34 +22,10 @@ def _ga_snippet() -> str:
     )
 
 
-def _client_error_snippet() -> str:
-    return """<script>
-(function () {
-  var endpoint = "https://admin.6cubed.app/api/public/report-error";
-  function send(kind, message, stack) {
-    try {
-      fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        keepalive: true,
-        body: JSON.stringify({ app_id: "hello-flask", kind: kind, message: message, stack: stack || "" })
-      });
-    } catch (e) {}
-  }
-  window.addEventListener("error", function (e) {
-    send("client", e.message || String(e.error), e.error && e.error.stack);
-  });
-  window.addEventListener("unhandledrejection", function (e) {
-    send("client", String((e.reason && e.reason.message) || e.reason), e.reason && e.reason.stack);
-  });
-})();
-</script>"""
-
-
 @app.get("/")
 def home():
     ga = _ga_snippet()
-    err = _client_error_snippet()
+    err = client_error_script("hello-flask")
     return (
         "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>"
         f"<title>Hello Flask</title>{ga}{err}</head><body>"

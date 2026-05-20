@@ -2,3 +2,5 @@
 # Use when public URL redirects through activator, HTML is runtime-injected, or restarts flap public probes.
 birdperch|8000
 pipesecure|3000
+ramblingradio|5000
+stroll|5000
