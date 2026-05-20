@@ -39,8 +39,9 @@ run_probes() {
       fails=$((fails + 1))
       continue
     fi
-    probe_py="import re,sys,urllib.request as u; h=u.urlopen('http://127.0.0.1:${port}/',timeout=${http_timeout}).read().decode(); sys.exit(0 if ('report-error' in h or any('report-error' in u.urlopen('http://127.0.0.1:${port}'+m.group(0),timeout=${http_timeout}).read().decode() for p in (r'/assets/[a-zA-Z0-9_.-]+\\.js',r'/_next/static/[a-zA-Z0-9_.-]+\\.js') for m in (re.search(p,h),) if m)) else 1)"
-    probe_js="const http=require('http');const P=${port};function get(p,cb){http.get('http://127.0.0.1:'+P+p,r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>cb(d));}).on('error',()=>process.exit(2));}get('/',h=>{if(h.includes('report-error'))process.exit(0);const m=h.match(/\\/(assets|_next\\/static)\\/[a-zA-Z0-9_.-]+\\.js/);if(!m)process.exit(1);get(m[0],j=>process.exit(j.includes('report-error')?0:1));});"
+    probe_host="$(docker exec "$ctr" sh -c 'h=$(hostname -i 2>/dev/null | awk "{print \$1}"); [ -n "$h" ] && echo "$h" || echo 127.0.0.1' 2>/dev/null || echo 127.0.0.1)"
+    probe_py="import re,sys,urllib.request as u; H='${probe_host}'; P=${port}; h=u.urlopen(f'http://{H}:{P}/',timeout=${http_timeout}).read().decode(); sys.exit(0 if ('report-error' in h or any('report-error' in u.urlopen(f'http://{H}:{P}'+m.group(0),timeout=${http_timeout}).read().decode() for p in (r'/assets/[a-zA-Z0-9_.-]+\\.js',r'/_next/static/[a-zA-Z0-9_.-]+\\.js') for m in (re.search(p,h),) if m)) else 1)"
+    probe_js="const http=require('http');const H='${probe_host}';const P=${port};function get(p,cb){http.get('http://'+H+':'+P+p,r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>cb(d));}).on('error',()=>process.exit(2));}get('/',h=>{if(h.includes('report-error'))process.exit(0);const m=h.match(/\\/(assets|_next\\/static)\\/[a-zA-Z0-9_.-]+\\.js/);if(!m)process.exit(1);get(m[0],j=>process.exit(j.includes('report-error')?0:1));});"
     ok=0
     detail=""
     for attempt in $(seq 1 "$attempts"); do
