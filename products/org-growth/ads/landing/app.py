@@ -5,7 +5,7 @@ import traceback
 
 from flask import Flask, render_template, request
 
-from client_error_report import report_server_error
+from client_error_report import client_error_script, report_server_error
 from labs_http import fetch_json, normalize_blog_items
 
 app = Flask(__name__)
@@ -21,6 +21,11 @@ def _ga_measurement_id() -> str:
 @app.context_processor
 def _inject_ga_context():
     return {"ga_measurement_id": _ga_measurement_id()}
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("landing")}
 
 
 def _fetch_live_apps():

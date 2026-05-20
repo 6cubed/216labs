@@ -131,36 +131,12 @@ DROPLET_HOST="${HEARTBEAT_PROBE_REMOTE:-root@46.101.88.197}"
 if [[ -f "$DROPLET_CFG" ]] && command -v ssh >/dev/null 2>&1; then
   echo
   echo "=== Droplet internal HTML (client error reporter) ==="
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line="${line%%#*}"
-    id="$(echo "${line%%|*}" | tr -d '[:space:]')"
-    [[ -z "$id" ]] && continue
-    port="$(echo "${line##*|}" | tr -d '[:space:]')"
-    [[ "$port" == "$id" || -z "$port" ]] && port="5000"
-    ctr="216labs-${id}-1"
-    probe_py="import urllib.request,sys; h=urllib.request.urlopen('http://127.0.0.1:${port}/',timeout=20).read().decode(); sys.exit(0 if 'report-error' in h else 1)"
-    probe_js="const http=require('http');http.get('http://127.0.0.1:${port}/',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>process.exit(d.includes('report-error')?0:1));}).on('error',()=>process.exit(2));"
-    ok=0
-    for attempt in 1 2 3; do
-      if ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
-        "docker exec $ctr python3 -c $(printf '%q' "$probe_py")" >/dev/null 2>&1; then
-        ok=1
-        break
-      fi
-      if ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
-        "docker exec $ctr node -e $(printf '%q' "$probe_js")" >/dev/null 2>&1; then
-        ok=1
-        break
-      fi
-      [[ "$attempt" -lt 3 ]] && sleep 5
-    done
-    if ((ok)); then
-      echo "  $id (container :${port}): reporter in HTML"
-    else
-      echo "  WARN: $id ($ctr :${port}): no report-error or container down" >&2
-      HTML_FAIL=$((HTML_FAIL + 1))
-    fi
-  done <"$DROPLET_CFG"
+  set +e
+  out=$("$ROOT/scripts/probe-droplet-reporters.sh" "$DROPLET_HOST" 2>&1)
+  droplet_rc=$?
+  set -e
+  echo "$out"
+  HTML_FAIL=$((HTML_FAIL + droplet_rc))
 fi
 
 CFG="$ROOT/config/errors-runtime-services.txt"

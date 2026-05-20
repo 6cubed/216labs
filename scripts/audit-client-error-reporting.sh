@@ -189,9 +189,9 @@ audit_extra_app "mediate" "products/org-social/mediate" "$mediate_rep"
 LANDING="$ROOT/products/org-growth/ads/landing"
 landing_rep="no"
 if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
-  && grep -q 'report_server_error' "$LANDING/app.py" 2>/dev/null \
+  && grep -q 'client_error_script' "$LANDING/app.py" 2>/dev/null \
   && grep -q 'client_error_report' "$LANDING/Dockerfile" 2>/dev/null \
-  && grep -q 'report-error' "$LANDING/templates/_client_errors.html" 2>/dev/null; then
+  && grep -q 'client_error_script_html' "$LANDING/templates/index.html" 2>/dev/null; then
   landing_rep="yes"
 fi
 audit_extra_app "landing" "products/org-growth/ads/landing" "$landing_rep"
