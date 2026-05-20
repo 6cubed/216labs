@@ -685,7 +685,9 @@ services:
   marketing:
     image: 216labs/marketing:latest
     pull_policy: never
-    build: ./products/org-growth/ads/marketing
+    build:
+      context: .
+      dockerfile: ./products/org-growth/ads/marketing/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

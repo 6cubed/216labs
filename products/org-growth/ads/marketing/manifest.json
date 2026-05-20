@@ -7,7 +7,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "marketing",
-  "build_context": "./products/org-growth/ads/marketing",
+  "build_context": ".",
+  "build_dockerfile": "products/org-growth/ads/marketing/Dockerfile",
   "stack": {
     "frontend": "Next.js 14",
     "backend": null,

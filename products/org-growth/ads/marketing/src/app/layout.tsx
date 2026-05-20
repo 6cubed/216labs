@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ClientErrorReporter } from '@216labs/errors/react'
 import './globals.css'
 import { Ga4Script } from "@/components/ga4/Ga4Script";
 
@@ -13,7 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="antialiased">
       <body className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
         <Ga4Script />
-        {children}</body>
+        <ClientErrorReporter appId="marketing" />
+        {children}
+      </body>
     </html>
   )
 }
