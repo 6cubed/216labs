@@ -1,0 +1,30 @@
+---
+description: Heartbeats must regularly advance revenue, not only infra and observability.
+alwaysApply: true
+---
+
+# Heartbeats — monetization floor
+
+216labs needs **revenue** to cover API tokens, hosting, and model spend. Technical heartbeats (errors, deploy, GHCR) are necessary but not sufficient.
+
+## Cadence
+
+- **At least 1 in every 10 heartbeats** should materially advance **making money** (not a status-only mention).
+- When the random `[Reflect]` prompt is revenue-themed (see `internal/admin/pocket-cursor-bridge/lib/heartbeat_harness.json`), treat that cycle as the monetization beat: **prioritize a shippable revenue path** unless production is on fire.
+
+## What counts as a monetization heartbeat
+
+- Wire or improve **checkout, pricing, paywall, affiliate, lead capture, or paid tier** on a live app.
+- Ship **merch / onefit / emailgpt / landing** CTAs that convert (clear offer, store link, subscribe flow).
+- Enable **Stripe / Resend / GA funnel** env + UI that was stubbed.
+- **Doc that unlocks the next revenue step** (pricing page copy, launch checklist, experiment design) when code needs product input.
+- Measure: link admin traffic, edge uniques, or conversion events before building more infra.
+
+## What does not count alone
+
+- Error reporting, deploy scripts, GHCR matrix, or probe lists **unless** they unblock a paid launch this week.
+- “We should monetize someday” without a commit, deploy, or concrete next move.
+
+## When blocked
+
+Name the blocker (no Stripe keys, no product decision, no storefront URL) and the **next concrete move** (e.g. set `NEXT_PUBLIC_MERCH_STORE_URL`, add pricing section to onefit, ship tip jar on tortellini).

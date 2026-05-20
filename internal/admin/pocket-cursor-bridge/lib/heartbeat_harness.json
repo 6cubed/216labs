@@ -1,11 +1,11 @@
 {
-  "message": "Drive the stack forward: fix what’s broken, advance active projects, and improve things that matter—even ideas outside the current thread if they’re clearly high leverage.",
+  "message": "Drive the stack forward: fix what's broken, advance active projects, and improve things that matter—even ideas outside the current thread if they're clearly high leverage.",
   "interval_sec": 1800,
   "first_run_delay_sec": 120,
   "skip_when_generating": true,
   "notify_telegram": true,
   "reflect_enabled": true,
-  "execution_floor": "Ship something real this cycle—fix, feature, refactor, commit, push, deploy, or a doc that unlocks the next step. Status-only replies don’t count. When blocked, name the blocker and the next concrete move.",
+  "execution_floor": "Ship something real this cycle—fix, feature, refactor, commit, push, deploy, or a doc that unlocks the next step. Status-only replies don't count. When blocked, name the blocker and the next concrete move. ~1 in 10 heartbeats should advance revenue (see .cursor/rules/heartbeat-monetization.mdc).",
   "reflect_prompts": [
     "Reflect: what is the highest-leverage unfinished item right now, and what blocks it?",
     "Prioritize: name your top three outcomes for the next 30 minutes—pick the boldest one you can still land and start.",
@@ -14,7 +14,7 @@
     "Reflect: what did the last heartbeat accomplish? If it was mostly status, what will you change in the repo this time?",
     "Prioritize: scan git status, open issues, and Telegram threads—move the needle that matters most.",
     "Ideate: what would a user notice if you shipped in the next ten minutes?",
-    "Execute: finish and commit (or deploy) the best shippable unit of work you can see—don’t sand down scope until it’s trivial.",
+    "Execute: finish and commit (or deploy) the best shippable unit of work you can see—don't sand down scope until it's trivial.",
     "Reflect: which assumptions from earlier today still hold? What changed?",
     "Prioritize: what is stale (docs, manifest, deploy, monitoring) versus the code on disk—close the gap.",
     "Ideate: what half-finished thread from Telegram or this chat deserves a decisive close-out?",
@@ -22,8 +22,12 @@
     "Reflect: where are you playing it safe? Pick the harder honest move and act.",
     "Prioritize: if you could only ship one thing before the next heartbeat, what would move the product most?",
     "Ideate: what outside-the-box improvement (DX, observability, UX, automation) is worth a bet this cycle?",
-    "Execute: try one improvement you haven’t been asked for—if it’s clearly good for the monorepo, ship it.",
+    "Execute: try one improvement you haven't been asked for—if it's clearly good for the monorepo, ship it.",
     "Reflect: what would you regret leaving uncommitted overnight?",
-    "Ideate: what’s one experiment you could run in-repo in under 30 minutes that might pay off all week?"
-  ]
+    "Ideate: what's one experiment you could run in-repo in under 30 minutes that might pay off all week?",
+    "Reflect: 216labs needs revenue for API tokens—what live app is closest to charging or converting traffic, and what's blocking it?",
+    "Prioritize: this is a monetization beat (~1 in 10)—ship one paid-value slice (checkout, subscribe, merch link, affiliate, B2B lead) before more infra.",
+    "Ideate: smallest diff on a deployed app that could produce revenue or qualified leads within 30 days?"
+  ],
+  "monetization_reflect_note": "Roughly 3 of 21 reflect lines are revenue-themed; agents should also follow .cursor/rules/heartbeat-monetization.mdc (≥1 revenue-focused heartbeat per 10)."
 }
