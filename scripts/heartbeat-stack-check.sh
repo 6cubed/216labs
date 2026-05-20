@@ -3,6 +3,7 @@
 # Usage: ./scripts/heartbeat-stack-check.sh [--live]
 #   --live  POST ingest probe per app (audit-client-error-reporting.sh --live)
 # Env: CLIENT_ERRORS_DB, HEARTBEAT_ERROR_HOURS (default 6)
+#   HEARTBEAT_SKIP_DROPLET=1  skip SSH droplet reporter probes (birdperch|slow can take 20+ min)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -128,7 +129,11 @@ fi
 
 DROPLET_CFG="$ROOT/config/errors-html-probe-droplet.txt"
 DROPLET_HOST="${HEARTBEAT_PROBE_REMOTE:-root@46.101.88.197}"
-if [[ -f "$DROPLET_CFG" ]] && command -v ssh >/dev/null 2>&1; then
+if [[ "${HEARTBEAT_SKIP_DROPLET:-}" == "1" ]]; then
+  echo
+  echo "=== Droplet internal HTML (client error reporter) ==="
+  echo "  (skipped: HEARTBEAT_SKIP_DROPLET=1)"
+elif [[ -f "$DROPLET_CFG" ]] && command -v ssh >/dev/null 2>&1; then
   echo
   echo "=== Droplet internal HTML (client error reporter) ==="
   set +e

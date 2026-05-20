@@ -8,7 +8,14 @@ from pathlib import Path
 import flask
 import resend
 
+from client_error_report import client_error_script
+
 app = flask.Flask(__name__)
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("emailgpt")}
 
 DATA_DIR = os.environ.get("EMAILGPT_DATA_DIR", "/app/data")
 DB_PATH = Path(DATA_DIR) / "emailgpt.db"
@@ -98,6 +105,11 @@ def build_email_html(nudge: str, date: str) -> str:
   </div>
 </body>
 </html>"""
+
+
+@app.route("/healthz")
+def healthz():
+    return flask.jsonify({"ok": True})
 
 
 @app.route("/")

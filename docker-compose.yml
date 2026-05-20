@@ -1177,7 +1177,9 @@ services:
   emailgpt:
     image: 216labs/emailgpt:latest
     pull_policy: never
-    build: ./products/org-growth/ads/emailgpt
+    build:
+      context: .
+      dockerfile: ./products/org-growth/ads/emailgpt/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
