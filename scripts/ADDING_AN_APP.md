@@ -44,7 +44,7 @@ Production apps POST client/server errors to **`https://admin.6cubed.app/api/pub
 
 | Stack | Reference |
 |-------|-----------|
-| **Next.js** | `products/org-platform/toolkit-demos/hello-nextjs` — `@216labs/errors`, `<ClientErrorReporter appId="…" />`, repo-root Docker + `scripts/docker-build-errors-package.sh` |
+| **Next.js** | `products/org-platform/toolkit-demos/hello-nextjs` or `products/org-growth/ads/marketing` — `@216labs/errors`, `transpilePackages`, `<ClientErrorReporter appId="…" />`, repo-root Docker + `scripts/docker-build-errors-package.sh`, `/healthz` optional |
 | **Vite + Express** | `products/org-social/ytsync` or `products/org-media/RamblingRadio` — `installBrowserErrorReporting({ appId })` in `client/src/main.tsx`; esbuild allowlist + `packages: "bundle"` when bundling the server |
 | **Flask / Jinja** | `products/org-growth/ads/landing`, `products/org-lifestyle/play/avatar`, `products/org-platform/local/explore` — COPY `internal/python/client_error_report.py`, `client_error_script("app-id")` in template with `client_error_script_html` (Jinja safe filter), `@app.errorhandler(500)` → `report_server_error` |
 | **FastAPI** | `products/org-platform/ai/bird-perch`, `products/org-platform/ai/ctfbench` — same Python module; Jinja `client_error_script()` or inject at `<!-- CLIENT_ERRORS -->` in static HTML |
@@ -60,7 +60,7 @@ Verify:
 
 ```bash
 ./scripts/audit-client-error-reporting.sh
-./scripts/heartbeat-stack-check.sh
+HEARTBEAT_SKIP_DROPLET=1 ./scripts/heartbeat-stack-check.sh
 ```
 
 ## 6. Build your app, commit, and ship

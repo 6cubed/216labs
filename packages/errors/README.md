@@ -23,7 +23,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-Docker: use **repo-root** `build.context` and copy `packages/errors` (see `products/org-shopping/onefit/Dockerfile` or `internal/admin/Dockerfile`).
+Docker: use **repo-root** `build.context` and copy `packages/errors` (see `products/org-growth/ads/marketing/Dockerfile`, `products/org-shopping/onefit/Dockerfile`, or `internal/admin/Dockerfile`).
 
 ## Python (Flask / FastAPI / static HTML)
 
@@ -64,6 +64,6 @@ Ingest: `POST https://admin.6cubed.app/api/public/report-error` (see `docs/REPOS
 
 Vite+Express apps with esbuild server bundles: add `@216labs/errors` to the allowlist and `packages: "bundle"` in `script/build.ts` (see RamblingRadio).
 
-**Heartbeat / monitoring:** `./scripts/heartbeat-stack-check.sh` — audit, DB summary, public admin APIs, then live probes from `config/errors-html-probe-*.txt` (see **`config/README-errors-reporting.md`**). Droplet in-container checks: `./scripts/probe-droplet-reporters.sh root@46.101.88.197`. Rollup only: `./scripts/heartbeat-error-summary.sh 6`.
+**Heartbeat / monitoring:** `./scripts/heartbeat-stack-check.sh` — audit, DB summary, public admin APIs, then live probes from `config/errors-html-probe-*.txt` (see **`config/README-errors-reporting.md`**). Use **`HEARTBEAT_SKIP_DROPLET=1`** when SSH droplet probes are too slow. Droplet in-container checks: `./scripts/probe-droplet-reporters.sh root@46.101.88.197`. Rollup only: `./scripts/heartbeat-error-summary.sh 6`. After wiring, add the app to **`config/ghcr-always-include.txt`** and the right probe list.
 
 **Flutter (anchor):** `ErrorReporter.install()` in `lib/main.dart`; server uses `app/client_error_report.py` (not `@216labs/errors` npm).

@@ -103,13 +103,14 @@ Apps can **POST** JSON to **`https://admin.6cubed.app/api/public/report-error`**
 ./scripts/audit-client-error-reporting.sh     # code: layout + Docker + stack-specific apps
 ./scripts/audit-client-error-reporting.sh --live  # + POST ingest probe per npm app
 ./scripts/heartbeat-stack-check.sh            # audit + summary + live HTML/JS/droplet probes
+HEARTBEAT_SKIP_DROPLET=1 ./scripts/heartbeat-stack-check.sh  # same, skip slow SSH droplet probes
 ./scripts/heartbeat-error-summary.sh 6        # errors by app only (last 6h)
 ./scripts/probe-droplet-reporters.sh root@46.101.88.197  # in-container reporter check
 ```
 
 **Patterns:** Next.js → `<ClientErrorReporter appId="…" />`. Vite/Express → `installBrowserErrorReporting`. Python → `client_error_script()` + `report_server_error()` from `internal/python/client_error_report.py`. Flutter **anchor** → `ErrorReporter`. See `packages/errors/README.md` and `scripts/ADDING_AN_APP.md` §5.
 
-**Coverage:** `./scripts/audit-client-error-reporting.sh` scans `products/**` with `@216labs/errors`, then a **stack-specific** block (anchor, hello-flask, mediate, landing, birdperch, ctfbench, avatar, explore, pipesecure). **Live monitoring** lists live in `config/README-errors-reporting.md` — update those when you add reporters; do not duplicate app IDs here.
+**Coverage:** `./scripts/audit-client-error-reporting.sh` scans `products/**` with `@216labs/errors`, then a **stack-specific** block (anchor, hello-flask, mediate, landing, **emailgpt**, birdperch, ctfbench, avatar, explore, pipesecure). **Live monitoring** app IDs live only in `config/errors-html-probe-*.txt` and `config/README-errors-reporting.md` — update those when you add reporters; do not duplicate app IDs here.
 
 **Docker (all apps with `@216labs/errors`):** repo-root `build.context`, then `scripts/docker-build-errors-package.sh` (emits `packages/errors/dist/*.cjs`) before app `npm install`. Vite+Express server bundles: allowlist + `packages: "bundle"` in `script/build.ts` (see RamblingRadio). Build-time check: `scripts/verify-errors-node-runtime.sh` in the app image; CI also runs `scripts/verify-image-errors-runtime.sh` before GHCR push.
 

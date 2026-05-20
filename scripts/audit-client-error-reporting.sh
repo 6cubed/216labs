@@ -204,6 +204,16 @@ if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
 fi
 audit_extra_app "landing" "products/org-growth/ads/landing" "$landing_rep"
 
+EMAILGPT="$ROOT/products/org-growth/ads/emailgpt"
+emailgpt_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$EMAILGPT/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$EMAILGPT/Dockerfile" 2>/dev/null \
+  && grep -q 'client_error_script_html' "$EMAILGPT/templates/index.html" 2>/dev/null; then
+  emailgpt_rep="yes"
+fi
+audit_extra_app "emailgpt" "products/org-growth/ads/emailgpt" "$emailgpt_rep"
+
 BIRDPERCH="$ROOT/products/org-platform/ai/bird-perch"
 birdperch_rep="no"
 if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \

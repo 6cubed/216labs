@@ -23,3 +23,9 @@ explore
 pipesecure
 hivefind
 pocket
+# Growth / security — repo-root Docker + admin error reporting (2026-05)
+bugbounty
+marketing
+onefitblog
+emailgpt
+merch
