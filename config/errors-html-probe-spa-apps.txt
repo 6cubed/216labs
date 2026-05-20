@@ -1,5 +1,5 @@
-# Vite/SPA apps: reporter lives in the main JS bundle, not inline in index.html.
-# heartbeat-stack-check.sh fetches the first /assets/*.js (or *.js script) and greps for report-error.
+# Vite/Next apps: reporter lives in a JS chunk, not inline in index.html.
+# heartbeat-stack-check.sh tries /assets/*.js and /_next/static/**/*.js until one contains report-error.
 ytsync
 onefit
 tortellini

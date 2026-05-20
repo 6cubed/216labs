@@ -99,26 +99,23 @@ if [[ -f "$HTML_CFG" || -f "$SPA_CFG" ]]; then
         HTML_FAIL=$((HTML_FAIL + 1))
         continue
       fi
-      js_path="$(grep -oE '/assets/[a-zA-Z0-9_.-]+\.js' "$PROBE_HTML" 2>/dev/null | head -1)"
-      if [[ -z "$js_path" ]]; then
-        js_path="$(grep -oE 'src="(/[^"]+\.js)"' "$PROBE_HTML" 2>/dev/null | head -1 | sed 's/src="//;s/"$//')"
-      fi
-      if [[ -z "$js_path" ]]; then
-        echo "  WARN: $id (https://${host}/): no JS bundle path in index HTML" >&2
-        HTML_FAIL=$((HTML_FAIL + 1))
-        continue
-      fi
-      js_code=$(curl -sS -o "$PROBE_JS" -w '%{http_code}' --max-time 20 -L \
-        "https://${host}${js_path}" 2>/dev/null || echo "000")
-      if [[ "$js_code" != "200" ]]; then
-        echo "  WARN: $id (https://${host}${js_path}): HTTP $js_code" >&2
-        HTML_FAIL=$((HTML_FAIL + 1))
-        continue
-      fi
-      if grep -q 'report-error' "$PROBE_JS" 2>/dev/null; then
-        echo "  $id (https://${host}${js_path}): reporter in JS bundle"
+      ok=0
+      found_path=""
+      while IFS= read -r js_path; do
+        [[ -z "$js_path" ]] && continue
+        js_code=$(curl -sS -o "$PROBE_JS" -w '%{http_code}' --max-time 20 -L \
+          "https://${host}${js_path}" 2>/dev/null || echo "000")
+        [[ "$js_code" != "200" ]] && continue
+        if grep -q 'report-error' "$PROBE_JS" 2>/dev/null; then
+          ok=1
+          found_path="$js_path"
+          break
+        fi
+      done < <(grep -oE '/(_next/static|assets)[^"<> ]+\.js' "$PROBE_HTML" 2>/dev/null | sort -u)
+      if ((ok)); then
+        echo "  $id (https://${host}${found_path}): reporter in JS bundle"
       else
-        echo "  WARN: $id: bundle has no report-error (stale image?)" >&2
+        echo "  WARN: $id (https://${host}/): no chunk with report-error (stale image?)" >&2
         HTML_FAIL=$((HTML_FAIL + 1))
       fi
     done <"$SPA_CFG"
