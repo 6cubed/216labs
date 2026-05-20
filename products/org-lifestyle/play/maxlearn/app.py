@@ -186,6 +186,24 @@ def ensure_snippet(conn, item: dict, source_page_id: int | None = None) -> int |
     return conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
 
+def bootstrap_seed_if_empty(conn, min_count: int = 80) -> None:
+    """Cold deploys ship with an empty data volume — seed a starter batch so the feed works."""
+    total = conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0]
+    if total >= min_count:
+        return
+    try:
+        page_ids = fetch_random_page_ids(limit=120)
+        for i in range(0, len(page_ids), 50):
+            batch = page_ids[i : i + 50]
+            for item in fetch_extract_and_categories(batch):
+                ensure_snippet(conn, item, source_page_id=None)
+            conn.commit()
+            if conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0] >= min_count:
+                return
+    except requests.RequestException:
+        conn.rollback()
+
+
 def get_session_id():
     sid = flask.request.cookies.get("maxlearn_session")
     if sid:
@@ -256,6 +274,7 @@ def api_next():
     init_db()
     session_id = get_session_id()
     with get_db() as conn:
+        bootstrap_seed_if_empty(conn)
         seen = get_seen_snippet_ids(conn, session_id)
         liked_ids = get_liked_snippet_ids(conn, session_id)
         liked_cats = get_liked_categories(conn, session_id)
@@ -287,6 +306,13 @@ def api_next():
         candidates = [r[0] for r in cur.fetchall()]
 
         if not candidates:
+            total = conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0]
+            if total < 80:
+                return flask.jsonify({
+                    "snippet": None,
+                    "message": "Loading Wikipedia articles… refresh in a few seconds.",
+                    "seeding": True,
+                })
             return flask.jsonify({"snippet": None, "message": "No more snippets. Like some to grow your feed!"})
 
         # Score: same-category boost

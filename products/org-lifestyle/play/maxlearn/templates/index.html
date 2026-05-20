@@ -298,6 +298,10 @@
             if (data.snippet) {
               setCard(data.snippet);
               showState('card-container');
+            } else if (data.seeding) {
+              errorMessage.textContent = data.message || 'Loading articles…';
+              showState('state-loading');
+              setTimeout(fetchNext, 2500);
             } else {
               showState('state-empty');
             }

@@ -7,6 +7,7 @@
   "internal_port": 5000,
   "memory_limit": "256m",
   "docker_service": "maxlearn",
+  "activator_never_evict": true,
   "build_context": ".",
   "build_dockerfile": "products/org-lifestyle/play/maxlearn/Dockerfile",
   "stack": {
