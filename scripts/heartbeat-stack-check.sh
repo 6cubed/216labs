@@ -138,9 +138,17 @@ if [[ -f "$DROPLET_CFG" ]] && command -v ssh >/dev/null 2>&1; then
     port="$(echo "${line##*|}" | tr -d '[:space:]')"
     [[ "$port" == "$id" || -z "$port" ]] && port="5000"
     ctr="216labs-${id}-1"
+    probe_py="import urllib.request,sys; h=urllib.request.urlopen('http://127.0.0.1:${port}/',timeout=8).read().decode(); sys.exit(0 if 'report-error' in h else 1)"
     probe_js="const http=require('http');http.get('http://127.0.0.1:${port}/',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>process.exit(d.includes('report-error')?0:1));}).on('error',()=>process.exit(2));"
+    ok=0
     if ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
+      "docker exec $ctr python3 -c $(printf '%q' "$probe_py")" >/dev/null 2>&1; then
+      ok=1
+    elif ssh -o ConnectTimeout=12 -o BatchMode=yes "$DROPLET_HOST" \
       "docker exec $ctr node -e $(printf '%q' "$probe_js")" >/dev/null 2>&1; then
+      ok=1
+    fi
+    if ((ok)); then
       echo "  $id (container :${port}): reporter in HTML"
     else
       echo "  WARN: $id ($ctr :${port}): no report-error or container down" >&2
