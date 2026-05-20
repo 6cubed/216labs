@@ -80,6 +80,32 @@ _fetch_remote_docker_tags() {
   ssh "${SSH_OPTS[@]}" "$REMOTE" "docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null"
 }
 
+_image_id() {
+  docker image inspect -f '{{.Id}}' "$1" 2>/dev/null || true
+}
+
+_remote_image_id() {
+  ssh "${SSH_OPTS[@]}" "$REMOTE" "docker image inspect -f '{{.Id}}' '$1' 2>/dev/null" || true
+}
+
+_prune_remote_disk_if_low() {
+  local pct avail_kb
+  read -r pct avail_kb < <(ssh "${SSH_OPTS[@]}" "$REMOTE" \
+    "df -P / | awk 'NR==2 {gsub(/%/,\"\",\$5); print \$5, \$4}'" 2>/dev/null || echo "0 0")
+  if [ -z "$pct" ] || [ "$pct" -lt 88 ] 2>/dev/null; then
+    return 0
+  fi
+  echo "==> Disk pressure on $REMOTE (${pct}% used, ${avail_kb}KB free) — pruning dangling + duplicate GHCR tags..."
+  ssh_retry "Prune disk on server" ssh "${SSH_OPTS[@]}" "$REMOTE" \
+    'docker image prune -f 2>/dev/null || true
+for img in $(docker images --format "{{.Repository}}:{{.Tag}}" 2>/dev/null | grep "^ghcr.io/6cubed/216labs/" || true); do
+  short="216labs/${img#ghcr.io/6cubed/216labs/}"
+  docker image inspect "$short" >/dev/null 2>&1 && docker rmi "$img" >/dev/null 2>&1 || true
+done
+docker volume prune -f 2>/dev/null || true
+df -h / | tail -1' || true
+}
+
 # ── Service mapping helpers ───────────────────────────────────
 # Try manifest.json first; fall back to hardcoded cases for apps
 # without manifests (anchor multi-service, pipesecure worker).
@@ -439,18 +465,30 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
   SYNC_ONLY_COUNT=0
   if [ "$REMOTE_LIST_OK" -eq 1 ]; then
     for TAG in "${ALL_IMAGES[@]}"; do
-      if echo "$REMOTE_IMAGE_LIST" | grep -qxF "$TAG" 2>/dev/null; then
-        continue
-      fi
       if docker image inspect "$TAG" &>/dev/null 2>&1; then
-        before=${#IMAGES_TO_TRANSFER[@]}
-        _transfer_add "$TAG"
-        if [ "${#IMAGES_TO_TRANSFER[@]}" -gt "$before" ]; then
-          SYNC_ONLY_COUNT=$((SYNC_ONLY_COUNT + 1))
-          echo "  [sync]  $TAG (missing on server, present locally — pushing cached image)"
-        fi
+        :
       else
         echo "  [warn]  $TAG enabled for deploy but no local image — build once (touch app or docker build) then redeploy."
+        continue
+      fi
+      if echo "$REMOTE_IMAGE_LIST" | grep -qxF "$TAG" 2>/dev/null; then
+        local_id=$(_image_id "$TAG")
+        remote_id=$(_remote_image_id "$TAG")
+        if [ -n "$local_id" ] && [ -n "$remote_id" ] && [ "$local_id" != "$remote_id" ]; then
+          before=${#IMAGES_TO_TRANSFER[@]}
+          _transfer_add "$TAG"
+          if [ "${#IMAGES_TO_TRANSFER[@]}" -gt "$before" ]; then
+            SYNC_ONLY_COUNT=$((SYNC_ONLY_COUNT + 1))
+            echo "  [sync]  $TAG (tag exists on server but image ID differs — pushing local build)"
+          fi
+        fi
+        continue
+      fi
+      before=${#IMAGES_TO_TRANSFER[@]}
+      _transfer_add "$TAG"
+      if [ "${#IMAGES_TO_TRANSFER[@]}" -gt "$before" ]; then
+        SYNC_ONLY_COUNT=$((SYNC_ONLY_COUNT + 1))
+        echo "  [sync]  $TAG (missing on server, present locally — pushing cached image)"
       fi
     done
   fi
@@ -463,6 +501,7 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
   if [ ${#IMAGES_TO_TRANSFER[@]} -eq 0 ]; then
     echo "==> All images up to date on server, skipping transfer"
   else
+    _prune_remote_disk_if_low
     # Free disk on server before transfer. Use dangling-only image prune — NOT `prune -a`:
     # tagged 216labs/* images must stay on disk when a container is stopped, or the next
     # deploy has nothing to run (e.g. activator cold-start) until a full rebuild+transfer.
