@@ -7,7 +7,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "shannonairport",
-  "build_context": "./products/org-social/shannonairport",
+  "build_context": ".",
+  "build_dockerfile": "products/org-social/shannonairport/Dockerfile",
   "stack": {
     "frontend": "Next.js + Leaflet",
     "backend": "Next.js Route Handlers (OpenSky proxy)",

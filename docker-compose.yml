@@ -520,7 +520,9 @@ services:
   shannonairport:
     image: 216labs/shannonairport:latest
     pull_policy: never
-    build: ./products/org-social/shannonairport
+    build:
+      context: .
+      dockerfile: ./products/org-social/shannonairport/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

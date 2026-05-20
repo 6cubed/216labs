@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClientErrorReporter } from "@216labs/errors/react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
@@ -31,6 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
       >
         <Ga4Script />
+        <ClientErrorReporter appId="shannonairport" />
         {children}
       </body>
     </html>
