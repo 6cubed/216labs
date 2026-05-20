@@ -11,7 +11,14 @@ from pathlib import Path
 import flask
 import requests
 
+from client_error_report import client_error_script
+
 app = flask.Flask(__name__)
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("maxlearn")}
 app.config["SECRET_KEY"] = os.environ.get("MAXLEARN_SECRET_KEY", "dev-secret-change-in-prod")
 
 DATA_DIR = os.environ.get("MAXLEARN_DATA_DIR", "/app/data")
@@ -229,6 +236,11 @@ def get_neighbour_snippet_ids(conn, liked_ids: set[int]) -> set[int]:
         tuple(liked_ids),
     ).fetchall()
     return set(r[0] for r in rows)
+
+
+@app.route("/healthz")
+def healthz():
+    return flask.jsonify({"ok": True})
 
 
 @app.route("/")

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>MaxLearn — Tinder for Wikipedia rabbit holes</title>
+  {{ client_error_script_html | safe }}
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -398,5 +399,11 @@
       fetchNext();
     })();
   </script>
+  <footer style="text-align:center;padding:1.5rem 1rem 2rem;font-size:0.75rem;color:var(--muted);">
+    From <a href="https://6cubed.app" style="color:var(--link);">216Labs</a> ·
+    <a href="https://storybook.6cubed.app" style="color:var(--link);">StoryMagic</a> ·
+    <a href="https://1pageresearch.6cubed.app" style="color:var(--link);">1PageResearch</a> ·
+    <a href="https://merch.6cubed.app" style="color:var(--link);">Merch</a>
+  </footer>
 </body>
 </html>

@@ -12,3 +12,4 @@ germandaily
 russiandaily
 1pageresearch
 labshq
+maxlearn
