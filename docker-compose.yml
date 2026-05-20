@@ -702,7 +702,9 @@ services:
   merch:
     image: 216labs/merch:latest
     pull_policy: never
-    build: ./products/org-growth/ads/merch
+    build:
+      context: .
+      dockerfile: ./products/org-growth/ads/merch/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
