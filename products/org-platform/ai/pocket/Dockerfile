@@ -8,7 +8,7 @@ RUN sh /tmp/docker-build-errors-package.sh
 COPY products/org-platform/ai/pocket ./products/org-platform/ai/pocket
 
 WORKDIR /repo/products/org-platform/ai/pocket
-RUN npm ci --no-audit --no-fund
+RUN npm install --no-audit --no-fund
 RUN rm -rf node_modules/@216labs \
   && mkdir -p node_modules/@216labs \
   && cp -a /repo/packages/errors node_modules/@216labs/errors
