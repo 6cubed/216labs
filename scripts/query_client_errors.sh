@@ -25,8 +25,10 @@ if [[ "${ARGS[0]:-}" == "--remote" ]]; then
   for a in "${ARGS[@]}"; do
     REMOTE_ARGS+=("$(printf '%q' "$a")")
   done
+  # shellcheck source=lib/ssh-retry.sh
+  source "$ROOT/scripts/lib/ssh-retry.sh"
   # shellcheck disable=SC2029
-  ssh "$REMOTE_HOST" "cd $(printf '%q' "$REMOTE_DIR") && CLIENT_ERRORS_DB=$(printf '%q' "$REMOTE_DB") ./scripts/query_client_errors.sh ${REMOTE_ARGS[*]}"
+  ssh_with_retry "$REMOTE_HOST" "cd $(printf '%q' "$REMOTE_DIR") && CLIENT_ERRORS_DB=$(printf '%q' "$REMOTE_DB") ./scripts/query_client_errors.sh ${REMOTE_ARGS[*]}"
   exit $?
 fi
 

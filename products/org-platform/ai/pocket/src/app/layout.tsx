@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
+import { ClientErrorReporter } from '@216labs/errors/react'
 import './globals.css'
 import { Ga4Script } from "@/components/ga4/Ga4Script";
 
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body className={`${plusJakarta.variable} antialiased min-h-[100dvh] font-sans`}>
         <Ga4Script />
+        <ClientErrorReporter appId="pocket" />
         {children}</body>
     </html>
   )

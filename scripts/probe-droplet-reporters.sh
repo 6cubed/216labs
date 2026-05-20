@@ -67,8 +67,10 @@ run_probes() {
 }
 
 if [[ -n "$REMOTE" ]]; then
-  exec ssh -o ConnectTimeout=15 -o BatchMode=yes "$REMOTE" \
-    "cd /opt/216labs && git pull -q 2>/dev/null || true && ./scripts/probe-droplet-reporters.sh"
+  # shellcheck source=lib/ssh-retry.sh
+  source "$ROOT/scripts/lib/ssh-retry.sh"
+  ssh_with_retry "$REMOTE" "cd /opt/216labs && git pull -q 2>/dev/null || true && ./scripts/probe-droplet-reporters.sh"
+  exit $?
 fi
 
 run_probes

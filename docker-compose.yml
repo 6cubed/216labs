@@ -194,7 +194,9 @@ services:
   hivefind:
     image: 216labs/hivefind:latest
     pull_policy: never
-    build: ./products/org-platform/ai/hivefind
+    build:
+      context: .
+      dockerfile: ./products/org-platform/ai/hivefind/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
@@ -627,7 +629,9 @@ services:
   pocket:
     image: 216labs/pocket:latest
     pull_policy: never
-    build: ./products/org-platform/ai/pocket
+    build:
+      context: .
+      dockerfile: ./products/org-platform/ai/pocket/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
