@@ -721,6 +721,12 @@ if [ "${PULL_FROM_GHCR:-0}" = "1" ]; then
     echo "WARN: pull failed for $short — skipped in CI, network blip, or private without credentials; see ghcr-publish workflow." >&2
   done <<< "$TAGS_LIST"
 
+  if [ -f scripts/lib/prune-ghcr-duplicate-tags.sh ]; then
+    # shellcheck source=lib/prune-ghcr-duplicate-tags.sh
+    . scripts/lib/prune-ghcr-duplicate-tags.sh
+    prune_ghcr_duplicate_tags || true
+  fi
+
   ghcr_skip_missing=0
   total_tags=0
   while IFS= read -r tag || [ -n "$tag" ]; do
