@@ -140,4 +140,11 @@ if [ -n "$SYNC_SERVICE_LOWER" ] && [ "$MATCHED" != "1" ]; then
   exit 1
 fi
 
+# pull+tag leaves both ghcr.io/… and 216labs/… on disk; drop GHCR copy when local tag exists.
+if [ -f "$ROOT/scripts/lib/prune-ghcr-duplicate-tags.sh" ]; then
+  # shellcheck source=lib/prune-ghcr-duplicate-tags.sh
+  . "$ROOT/scripts/lib/prune-ghcr-duplicate-tags.sh"
+  prune_ghcr_duplicate_tags || true
+fi
+
 echo "==> droplet-ghcr-sync done."
