@@ -7,7 +7,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "pocket",
-  "build_context": "./products/org-platform/ai/pocket",
+  "build_context": ".",
+  "build_dockerfile": "products/org-platform/ai/pocket/Dockerfile",
   "stack": {
     "frontend": "Next.js 14",
     "backend": "Custom Node.js WebSocket relay server",

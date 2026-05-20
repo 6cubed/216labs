@@ -7,7 +7,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "hivefind",
-  "build_context": "./products/org-platform/ai/hivefind",
+  "build_context": ".",
+  "build_dockerfile": "products/org-platform/ai/hivefind/Dockerfile",
   "stack": {
     "frontend": "Next.js 16 + React 19",
     "backend": null,

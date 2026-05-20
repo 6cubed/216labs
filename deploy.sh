@@ -387,7 +387,11 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
         [ -f "internal/ops/cron-runner/.deploy-no-cache" ] && BUILD_ARGS+=(--no-cache) && rm -f internal/ops/cron-runner/.deploy-no-cache
       fi
       if [ -n "${DFILE:-}" ]; then
-        BUILD_ARGS+=(-f "$CTX/$DFILE")
+        if [ "$CTX" = "." ] || [ "$CTX" = "./" ]; then
+          BUILD_ARGS+=(-f "$DFILE")
+        else
+          BUILD_ARGS+=(-f "$CTX/$DFILE")
+        fi
       fi
       BUILD_ARGS+=("$CTX")
       echo "  [$NAME] building..."

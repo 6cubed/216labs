@@ -9,6 +9,7 @@ RUN sh /tmp/docker-build-errors-package.sh
 WORKDIR /repo/packages/ui
 RUN npm install --no-audit --no-fund
 
+WORKDIR /repo
 COPY products/org-platform/ai/hivefind ./products/org-platform/ai/hivefind
 
 WORKDIR /repo/products/org-platform/ai/hivefind
