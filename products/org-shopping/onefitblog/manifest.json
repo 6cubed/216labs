@@ -9,7 +9,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "onefitblog",
-  "build_context": "./products/org-shopping/onefitblog",
+  "build_context": ".",
+  "build_dockerfile": "products/org-shopping/onefitblog/Dockerfile",
   "stack": {
     "frontend": "Next.js 14",
     "backend": null,

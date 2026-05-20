@@ -718,7 +718,9 @@ services:
   onefitblog:
     image: 216labs/onefitblog:latest
     pull_policy: never
-    build: ./products/org-shopping/onefitblog
+    build:
+      context: .
+      dockerfile: ./products/org-shopping/onefitblog/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ClientErrorReporter } from '@216labs/errors/react'
 import './globals.css'
 import { OneFitFooterPitch, OneFitUpsellStrip } from '@/components/OneFitUpsell'
 import { Ga4Script } from '@/components/ga4/Ga4Script'
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="antialiased">
       <body className="min-h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col">
         <Ga4Script />
+        <ClientErrorReporter appId="onefitblog" />
         <OneFitUpsellStrip />
         <div className="flex-1">{children}</div>
         <OneFitFooterPitch />
