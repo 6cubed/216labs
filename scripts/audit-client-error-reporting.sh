@@ -238,7 +238,7 @@ audit_extra_app "explore" "products/org-platform/local/explore" "$explore_rep"
 
 PIPESECURE="$ROOT/internal/security/pipesecure"
 pipesecure_rep="no"
-if grep -q 'clientErrorScript' "$PIPESECURE/src/status.ts" 2>/dev/null \
+if grep -q 'clientErrorScript("pipesecure")' "$PIPESECURE/src/status.ts" 2>/dev/null \
   && grep -q 'reportServerError' "$PIPESECURE/src/main.ts" 2>/dev/null \
   && [[ -f "$PIPESECURE/src/error-report.ts" ]]; then
   pipesecure_rep="yes"

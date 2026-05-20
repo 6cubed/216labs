@@ -155,6 +155,7 @@ ${tokenMissing ? `
   </div>
 
 </div>
+${clientErrorScript("pipesecure")}
 <script>setTimeout(() => location.reload(), 300_000);</script>
 </body>
 </html>`;
