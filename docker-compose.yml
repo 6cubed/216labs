@@ -914,7 +914,9 @@ services:
   vc:
     image: 216labs/vc:latest
     pull_policy: never
-    build: ./products/org-platform/vc
+    build:
+      context: .
+      dockerfile: products/org-platform/vc/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
