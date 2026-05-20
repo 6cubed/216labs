@@ -94,6 +94,41 @@ export default function MerchPage() {
         </p>
       </header>
 
+      <section
+        className="mb-10 rounded-2xl border border-fuchsia-500/25 bg-gradient-to-br from-fuchsia-950/40 to-cyan-950/30 p-5 sm:p-6"
+        aria-label="Paid products from 216Labs"
+      >
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-fuchsia-200/90 mb-2">
+          Checkout live now
+        </h2>
+        <p className="text-sm text-[var(--muted)] leading-relaxed max-w-2xl mb-4">
+          Apparel checkout on this page needs <code className="text-zinc-400">NEXT_PUBLIC_MERCH_STORE_URL</code> in
+          admin Env. These paid products are shipping today:
+        </p>
+        <ul className="flex flex-col sm:flex-row flex-wrap gap-3 text-sm">
+          <li>
+            <a
+              href="https://storybook.6cubed.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-medium text-zinc-100 hover:border-cyan-500/40 hover:text-cyan-200 transition-colors"
+            >
+              StoryMagic books (Stripe)
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://1pageresearch.6cubed.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-medium text-zinc-100 hover:border-fuchsia-500/40 hover:text-fuchsia-200 transition-colors"
+            >
+              1PageResearch reports
+            </a>
+          </li>
+        </ul>
+      </section>
+
       <section aria-label="Product catalog" className="mb-16">
         <h2 className="sr-only">Products</h2>
         <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">

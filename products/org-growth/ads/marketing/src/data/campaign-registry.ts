@@ -83,6 +83,30 @@ export const campaigns: Campaign[] = [
     url: appUrl('1pageresearch'),
     status: 'live',
   },
+  {
+    id: 'merch-store',
+    parentAppId: 'landing',
+    parentAppName: '216labs (factory)',
+    kind: 'landing',
+    name: 'Merch store',
+    description:
+      'Branded apparel and stationery. Buy buttons use NEXT_PUBLIC_MERCH_STORE_URL or per-SKU links when configured.',
+    url: appUrl('merch'),
+    status: 'live',
+    notes: 'Cross-sell to StoryMagic / 1PageResearch when storefront env is unset.',
+  },
+  {
+    id: 'storymagic-checkout',
+    parentAppId: 'storybook',
+    parentAppName: 'StoryMagic',
+    kind: 'landing',
+    name: 'Printed book checkout',
+    description:
+      'AI-generated personalised children’s storybooks with Stripe checkout for printed hardbacks.',
+    url: appUrl('storybook'),
+    status: 'live',
+    notes: 'Requires STORYBOOK_STRIPE_* in admin Env.',
+  },
 ]
 
 export function campaignsByParentApp(): Map<string, Campaign[]> {
