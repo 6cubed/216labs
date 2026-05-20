@@ -1,6 +1,7 @@
 """Activator helpers and safety paths (no Docker / compose)."""
 from __future__ import annotations
 
+import json
 import pathlib
 import sys
 import unittest
@@ -99,6 +100,19 @@ class TestWarmupFlask(unittest.TestCase):
     def test_warmup_invalid_app_id(self):
         r = self.client.get("/warmup?app=../x")
         self.assertEqual(r.status_code, 400)
+
+
+class TestReportColdStartFailure(unittest.TestCase):
+    @patch.object(activator_app.urlrequest, "urlopen")
+    def test_posts_server_error(self, mock_urlopen):
+        mock_urlopen.return_value.__enter__.return_value.read.return_value = b""
+        activator_app._report_cold_start_failure("hivefind", "Container start failed.")
+        mock_urlopen.assert_called_once()
+        req = mock_urlopen.call_args[0][0]
+        body = json.loads(req.data.decode())
+        self.assertEqual(body["app_id"], "hivefind")
+        self.assertEqual(body["kind"], "server")
+        self.assertIn("Container start failed", body["message"])
 
 
 if __name__ == "__main__":

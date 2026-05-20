@@ -6,6 +6,7 @@ import sqlite3
 import subprocess
 import threading
 import time
+import traceback
 from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Dict, List, Optional, Set, Tuple
@@ -99,6 +100,37 @@ _APP_ID_RE = re.compile(r"^[a-z0-9][a-z0-9.-]*$")
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _report_cold_start_failure(app_id: str, message: str, *, stack: str = "") -> None:
+    """Best-effort POST to admin ingest so cold-start failures show in client_error_event."""
+    base = (
+        os.environ.get("CLIENT_ERROR_REPORT_URL") or "http://admin:3000/api/public/report-error"
+    ).strip()
+    aid = (app_id or "").strip().lower()
+    msg = (message or "").strip()
+    if not base or not aid or not msg:
+        return
+    body = json.dumps(
+        {
+            "app_id": aid,
+            "kind": "server",
+            "message": msg[:2000],
+            "stack": (stack or "")[:8000] or None,
+            "url": f"activator:/api/start/{aid}",
+        }
+    ).encode("utf-8")
+    req = urlrequest.Request(
+        base,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=3) as resp:
+            resp.read(256)
+    except Exception:
+        pass
 
 
 def normalize_app_id(raw: str) -> Optional[str]:
@@ -971,6 +1003,7 @@ def start_app(app_id: str) -> Dict[str, object]:
                         "Add read:packages PAT + GHCR_USERNAME in admin Environment (216labs.db), restart the activator "
                         "container, or run ./deploy.sh to sync images to the droplet."
                     )
+            _report_cold_start_failure(app_id, err, stack=registry_pull_notes)
             set_runtime_state(app_id, "failed", err, touch_accessed=True)
             status = set_status(app_id, "failed", err, docker_service=docker_service)
             return {"ok": False, "status": status}
@@ -1009,10 +1042,12 @@ def start_app(app_id: str) -> Dict[str, object]:
             f"({START_TIMEOUT_SECONDS}s + one restart window). "
             "Check container logs and memory limits; Next.js apps benefit from /healthz."
         )
+        _report_cold_start_failure(app_id, msg)
         set_runtime_state(app_id, "failed", msg, touch_accessed=True)
         status = set_status(app_id, "failed", msg, docker_service=docker_service)
         return {"ok": False, "status": status}
     except Exception as e:
+        _report_cold_start_failure(app_id, str(e), stack=traceback.format_exc())
         st = set_status(app_id, "failed", str(e))
         return {"ok": False, "status": st}
     finally:

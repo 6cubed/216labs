@@ -15,3 +15,5 @@ Keep these lists aligned when you wire a new app to admin ingest (`POST /api/pub
 **Deploy subset:** `DEPLOY_RUNTIME_APPS=birdperch` works even when the app is outside the 11-app catalogue cap, as long as `docker-compose.yml` defines the service (`deploy.sh` NOTE line).
 
 Wiring patterns: `packages/errors/README.md`, `scripts/ADDING_AN_APP.md` §5.
+
+**Activator:** On cold-start failure (`compose up` or HTTP timeout), posts `kind: server` to admin ingest with the **target app’s** `app_id` (see `internal/platform/activator/app.py` `_report_cold_start_failure`).

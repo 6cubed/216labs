@@ -4,6 +4,7 @@
 # lines you do not need. Frame & Flux: .github/workflows/ghcr-publish-aiart.yml
 # Spine: admin API, error reporting, high-traffic Node apps, and toolkit reference demos.
 admin
+activator
 storybook
 ramblingradio
 stroll
