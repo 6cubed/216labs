@@ -954,7 +954,9 @@ services:
   facerate:
     image: 216labs/facerate:latest
     pull_policy: never
-    build: ./products/org-lifestyle/play/facerate
+    build:
+      context: .
+      dockerfile: products/org-lifestyle/play/facerate/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

@@ -7,7 +7,8 @@
   "internal_port": 5000,
   "memory_limit": "128m",
   "docker_service": "explore",
-  "build_context": "./products/org-platform/local/explore",
+  "build_context": ".",
+  "build_dockerfile": "products/org-platform/local/explore/Dockerfile",
   "stack": {
     "frontend": "Jinja2 + vanilla JS",
     "backend": "Python + Flask + Gunicorn",

@@ -3,6 +3,7 @@ import os
 
 from flask import Flask, jsonify, render_template, request, send_from_directory
 
+from client_error_report import client_error_script
 from database import (
     face_count,
     get_bottom,
@@ -15,6 +16,12 @@ from database import (
 )
 
 app = Flask(__name__)
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("facerate")}
+
 
 DB_INITIALIZED = False
 FACES_DIR = os.environ.get("FACERATE_FACES_DIR", os.path.join(os.path.dirname(__file__), "static", "faces"))
@@ -37,6 +44,11 @@ def before_request():
     if not DB_INITIALIZED:
         init_db()
         DB_INITIALIZED = True
+
+
+@app.route("/healthz")
+def healthz():
+    return jsonify({"ok": True})
 
 
 @app.route("/")

@@ -7,7 +7,8 @@
   "internal_port": 5000,
   "memory_limit": "256m",
   "docker_service": "facerate",
-  "build_context": "./products/org-lifestyle/play/facerate",
+  "build_context": ".",
+  "build_dockerfile": "products/org-lifestyle/play/facerate/Dockerfile",
   "stack": {
     "frontend": "Flask + Jinja2",
     "backend": "Flask + Gunicorn",

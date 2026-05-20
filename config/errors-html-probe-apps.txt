@@ -13,3 +13,4 @@ russiandaily
 1pageresearch
 labshq
 maxlearn
+facerate

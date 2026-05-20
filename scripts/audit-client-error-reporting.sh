@@ -264,6 +264,16 @@ if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
 fi
 audit_extra_app "maxlearn" "products/org-lifestyle/play/maxlearn" "$maxlearn_rep"
 
+FACERATE="$ROOT/products/org-lifestyle/play/facerate"
+facerate_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$FACERATE/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$FACERATE/Dockerfile" 2>/dev/null \
+  && grep -q 'client_error_script_html' "$FACERATE/templates/base.html" 2>/dev/null; then
+  facerate_rep="yes"
+fi
+audit_extra_app "facerate" "products/org-lifestyle/play/facerate" "$facerate_rep"
+
 BIRDPERCH="$ROOT/products/org-platform/ai/bird-perch"
 birdperch_rep="no"
 if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
