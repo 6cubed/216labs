@@ -31,3 +31,5 @@ emailgpt
 merch
 shannonairport
 tigertank
+germandaily
+russiandaily

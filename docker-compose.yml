@@ -1114,7 +1114,9 @@ services:
   germandaily:
     image: 216labs/germandaily:latest
     pull_policy: never
-    build: ./products/org-media/germandaily
+    build:
+      context: .
+      dockerfile: ./products/org-media/germandaily/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
@@ -1131,7 +1133,9 @@ services:
   russiandaily:
     image: 216labs/russiandaily:latest
     pull_policy: never
-    build: ./products/org-media/russiandaily
+    build:
+      context: .
+      dockerfile: ./products/org-media/russiandaily/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

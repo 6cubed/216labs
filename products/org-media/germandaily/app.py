@@ -15,7 +15,14 @@ except ImportError:  # Python < 3.9
 
 import flask
 
+from client_error_report import client_error_script
+
 app = flask.Flask(__name__)
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("germandaily")}
 
 BERLIN = ZoneInfo("Europe/Berlin")
 DATA_DIR = os.environ.get("GERMANDAILY_DATA_DIR", "/app/data")
@@ -455,7 +462,7 @@ def api_vote():
 
 @app.route("/healthz")
 def healthz():
-    return "ok", 200, {"Content-Type": "text/plain"}
+    return flask.jsonify({"ok": True})
 
 
 init_db()

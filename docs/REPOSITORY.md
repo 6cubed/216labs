@@ -110,7 +110,7 @@ HEARTBEAT_SKIP_DROPLET=1 ./scripts/heartbeat-stack-check.sh  # same, skip slow S
 
 **Patterns:** Next.js → `<ClientErrorReporter appId="…" />`. Vite/Express → `installBrowserErrorReporting`. Python → `client_error_script()` + `report_server_error()` from `internal/python/client_error_report.py`. Flutter **anchor** → `ErrorReporter`. See `packages/errors/README.md` and `scripts/ADDING_AN_APP.md` §5.
 
-**Coverage:** `./scripts/audit-client-error-reporting.sh` scans `products/**` with `@216labs/errors`, then a **stack-specific** block (anchor, hello-flask, mediate, landing, **emailgpt**, birdperch, ctfbench, avatar, explore, pipesecure). **Live monitoring** app IDs live only in `config/errors-html-probe-*.txt` and `config/README-errors-reporting.md` — update those when you add reporters; do not duplicate app IDs here.
+**Coverage:** `./scripts/audit-client-error-reporting.sh` scans `products/**` with `@216labs/errors`, then a **stack-specific** block (anchor, hello-flask, mediate, landing, **emailgpt**, **germandaily**, **russiandaily**, birdperch, ctfbench, avatar, explore, pipesecure). **Live monitoring** app IDs live only in `config/errors-html-probe-*.txt` and `config/README-errors-reporting.md` — update those when you add reporters; do not duplicate app IDs here.
 
 **Docker (all apps with `@216labs/errors`):** repo-root `build.context`, then `scripts/docker-build-errors-package.sh` (emits `packages/errors/dist/*.cjs`) before app `npm install`. Vite+Express server bundles: allowlist + `packages: "bundle"` in `script/build.ts` (see RamblingRadio). Build-time check: `scripts/verify-errors-node-runtime.sh` in the app image; CI also runs `scripts/verify-image-errors-runtime.sh` before GHCR push.
 

@@ -8,3 +8,5 @@ avatar
 hello-flask
 explore
 emailgpt
+germandaily
+russiandaily

@@ -214,6 +214,26 @@ if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
 fi
 audit_extra_app "emailgpt" "products/org-growth/ads/emailgpt" "$emailgpt_rep"
 
+GERMANDAILY="$ROOT/products/org-media/germandaily"
+germandaily_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$GERMANDAILY/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$GERMANDAILY/Dockerfile" 2>/dev/null \
+  && grep -q 'client_error_script_html' "$GERMANDAILY/templates/index.html" 2>/dev/null; then
+  germandaily_rep="yes"
+fi
+audit_extra_app "germandaily" "products/org-media/germandaily" "$germandaily_rep"
+
+RUSSIANDAILY="$ROOT/products/org-media/russiandaily"
+russiandaily_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$RUSSIANDAILY/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$RUSSIANDAILY/Dockerfile" 2>/dev/null \
+  && grep -q 'client_error_script_html' "$RUSSIANDAILY/templates/index.html" 2>/dev/null; then
+  russiandaily_rep="yes"
+fi
+audit_extra_app "russiandaily" "products/org-media/russiandaily" "$russiandaily_rep"
+
 BIRDPERCH="$ROOT/products/org-platform/ai/bird-perch"
 birdperch_rep="no"
 if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
