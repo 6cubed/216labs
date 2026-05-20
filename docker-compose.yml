@@ -738,7 +738,9 @@ services:
   tigertank:
     image: 216labs/tigertank:latest
     pull_policy: never
-    build: ./products/org-lifestyle/play/tigertank
+    build:
+      context: .
+      dockerfile: ./products/org-lifestyle/play/tigertank/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}

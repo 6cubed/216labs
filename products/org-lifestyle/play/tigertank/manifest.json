@@ -7,7 +7,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "tigertank",
-  "build_context": "./products/org-lifestyle/play/tigertank",
+  "build_context": ".",
+  "build_dockerfile": "products/org-lifestyle/play/tigertank/Dockerfile",
   "stack": {
     "frontend": "Next.js 14",
     "backend": null,
