@@ -13,10 +13,16 @@ from pathlib import Path
 
 import flask
 
+from client_error_report import client_error_script
 from http_errors import AppError, register_flask_error_handlers
 
 app = flask.Flask(__name__)
 register_flask_error_handlers(app)
+
+
+@app.context_processor
+def _inject_client_error_script():
+    return {"client_error_script_html": client_error_script("mediate")}
 app.secret_key = os.environ.get("MEDIATE_SECRET_KEY") or "dev-insecure-change-me"
 
 DATA_DIR = os.environ.get("MEDIATE_DATA_DIR", "/app/data")

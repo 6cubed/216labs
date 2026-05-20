@@ -1,6 +1,6 @@
 # App probes via SSH + docker exec (localhost inside container). Format: app_id|port
 # Use when public URL redirects through activator, HTML is runtime-injected, or restarts flap public probes.
-birdperch|8000
+birdperch|8000|slow
 pipesecure|3000
 ramblingradio|5000
 stroll|5000

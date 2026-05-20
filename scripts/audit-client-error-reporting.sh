@@ -179,9 +179,9 @@ audit_extra_app "hello-flask" "products/org-platform/toolkit-demos/hello-flask" 
 MEDIATE_DIR="$ROOT/products/org-social/mediate"
 mediate_rep="no"
 if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
-  && grep -q 'report_server_error' "$MEDIATE_DIR/http_errors.py" 2>/dev/null \
+  && grep -q 'client_error_script' "$MEDIATE_DIR/app.py" 2>/dev/null \
   && grep -q 'client_error_report' "$MEDIATE_DIR/Dockerfile" 2>/dev/null \
-  && grep -rq 'report-error' "$MEDIATE_DIR/templates" 2>/dev/null; then
+  && grep -q 'client_error_script_html' "$MEDIATE_DIR/templates/index.html" 2>/dev/null; then
   mediate_rep="yes"
 fi
 audit_extra_app "mediate" "products/org-social/mediate" "$mediate_rep"
