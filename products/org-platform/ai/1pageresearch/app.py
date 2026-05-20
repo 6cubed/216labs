@@ -4,8 +4,9 @@ import re
 
 import requests
 import stripe
-from flask import Flask, Response, render_template, request, stream_with_context
+from flask import Flask, Response, jsonify, render_template, request, stream_with_context
 
+from client_error_report import client_error_script
 from database import (
     get_all_reports,
     get_report_by_slug,
@@ -101,6 +102,25 @@ def _platform_api_config():
             MODEL,
         )
     return None
+
+
+@app.route("/healthz")
+def healthz():
+    return jsonify({"ok": True})
+
+
+@app.route("/api/checkout/ready")
+def api_checkout_ready():
+    """Public probe: whether €1 Stripe checkout can run (keys in admin Env)."""
+    ready = bool(STRIPE_SECRET_KEY)
+    return jsonify(
+        {
+            "ready": ready,
+            "message": None
+            if ready
+            else "€1 report checkout is being enabled. Use your own API key or request a free report until ONEPAGE_STRIPE_SECRET_KEY is set in admin Env.",
+        }
+    )
 
 
 @app.route("/generate", methods=["GET"])

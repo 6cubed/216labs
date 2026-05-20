@@ -258,6 +258,13 @@
     <button type="button" class="btn" id="payBtn" onclick="payAndGenerate()">Pay €1 and generate now</button>
     <p style="font-size: 0.8rem; color: var(--muted); margin-top: 0.6rem; text-align: center;">Secure payment via Stripe · Report generated immediately after payment</p>
   </div>
+  {% else %}
+  <div class="primary-cta" style="padding: 0.85rem 1rem; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: var(--radius); margin-bottom: 2rem;">
+    <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5; margin: 0;">
+      <strong>€1 checkout</strong> is being enabled in admin Env (<code style="font-size: 0.8em;">ONEPAGE_STRIPE_SECRET_KEY</code>).
+      Use your own OpenAI key below or request a free report while we finish Stripe setup.
+    </p>
+  </div>
   {% endif %}
 
   <div class="own-key-section">

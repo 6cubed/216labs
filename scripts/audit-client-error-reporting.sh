@@ -234,6 +234,16 @@ if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
 fi
 audit_extra_app "russiandaily" "products/org-media/russiandaily" "$russiandaily_rep"
 
+ONEPAGE="$ROOT/products/org-platform/ai/1pageresearch"
+onepage_rep="no"
+if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \
+  && grep -q 'client_error_script' "$ONEPAGE/app.py" 2>/dev/null \
+  && grep -q 'client_error_report' "$ONEPAGE/Dockerfile" 2>/dev/null \
+  && grep -q 'client_error_script_html' "$ONEPAGE/templates/base.html" 2>/dev/null; then
+  onepage_rep="yes"
+fi
+audit_extra_app "1pageresearch" "products/org-platform/ai/1pageresearch" "$onepage_rep"
+
 BIRDPERCH="$ROOT/products/org-platform/ai/bird-perch"
 birdperch_rep="no"
 if [[ -f "$ROOT/internal/python/client_error_report.py" ]] \

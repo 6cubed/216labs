@@ -8,7 +8,8 @@
   "internal_port": 5000,
   "memory_limit": "128m",
   "docker_service": "1pageresearch",
-  "build_context": "./products/org-platform/ai/1pageresearch",
+  "build_context": ".",
+  "build_dockerfile": "products/org-platform/ai/1pageresearch/Dockerfile",
   "stack": {
     "frontend": "Flask templates + Jinja2",
     "backend": "Flask + Python + Gunicorn",

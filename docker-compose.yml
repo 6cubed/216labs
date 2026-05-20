@@ -480,13 +480,19 @@ services:
   1pageresearch:
     image: 216labs/1pageresearch:latest
     pull_policy: never
-    build: ./products/org-platform/ai/1pageresearch
+    build:
+      context: .
+      dockerfile: products/org-platform/ai/1pageresearch/Dockerfile
     restart: unless-stopped
     environment:
       - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
       - PORT=5000
       - ONEPAGE_OPENROUTER_API_KEY=${ONEPAGE_OPENROUTER_API_KEY:-}
       - ONEPAGE_MODEL=${ONEPAGE_MODEL:-google/gemini-2.0-flash-001}
+      - ONEPAGE_STRIPE_SECRET_KEY=${ONEPAGE_STRIPE_SECRET_KEY:-}
+      - ONEPAGE_STRIPE_WEBHOOK_SECRET=${ONEPAGE_STRIPE_WEBHOOK_SECRET:-}
+      - ONEPAGE_ADMIN_SECRET=${ONEPAGE_ADMIN_SECRET:-}
+      - ONEPAGE_BASE_URL=${ONEPAGE_BASE_URL:-https://1pageresearch.6cubed.app}
       - ONEPAGE_DB_PATH=/app/data/1pageresearch.db
     volumes:
       - ./products/org-platform/ai/1pageresearch/data:/app/data
