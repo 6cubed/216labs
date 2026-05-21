@@ -12,8 +12,11 @@ Paid flows read secrets from **admin → Env** ([`https://admin.6cubed.app/env`]
 **Checkout readiness** (no SSH required):
 
 ```bash
-./scripts/check-revenue-env-http.sh
+./scripts/edge-smoke.sh              # fast parallel probe (~10s); heartbeats run this first
+./scripts/check-revenue-env-http.sh  # full revenue checklist (Stripe ready flags)
 ```
+
+**Automated:** cron job `revenue-env-check` (enabled by default, 08:00 & 20:00 UTC) stores results in `cron_runner_state.revenue_env_last` and Telegram-alerts on edge failures. Shown on admin **Env** when live probes from your browser time out.
 
 **Droplet check** (keys inside running containers; falls back to HTTP if SSH fails):
 

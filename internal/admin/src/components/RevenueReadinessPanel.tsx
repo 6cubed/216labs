@@ -33,12 +33,41 @@ export function RevenueReadinessPanel({
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-foreground">Revenue readiness</h2>
         <p className="text-xs text-muted mt-0.5 max-w-2xl">
-          Live checkout probes plus env keys in this database. After setting Stripe or
-          merch keys below, redeploy affected apps (or run{" "}
+          Live checkout probes plus env keys in this database. Cron job{" "}
+          <code className="text-[11px]">revenue-env-check</code> (08:00 & 20:00 UTC)
+          pings Telegram when the edge fails. After setting Stripe or merch keys below,
+          redeploy affected apps (or run{" "}
           <code className="text-[11px]">./deploy.sh</code>). See{" "}
-          <code className="text-[11px]">docs/REVENUE-ENV.md</code> in the repo.
+          <code className="text-[11px]">docs/REVENUE-ENV.md</code>.
         </p>
       </div>
+
+      {data.lastCronProbe && (
+        <div
+          className={`mb-4 rounded-lg border px-4 py-3 text-xs ${
+            data.lastCronProbe.issues > 0
+              ? "border-red-500/30 bg-red-500/5 text-red-300/90"
+              : "border-border bg-white/[0.02] text-muted"
+          }`}
+        >
+          <p className="font-medium text-foreground mb-1">
+            Last droplet probe ({data.lastCronProbe.at})
+          </p>
+          {data.lastCronProbe.issues > 0 ? (
+            <ul className="space-y-0.5 font-mono">
+              {data.lastCronProbe.results
+                .filter((r) => !r.ok)
+                .map((r) => (
+                  <li key={r.id}>
+                    {r.label}: {r.error || `HTTP ${r.status ?? "?"}`}
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <p>All cron probes OK on the VPS (Stripe keys may still be unset).</p>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         {data.apps.map((app) => {

@@ -1,4 +1,8 @@
 import type { DbEnvVar } from "@/lib/db";
+import { getCronRunnerState } from "@/lib/db";
+
+/** Matches cron-runner `revenueEnvCheck` state key. */
+export const REVENUE_CRON_STATE_KEY = "revenue_env_last";
 
 export type RevenueAppConfig = {
   id: string;
@@ -49,10 +53,39 @@ export type RevenueAppStatus = {
   probeError: string | null;
 };
 
+export type RevenueCronProbeRow = {
+  id: string;
+  label: string;
+  ok: boolean;
+  status?: number;
+  ready?: boolean | null;
+  error?: string | null;
+};
+
+export type RevenueCronSnapshot = {
+  at: string;
+  issues: number;
+  results: RevenueCronProbeRow[];
+};
+
 export type RevenueReadinessSnapshot = {
   apps: RevenueAppStatus[];
   allCheckoutReady: boolean;
+  lastCronProbe: RevenueCronSnapshot | null;
 };
+
+export function parseRevenueCronSnapshot(
+  raw: string | null
+): RevenueCronSnapshot | null {
+  if (!raw) return null;
+  try {
+    const d = JSON.parse(raw) as RevenueCronSnapshot;
+    if (!d?.at || !Array.isArray(d.results)) return null;
+    return d;
+  } catch {
+    return null;
+  }
+}
 
 function envMap(vars: DbEnvVar[]): Map<string, string> {
   return new Map(vars.map((v) => [v.key, (v.value ?? "").trim()]));
@@ -182,5 +215,9 @@ export async function getRevenueReadiness(
     (a) => a.probeOk === true && a.probeReady === true
   );
 
-  return { apps, allCheckoutReady };
+  const lastCronProbe = parseRevenueCronSnapshot(
+    getCronRunnerState(REVENUE_CRON_STATE_KEY)
+  );
+
+  return { apps, allCheckoutReady, lastCronProbe };
 }

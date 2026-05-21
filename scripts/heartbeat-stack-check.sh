@@ -14,6 +14,19 @@ LIVE=0
 echo "=== Heartbeat stack check ==="
 echo
 
+echo "=== Edge smoke (fast) ==="
+if "$ROOT/scripts/edge-smoke.sh"; then
+  echo "edge-smoke: ok"
+else
+  echo "edge-smoke: FAILED (droplet may be down — skip slow probes or run droplet-recover.sh)" >&2
+  if [[ "${HEARTBEAT_SKIP_EDGE_FAIL:-}" == "1" ]]; then
+    echo "HEARTBEAT_SKIP_EDGE_FAIL=1 — continuing" >&2
+  else
+    exit 1
+  fi
+fi
+echo
+
 echo "=== Manifest build spec (repo-root Docker) ==="
 "$ROOT/scripts/validate-manifest-build-spec.sh" || exit 1
 echo

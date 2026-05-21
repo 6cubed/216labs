@@ -17,7 +17,11 @@ import {
   countClientErrorEventsSinceHours,
   topReportedErrorAppSinceHours,
 } from "@/lib/client-error-store";
-import { getDb } from "@/lib/db";
+import { getCronRunnerState, getDb } from "@/lib/db";
+import {
+  parseRevenueCronSnapshot,
+  REVENUE_CRON_STATE_KEY,
+} from "@/lib/revenue-readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +54,18 @@ export default async function DashboardPage() {
   const errorHref = resolveErrorsFeedHref(getDb());
   const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
   const renderedAtIso = new Date().toISOString();
+  const revenueCron = parseRevenueCronSnapshot(
+    getCronRunnerState(REVENUE_CRON_STATE_KEY)
+  );
+  const revenueMetricValue = revenueCron
+    ? revenueCron.issues > 0
+      ? `${revenueCron.issues} edge issue(s)`
+      : "Edge OK"
+    : "—";
+  const revenueMetricSub =
+    revenueCron != null
+      ? `cron ${revenueCron.at.replace("T", " ").slice(0, 16)} UTC`
+      : "Stripe keys on Env";
 
   return (
     <>
@@ -57,7 +73,7 @@ export default async function DashboardPage() {
         <ProjectOverviewBanner appCount={apps.length} renderedAtIso={renderedAtIso} />
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 animate-fade-in">
         <MetricCard
           label="Applications"
           value={apps.length}
@@ -68,6 +84,12 @@ export default async function DashboardPage() {
           value={errorSignals24h}
           sublabel={errorSublabel}
           href={errorHref}
+        />
+        <MetricCard
+          label="Revenue / edge"
+          value={revenueMetricValue}
+          sublabel={revenueMetricSub}
+          href="/env"
         />
         <MetricCard
           label="Monthly Cost"

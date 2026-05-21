@@ -446,6 +446,160 @@ export async function edgeVisitorRollup(db) {
   return "";
 }
 
+const REVENUE_PROBE_STATE_KEY = "revenue_env_last";
+
+async function fetchCheckoutReady(url) {
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(18_000),
+    redirect: "follow",
+  });
+  const text = await res.text();
+  if (!text.includes('"ready"')) {
+    return {
+      ok: false,
+      status: res.status,
+      ready: null,
+      message: null,
+      error: "no-json",
+    };
+  }
+  const data = JSON.parse(text);
+  return {
+    ok: true,
+    status: res.status,
+    ready: Boolean(data.ready),
+    message: typeof data.message === "string" ? data.message : null,
+    error: null,
+  };
+}
+
+async function fetchMerchStorefront(url) {
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(18_000),
+    redirect: "follow",
+  });
+  const html = await res.text();
+  if (!res.ok) {
+    return { ok: false, status: res.status, ready: null, error: `HTTP ${res.status}` };
+  }
+  const fallback =
+    html.includes("Checkout URL not configured") || html.includes("Shop StoryMagic");
+  return {
+    ok: true,
+    status: res.status,
+    ready: !fallback,
+    message: fallback ? "merch fallback CTA" : "storefront ok",
+    error: null,
+  };
+}
+
+/**
+ * Twice-daily edge + revenue probe; Telegram only when something is broken.
+ * Persists JSON in cron_runner_state for admin Env page.
+ */
+export async function revenueEnvCheck(db) {
+  const at = new Date().toISOString();
+  const results = [];
+  let issues = 0;
+
+  try {
+    const res = await fetch("https://admin.6cubed.app/", {
+      signal: AbortSignal.timeout(12_000),
+      redirect: "follow",
+    });
+    const adminOk = res.status === 200 || res.status === 401;
+    results.push({
+      id: "admin",
+      label: "Admin",
+      ok: adminOk,
+      status: res.status,
+      error: adminOk ? null : `HTTP ${res.status}`,
+    });
+    if (!adminOk) issues += 1;
+  } catch (e) {
+    results.push({
+      id: "admin",
+      label: "Admin",
+      ok: false,
+      status: 0,
+      error: e instanceof Error ? e.message : "unreachable",
+    });
+    issues += 1;
+  }
+
+  for (const { id, label, url } of [
+    {
+      id: "storybook",
+      label: "StoryMagic",
+      url: "https://storybook.6cubed.app/api/checkout/ready",
+    },
+    {
+      id: "1pageresearch",
+      label: "1PageResearch",
+      url: "https://1pageresearch.6cubed.app/api/checkout/ready",
+    },
+  ]) {
+    try {
+      const p = await fetchCheckoutReady(url);
+      const row = {
+        id,
+        label,
+        ok: p.ok,
+        status: p.status,
+        ready: p.ready,
+        message: p.message,
+        error: p.error,
+      };
+      results.push(row);
+      if (!p.ok) issues += 1;
+    } catch (e) {
+      results.push({
+        id,
+        label,
+        ok: false,
+        status: 0,
+        ready: null,
+        error: e instanceof Error ? e.message : "unreachable",
+      });
+      issues += 1;
+    }
+  }
+
+  try {
+    const p = await fetchMerchStorefront("https://merch.6cubed.app/");
+    results.push({
+      id: "merch",
+      label: "Merch",
+      ok: p.ok,
+      status: p.status,
+      ready: p.ready,
+      message: p.message,
+      error: p.error,
+    });
+    if (!p.ok) issues += 1;
+  } catch (e) {
+    results.push({
+      id: "merch",
+      label: "Merch",
+      ok: false,
+      status: 0,
+      ready: null,
+      error: e instanceof Error ? e.message : "unreachable",
+    });
+    issues += 1;
+  }
+
+  const snapshot = { at, issues, results };
+  setCronState(db, REVENUE_PROBE_STATE_KEY, JSON.stringify(snapshot));
+
+  if (issues === 0) return "";
+
+  const lines = results
+    .filter((r) => !r.ok)
+    .map((r) => `• ${r.label}: ${r.error || `HTTP ${r.status}`}`);
+  return `[Revenue/Edge] ${issues} probe(s) failed:\n${lines.join("\n")}\nRun ./scripts/droplet-recover.sh or see docs/DROPLET-RECOVERY.md`;
+}
+
 /** Drop client/server error rows older than 14 days. */
 export async function clientErrorPrune(ctx) {
   const db = ctx.db;
@@ -466,4 +620,5 @@ export const HANDLERS = {
   "workforce-telegram-test": workforceTelegramTest,
   "edge-visitor-rollup": edgeVisitorRollup,
   "client-error-prune": clientErrorPrune,
+  "revenue-env-check": revenueEnvCheck,
 };

@@ -242,6 +242,7 @@ function initSchema(db: Database.Database) {
   ensureWorkforceTelegramTestCronJob(db);
   ensureWorkforceTelegramCronBootstrapped(db);
   ensureEdgeVisitorRollupCronJob(db);
+  ensureRevenueEnvCheckCronJob(db);
 
   ensureDeploymentEventsTable(db);
   backfillDeploymentEventsFromApps(db);
@@ -831,6 +832,18 @@ export function getAllEnvVars(): DbEnvVar[] {
     .all() as DbEnvVar[];
 }
 
+/** Last revenue-env-check cron snapshot (JSON), if cron-runner has run. */
+export function getCronRunnerState(key: string): string | null {
+  try {
+    const row = getDb()
+      .prepare("SELECT value FROM cron_runner_state WHERE key = ?")
+      .get(key) as { value: string } | undefined;
+    return row?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function getEnabledApps(): DbApp[] {
   return getDb()
     .prepare("SELECT * FROM apps WHERE deploy_enabled = 1 ORDER BY port")
@@ -1005,6 +1018,7 @@ function ensureCronJobsTable(db: Database.Database): void {
   ensureWorkforceTelegramCronBootstrapped(db);
   ensureEdgeVisitorRollupCronJob(db);
   ensureClientErrorPruneCronJob(db);
+  ensureRevenueEnvCheckCronJob(db);
 }
 
 function ensureClientErrorPruneCronJob(db: Database.Database): void {
@@ -1015,6 +1029,19 @@ function ensureClientErrorPruneCronJob(db: Database.Database): void {
        'Prune old client error events',
        'Deletes client_error_event rows older than 14 days.',
        '15 4 * * *',
+       1
+     )`
+  ).run();
+}
+
+function ensureRevenueEnvCheckCronJob(db: Database.Database): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+     VALUES (
+       'revenue-env-check',
+       'Revenue & edge smoke',
+       'Probes admin + paid-app checkout endpoints; Telegram alert when edge is down. Snapshot in cron_runner_state.',
+       '0 8,20 * * *',
        1
      )`
   ).run();

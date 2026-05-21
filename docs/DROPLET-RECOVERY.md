@@ -5,6 +5,7 @@ When **SSH times out** or **all `*.6cubed.app` sites hang**, the VPS is usually 
 ## Fast path
 
 ```bash
+./scripts/edge-smoke.sh           # confirm failure from laptop (~10s)
 ./scripts/droplet-recover.sh root@46.101.88.197
 ```
 

@@ -30,6 +30,14 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | Revenue probe 302 to activator | **Fixed probe** — `check-revenue-env-http.sh` follows redirects and detects non-JSON |
 | Stripe €1 checkout | **Blocked** — `ONEPAGE_STRIPE_SECRET_KEY` in admin Env; free requests + BYO key on `/generate` |
 
+## Revenue / edge monitoring (2026-05-21)
+
+| Piece | Role |
+|-------|------|
+| `./scripts/edge-smoke.sh` | ~10s parallel probe; heartbeats fail fast when droplet is down |
+| Cron `revenue-env-check` | 08:00 & 20:00 UTC; Telegram on failure; `revenue_env_last` in DB |
+| Admin **Env** + overview card | Live probes + last cron snapshot |
+
 ## Droplet unreachable (2026-05-21)
 
 | Symptom | Action |
