@@ -23,7 +23,8 @@ ssh_retry() {
 
 if ! ssh_retry 6 'echo ok' | grep -q ok; then
   echo "SSH to $REMOTE failed after retries (banner hang = disk/OOM)." >&2
-  echo "Next: DigitalOcean console → Power → Reboot droplet 46.101.88.197, wait 2 min, re-run." >&2
+  echo "Next: ./scripts/droplet-reboot.sh  (needs DIGITALOCEAN_ACCESS_TOKEN)" >&2
+  echo "   or DO dashboard → Power → Reboot 46.101.88.197, wait 2 min, re-run this script." >&2
   echo "See docs/DROPLET-RECOVERY.md" >&2
   exit 1
 fi
