@@ -42,14 +42,14 @@ services:
       - GHCR_TOKEN=${GHCR_TOKEN:-}
       - GHCR_USERNAME=${GHCR_USERNAME:-token}
       # Showroom: max evictable app containers (non-protected); LRU evicts to make room + GHCR pull for the requested app. 0 = unlimited (dev / huge RAM only).
-      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-10}
+      - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-6}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
       # Only edge + admin + marketing root; other apps can be LRU-stopped so cold traffic pulls from GHCR.
       - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing}
       # Compose services that refuse /api/start (avoid restarting edge or self).
       - ACTIVATOR_BLOCK_START_SERVICES=${ACTIVATOR_BLOCK_START_SERVICES:-caddy,activator}
       # Optional: delete 216labs/<svc>:latest on eviction to free disk (next cold start may pull from GHCR).
-      - ACTIVATOR_REMOVE_IMAGE_ON_EVICT=${ACTIVATOR_REMOVE_IMAGE_ON_EVICT:-false}
+      - ACTIVATOR_REMOVE_IMAGE_ON_EVICT=${ACTIVATOR_REMOVE_IMAGE_ON_EVICT:-true}
       # true only if you host 216labs/* in a registry (default: do not docker pull).
       - ACTIVATOR_TRY_DOCKER_PULL=${ACTIVATOR_TRY_DOCKER_PULL:-false}
     volumes:

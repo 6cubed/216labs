@@ -6,7 +6,7 @@
 
 The **showroom** is the ability to **browse 100+ apps** from one small droplet. You cannot keep every container **running** at once (RAM), but you **can** keep a **small hot pool** and **hotswap**: when someone opens an app that is not already up, the activator **evicts** the least-recently-used **evictable** container (if the pool is over cap), **pulls** the image from GHCR if needed (`ACTIVATOR_REGISTRY_PREFIX` → retag to `216labs/<service>:latest`), then **`compose up`** the requested service. That is **intentional churn** — not a mistake — so the **requested** demo wins over **idle** demos.
 
-- **`ACTIVATOR_MAX_CONCURRENT_APPS`** (compose default **10**) = max **evictable** app containers **running** at once (protected services do not count). Set **`0`** only if you want **no** LRU eviction (e.g. dev box or plenty of RAM) and accept many concurrent app processes.
+- **`ACTIVATOR_MAX_CONCURRENT_APPS`** (compose default **6**) = max **evictable** app containers **running** at once (protected services do not count). Set **`0`** only if you want **no** LRU eviction (e.g. dev box or plenty of RAM) and accept many concurrent app processes.
 - **`ACTIVATOR_PROTECTED_SERVICES`** — edge stays up (`caddy`, `activator`, `admin`, `landing` by default); they are never LRU-stopped.
 - **`activator_never_evict` in `manifest.json`** — opt a specific product **out** of eviction when a cap is enabled (e.g. a flagship demo you always want to keep warm if it was touched recently).
 
@@ -53,7 +53,7 @@ Compose sets `pull_policy: never` on each `216labs/*` service so a plain `docker
 
 See `docker-compose.yml` `activator` service. Key variables:
 
-- `ACTIVATOR_MAX_CONCURRENT_APPS` — default **10** in compose: **showroom** hot pool size (evictable apps only). Set **`0`** for unlimited concurrent evictable containers (not the normal showroom mode).
+- `ACTIVATOR_MAX_CONCURRENT_APPS` — default **6** in compose: **showroom** hot pool size (evictable apps only). Set **`0`** for unlimited concurrent evictable containers (not the normal showroom mode).
 - `ACTIVATOR_REAPER_INTERVAL_SECONDS` — background trim interval (set `0` to disable reaper thread).
 - `ACTIVATOR_PROTECTED_SERVICES` — comma-separated compose service names (never LRU-stopped).
 - `ACTIVATOR_BLOCK_START_SERVICES` — compose services that refuse `/api/start` (default `caddy,activator`).

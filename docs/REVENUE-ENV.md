@@ -1,5 +1,7 @@
 # Revenue env — admin checklist
 
+**First paid checkout:** step-by-step Stripe + deploy → [`docs/FIRST-SALE.md`](FIRST-SALE.md).
+
 Paid flows read secrets from **admin → Env** ([`https://admin.6cubed.app/env`](https://admin.6cubed.app/env) — revenue readiness panel + key editor), synced to the droplet on deploy. Set keys there, then redeploy the app (or full `./deploy.sh`).
 
 | App | Keys | Unblocks |

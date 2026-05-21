@@ -60,6 +60,7 @@ TO="/usr/bin/timeout"
 cd /opt/216labs
 git pull -q
 $TO 300 docker compose up -d caddy activator admin landing maxlearn storybook 1pageresearch cron-runner
+$TO 120 docker compose up -d --force-recreate activator
 $TO 30 docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -2 || docker compose restart caddy
 $TO 45 docker compose ps caddy activator admin landing maxlearn storybook 1pageresearch cron-runner
 REMOTE_UP
