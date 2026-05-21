@@ -34,7 +34,17 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 # Centralized file logging (logs/pocket-bridge.log) — before chat_detection so we can wrap ts_print
-BRIDGE_DIR = Path(__file__).resolve().parent
+BRIDGE_CODE_DIR = Path(__file__).resolve().parent
+
+
+def _resolve_bridge_dir() -> Path:
+    """Per-machine state dir; default = package dir. Use POCKET_BRIDGE_DATA_DIR for spawned instances."""
+    data = os.environ.get("POCKET_BRIDGE_DATA_DIR", "").strip()
+    return Path(data).resolve() if data else BRIDGE_CODE_DIR
+
+
+BRIDGE_DIR = _resolve_bridge_dir()
+
 from lib.bridge_log import (
     init_bridge_logging,
     log_event,
@@ -92,16 +102,19 @@ def _parse_env_file(path: Path) -> dict:
 
 
 def _apply_merged_env_files() -> None:
-    bridge = Path(__file__).parent
-    merged = {}
-    merged.update(_parse_env_file(bridge / ".env.admin-sync"))
-    merged.update(_parse_env_file(bridge / ".env"))
+    merged: dict[str, str] = {}
+    for base in (BRIDGE_CODE_DIR, BRIDGE_DIR):
+        merged.update(_parse_env_file(base / ".env.admin-sync"))
+    for base in (BRIDGE_CODE_DIR, BRIDGE_DIR):
+        merged.update(_parse_env_file(base / ".env"))
     for key, val in merged.items():
         if key not in os.environ:
             os.environ[key] = val
 
 
 _apply_merged_env_files()
+BRIDGE_DIR = _resolve_bridge_dir()
+INSTANCE_LABEL = os.environ.get("POCKET_BRIDGE_INSTANCE_ID", "").strip()
 
 BRIDGE_VERBOSITY_FILE = BRIDGE_DIR / ".bridge_verbosity"
 allowed_ids_file = BRIDGE_DIR / ".allowed_user_ids"
@@ -543,9 +556,18 @@ def tg_typing(cid):
     return tg_call('sendChatAction', chat_id=cid, action='typing', **_tg_thread_kw())
 
 
+def _tg_instance_prefix() -> str:
+    if INSTANCE_LABEL:
+        return f"[{INSTANCE_LABEL}] "
+    return ""
+
+
 def tg_send(cid, text):
     if not cid:
         return
+    prefix = _tg_instance_prefix()
+    if prefix and text and not text.startswith(prefix):
+        text = prefix + text
     tw = _tg_thread_kw()
     if len(text) <= 4000:
         return tg_call('sendMessage', chat_id=cid, text=text, **tw)
@@ -727,6 +749,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'chats', 'description': 'Show all chats across instances'},
     {'command': 'deleteoldchats', 'description': 'Close non-active chat tabs'},
     {'command': 'commands', 'description': 'List all Pocket Cursor commands'},
+    {'command': 'bridges', 'description': 'Multi-bridge setup (spawn more bots in this group)'},
     {'command': 'logs', 'description': 'Tail of bridge log file (recent console lines)'},
     {'command': 'logevents', 'description': 'Recent structured JSON events from the bridge'},
     {'command': 'status', 'description': 'Show bridge status (pause, workspaces, verbosity)'},
@@ -818,6 +841,20 @@ def detect_cdp_port(exit_on_fail=True):
     When exit_on_fail=False (used by background threads), returns None
     instead of calling sys.exit() so the caller can retry next cycle.
     """
+    forced = os.environ.get("POCKET_CDP_PORT", "").strip()
+    if forced.isdigit():
+        port = int(forced)
+        try:
+            resp = requests.get(f"http://localhost:{port}/json", timeout=2)
+            if resp.status_code == 200:
+                return port
+        except Exception:
+            pass
+        if exit_on_fail:
+            print(f"ERROR: POCKET_CDP_PORT={port} is not responding.")
+            sys.exit(1)
+        return None
+
     ports = get_used_ports()
     if not ports:
         if exit_on_fail:
@@ -2653,6 +2690,8 @@ def tg_bridge_status_text():
         hb_line,
         f"{instances} workspace{'s' if instances != 1 else ''} connected.",
     ]
+    if INSTANCE_LABEL:
+        lines.append(f"Bridge instance: {INSTANCE_LABEL} (see /bridges)")
     if conv_name:
         lines.append(f"💬 {conv_name}")
     lines.append(
@@ -2667,6 +2706,24 @@ def tg_bridge_status_text():
         "Agent conversation: in groups, forwarding is OFF by default (/agentconversation ON to opt in). "
         "In a private chat with the bot, forwarding is ON by default (/agentconversation OFF to mute)."
     )
+    return "\n".join(lines)
+
+
+def tg_bridges_federation_text() -> str:
+    """How to add more bridges (machines) to the same Telegram group."""
+    inst_root = BRIDGE_CODE_DIR.parent / "pocket-cursor-bridge-instances"
+    lines = [
+        "Multi-bridge — same Telegram group:",
+        "• One bot token per running bridge (create each via @BotFather).",
+        "• Spawn on a machine: ./scripts/spawn-pocket-bridge.sh <name>",
+        "• Start: POCKET_BRIDGE_DATA_DIR=internal/admin/pocket-cursor-bridge-instances/<name> ./scripts/pocket-cursor-bridge.sh",
+        f"• This process: {INSTANCE_LABEL or 'default (main package dir)'}",
+    ]
+    if inst_root.is_dir():
+        kids = sorted(p.name for p in inst_root.iterdir() if p.is_dir() and not p.name.startswith("."))
+        if kids:
+            lines.append("Instance dirs: " + ", ".join(kids))
+    lines.append("Read: BRIDGE-FEDERATION.md in the bridge package.")
     return "\n".join(lines)
 
 
@@ -3066,6 +3123,10 @@ def sender_thread():
 
                 if cmd == '/commands':
                     tg_send(cid, tg_pocket_commands_help_text())
+                    continue
+
+                if cmd == '/bridges':
+                    tg_send(cid, tg_bridges_federation_text())
                     continue
 
                 if cmd == '/logs':

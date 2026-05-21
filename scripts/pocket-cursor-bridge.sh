@@ -91,8 +91,25 @@ else
   "$PY" -X utf8 bridge_wizard.py --ensure || exit 1
 fi
 
-pkill -f 'pocket_cursor\.py' 2>/dev/null || true
-rm -f .bridge.lock
+# Optional federated instance (see scripts/spawn-pocket-bridge.sh).
+if [[ -n "${POCKET_BRIDGE_DATA_DIR:-}" ]]; then
+  export POCKET_BRIDGE_DATA_DIR
+  echo "[pocket-cursor-bridge] data dir: $POCKET_BRIDGE_DATA_DIR"
+fi
 
-"$PY" -X utf8 start_cursor.py
+# Main bridge: restart singleton. Federated instance: only clear this instance's lock (keep other bots running).
+if [[ -n "${POCKET_BRIDGE_DATA_DIR:-}" ]]; then
+  rm -f "${POCKET_BRIDGE_DATA_DIR}/.bridge.lock"
+else
+  pkill -f 'pocket_cursor\.py' 2>/dev/null || true
+  rm -f .bridge.lock
+fi
+
+START_ARGS=()
+if [[ -n "${POCKET_CDP_PORT:-}" ]]; then
+  START_ARGS=(--port "$POCKET_CDP_PORT")
+  echo "[pocket-cursor-bridge] CDP port: $POCKET_CDP_PORT"
+fi
+
+"$PY" -X utf8 start_cursor.py "${START_ARGS[@]}"
 exec "$PY" -X utf8 pocket_cursor.py

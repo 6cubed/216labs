@@ -17,3 +17,6 @@ node_modules
 data/*
 !data/.gitkeep
 logs/
+
+# Spawned federation instances (per-machine .env + state; see scripts/spawn-pocket-bridge.sh)
+../pocket-cursor-bridge-instances/

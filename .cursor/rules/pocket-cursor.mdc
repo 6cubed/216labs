@@ -16,6 +16,13 @@ alwaysApply: true
 - **Centralized errors:** `./scripts/query_client_errors.sh [app_id] [hours]` — `client_error_event` in `216labs.db`; admin **Errors** page at `/errors`. Ingest: `POST https://admin.6cubed.app/api/public/report-error` (see `docs/REPOSITORY.md`). Heartbeat: `./scripts/heartbeat-stack-check.sh` (audit + DB summary + live probes from `config/errors-html-probe-*.txt` + `./scripts/probe-droplet-reporters.sh` on droplet). Probe lists: `config/README-errors-reporting.md`. Rollup only: `./scripts/heartbeat-error-summary.sh [hours]`.
 - **Heartbeat harness:** `/heartbeat on`, `/heartbeat off`, and `/heartbeat now` (run once immediately; persisted on/off in `.heartbeat_enabled`). Optional env `POCKET_HEARTBEAT_ENABLED=1|0` syncs that file on startup. Default interval **30 minutes** (`lib/heartbeat_harness.json` or `POCKET_HEARTBEAT_INTERVAL_SEC`). Each beat adds a **random** `[Reflect]` line (reflect / prioritize / ideate / execute) plus a `[Push]` bar: ship real repo progress (fix, feature, commit, deploy, doc)—not status-only replies; outside-the-box improvements are welcome when clearly high leverage. **~1 in 10 heartbeats** should advance **revenue** (tokens/hosting); see `.cursor/rules/heartbeat-monetization.mdc` and revenue lines in `reflect_prompts`. Pool in `reflect_prompts`; disable with `reflect_enabled: false` or `POCKET_HEARTBEAT_REFLECT=0`. Injects into the **mirrored** chat with `[Heartbeat]` timestamp prefix; restores target from `.active_chat` when `list_chats` was empty at connect. Skips when bridge is **paused**, no mirrored chat on disk, or Cursor is **still generating** (configurable). Optional Telegram ping when a heartbeat fires. Edit `lib/heartbeat_harness.json` (hot-reload).
 
+## Multi-bridge / same Telegram group
+
+- **One bot token per bridge process** — duplicate tokens break polling. To add laptops or VMs to the **same group**, create another @BotFather bot and invite it to the group.
+- **Spawn:** `./scripts/spawn-pocket-bridge.sh <instance-id>` → edit `internal/admin/pocket-cursor-bridge-instances/<id>/.env` → start with `POCKET_BRIDGE_DATA_DIR=internal/admin/pocket-cursor-bridge-instances/<id> ./scripts/pocket-cursor-bridge.sh`.
+- **Telegram:** `/bridges` on any running bridge lists federation steps. Outbound text is prefixed `[instance-id]` when `POCKET_BRIDGE_INSTANCE_ID` is set.
+- **Doc:** `internal/admin/pocket-cursor-bridge/BRIDGE-FEDERATION.md`.
+
 ## WhatsApp (Meta Cloud API, optional inbound)
 
 - **Enable:** `WHATSAPP_CLOUD_ENABLED=1` plus `WHATSAPP_WEBHOOK_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ALLOWED_FROM` (comma-separated WA ids, digits only). See `internal/admin/pocket-cursor-bridge/.env.example`.
