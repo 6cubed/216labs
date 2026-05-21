@@ -1,6 +1,7 @@
-import { fetchStorybookOrders } from "@/lib/storybook";
+import { fetchStorybookOrders, fetchStorybookPrintLeads } from "@/lib/storybook";
 import { fetchValentineOrders } from "@/lib/valentine";
 import { OrdersSection } from "@/components/OrdersSection";
+import { StorybookPrintLeadsSection } from "@/components/StorybookPrintLeadsSection";
 import { ValentineOrdersSection } from "@/components/ValentineOrdersSection";
 
 export const dynamic = "force-dynamic";
