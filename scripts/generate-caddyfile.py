@@ -131,6 +131,12 @@ if root_domain_app:
             lines += [
                 f"{host} {{",
                 *ACCESS_LOG_BLOCK,
+                "\thandle /api/* {",
+                f"\t\treverse_proxy {svc}:{port}",
+                "\t}",
+                "\thandle /healthz {",
+                f"\t\treverse_proxy {svc}:{port}",
+                "\t}",
                 f"\treverse_proxy {svc}:{port} {{",
                 "\t\t@cold status 502 503 504",
                 "\t\thandle_response @cold {",
@@ -172,8 +178,15 @@ for app_id, docker_svc, port in entries:
         # Upstream 502/503/504: handle_response (response came back from upstream).
         # Dial / DNS / no-backend failures: handle_errors — some Caddy builds use status 0 for dial errors.
         # Do not use a catch-all handle_errors: app 4xx/5xx responses must not redirect to warmup.
+        # /api/* and /healthz skip Activator warmup so probes and webhooks get JSON/errors, not 302 HTML.
         lines += [
             f"{app_id}.{domain} {{",
+            "\thandle /api/* {",
+            f"\t\treverse_proxy {docker_svc}:{port}",
+            "\t}",
+            "\thandle /healthz {",
+            f"\t\treverse_proxy {docker_svc}:{port}",
+            "\t}",
             f"\treverse_proxy {docker_svc}:{port} {{",
             "\t\t@cold status 502 503 504",
             "\t\thandle_response @cold {",

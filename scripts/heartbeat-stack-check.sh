@@ -31,6 +31,14 @@ HOURS="${HEARTBEAT_ERROR_HOURS:-6}"
 "$ROOT/scripts/heartbeat-error-summary.sh" "$HOURS" || true
 
 echo
+echo "=== Revenue checkout probes (HTTP) ==="
+if "$ROOT/scripts/check-revenue-env-http.sh"; then
+  echo "revenue-env: all checkout probes passed"
+else
+  echo "revenue-env: see docs/REVENUE-ENV.md (Stripe/merch keys or cold containers)" >&2
+fi
+
+echo
 echo "=== Public admin APIs ==="
 LIVE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 12 \
   "https://admin.6cubed.app/api/public/live-apps" 2>/dev/null || echo "000")

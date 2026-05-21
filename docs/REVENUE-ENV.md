@@ -34,4 +34,6 @@ curl -sS -X POST "https://storybook.6cubed.app/api/checkout" -H 'Content-Type: a
 
 **Leads without Stripe:** StoryMagic stores **print interest** emails (`POST /api/print-interest`, table `print_interest` in `storybook.db`) and pings admin ingest with `[Print lead]`. **1PageResearch** accepts **free report requests** on `/generate` (`POST /api/request-free`) — review at `/admin/requests` when `ONEPAGE_ADMIN_SECRET` is set.
 
-**Cold apps:** If `check-revenue-env-http.sh` reports activator warmup instead of JSON, start the service: `docker compose up -d 1pageresearch` (manifest sets `activator_never_evict` to reduce LRU kills).
+**Cold apps:** `/api/*` and `/healthz` bypass Activator warmup redirects (see `scripts/generate-caddyfile.py`) so checkout probes return JSON. If probes still fail, start the service: `docker compose up -d 1pageresearch storybook` — revenue apps use `activator_never_evict` where set in manifests.
+
+**After Caddyfile regen:** `docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` on the droplet (or restart the `caddy` service).

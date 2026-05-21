@@ -4,6 +4,7 @@
   "tagline": "AI-generated personalised children's storybooks",
   "description": "Enter a child's age, name, and story idea — AI writes and illustrates a full colour 6-page children's storybook. Order a professionally printed hardback via Stripe checkout.",
   "category": "ai",
+  "activator_never_evict": true,
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "storybook",
