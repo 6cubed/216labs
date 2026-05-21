@@ -77,7 +77,11 @@ def before_request():
 @app.route("/")
 def index():
     reports = get_all_reports()
-    return render_template("index.html", reports=reports)
+    return render_template(
+        "index.html",
+        reports=reports,
+        stripe_configured=bool(STRIPE_SECRET_KEY),
+    )
 
 
 @app.route("/report/<slug>")

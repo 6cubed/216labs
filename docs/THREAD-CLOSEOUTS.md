@@ -22,6 +22,14 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | Admin visibility | **Shipped** — Orders page + `query_storybook_print_leads.sh` (`6f8d7aeb` fixes imports) |
 | Stripe checkout | **Blocked** — set `STORYBOOK_STRIPE_*` in admin Env → `./scripts/check-revenue-env-http.sh` |
 
+## 1PageResearch — cold / OOM (2026-05-21)
+
+| Item | Status |
+|------|--------|
+| Container `Exited (137)` | **Mitigated** — `activator_never_evict`, `mem_limit` 192m; `docker compose up -d 1pageresearch` |
+| Revenue probe 302 to activator | **Fixed probe** — `check-revenue-env-http.sh` follows redirects and detects non-JSON |
+| Stripe €1 checkout | **Blocked** — `ONEPAGE_STRIPE_SECRET_KEY` in admin Env; free requests + BYO key on `/generate` |
+
 ## Droplet deploy drift
 
 If `git rev-parse HEAD` on the server lags `main`, run:

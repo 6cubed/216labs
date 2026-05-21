@@ -32,4 +32,6 @@ curl -sS -X POST "https://storybook.6cubed.app/api/checkout" -H 'Content-Type: a
 
 **UX when keys are missing:** StoryMagic preview calls `GET /api/checkout/ready` and disables Order with a clear message; merch Buy falls back to a StoryMagic link until `NEXT_PUBLIC_MERCH_STORE_URL` is set.
 
-**Leads without Stripe:** StoryMagic stores **print interest** emails (`POST /api/print-interest`, table `print_interest` in `storybook.db`) and pings admin ingest with `[Print lead]`. Follow up from admin **Errors** or SQLite on the droplet before checkout goes live.
+**Leads without Stripe:** StoryMagic stores **print interest** emails (`POST /api/print-interest`, table `print_interest` in `storybook.db`) and pings admin ingest with `[Print lead]`. **1PageResearch** accepts **free report requests** on `/generate` (`POST /api/request-free`) — review at `/admin/requests` when `ONEPAGE_ADMIN_SECRET` is set.
+
+**Cold apps:** If `check-revenue-env-http.sh` reports activator warmup instead of JSON, start the service: `docker compose up -d 1pageresearch` (manifest sets `activator_never_evict` to reduce LRU kills).

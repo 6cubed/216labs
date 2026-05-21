@@ -498,7 +498,7 @@ services:
       - ./products/org-platform/ai/1pageresearch/data:/app/data
     expose:
       - "5000"
-    mem_limit: 128m
+    mem_limit: 192m
 
   # ── The Zurich Dating Game ───────────────────────────────────
   thezurichdatinggame:

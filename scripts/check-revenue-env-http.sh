@@ -8,9 +8,14 @@ check_json_ready() {
   local label="$1"
   local url="$2"
   local body
-  body="$(curl -sS -m 25 "$url" 2>/dev/null || true)"
+  body="$(curl -sS -m 25 -L "$url" 2>/dev/null || true)"
   if [[ -z "$body" ]]; then
     echo "[$label] unreachable: $url"
+    fail=1
+    return
+  fi
+  if ! echo "$body" | grep -q '"ready"'; then
+    echo "[$label] no JSON at $url (container stopped or activator warmup — see docs/REVENUE-ENV.md)"
     fail=1
     return
   fi

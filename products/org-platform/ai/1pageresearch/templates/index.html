@@ -163,10 +163,10 @@
     </div>
     <p style="margin-top: 1.25rem;">
       <a href="/generate" class="btn" style="display: inline-flex; align-items: center; gap: 0.5rem;">
-        Commission a report — €1 via Stripe
+        {% if stripe_configured %}Commission a report — €1 via Stripe{% else %}Generate or request a free report{% endif %}
       </a>
       <span style="display: block; margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted);">
-        Or use your own OpenAI key on the generate page.
+        {% if stripe_configured %}Secure checkout on the generate page.{% else %}€1 checkout is being enabled — use your OpenAI key or submit a free-request for high-impact topics.{% endif %}
       </span>
     </p>
   </div>
