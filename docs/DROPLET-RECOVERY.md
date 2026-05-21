@@ -1,6 +1,6 @@
 # Droplet recovery
 
-When **SSH times out** or **all `*.6cubed.app` sites hang**, the VPS is usually disk-full, OOM-killed containers, or a stuck Docker daemon.
+When **SSH times out** or **all `*.6cubed.app` sites hang**, the VPS is usually **disk ~95% full**, OOM-killed containers, or a stuck Docker daemon. SSH may **authenticate** then hang opening a session — treat that as the same incident (prune + reboot).
 
 ## Fast path
 
@@ -13,8 +13,8 @@ This script:
 
 1. Prunes duplicate GHCR tags and dangling Docker data (`prune-droplet-docker.sh`)
 2. `git pull` on `/opt/216labs`
-3. Restarts **caddy**, **activator**, **admin**, **landing**, **maxlearn**, **storybook**, **1pageresearch**
-4. Runs HTTP smoke probes from your laptop
+3. Restarts **caddy**, **activator**, **admin**, **landing**, **maxlearn**, **storybook**, **1pageresearch**, **cron-runner**; reloads Caddy
+4. Runs **`edge-smoke.sh`** from your laptop (must pass for “lights on”)
 
 ## If SSH still fails
 
