@@ -29,6 +29,9 @@ DB_PATH = Path(DATA_DIR) / "maxlearn.db"
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 USER_AGENT = "MaxLearn/1.0 (https://maxlearn.6cubed.app; educational)"
 
+# Bundled fallback has 20 snippets; feed must work at this count when Wikipedia is slow/unreachable.
+MIN_USABLE_SNIPPETS = 20
+
 
 def get_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -199,23 +202,29 @@ def _load_fallback_seed(conn) -> None:
     conn.commit()
 
 
-def bootstrap_seed_if_empty(conn, min_count: int = 80) -> None:
+def bootstrap_seed_if_empty(
+    conn,
+    min_count: int = MIN_USABLE_SNIPPETS,
+    *,
+    wiki_random_limit: int = 50,
+) -> None:
     """Cold deploys ship with an empty data volume — seed a starter batch so the feed works."""
     total = conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0]
     if total >= min_count:
         return
-    try:
-        page_ids = fetch_random_page_ids(limit=120)
-        for i in range(0, len(page_ids), 50):
-            batch = page_ids[i : i + 50]
-            for item in fetch_extract_and_categories(batch):
-                ensure_snippet(conn, item, source_page_id=None)
-            conn.commit()
-            if conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0] >= min_count:
-                return
-    except requests.RequestException as exc:
-        logging.warning("maxlearn: Wikipedia seed failed (%s), using fallback", exc)
-        conn.rollback()
+    if wiki_random_limit > 0:
+        try:
+            page_ids = fetch_random_page_ids(limit=min(wiki_random_limit, 120))
+            for i in range(0, len(page_ids), 50):
+                batch = page_ids[i : i + 50]
+                for item in fetch_extract_and_categories(batch):
+                    ensure_snippet(conn, item, source_page_id=None)
+                conn.commit()
+                if conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0] >= min_count:
+                    return
+        except requests.RequestException as exc:
+            logging.warning("maxlearn: Wikipedia seed failed (%s), using fallback", exc)
+            conn.rollback()
     if conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0] < min_count:
         _load_fallback_seed(conn)
 
@@ -290,7 +299,7 @@ def api_next():
     init_db()
     session_id = get_session_id()
     with get_db() as conn:
-        bootstrap_seed_if_empty(conn)
+        bootstrap_seed_if_empty(conn, wiki_random_limit=0)
         seen = get_seen_snippet_ids(conn, session_id)
         liked_ids = get_liked_snippet_ids(conn, session_id)
         liked_cats = get_liked_categories(conn, session_id)
@@ -424,7 +433,7 @@ def api_seed_status():
     return flask.jsonify({
         "total_snippets": total,
         "seed_snippets": seed_count,
-        "ready": seed_count >= 10000,
+        "ready": seed_count >= MIN_USABLE_SNIPPETS,
     })
 
 
