@@ -21,9 +21,10 @@ This script:
 **Reboot first** — sshd/Docker often cannot recover in-place when root is full.
 
 1. **Dashboard:** [DigitalOcean droplets](https://cloud.digitalocean.com/droplets) → select **46.101.88.197** → **Power** → **Reboot** → wait ~2 minutes.
-2. **API (if you have a token):** `DIGITALOCEAN_ACCESS_TOKEN=… ./scripts/droplet-reboot.sh` (reboot + auto-runs `droplet-recover.sh`).
-3. **Recovery console** (if reboot is not enough): **Access** → launch console → `df -h /` then `docker system prune -af` (re-pull images on next deploy).
-4. When SSH works: `./scripts/droplet-recover.sh`
+2. **API (if you have a token):** `DIGITALOCEAN_ACCESS_TOKEN=… ./scripts/droplet-reboot.sh` (reboot, wait for SSH, then `droplet-recover.sh`). Token can live in repo `.env`.
+3. **After manual reboot:** `./scripts/wait-for-droplet.sh` polls SSH (default 10 min) then runs recover.
+4. **Recovery console** (if reboot is not enough): **Access** → launch console → `df -h /` then `docker system prune -af` (re-pull images on next deploy).
+5. When SSH works: `./scripts/droplet-recover.sh`
 
 ## Revenue after recovery
 

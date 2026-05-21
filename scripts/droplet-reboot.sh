@@ -4,7 +4,16 @@
 # Then: sleep 120 && ./scripts/droplet-recover.sh
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IP="${1:-46.101.88.197}"
+
+if [[ -f "$ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  . "$ROOT/.env"
+  set +a
+fi
+
 TOKEN="${DIGITALOCEAN_ACCESS_TOKEN:-${DOCTL_ACCESS_TOKEN:-}}"
 
 if [[ -z "$TOKEN" ]]; then
@@ -31,5 +40,4 @@ echo "Rebooting droplet id=$DROPLET_ID ($IP)..."
 doctl compute droplet-action reboot "$DROPLET_ID" --wait
 echo "Reboot complete. Waiting 90s for sshd..."
 sleep 90
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-exec "$ROOT/scripts/droplet-recover.sh" "root@${IP}"
+exec "$ROOT/scripts/wait-for-droplet.sh" "root@${IP}"

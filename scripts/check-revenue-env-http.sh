@@ -23,7 +23,15 @@ check_json_ready() {
     echo "[$label] checkout ready ($url)"
   else
     echo "[$label] checkout NOT ready ($url)"
-    echo "$body" | python3 -c "import sys,json; d=json.load(sys.stdin); print('  ', d.get('message',''))" 2>/dev/null || echo "  $body"
+    echo "$body" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print('  ', d.get('message', ''))
+if d.get('setupUrl'):
+    print('   setup:', d['setupUrl'])
+if d.get('missingKeys'):
+    print('   missing:', ', '.join(d['missingKeys']))
+" 2>/dev/null || echo "  $body"
     fail=1
   fi
 }

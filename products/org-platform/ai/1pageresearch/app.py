@@ -116,13 +116,21 @@ def healthz():
 @app.route("/api/checkout/ready")
 def api_checkout_ready():
     """Public probe: whether €1 Stripe checkout can run (keys in admin Env)."""
-    ready = bool(STRIPE_SECRET_KEY)
+    missing = []
+    if not STRIPE_SECRET_KEY:
+        missing.append("ONEPAGE_STRIPE_SECRET_KEY")
+    webhook = os.environ.get("ONEPAGE_STRIPE_WEBHOOK_SECRET", "").strip()
+    if not webhook:
+        missing.append("ONEPAGE_STRIPE_WEBHOOK_SECRET")
+    ready = not missing
     return jsonify(
         {
             "ready": ready,
+            "setupUrl": None if ready else "https://admin.6cubed.app/env",
+            "missingKeys": None if ready else missing,
             "message": None
             if ready
-            else "€1 report checkout is being enabled. Use your own API key or request a free report until ONEPAGE_STRIPE_SECRET_KEY is set in admin Env.",
+            else "€1 checkout needs Stripe keys in admin Env. Use a free report until configured, or set keys and redeploy 1pageresearch.",
         }
     )
 
