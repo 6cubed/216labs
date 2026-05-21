@@ -1,6 +1,6 @@
 # Revenue env — admin checklist
 
-Paid flows read secrets from **admin Env** (`https://admin.6cubed.app/env`), synced to the droplet on deploy. Set keys there, then redeploy the app (or full `./deploy.sh`).
+Paid flows read secrets from **admin → Env** ([`https://admin.6cubed.app/env`](https://admin.6cubed.app/env) — revenue readiness panel + key editor), synced to the droplet on deploy. Set keys there, then redeploy the app (or full `./deploy.sh`).
 
 | App | Keys | Unblocks |
 |-----|------|----------|
@@ -37,3 +37,5 @@ curl -sS -X POST "https://storybook.6cubed.app/api/checkout" -H 'Content-Type: a
 **Cold apps:** `/api/*` and `/healthz` bypass Activator warmup redirects (see `scripts/generate-caddyfile.py`) so checkout probes return JSON. If probes still fail, start the service: `docker compose up -d 1pageresearch storybook` — revenue apps use `activator_never_evict` where set in manifests.
 
 **After Caddyfile regen:** `docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` on the droplet (or restart the `caddy` service).
+
+**Droplet down / SSH timeout:** `./scripts/droplet-recover.sh` — see `docs/DROPLET-RECOVERY.md`.

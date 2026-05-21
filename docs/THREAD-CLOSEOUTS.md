@@ -30,6 +30,13 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | Revenue probe 302 to activator | **Fixed probe** — `check-revenue-env-http.sh` follows redirects and detects non-JSON |
 | Stripe €1 checkout | **Blocked** — `ONEPAGE_STRIPE_SECRET_KEY` in admin Env; free requests + BYO key on `/generate` |
 
+## Droplet unreachable (2026-05-21)
+
+| Symptom | Action |
+|---------|--------|
+| SSH timeout, admin/edge curl timeout | `./scripts/droplet-recover.sh` or DO console power cycle |
+| Disk ~95% | `prune-droplet-docker.sh` (included in recover script) |
+
 ## Droplet deploy drift
 
 If `git rev-parse HEAD` on the server lags `main`, run:
