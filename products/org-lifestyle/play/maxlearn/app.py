@@ -1,6 +1,8 @@
 # MaxLearn — Tinder for Wikipedia rabbit holes
 from __future__ import annotations
 
+import json
+import logging
 import os
 import random
 import sqlite3
@@ -186,6 +188,17 @@ def ensure_snippet(conn, item: dict, source_page_id: int | None = None) -> int |
     return conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
 
+def _load_fallback_seed(conn) -> None:
+    """Bundled snippets when Wikipedia is unreachable from the droplet."""
+    path = Path(__file__).resolve().parent / "seed_fallback.json"
+    if not path.is_file():
+        return
+    items = json.loads(path.read_text(encoding="utf-8"))
+    for item in items:
+        ensure_snippet(conn, item, source_page_id=None)
+    conn.commit()
+
+
 def bootstrap_seed_if_empty(conn, min_count: int = 80) -> None:
     """Cold deploys ship with an empty data volume — seed a starter batch so the feed works."""
     total = conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0]
@@ -200,8 +213,11 @@ def bootstrap_seed_if_empty(conn, min_count: int = 80) -> None:
             conn.commit()
             if conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0] >= min_count:
                 return
-    except requests.RequestException:
+    except requests.RequestException as exc:
+        logging.warning("maxlearn: Wikipedia seed failed (%s), using fallback", exc)
         conn.rollback()
+    if conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0] < min_count:
+        _load_fallback_seed(conn)
 
 
 def get_session_id():

@@ -1,0 +1,142 @@
+[
+  {
+    "page_id": 10001,
+    "title": "Photosynthesis",
+    "extract": "Photosynthesis is a process used by plants and other organisms to convert light energy into chemical energy that can later be released to fuel the organism's activities.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Photosynthesis",
+    "categories": "Biology,Plants"
+  },
+  {
+    "page_id": 10002,
+    "title": "Machine learning",
+    "extract": "Machine learning is a field of study in artificial intelligence concerned with the development and study of statistical algorithms that can learn from data and generalise to unseen data.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Machine_learning",
+    "categories": "Computer science,AI"
+  },
+  {
+    "page_id": 10003,
+    "title": "Mitochondrion",
+    "extract": "A mitochondrion is an organelle found in the cells of most eukaryotes. Mitochondria generate most of the cell's supply of adenosine triphosphate (ATP), used as a source of chemical energy.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Mitochondrion",
+    "categories": "Biology,Cell biology"
+  },
+  {
+    "page_id": 10004,
+    "title": "Renaissance",
+    "extract": "The Renaissance was a period in history and a cultural movement marking the transition from the Middle Ages to modernity, covering the 15th and 16th centuries.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Renaissance",
+    "categories": "History,Art"
+  },
+  {
+    "page_id": 10005,
+    "title": "Supply and demand",
+    "extract": "In microeconomics, supply and demand is an economic model describing how the interaction of supply and demand in a market determines the quantity and price of a good.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Supply_and_demand",
+    "categories": "Economics"
+  },
+  {
+    "page_id": 10006,
+    "title": "Plate tectonics",
+    "extract": "Plate tectonics is the scientific theory that Earth's lithosphere comprises a number of large tectonic plates which have been slowly moving since about 3.4 billion years ago.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Plate_tectonics",
+    "categories": "Geology,Earth science"
+  },
+  {
+    "page_id": 10007,
+    "title": "Immune system",
+    "extract": "The immune system is a network of biological processes that protects an organism from disease. It detects and responds to pathogens ranging from viruses to parasitic worms.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Immune_system",
+    "categories": "Biology,Medicine"
+  },
+  {
+    "page_id": 10008,
+    "title": "Quantum mechanics",
+    "extract": "Quantum mechanics is a fundamental theory in physics that describes the behaviour of nature at and below the scale of atoms: the motion and interaction of subatomic particles.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Quantum_mechanics",
+    "categories": "Physics"
+  },
+  {
+    "page_id": 10009,
+    "title": "Democracy",
+    "extract": "Democracy is a form of government in which the people have the authority to deliberate and decide legislation, or to choose governing officials to do so.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Democracy",
+    "categories": "Politics,Philosophy"
+  },
+  {
+    "page_id": 10010,
+    "title": "Chocolate",
+    "extract": "Chocolate is a food made from roasted and ground cacao seed kernels that is available as a liquid, solid, or paste, either alone or as a flavouring agent in other foods.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Chocolate",
+    "categories": "Food,Cuisine"
+  },
+  {
+    "page_id": 10011,
+    "title": "Solar System",
+    "extract": "The Solar System is the gravitationally bound system of the Sun and the objects that orbit it. It formed about 4.6 billion years ago from the gravitational collapse of a giant interstellar molecular cloud.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Solar_System",
+    "categories": "Astronomy"
+  },
+  {
+    "page_id": 10012,
+    "title": "World War II",
+    "extract": "World War II was a global conflict that lasted from 1939 to 1945. It involved the vast majority of the world's countries forming two opposing military alliances: the Allies and the Axis.",
+    "wiki_url": "https://en.wikipedia.org/wiki/World_War_II",
+    "categories": "History,Military"
+  },
+  {
+    "page_id": 10013,
+    "title": "Evolution",
+    "extract": "Evolution is the change in the heritable characteristics of biological populations over successive generations. These characteristics are the expressions of genes.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Evolution",
+    "categories": "Biology"
+  },
+  {
+    "page_id": 10014,
+    "title": "Internet",
+    "extract": "The Internet is the global system of interconnected computer networks that uses the Internet protocol suite to communicate between networks and devices.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Internet",
+    "categories": "Technology"
+  },
+  {
+    "page_id": 10015,
+    "title": "Jazz",
+    "extract": "Jazz is a music genre that originated in the African-American communities of New Orleans in the late 19th and early 20th centuries, with its roots in blues and ragtime.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Jazz",
+    "categories": "Music"
+  },
+  {
+    "page_id": 10016,
+    "title": "Climate change",
+    "extract": "Climate change refers to long-term shifts in temperatures and weather patterns. Since the 1800s human activities have been the main driver of climate change, primarily due to burning fossil fuels.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Climate_change",
+    "categories": "Environment,Science"
+  },
+  {
+    "page_id": 10017,
+    "title": "DNA",
+    "extract": "Deoxyribonucleic acid is a polymer composed of two polynucleotide chains that coil around each other to form a double helix. It carries genetic instructions for development and function.",
+    "wiki_url": "https://en.wikipedia.org/wiki/DNA",
+    "categories": "Biology,Genetics"
+  },
+  {
+    "page_id": 10018,
+    "title": "Olympic Games",
+    "extract": "The modern Olympic Games are the world's preeminent international sporting events. They feature summer and winter sports competitions in which thousands of athletes from around the world participate.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+    "categories": "Sport"
+  },
+  {
+    "page_id": 10019,
+    "title": "Shakespeare",
+    "extract": "William Shakespeare was an English playwright, poet and actor. He is widely regarded as the greatest writer in the English language and the world's pre-eminent dramatist.",
+    "wiki_url": "https://en.wikipedia.org/wiki/William_Shakespeare",
+    "categories": "Literature,History"
+  },
+  {
+    "page_id": 10020,
+    "title": "Black hole",
+    "extract": "A black hole is a region of spacetime where gravity is so strong that nothing, including light and other electromagnetic waves, has enough energy to escape it.",
+    "wiki_url": "https://en.wikipedia.org/wiki/Black_hole",
+    "categories": "Physics,Astronomy"
+  }
+]
