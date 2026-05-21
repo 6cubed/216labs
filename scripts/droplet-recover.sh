@@ -53,8 +53,12 @@ fi
 df -h / | tail -1
 REMOTE_PRUNE
 
+# Prune/docker load often resets sshd briefly — wait before compose up.
+echo "=== Cooldown after prune (20s) ==="
+sleep 20
+
 echo "=== Compose up (edge + revenue + cron) ==="
-ssh_retry 2 'bash -s' <<'REMOTE_UP'
+ssh_retry 8 'bash -s' <<'REMOTE_UP'
 set -euo pipefail
 TO="/usr/bin/timeout"
 cd /opt/216labs
