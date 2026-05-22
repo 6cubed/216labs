@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import type { RevenueReadinessSnapshot } from "@/lib/revenue-readiness";
+import { CopyableSnippet } from "@/components/CopyableSnippet";
+import {
+  REVENUE_SETUP_LINKS,
+  type RevenueReadinessSnapshot,
+} from "@/lib/revenue-readiness";
 
 function StatusPill({
   tone,
@@ -130,6 +134,32 @@ export function RevenueReadinessPanel({
                 <p className="text-[11px] text-red-400/90 leading-snug border-t border-border/60 pt-2">
                   {app.probeError}
                 </p>
+              )}
+
+              {!app.keysReady && REVENUE_SETUP_LINKS[app.id] && (
+                <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2">
+                  {REVENUE_SETUP_LINKS[app.id].stripeDashboard && (
+                    <a
+                      href={REVENUE_SETUP_LINKS[app.id].stripeDashboard}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-accent hover:underline"
+                    >
+                      Open Stripe test keys →
+                    </a>
+                  )}
+                  {REVENUE_SETUP_LINKS[app.id].webhookUrl && (
+                    <CopyableSnippet
+                      label="Webhook URL"
+                      value={REVENUE_SETUP_LINKS[app.id].webhookUrl!}
+                    />
+                  )}
+                  {REVENUE_SETUP_LINKS[app.id].deployHint && (
+                    <p className="text-[11px] text-muted font-mono leading-snug">
+                      {REVENUE_SETUP_LINKS[app.id].deployHint}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           );

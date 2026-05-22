@@ -7,7 +7,7 @@
 1. [Stripe Dashboard](https://dashboard.stripe.com/test/apikeys) → **Developers → API keys** (test).
 2. Copy **Publishable** and **Secret** keys.
 3. **Developers → Webhooks** → Add endpoint:
-   - URL: `https://storybook.6cubed.app/api/stripe/webhook`
+   - URL: `https://storybook.6cubed.app/api/webhook`
    - Events: `checkout.session.completed` (and `payment_intent.succeeded` if you use Payment Intents later).
 4. Copy the **Signing secret** (`whsec_…`).
 

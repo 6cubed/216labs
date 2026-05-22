@@ -12,6 +12,28 @@ export type RevenueAppConfig = {
   publicUrl: string;
 };
 
+/** Stripe / storefront shortcuts shown on admin Env when keys are incomplete. */
+export const REVENUE_SETUP_LINKS: Record<
+  string,
+  { stripeDashboard?: string; webhookUrl?: string; deployHint?: string }
+> = {
+  storybook: {
+    stripeDashboard: "https://dashboard.stripe.com/test/apikeys",
+    webhookUrl: "https://storybook.6cubed.app/api/webhook",
+    deployHint: "DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197",
+  },
+  "1pageresearch": {
+    stripeDashboard: "https://dashboard.stripe.com/test/apikeys",
+    webhookUrl: "https://1pageresearch.6cubed.app/api/webhook/stripe",
+    deployHint: "DEPLOY_RUNTIME_APPS=1pageresearch ./deploy.sh root@46.101.88.197",
+  },
+  merch: {
+    stripeDashboard: undefined,
+    webhookUrl: undefined,
+    deployHint: "Set NEXT_PUBLIC_MERCH_STORE_URL (Printful storefront URL)",
+  },
+};
+
 export const REVENUE_APPS: RevenueAppConfig[] = [
   {
     id: "storybook",
