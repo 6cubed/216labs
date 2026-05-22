@@ -2,9 +2,9 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
-## Droplet / edge — **lights on** (2026-05-22 13:35 UTC)
+## Droplet / edge — **lights on** (2026-05-22, stable ~14:35 UTC)
 
-`./scripts/edge-smoke.sh` **passing**: admin 401, landing 200, maxlearn `ready=true`, storybook/1page JSON probes up. Fix that stuck sessions needed: **`python3 scripts/generate-caddyfile.py`** + Caddy reload (now in `droplet-recover.sh` / `droplet-spine-up.sh`, `d53cfa46`). Droplet at `d53cfa46`; ~2.3 GB free on `/`.
+`./scripts/edge-smoke.sh` **passing**: admin 401, landing 200, maxlearn `ready=true`, storybook/1page JSON (`ready=false` until Stripe keys). VPS git **`8f0fd317`** (spine excluded from default GHCR sync, `08a33bef`). If edge dies again: `./scripts/droplet-spine-up.sh` — not full recover unless disk/OOM.
 
 ## Droplet wedged / “everything down” (2026-05-21–22) — **CLOSED (procedure)**
 

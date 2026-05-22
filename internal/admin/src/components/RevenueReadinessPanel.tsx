@@ -37,14 +37,25 @@ export function RevenueReadinessPanel({
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-foreground">Revenue readiness</h2>
         <p className="text-xs text-muted mt-0.5 max-w-2xl">
-          Live checkout probes plus env keys in this database. Cron job{" "}
-          <code className="text-[11px]">revenue-env-check</code> (08:00 & 20:00 UTC)
-          pings Telegram when the edge fails. After setting Stripe or merch keys below,
-          redeploy affected apps (or run{" "}
-          <code className="text-[11px]">./deploy.sh</code>). See{" "}
-          <code className="text-[11px]">docs/REVENUE-ENV.md</code>.
+          Live checkout probes plus env keys in this database. Saving{" "}
+          <code className="text-[11px]">STORYBOOK_*</code> /{" "}
+          <code className="text-[11px]">ONEPAGE_*</code> on this host regenerates{" "}
+          <code className="text-[11px]">.env.admin</code> and recreates that app
+          container (no laptop deploy). See{" "}
+          <code className="text-[11px]">docs/FIRST-SALE.md</code>.
         </p>
       </div>
+
+      {!data.allCheckoutReady && (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+          <p className="font-medium text-amber-200/95">First sale: add Stripe keys below</p>
+          <p className="text-xs text-muted mt-1">
+            Edge is up — checkout probes return JSON but{" "}
+            <code className="text-[11px]">ready: false</code> until keys are saved.
+            Start with StoryMagic (webhook URL in each card).
+          </p>
+        </div>
+      )}
 
       {data.lastCronProbe && (
         <div
