@@ -9,6 +9,12 @@ When **SSH times out** or **all `*.6cubed.app` sites hang**, the VPS is usually 
 ./scripts/droplet-recover.sh root@46.101.88.197
 ```
 
+If SSH works but only **landing** or **maxlearn** are down (admin/storybook OK), use the lighter path:
+
+```bash
+./scripts/droplet-spine-up.sh root@46.101.88.197
+```
+
 This script:
 
 1. Prunes duplicate GHCR tags and dangling Docker data (`prune-droplet-docker.sh`)

@@ -23,6 +23,22 @@ probe_http() {
   fi
 }
 
+probe_landing() {
+  local code
+  code="$(curl -sS -m "$MAX" -o /dev/null -w '%{http_code}' "https://6cubed.app/" 2>/dev/null || echo "000")"
+  if [[ "$code" == "000" ]]; then
+    code="$(curl -sS -m "$MAX" -o /dev/null -w '%{http_code}' "https://www.6cubed.app/" 2>/dev/null || echo "000")"
+    if [[ "$code" != "000" ]]; then
+      echo "landing $code (www)" >>"$tmpdir/summary"
+      return
+    fi
+  fi
+  echo "landing $code" >>"$tmpdir/summary"
+  if [[ "$code" == "000" ]]; then
+    fail=1
+  fi
+}
+
 probe_json_ready() {
   local id="$1" url="$2"
   local out="$tmpdir/$id"
@@ -44,19 +60,40 @@ probe_json_ready() {
   echo "$id OK ready=$ready HTTP $code" >>"$tmpdir/summary"
 }
 
+probe_maxlearn() {
+  local out="$tmpdir/maxlearn"
+  local code body ready
+  code="$(curl -sS -m "$MAX" -L -o "$out" -w '%{http_code}' "https://maxlearn.6cubed.app/api/seed-status" 2>/dev/null || echo "000")"
+  body="$(cat "$out" 2>/dev/null || true)"
+  if [[ "$code" != "000" && -n "$body" ]] && echo "$body" | grep -q '"ready"'; then
+    ready="$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ready'))" 2>/dev/null || echo "?")"
+    echo "maxlearn OK ready=$ready HTTP $code" >>"$tmpdir/summary"
+    return
+  fi
+  code="$(curl -sS -m "$MAX" -o /dev/null -w '%{http_code}' "https://maxlearn.6cubed.app/healthz" 2>/dev/null || echo "000")"
+  if [[ "$code" != "000" ]]; then
+    echo "maxlearn WARN up but seed-status missing HTTP $code" >>"$tmpdir/summary"
+    fail=1
+    return
+  fi
+  echo "maxlearn FAIL unreachable" >>"$tmpdir/summary"
+  fail=1
+}
+
 echo "=== Edge smoke (timeout ${MAX}s) ==="
 
-probe_http admin "https://admin.6cubed.app/"
-probe_http landing "https://6cubed.app/"
-probe_json_ready storybook "https://storybook.6cubed.app/api/checkout/ready"
-probe_json_ready onepage "https://1pageresearch.6cubed.app/api/checkout/ready"
-probe_json_ready maxlearn "https://maxlearn.6cubed.app/api/seed-status"
+probe_http admin "https://admin.6cubed.app/" &
+probe_landing &
+probe_json_ready storybook "https://storybook.6cubed.app/api/checkout/ready" &
+probe_json_ready onepage "https://1pageresearch.6cubed.app/api/checkout/ready" &
+probe_maxlearn &
+wait
 
 sort "$tmpdir/summary" | while read -r line; do echo "  $line"; done
 
 if [[ "$fail" -ne 0 ]]; then
   echo
-  echo "Edge degraded — ./scripts/droplet-recover.sh (see docs/DROPLET-RECOVERY.md)" >&2
+  echo "Edge degraded — ./scripts/droplet-spine-up.sh or ./scripts/droplet-recover.sh" >&2
   exit 1
 fi
 echo "edge-smoke: critical hosts reachable"
