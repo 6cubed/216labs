@@ -31,7 +31,11 @@ function normalizeQuery(q: string) {
 export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
-  const [savedKey, setSavedKey] = useState<string | null>(null);
+  const [lastSave, setLastSave] = useState<{
+    key: string;
+    note: string;
+    ok: boolean;
+  } | null>(null);
   const [query, setQuery] = useState("");
   const [openCats, setOpenCats] = useState<Record<EnvUiCategoryId, boolean>>(() => ({
     platform: true,
@@ -136,17 +140,27 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
             disabled={!hasChanged || isPending}
             onClick={() =>
               startTransition(async () => {
-                await saveEnvVar(row.key, draft);
+                const result = await saveEnvVar(row.key, draft);
                 setDrafts((prev) => {
                   const next = { ...prev };
                   delete next[row.key];
                   return next;
                 });
-                setSavedKey(row.key);
-                setTimeout(
-                  () => setSavedKey((s) => (s === row.key ? null : s)),
-                  1500
-                );
+                if (result && "error" in result) {
+                  setSaveNote(result.error);
+                  setSavedKey(null);
+                } else {
+                  setSavedKey(row.key);
+                  setSaveNote(
+                    result && "reloaded" in result && result.reloaded
+                      ? `Saved — recreated ${result.reloaded} with new env`
+                      : "Saved"
+                  );
+                }
+                setTimeout(() => {
+                  setSavedKey((s) => (s === row.key ? null : s));
+                  setSaveNote(null);
+                }, 4000);
               })
             }
             className="rounded-md border border-accent/40 px-3 py-2 text-xs text-accent disabled:opacity-40"
@@ -154,8 +168,12 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
             Save
           </button>
         </div>
-        {savedKey === row.key && (
-          <p className="mt-1 text-[11px] text-emerald-400">Saved</p>
+        {lastSave?.key === row.key && (
+          <p
+            className={`mt-1 text-[11px] ${lastSave.ok ? "text-emerald-400" : "text-amber-400"}`}
+          >
+            {lastSave.note}
+          </p>
         )}
       </div>
     );

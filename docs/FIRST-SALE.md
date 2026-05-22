@@ -22,7 +22,7 @@ Open [admin → Env](https://admin.6cubed.app/env) and set:
 | `STORYBOOK_STRIPE_WEBHOOK_SECRET` | `whsec_…` |
 | `STORYBOOK_BOOK_PRICE_CENTS` | optional (default `2499`) |
 
-Save. Keys sync to the droplet on the next deploy (or `git pull` + `docker compose up -d storybook` on the VPS).
+Save. On the live admin host, saving a `STORYBOOK_*` key **recreates the storybook container** with updated `.env.admin` automatically. Otherwise redeploy: `DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197`.
 
 ## 3. Redeploy StoryMagic
 

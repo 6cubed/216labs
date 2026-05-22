@@ -15,6 +15,12 @@ import {
   getEnvVarValue,
 } from "@/lib/db";
 import { startContainer, stopContainer, pullLatestGhcrForService } from "@/lib/docker";
+import {
+  canHotReloadEnvOnHost,
+  dockerServiceForEnvKey,
+  recreateComposeService,
+  syncEnvAdminFromDb,
+} from "@/lib/env-compose-sync";
 import { canPullGhcrFromAdmin } from "@/lib/ghcr-pull";
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
@@ -227,11 +233,33 @@ export async function fulfillValentineOrder(orderId: string): Promise<ActionResu
   }
 }
 
-export async function saveEnvVar(key: string, value: string) {
+export async function saveEnvVar(
+  key: string,
+  value: string
+): Promise<{ error: string } | { success: true; reloaded?: string }> {
   setEnvVarValue(key, value);
   const appDir = getAppDirForKey(key);
   if (appDir) writeEnvLocal(appDir);
+
+  const service = dockerServiceForEnvKey(key);
+  if (service && canHotReloadEnvOnHost()) {
+    try {
+      await syncEnvAdminFromDb();
+      await recreateComposeService(service);
+      revalidateAdminPaths();
+      return { success: true, reloaded: service };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Hot reload failed";
+      console.warn("[saveEnvVar] hot-reload:", msg);
+      revalidateAdminPaths();
+      return {
+        error: `${msg} — keys saved in DB; run deploy or compose up -d ${service} on the VPS`,
+      };
+    }
+  }
+
   revalidateAdminPaths();
+  return { success: true };
 }
 
 export async function fetchAppLogs(appId: string): Promise<string[]> {
