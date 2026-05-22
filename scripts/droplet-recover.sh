@@ -53,6 +53,9 @@ fi
 df -h / | tail -1
 REMOTE_PRUNE
 
+echo "=== Showroom stop (disk ≥88%: drop demo containers, keep spine + revenue) ==="
+"$ROOT/scripts/droplet-showroom-stop.sh" "$REMOTE" || true
+
 # Prune/docker load often resets sshd briefly — wait before compose up.
 echo "=== Cooldown after prune (20s) ==="
 sleep 20

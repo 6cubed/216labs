@@ -12,9 +12,10 @@ When **SSH times out** or **all `*.6cubed.app` sites hang**, the VPS is usually 
 This script:
 
 1. Prunes duplicate GHCR tags and dangling Docker data (`prune-droplet-docker.sh`)
-2. `git pull` on `/opt/216labs`
-3. Restarts **caddy**, **activator**, **admin**, **landing**, **maxlearn**, **storybook**, **1pageresearch**, **cron-runner**; reloads Caddy
-4. Runs **`edge-smoke.sh`** from your laptop (must pass for “lights on”)
+2. When disk is **≥88% full**, stops every compose service **except** the recovery hot pool (`droplet-showroom-stop.sh` — spine + maxlearn + storybook + 1pageresearch + cron-runner). Demos cold-start again via the activator.
+3. `git pull` on `/opt/216labs`
+4. Restarts **caddy**, **activator**, **admin**, **landing**, **maxlearn**, **storybook**, **1pageresearch**, **cron-runner**; reloads Caddy
+5. Runs **`edge-smoke.sh`** from your laptop (must pass for “lights on”)
 
 ## If SSH still fails (or disk is 97%+)
 
