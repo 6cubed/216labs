@@ -68,6 +68,37 @@ probe_maxlearn() {
   if [[ "$code" != "000" && -n "$body" ]] && echo "$body" | grep -q '"ready"'; then
     ready="$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ready'))" 2>/dev/null || echo "?")"
     echo "maxlearn OK ready=$ready HTTP $code" >>"$tmpdir/summary"
+    if [[ "$ready" == "True" || "$ready" == "true" ]]; then
+      local sid="edge-smoke-$$"
+      local next_out="$tmpdir/maxlearn-next"
+      code="$(curl -sS -m "$MAX" -o "$next_out" -w '%{http_code}' \
+        -H "X-MaxLearn-Session: $sid" "https://maxlearn.6cubed.app/api/next" 2>/dev/null || echo "000")"
+      local sid_json snippet_id
+      sid_json="$(python3 -c "import json; d=json.load(open('$next_out')); print(d.get('snippet',{}).get('id',''), d.get('session_id',''))" 2>/dev/null || echo "")"
+      snippet_id="${sid_json%% *}"
+      [[ -n "${sid_json#* }" && "${sid_json#* }" != "$sid_json" ]] && sid="${sid_json#* }"
+      if [[ "$code" != "200" || -z "$snippet_id" ]]; then
+        echo "maxlearn FAIL feed next HTTP $code" >>"$tmpdir/summary"
+        fail=1
+        return
+      fi
+      code="$(curl -sS -m "$MAX" -o /dev/null -w '%{http_code}' \
+        -X POST -H "Content-Type: application/json" -H "X-MaxLearn-Session: $sid" \
+        -d "{\"snippet_id\":$snippet_id}" "https://maxlearn.6cubed.app/api/skip" 2>/dev/null || echo "000")"
+      if [[ "$code" != "200" ]]; then
+        echo "maxlearn FAIL feed skip HTTP $code" >>"$tmpdir/summary"
+        fail=1
+        return
+      fi
+      code="$(curl -sS -m "$MAX" -o /dev/null -w '%{http_code}' \
+        -H "X-MaxLearn-Session: $sid" "https://maxlearn.6cubed.app/api/next" 2>/dev/null || echo "000")"
+      if [[ "$code" != "200" ]]; then
+        echo "maxlearn FAIL feed after skip HTTP $code" >>"$tmpdir/summary"
+        fail=1
+        return
+      fi
+      echo "maxlearn OK feed swipe HTTP $code" >>"$tmpdir/summary"
+    fi
     return
   fi
   code="$(curl -sS -m "$MAX" -o /dev/null -w '%{http_code}' "https://maxlearn.6cubed.app/healthz" 2>/dev/null || echo "000")"
