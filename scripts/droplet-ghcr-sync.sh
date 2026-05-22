@@ -62,6 +62,10 @@ is_excluded() {
   local svc="$1"
   local lower
   lower=$(echo "$svc" | tr '[:upper:]' '[:lower:]')
+  # Explicit SYNC_SERVICE=admin (etc.) overrides the periodic exclude list.
+  if [ -n "$SYNC_SERVICE_LOWER" ] && [ "$lower" = "$SYNC_SERVICE_LOWER" ]; then
+    return 1
+  fi
   IFS=',' read -ra _EX <<< "$EXCLUDE_RAW"
   for e in "${_EX[@]}"; do
     e=$(echo "$e" | sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')
