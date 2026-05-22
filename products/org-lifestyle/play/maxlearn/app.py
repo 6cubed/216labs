@@ -353,7 +353,7 @@ def api_next():
         pool_ids = list(neighbour_ids) if neighbour_ids else []
         if not pool_ids:
             cur = conn.execute(
-                "SELECT id FROM snippets WHERE source_page_id IS NULL" + exclude,
+                "SELECT s.id FROM snippets s WHERE s.source_page_id IS NULL" + exclude,
                 params,
             )
         else:

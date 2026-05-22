@@ -9,7 +9,7 @@ Production is a single DigitalOcean droplet (`46.101.88.197`). When edge or SSH 
 
 ## First action each heartbeat
 
-1. Run `./scripts/edge-smoke.sh` (~10s).
+1. Run `./scripts/heartbeat-stack.sh` or `./scripts/edge-smoke.sh` (~10s).
 2. If it **fails**: run `./scripts/droplet-recover.sh` (retries SSH, prunes disk, restarts caddy/activator/admin/landing/revenue apps).
 3. If recover **still fails** (SSH banner hang after auth, or smoke stays red): tell the user to **reboot the droplet in the DO console**, then re-run recover.
 
