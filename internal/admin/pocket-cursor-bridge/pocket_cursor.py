@@ -1319,6 +1319,81 @@ def _confirm_dedup_key(text: str, sec_id: str) -> str:
     return norm if norm else (sec_id or '')
 
 
+def _attempt_autoprompt_approve(
+    text: str,
+    tool_id: str,
+    buttons: list,
+    btns_selector: str,
+    scope_sel: str,
+    sec_selector: str | None,
+    sec_key: str,
+    mc_conn,
+    mc_iid,
+    cid,
+    dedup_key: str,
+    section_index: int,
+    sections: list,
+    forwarded_ids: set,
+    section_stable: dict,
+) -> bool:
+    """Auto-click Run/confirm when autoprompt is on. Reads toggle from disk each call."""
+    if not auto_approve_prompts_file.exists() or not btns_selector or not buttons:
+        return False
+    accept_idx, accept_label = command_rules.pick_approval_button(buttons)
+    if accept_idx is None:
+        print(
+            f"[auto-prompt] No safe approval button for {text!r} "
+            f"({[b.get('label') for b in buttons]!r}) — sending to Telegram",
+        )
+        return False
+    png_ap = (
+        cdp_screenshot_element(sec_selector, conn=mc_conn, iid=mc_iid)
+        if sec_selector
+        else None
+    )
+    click_result = cdp_click_approval_button(
+        btns_selector,
+        accept_label,
+        scope_selector=scope_sel or None,
+        accept_idx=accept_idx,
+        conn=mc_conn,
+        iid=mc_iid,
+    )
+    if click_result != 'OK':
+        print(
+            f"[auto-prompt] Auto-approve click failed ({click_result}), "
+            "falling back to keyboard",
+        )
+        return False
+    print(f"[auto-prompt] Auto-approved: {text} -> {accept_label}")
+    if not muted and cid:
+        cap = f"✅ Auto-approved ({accept_label}): {text}"
+        if png_ap:
+            tg_send_photo_bytes(
+                cid,
+                png_ap,
+                filename='auto_approve.png',
+                caption=cap[:1024],
+            )
+        else:
+            tg_send(cid, cap)
+    with pending_confirms_lock:
+        pending_confirms.pop(tool_id, None)
+    if sec_key:
+        forwarded_ids.add(sec_key)
+    section_stable.pop(sec_key, None)
+    recent_auto_confirms[dedup_key] = time.monotonic()
+    for j in range(section_index + 1, len(sections)):
+        s2 = sections[j]
+        if not isinstance(s2, dict) or s2.get('type') != 'confirmation':
+            continue
+        if _confirm_dedup_key(s2.get('text', ''), s2.get('id', '')) == dedup_key:
+            sk2 = s2.get('id', '')
+            if sk2:
+                forwarded_ids.add(sk2)
+    return True
+
+
 def cdp_click_approval_button(
     btns_selector: str,
     accept_label: str,
@@ -3845,60 +3920,25 @@ def monitor_thread():
                             else:
                                 print(f"[command-rules] Auto-accept click failed ({click_result}), falling back to keyboard")
 
-                    # Auto-approve (toggle: /autoprompt). Unsafe guess → Telegram keyboard instead.
-                    if auto_approve_prompts and btns_selector and buttons:
-                        accept_idx, accept_label = command_rules.pick_approval_button(buttons)
-                        if accept_idx is not None:
-                            png_ap = (
-                                cdp_screenshot_element(sec_selector, conn=mc_conn, iid=mc_iid)
-                                if sec_selector
-                                else None
-                            )
-                            click_result = cdp_click_approval_button(
-                                btns_selector,
-                                accept_label,
-                                scope_selector=scope_sel or None,
-                                accept_idx=accept_idx,
-                                conn=mc_conn,
-                                iid=mc_iid,
-                            )
-                            if click_result == 'OK':
-                                print(f"[auto-prompt] Auto-approved: {text} -> {accept_label}")
-                                if not muted and cid:
-                                    cap = f"✅ Auto-approved ({accept_label}): {text}"
-                                    if png_ap:
-                                        tg_send_photo_bytes(
-                                            cid,
-                                            png_ap,
-                                            filename='auto_approve.png',
-                                            caption=cap[:1024],
-                                        )
-                                    else:
-                                        tg_send(cid, cap)
-                                with pending_confirms_lock:
-                                    pending_confirms.pop(tool_id, None)
-                                if sec_key:
-                                    forwarded_ids.add(sec_key)
-                                section_stable.pop(sec_key, None)
-                                recent_auto_confirms[dedup_key] = time.monotonic()
-                                for j in range(i + 1, len(sections)):
-                                    s2 = sections[j]
-                                    if not isinstance(s2, dict) or s2.get('type') != 'confirmation':
-                                        continue
-                                    if _confirm_dedup_key(s2.get('text', ''), s2.get('id', '')) == dedup_key:
-                                        sk2 = s2.get('id', '')
-                                        if sk2:
-                                            forwarded_ids.add(sk2)
-                                continue
-                            print(
-                                f"[auto-prompt] Auto-approve click failed ({click_result}), "
-                                "falling back to keyboard",
-                            )
-                        else:
-                            print(
-                                f"[auto-prompt] No safe approval button for {text!r} "
-                                f"({[b.get('label') for b in buttons]!r}) — sending to Telegram",
-                            )
+                    # Auto-approve (/autoprompt); retried after live button scrape below.
+                    if _attempt_autoprompt_approve(
+                        text,
+                        tool_id,
+                        buttons,
+                        btns_selector,
+                        scope_sel,
+                        sec_selector,
+                        sec_key,
+                        mc_conn,
+                        mc_iid,
+                        cid,
+                        dedup_key,
+                        i,
+                        sections,
+                        forwarded_ids,
+                        section_stable,
+                    ):
+                        continue
 
                     if not buttons and btns_selector and mc_conn:
                         live_btns = cdp_eval(f"""
@@ -3915,6 +3955,25 @@ def monitor_thread():
                                 buttons = json.loads(live_btns)
                         except (json.JSONDecodeError, TypeError):
                             pass
+
+                    if _attempt_autoprompt_approve(
+                        text,
+                        tool_id,
+                        buttons,
+                        btns_selector,
+                        scope_sel,
+                        sec_selector,
+                        sec_key,
+                        mc_conn,
+                        mc_iid,
+                        cid,
+                        dedup_key,
+                        i,
+                        sections,
+                        forwarded_ids,
+                        section_stable,
+                    ):
+                        continue
 
                     if not muted:
                         tg_typing(cid)
