@@ -136,6 +136,23 @@
       margin-bottom: 0.5rem;
     }
 
+    .btn-retry {
+      margin-top: 1rem;
+      padding: 0.6rem 1.25rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-retry:hover {
+      border-color: var(--link);
+      color: var(--link);
+    }
+
     .state-loading {
       display: flex;
       flex-direction: column;
@@ -229,11 +246,16 @@
     <div id="state-empty" class="state-empty hidden">
       <h2>You’re all caught up</h2>
       <p>Like some articles to grow your feed with 10 related snippets each. Come back later for more.</p>
+      <p style="margin-top:1rem;font-size:0.9rem;">
+        Turn a topic into an illustrated story —
+        <a href="https://storybook.6cubed.app?utm_source=maxlearn&utm_medium=empty" style="color:var(--link);">StoryMagic</a>
+      </p>
     </div>
 
     <div id="state-error" class="state-error hidden">
       <h2>Something went wrong</h2>
       <p id="error-message">Try refreshing the page.</p>
+      <button type="button" id="btn-retry" class="btn-retry">Try again</button>
     </div>
 
     <div id="card-container" class="hidden">
@@ -273,6 +295,7 @@
       const actions = document.getElementById('actions');
       const btnSkip = document.getElementById('btn-skip');
       const btnLike = document.getElementById('btn-like');
+      const btnRetry = document.getElementById('btn-retry');
       const SESSION_KEY = 'maxlearn_session';
 
       function readCookieSession() {
@@ -402,6 +425,7 @@
 
       btnLike.addEventListener('click', like);
       btnSkip.addEventListener('click', skip);
+      btnRetry.addEventListener('click', fetchNext);
 
       // Touch swipe
       var touchStartX = 0, touchStartY = 0;

@@ -29,6 +29,16 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **Verify:** `curl https://maxlearn.6cubed.app/api/seed-status` → `ready: true`, `seed_snippets` ≥ 20.
 
+## MaxLearn — “error after first swipe” (2026-05-22) — **CLOSED (code)**
+
+| Cause | Fix (on `main`) |
+|-------|-----------------|
+| `/api/like` blocked on Wikipedia neighbours → proxy timeout | Return immediately; expand in background (`bf6fdf4b`) |
+| `/api/next` SQL used `s.id` without alias after skip/like | `SELECT s.id FROM snippets s …` (`ddb5eab4`) |
+| Telegram WebView dropped session cookie | `X-MaxLearn-Session` + `localStorage` (`bf6fdf4b`) |
+
+**Verify:** `edge-smoke` includes skip→next; or manual session header curl on `/api/skip` then `/api/next`. **Ops:** if edge all `000`, droplet is wedged — reboot + `./scripts/droplet-spine-up.sh`.
+
 ## StoryMagic + 1Page — revenue (2026-05-20–22) — **CLOSED (blocked on keys)**
 
 | Item | Status |
