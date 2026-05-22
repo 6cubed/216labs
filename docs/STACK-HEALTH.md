@@ -1,0 +1,39 @@
+# Stack health (edge vs internal)
+
+Public URLs can fail while app containers are still healthy behind Caddy. The cron job **`stack-health-check`** (every 15 minutes) compares:
+
+| Layer | Probes |
+|-------|--------|
+| **External** | `https://admin.6cubed.app/`, `https://6cubed.app/` |
+| **Internal** (Docker network) | `http://admin:3000/`, `http://activator:3040/healthz`, `http://storybook:3000/api/checkout/ready` |
+
+Results are stored in `216labs.db` → `cron_runner_state.stack_health_last` and surfaced on the admin dashboard (**Stack / edge** metric).
+
+## Diagnosis
+
+| `diagnosis` | Meaning | Typical fix |
+|-------------|---------|-------------|
+| `ok` | Public edge reachable | — |
+| `edge_proxy` | Internal spine OK, public down | `./scripts/droplet-spine-up.sh` (Caddy reload) |
+| `spine_down` | Internal + public failed | DO reboot → `./scripts/wait-for-droplet.sh` |
+| `degraded` | Mixed failures | `./scripts/droplet-recover.sh` |
+
+Telegram alerts only when external probes fail (same pattern as `revenue-env-check`).
+
+## Heartbeats
+
+```bash
+./scripts/heartbeat-stack.sh
+```
+
+Runs `edge-smoke.sh` from your laptop and, when SSH works, prints the latest `stack_health_last` snapshot from the droplet.
+
+## Enable / deploy
+
+Job is registered in `cron-runner` on deploy. After changing handlers:
+
+```bash
+DEPLOY_RUNTIME_APPS=cron-runner,admin ./deploy.sh root@46.101.88.197
+```
+
+On an existing VPS, `git pull` + `docker compose up -d --force-recreate cron-runner admin` applies the new job without a full deploy.

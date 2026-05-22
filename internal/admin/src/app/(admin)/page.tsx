@@ -22,6 +22,10 @@ import {
   parseRevenueCronSnapshot,
   REVENUE_CRON_STATE_KEY,
 } from "@/lib/revenue-readiness";
+import {
+  getStackHealthSnapshot,
+  stackHealthMetric,
+} from "@/lib/stack-health";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +70,8 @@ export default async function DashboardPage() {
     revenueCron != null
       ? `cron ${revenueCron.at.replace("T", " ").slice(0, 16)} UTC`
       : "Stripe keys on Env";
+  const stackSnap = getStackHealthSnapshot();
+  const stackMetric = stackHealthMetric(stackSnap);
 
   return (
     <>
@@ -73,7 +79,7 @@ export default async function DashboardPage() {
         <ProjectOverviewBanner appCount={apps.length} renderedAtIso={renderedAtIso} />
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 animate-fade-in">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 animate-fade-in">
         <MetricCard
           label="Applications"
           value={apps.length}
@@ -86,7 +92,13 @@ export default async function DashboardPage() {
           href={errorHref}
         />
         <MetricCard
-          label="Revenue / edge"
+          label="Stack / edge"
+          value={stackMetric.value}
+          sublabel={stackMetric.sublabel}
+          href="/cron"
+        />
+        <MetricCard
+          label="Revenue / checkout"
           value={revenueMetricValue}
           sublabel={revenueMetricSub}
           href="/env"

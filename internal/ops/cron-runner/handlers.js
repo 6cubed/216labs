@@ -600,6 +600,135 @@ export async function revenueEnvCheck(db) {
   return `[Revenue/Edge] ${issues} probe(s) failed:\n${lines.join("\n")}\nRun ./scripts/droplet-recover.sh or see docs/DROPLET-RECOVERY.md`;
 }
 
+export const STACK_HEALTH_STATE_KEY = "stack_health_last";
+
+function fetchTimeout(url, ms = 10_000) {
+  return fetch(url, { signal: AbortSignal.timeout(ms), redirect: "follow" });
+}
+
+/**
+ * Every 15m: public edge vs in-network spine. Surfaces "Caddy down, apps fine" vs full outage.
+ * Persists JSON in cron_runner_state; admin dashboard reads stack_health_last.
+ */
+export async function stackHealthCheck(db) {
+  const at = new Date().toISOString();
+  const external = [];
+  const internal = [];
+  let extIssues = 0;
+
+  try {
+    const res = await fetchTimeout("https://admin.6cubed.app/");
+    const ok = res.status === 200 || res.status === 401;
+    external.push({
+      id: "admin",
+      ok,
+      status: res.status,
+      error: ok ? null : `HTTP ${res.status}`,
+    });
+    if (!ok) extIssues += 1;
+  } catch (e) {
+    external.push({
+      id: "admin",
+      ok: false,
+      status: 0,
+      error: e instanceof Error ? e.message : "unreachable",
+    });
+    extIssues += 1;
+  }
+
+  try {
+    const res = await fetchTimeout("https://6cubed.app/");
+    const ok = res.status >= 200 && res.status < 500;
+    external.push({
+      id: "landing",
+      ok,
+      status: res.status,
+      error: ok ? null : `HTTP ${res.status}`,
+    });
+    if (!ok) extIssues += 1;
+  } catch (e) {
+    external.push({
+      id: "landing",
+      ok: false,
+      status: 0,
+      error: e instanceof Error ? e.message : "unreachable",
+    });
+    extIssues += 1;
+  }
+
+  const internalTargets = [
+    { id: "admin", url: "http://admin:3000/", okStatuses: [200, 401] },
+    { id: "activator", url: "http://activator:3040/healthz", okStatuses: [200] },
+    {
+      id: "storybook",
+      url: "http://storybook:3000/api/checkout/ready",
+      needsReadyJson: true,
+    },
+  ];
+
+  for (const t of internalTargets) {
+    try {
+      const res = await fetchTimeout(t.url, 8000);
+      const text = t.needsReadyJson ? await res.text() : "";
+      let ok = t.okStatuses ? t.okStatuses.includes(res.status) : res.ok;
+      if (t.needsReadyJson) ok = text.includes('"ready"');
+      internal.push({
+        id: t.id,
+        ok,
+        status: res.status,
+        error: ok ? null : `HTTP ${res.status}`,
+      });
+    } catch (e) {
+      internal.push({
+        id: t.id,
+        ok: false,
+        status: 0,
+        error: e instanceof Error ? e.message : "unreachable",
+      });
+    }
+  }
+
+  const extOk = extIssues === 0;
+  const intCoreOk = internal
+    .filter((r) => r.id === "admin" || r.id === "activator")
+    .every((r) => r.ok);
+  const intAnyOk = internal.some((r) => r.ok);
+
+  let diagnosis = "ok";
+  if (!extOk && intCoreOk) diagnosis = "edge_proxy";
+  else if (!extOk && !intAnyOk) diagnosis = "spine_down";
+  else if (!extOk) diagnosis = "degraded";
+
+  const snapshot = {
+    at,
+    issues: extIssues,
+    diagnosis,
+    external,
+    internal,
+  };
+  setCronState(db, STACK_HEALTH_STATE_KEY, JSON.stringify(snapshot));
+
+  if (extOk) return "";
+
+  const lines = [];
+  if (diagnosis === "edge_proxy") {
+    lines.push(
+      "Public edge down; admin/activator OK inside Docker — likely Caddy, TLS, or DNS."
+    );
+    lines.push("Try: ./scripts/droplet-spine-up.sh (reload caddy + spine).");
+  } else if (diagnosis === "spine_down") {
+    lines.push("Public and internal probes failed — VPS wedged or compose down.");
+    lines.push("Try: DO reboot → ./scripts/wait-for-droplet.sh");
+  } else {
+    lines.push(`External probes failing (diagnosis: ${diagnosis}).`);
+    lines.push("Try: ./scripts/droplet-recover.sh");
+  }
+  for (const r of external.filter((x) => !x.ok)) {
+    lines.push(`• ${r.id}: ${r.error || `HTTP ${r.status}`}`);
+  }
+  return `[Stack health]\n${lines.join("\n")}`;
+}
+
 /** Drop client/server error rows older than 14 days. */
 export async function clientErrorPrune(ctx) {
   const db = ctx.db;
@@ -621,4 +750,5 @@ export const HANDLERS = {
   "edge-visitor-rollup": edgeVisitorRollup,
   "client-error-prune": clientErrorPrune,
   "revenue-env-check": revenueEnvCheck,
+  "stack-health-check": stackHealthCheck,
 };
