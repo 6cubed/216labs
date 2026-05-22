@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import sqlite3
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -230,10 +231,45 @@ def bootstrap_seed_if_empty(
 
 
 def get_session_id():
+    header_sid = (flask.request.headers.get("X-MaxLearn-Session") or "").strip()
+    if header_sid:
+        return header_sid
     sid = flask.request.cookies.get("maxlearn_session")
     if sid:
         return sid
     return str(uuid.uuid4())
+
+
+def _expand_liked_neighbours(page_id: int) -> None:
+    """Wikipedia neighbour fetch can take 30s+; run off the request thread."""
+    try:
+        neighbour_ids = fetch_links(page_id, limit=10)
+        for nid in neighbour_ids:
+            time.sleep(0.15)
+            try:
+                items = fetch_extract_and_categories([nid])
+                with get_db() as conn:
+                    for item in items:
+                        ensure_snippet(conn, item, source_page_id=page_id)
+                    conn.commit()
+            except Exception:
+                continue
+    except Exception:
+        logging.exception("maxlearn: neighbour expand failed for page_id=%s", page_id)
+
+
+def _json_with_session(payload: dict, session_id: str):
+    body = dict(payload)
+    body["session_id"] = session_id
+    resp = flask.make_response(flask.jsonify(body))
+    if not flask.request.cookies.get("maxlearn_session"):
+        resp.set_cookie(
+            "maxlearn_session",
+            session_id,
+            max_age=60 * 60 * 24 * 365,
+            samesite="Lax",
+        )
+    return resp
 
 
 def get_liked_categories(conn, session_id: str) -> set[str]:
@@ -333,12 +369,15 @@ def api_next():
         if not candidates:
             total = conn.execute("SELECT COUNT(*) FROM snippets").fetchone()[0]
             if total < 80:
-                return flask.jsonify({
+                return _json_with_session({
                     "snippet": None,
                     "message": "Loading Wikipedia articles… refresh in a few seconds.",
                     "seeding": True,
-                })
-            return flask.jsonify({"snippet": None, "message": "No more snippets. Like some to grow your feed!"})
+                }, session_id)
+            return _json_with_session({
+                "snippet": None,
+                "message": "No more snippets. Like some to grow your feed!",
+            }, session_id)
 
         # Score: same-category boost
         def score(sid):
@@ -362,7 +401,7 @@ def api_next():
             "extract": row["extract"],
             "wiki_url": row["wiki_url"],
         }
-    return flask.jsonify({"snippet": snippet})
+    return _json_with_session({"snippet": snippet}, session_id)
 
 
 @app.route("/api/like", methods=["POST"])
@@ -383,24 +422,14 @@ def api_like():
             "INSERT OR IGNORE INTO likes (session_id, snippet_id) VALUES (?, ?)",
             (session_id, snippet_id),
         )
+        conn.commit()
         page_id = row["page_id"]
-        # Fetch up to 10 neighbour articles and add to DB
-        try:
-            neighbour_ids = fetch_links(page_id, limit=10)
-            for nid in neighbour_ids:
-                time.sleep(0.15)
-                try:
-                    items = fetch_extract_and_categories([nid])
-                    for item in items:
-                        ensure_snippet(conn, item, source_page_id=page_id)
-                except Exception:
-                    continue
-        except Exception:
-            pass
-    resp = flask.jsonify({"ok": True})
-    if not flask.request.cookies.get("maxlearn_session"):
-        resp.set_cookie("maxlearn_session", session_id, max_age=60 * 60 * 24 * 365)
-    return resp
+    threading.Thread(
+        target=_expand_liked_neighbours,
+        args=(page_id,),
+        daemon=True,
+    ).start()
+    return _json_with_session({"ok": True}, session_id)
 
 
 @app.route("/api/skip", methods=["POST"])
@@ -416,10 +445,8 @@ def api_skip():
             "INSERT OR IGNORE INTO skips (session_id, snippet_id) VALUES (?, ?)",
             (session_id, snippet_id),
         )
-    resp = flask.jsonify({"ok": True})
-    if not flask.request.cookies.get("maxlearn_session"):
-        resp.set_cookie("maxlearn_session", session_id, max_age=60 * 60 * 24 * 365)
-    return resp
+        conn.commit()
+    return _json_with_session({"ok": True}, session_id)
 
 
 @app.route("/api/seed-status", methods=["GET"])

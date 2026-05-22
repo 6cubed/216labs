@@ -273,6 +273,54 @@
       const actions = document.getElementById('actions');
       const btnSkip = document.getElementById('btn-skip');
       const btnLike = document.getElementById('btn-like');
+      const SESSION_KEY = 'maxlearn_session';
+
+      function readCookieSession() {
+        var m = document.cookie.match(/(?:^|; )maxlearn_session=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+      }
+      function getStoredSession() {
+        try { return localStorage.getItem(SESSION_KEY) || ''; } catch (_e) { return ''; }
+      }
+      function storeSession(id) {
+        if (!id) return;
+        try { localStorage.setItem(SESSION_KEY, id); } catch (_e) {}
+      }
+      var clientSession = getStoredSession() || readCookieSession();
+
+      function persistSessionFromPayload(data) {
+        if (data && data.session_id) {
+          clientSession = data.session_id;
+          storeSession(clientSession);
+        }
+      }
+
+      function apiFetch(url, opts) {
+        opts = opts || {};
+        var headers = Object.assign({}, opts.headers || {});
+        if (clientSession) headers['X-MaxLearn-Session'] = clientSession;
+        if (opts.body && !headers['Content-Type']) {
+          headers['Content-Type'] = 'application/json';
+        }
+        return fetch(url, Object.assign({ credentials: 'same-origin', headers: headers }, opts))
+          .then(function(r) {
+            var ct = r.headers.get('content-type') || '';
+            if (!r.ok) {
+              return r.text().then(function(t) {
+                var msg = (t && t.length < 120) ? t : ('Server error (' + r.status + ')');
+                throw new Error(msg);
+              });
+            }
+            if (ct.indexOf('application/json') === -1) {
+              throw new Error('Unexpected response from server');
+            }
+            return r.json();
+          })
+          .then(function(data) {
+            persistSessionFromPayload(data);
+            return data;
+          });
+      }
 
       function showState(id) {
         stateLoading.classList.toggle('hidden', id !== 'state-loading');
@@ -292,8 +340,7 @@
 
       function fetchNext() {
         showState('state-loading');
-        fetch('/api/next')
-          .then(function(r) { return r.json(); })
+        apiFetch('/api/next')
           .then(function(data) {
             if (data.snippet) {
               setCard(data.snippet);
@@ -313,13 +360,9 @@
       }
 
       function sendAction(snippetId, endpoint) {
-        return fetch(endpoint, {
+        return apiFetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ snippet_id: snippetId })
-        }).then(function(r) {
-          if (!r.ok) throw new Error('Request failed');
-          return r.json();
         });
       }
 
@@ -331,10 +374,12 @@
         btnSkip.disabled = true;
         sendAction(sid, '/api/like').then(function() {
           setTimeout(fetchNext, 280);
-        }).catch(function() {
+        }).catch(function(err) {
           btnLike.disabled = false;
           btnSkip.disabled = false;
           card.classList.remove('swiping-right');
+          errorMessage.textContent = err.message || 'Like failed — try again.';
+          showState('state-error');
         });
       }
 
@@ -346,10 +391,12 @@
         btnSkip.disabled = true;
         sendAction(sid, '/api/skip').then(function() {
           setTimeout(fetchNext, 280);
-        }).catch(function() {
+        }).catch(function(err) {
           btnLike.disabled = false;
           btnSkip.disabled = false;
           card.classList.remove('swiping-left');
+          errorMessage.textContent = err.message || 'Skip failed — try again.';
+          showState('state-error');
         });
       }
 
