@@ -91,6 +91,14 @@ wait
 
 sort "$tmpdir/summary" | while read -r line; do echo "  $line"; done
 
+# Background jobs cannot update parent $fail — derive from summary.
+if grep -qE ' (000|000000|FAIL unreachable)' "$tmpdir/summary" 2>/dev/null; then
+  fail=1
+fi
+if grep -qE ' WARN ' "$tmpdir/summary" 2>/dev/null; then
+  fail=1
+fi
+
 if [[ "$fail" -ne 0 ]]; then
   echo
   echo "Edge degraded — ./scripts/droplet-spine-up.sh or ./scripts/droplet-recover.sh" >&2
