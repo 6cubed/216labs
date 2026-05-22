@@ -147,20 +147,17 @@ export function EnvVarEditor({ vars }: { vars: EnvVarRow[] }) {
                   return next;
                 });
                 if (result && "error" in result) {
-                  setSaveNote(result.error);
-                  setSavedKey(null);
+                  setLastSave({ key: row.key, note: result.error, ok: false });
                 } else {
-                  setSavedKey(row.key);
-                  setSaveNote(
+                  const note =
                     result && "reloaded" in result && result.reloaded
                       ? `Saved — recreated ${result.reloaded} with new env`
-                      : "Saved"
-                  );
+                      : "Saved";
+                  setLastSave({ key: row.key, note, ok: true });
                 }
                 setTimeout(() => {
-                  setSavedKey((s) => (s === row.key ? null : s));
-                  setSaveNote(null);
-                }, 4000);
+                  setLastSave((s) => (s?.key === row.key ? null : s));
+                }, 5000);
               })
             }
             className="rounded-md border border-accent/40 px-3 py-2 text-xs text-accent disabled:opacity-40"
