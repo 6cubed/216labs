@@ -71,7 +71,7 @@ probe_maxlearn() {
     return
   fi
   code="$(curl -sS -m "$MAX" -o /dev/null -w '%{http_code}' "https://maxlearn.6cubed.app/healthz" 2>/dev/null || echo "000")"
-  if [[ "$code" != "000" ]]; then
+  if [[ "$code" =~ ^[1-5][0-9]{2}$ ]]; then
     echo "maxlearn WARN up but seed-status missing HTTP $code" >>"$tmpdir/summary"
     fail=1
     return
