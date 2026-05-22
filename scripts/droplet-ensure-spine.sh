@@ -94,4 +94,22 @@ if ! is_running caddy; then
     "${COMPOSE[@]}" up -d --pull never --no-build caddy
 fi
 
+# Revenue + marketing root (no GHCR pull here — keep running for edge smoke / checkout probes).
+for svc in landing storybook maxlearn 1pageresearch cron-runner; do
+  if is_running "$svc"; then
+    continue
+  fi
+  echo "==> spine: $svc not running — compose up (--no-build)"
+  COMPOSE_DOCKER_CLI_BUILD=0 DOCKER_BUILDKIT=0 \
+    "${COMPOSE[@]}" up -d --pull never --no-build "$svc" 2>/dev/null || true
+done
+
+if [ -f "$ROOT/scripts/generate-caddyfile.py" ] && command -v python3 &>/dev/null; then
+  python3 "$ROOT/scripts/generate-caddyfile.py" 2>&1 | tail -1 || true
+  if is_running caddy; then
+    "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -1 \
+      || "${COMPOSE[@]}" restart caddy
+  fi
+fi
+
 echo "==> droplet-ensure-spine: ok"

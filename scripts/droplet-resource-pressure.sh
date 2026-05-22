@@ -43,7 +43,7 @@ MIN_FREE_MB="${DROPLET_MIN_FREE_MB:-2048}"
 MAX_EVICTABLE="${DROPLET_MAX_EVICTABLE_RUNNING:-6}"
 PRUNE_IMG="${DROPLET_PRUNE_IMAGE_ON_EVICTION:-0}"
 MAX_STOPS="${DROPLET_PRESSURE_MAX_STOPS:-30}"
-PROT_RAW="${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing}"
+PROT_RAW="${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch}"
 DB_FILE="${DROPLET_DB_PATH:-216labs.db}"
 
 free_mb_root() {

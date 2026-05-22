@@ -45,7 +45,7 @@ services:
       - ACTIVATOR_MAX_CONCURRENT_APPS=${ACTIVATOR_MAX_CONCURRENT_APPS:-6}
       - ACTIVATOR_REAPER_INTERVAL_SECONDS=${ACTIVATOR_REAPER_INTERVAL_SECONDS:-120}
       # Only edge + admin + marketing root; other apps can be LRU-stopped so cold traffic pulls from GHCR.
-      - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing}
+      - ACTIVATOR_PROTECTED_SERVICES=${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch}
       # Compose services that refuse /api/start (avoid restarting edge or self).
       - ACTIVATOR_BLOCK_START_SERVICES=${ACTIVATOR_BLOCK_START_SERVICES:-caddy,activator}
       # Optional: delete 216labs/<svc>:latest on eviction to free disk (next cold start may pull from GHCR).

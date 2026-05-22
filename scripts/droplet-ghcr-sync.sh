@@ -12,7 +12,8 @@ set -euo pipefail
 
 ROOT="${SYNC_PROJECT_ROOT:-/opt/216labs}"
 # zurichrunclubs: GHCR :latest can lag CI; periodic pull was recreating containers with stale images over laptop deploys.
-EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator,zurichrunclubs}"
+# Spine + revenue hot pool: periodic sync must not recreate these (use SYNC_SERVICE=admin explicitly).
+EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch,zurichrunclubs}"
 SYNC_SERVICE_RAW="${SYNC_SERVICE:-}"
 SYNC_SERVICE_LOWER=""
 if [ -n "$SYNC_SERVICE_RAW" ]; then
@@ -145,6 +146,19 @@ if [ -f "$ROOT/scripts/lib/prune-ghcr-duplicate-tags.sh" ]; then
   # shellcheck source=lib/prune-ghcr-duplicate-tags.sh
   . "$ROOT/scripts/lib/prune-ghcr-duplicate-tags.sh"
   prune_ghcr_duplicate_tags || true
+fi
+
+# Recreate of any app can leave Caddy on a stale config; regen + reload spine every sync.
+if [ -f "$ROOT/scripts/generate-caddyfile.py" ] && command -v python3 &>/dev/null; then
+  echo "==> GHCR sync: regenerate Caddyfile"
+  python3 "$ROOT/scripts/generate-caddyfile.py" 2>&1 | tail -2 || true
+fi
+if docker compose --env-file .env --env-file .env.admin ps --status running --format '{{.Service}}' 2>/dev/null | grep -qx caddy; then
+  docker compose --env-file .env --env-file .env.admin exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -2 \
+    || docker compose --env-file .env --env-file .env.admin restart caddy
+fi
+if [ -f "$ROOT/scripts/droplet-ensure-spine.sh" ]; then
+  SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/droplet-ensure-spine.sh" || true
 fi
 
 echo "==> droplet-ghcr-sync done."
