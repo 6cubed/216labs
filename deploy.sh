@@ -606,12 +606,26 @@ GHCR_TAGS_B64=""
 if [ "$PULL_FROM_GHCR" = "1" ] && [ ${#ALL_IMAGES[@]} -gt 0 ]; then
   GHCR_TAGS_B64=$(printf '%s\n' "${ALL_IMAGES[@]}" | base64 | tr -d '\n')
 fi
+
+# Subset image pull without DEPLOY_SHOWROOM=1: do not `compose up` the full catalogue (missing
+# images like groundtruth abort the run and can flap Caddy). Phase 2 = spine + pulled apps only.
+DEPLOY_PHASE2_SERVICES=""
+if [ -n "${FILTERED_RUNTIME:-}" ] && [ "$SHOWROOM" != "1" ]; then
+  DEPLOY_PHASE2_SERVICES="caddy activator admin landing cron-runner"
+  for app in $FILTERED_RUNTIME; do
+    svc=$(compose_svc_name "$app")
+    if [[ " $DEPLOY_PHASE2_SERVICES " != *" $svc "* ]]; then
+      DEPLOY_PHASE2_SERVICES="$DEPLOY_PHASE2_SERVICES $svc"
+    fi
+  done
+  echo "==> Phase-2 compose subset (DEPLOY_RUNTIME_APPS): $DEPLOY_PHASE2_SERVICES"
+fi
 # Pass changed-services sentinel as $3, deploy-meta app ids as $4 (single arg), then compose services ($5+).
 # PULL_FROM_GHCR + GHCR_TAGS_B64: droplet pulls ghcr.io/…/short:latest and retags to 216labs/short:latest.
 # GHCR_RECREATE_B64: base64-encoded space-separated compose services to force-recreate after pulls.
 REMOTE_DEPLOY_OK=1
 if ! ssh_retry "Apply deploy on droplet" ssh "${SSH_OPTS[@]}" "$REMOTE" \
-  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" GHCR_RECREATE_B64="${GHCR_RECREATE_B64:-}" DEPLOY_SHOWROOM="$SHOWROOM" \
+  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" GHCR_RECREATE_B64="${GHCR_RECREATE_B64:-}" DEPLOY_SHOWROOM="$SHOWROOM" DEPLOY_PHASE2_SERVICES="${DEPLOY_PHASE2_SERVICES:-}" \
   bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$APPS_DEPLOY_META" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
@@ -830,9 +844,14 @@ else
   # that redirects cold traffic to activator.6cubed.app returns 502.
   echo "==> Normal deploy — phase 1: Caddy + activator..."
   docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build caddy activator
-  echo "==> Normal deploy — phase 2: all enabled services..."
+  PHASE2_SERVICES="${DEPLOY_PHASE2_SERVICES:-$COMPOSE_SERVICES}"
+  if [ -n "${DEPLOY_PHASE2_SERVICES:-}" ]; then
+    echo "==> Normal deploy — phase 2: spine + DEPLOY_RUNTIME_APPS subset..."
+  else
+    echo "==> Normal deploy — phase 2: all enabled services..."
+  fi
   # shellcheck disable=SC2086
-  docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build $COMPOSE_SERVICES || true
+  docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build $PHASE2_SERVICES || true
 
   if [ -n "$(echo "${CHANGED_SERVICES:-}" | tr -d ' ')" ]; then
     echo "==> Restarting changed services: $CHANGED_SERVICES"
@@ -843,6 +862,15 @@ fi
 
 echo "==> Final ensure: activator (cold-start)..."
 docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build activator 2>/dev/null || true
+
+if command -v python3 >/dev/null 2>&1 && [ -f scripts/generate-caddyfile.py ]; then
+  echo "==> Post-deploy: regenerate Caddyfile + reload"
+  python3 scripts/generate-caddyfile.py 2>&1 | tail -2 || true
+fi
+if docker compose --env-file .env --env-file .env.admin ps --status running --format '{{.Service}}' 2>/dev/null | grep -qx caddy; then
+  docker compose --env-file .env --env-file .env.admin exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -2 \
+    || docker compose --env-file .env --env-file .env.admin restart caddy
+fi
 
 docker compose ps
 
