@@ -34,7 +34,13 @@ Open [admin → Env](https://admin.6cubed.app/env) and set:
 | `NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` *(optional — checkout is server-side)* |
 | `STORYBOOK_BOOK_PRICE_CENTS` | optional (default `2499`) |
 
-Save. On the live admin host, saving a `STORYBOOK_*` key **recreates the storybook container** with updated `.env.admin` automatically. Otherwise redeploy: `DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197`.
+Save. On the live admin host, saving a `STORYBOOK_*` key **recreates the storybook container** with updated `.env.admin` automatically (admin needs a **writable** `/workspace` mount — see `docker-compose.yml`). If hot-reload errors, run:
+
+```bash
+./scripts/apply-revenue-env-on-droplet.sh root@46.101.88.197 storybook
+```
+
+Otherwise redeploy: `DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197`.
 
 ## 3. Redeploy StoryMagic
 

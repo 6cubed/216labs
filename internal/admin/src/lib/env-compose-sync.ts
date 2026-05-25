@@ -8,8 +8,13 @@ function projectRoot(): string {
   return (
     process.env.SYNC_PROJECT_ROOT ||
     process.env.ADMIN_PROJECT_ROOT ||
+    process.env.PROJECTS_ROOT ||
     "/workspace"
   ).replace(/\/$/, "");
+}
+
+function envAdminPath(): string {
+  return join(projectRoot(), ".env.admin");
 }
 
 function dbPath(): string {
@@ -88,7 +93,8 @@ export async function syncEnvAdminFromDb(): Promise<void> {
       else reject(new Error(stderr || `export exit ${code}`));
     });
   });
-  writeFileSync(join(root, ".env.admin"), out, "utf-8");
+  const target = envAdminPath();
+  writeFileSync(target, out, "utf-8");
 }
 
 /** Apply new env to one running service without a laptop deploy. */
