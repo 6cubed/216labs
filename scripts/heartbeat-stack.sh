@@ -40,7 +40,11 @@ if [[ "$smoke_ok" -eq 1 ]]; then
   exit 0
 fi
 
-"$ROOT/scripts/droplet-wedge-check.sh" "$REMOTE" || true
-echo
-echo "See docs/STACK-HEALTH.md and docs/DROPLET-RECOVERY.md"
-exit 1
+if "$ROOT/scripts/heartbeat-recover.sh" "$REMOTE"; then
+  exit 0
+fi
+rc=$?
+if [[ "$rc" -eq 2 ]]; then
+  echo "See docs/STACK-HEALTH.md and docs/DROPLET-RECOVERY.md"
+fi
+exit "$rc"

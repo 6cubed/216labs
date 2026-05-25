@@ -7,6 +7,7 @@
 #   SYNC_PROJECT_ROOT — default /opt/216labs
 #   SYNC_EXCLUDE_SERVICES — comma-separated compose service names to never touch (default: caddy,activator)
 #   SYNC_SERVICE — optional: only sync this compose service (must be running; case-insensitive)
+#   SYNC_SKIP_IF_DISK_PCT_GE — skip image pulls when root use% >= this (default 90; 0 = disable)
 
 set -euo pipefail
 
@@ -33,6 +34,16 @@ if [ -f "$ROOT/scripts/droplet-resource-pressure.sh" ]; then
 fi
 if [ -f "$ROOT/scripts/droplet-ensure-spine.sh" ]; then
   SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/droplet-ensure-spine.sh" || true
+fi
+
+DISK_SKIP_GE="${SYNC_SKIP_IF_DISK_PCT_GE:-90}"
+if [[ "$DISK_SKIP_GE" =~ ^[0-9]+$ ]] && [ "$DISK_SKIP_GE" -gt 0 ]; then
+  ROOT_USE_PCT=$(df -P / 2>/dev/null | awk 'NR==2 {gsub(/%/,"",$5); print $5}')
+  if [[ "${ROOT_USE_PCT:-0}" =~ ^[0-9]+$ ]] && [ "$ROOT_USE_PCT" -ge "$DISK_SKIP_GE" ]; then
+    echo "WARN: root ${ROOT_USE_PCT}% full (>= ${DISK_SKIP_GE}%) — skipping GHCR pulls to avoid deepening wedge" >&2
+    echo "      Run droplet-resource-pressure.sh / droplet-recover.sh; set SYNC_SKIP_IF_DISK_PCT_GE=0 to force pull" >&2
+    exit 0
+  fi
 fi
 
 set -a

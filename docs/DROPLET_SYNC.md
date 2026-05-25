@@ -10,6 +10,8 @@ GitHub Actions (`.github/workflows/ghcr-publish.yml`) pushes `ghcr.io/<org>/216l
 
 4. **Resource pressure (disk + cap)** — [`scripts/droplet-resource-pressure.sh`](../scripts/droplet-resource-pressure.sh) runs **before** each GHCR sync (and can run on its own timer). It `docker image prune`s dangling layers, then **LRU-stops** evictable Compose services (same **protected** list as the activator: `ACTIVATOR_PROTECTED_SERVICES`) until either free space on `/` is at least **`DROPLET_MIN_FREE_MB`** (default 2048) or the count of running evictable containers is ≤ **`DROPLET_MAX_EVICTABLE_RUNNING`** (default **6**; set **`0`** for count-only-off / disk-pressure-only). Optional **`DROPLET_PRUNE_IMAGE_ON_EVICTION=1`** removes `216labs/<svc>:latest` after stop (frees more disk; next cold start pulls from GHCR). This complements the activator’s in-process LRU (`ACTIVATOR_MAX_CONCURRENT_APPS`); see [`docs/SCALING.md`](SCALING.md).
 
+5. **Disk wedge guard** — If root is **≥90%** full (`SYNC_SKIP_IF_DISK_PCT_GE`, default 90), `droplet-ghcr-sync.sh` **skips all image pulls** and exits 0 so the 20‑minute timer does not download layers into a full disk. Prune/recover first; override with `SYNC_SKIP_IF_DISK_PCT_GE=0` for a forced pull.
+
 ## One-time install (systemd)
 
 From the repo on the droplet (paths assume `/opt/216labs`):
