@@ -19,6 +19,9 @@ export async function GET() {
     missingKeys: ready ? undefined : missingKeys,
     message: ready
       ? undefined
-      : "Printed checkout needs Stripe keys in admin Env (see docs/FIRST-SALE.md). Your story is saved — add keys, redeploy storybook, then Order.",
+      : "Printed checkout isn't open yet. Your story is saved — leave your email below and we'll notify you when ordering is live.",
+    operatorHint: ready
+      ? undefined
+      : "Set STORYBOOK_STRIPE_* in admin Env (docs/FIRST-SALE.md); save recreates the storybook container on this host.",
   });
 }

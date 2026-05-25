@@ -1,6 +1,18 @@
 # First sale — unblock checkout this week
 
-216labs has **live apps** and **lead capture** without Stripe. The fastest path to **paid revenue** is **StoryMagic** (fixed price, one webhook).
+216labs has **live apps** and **lead capture** without Stripe.
+
+## Closest to charging (May 2026)
+
+| Rank | App | Why | Blocker |
+|------|-----|-----|---------|
+| 1 | **StoryMagic** | Fixed $24.99, one Stripe webhook, hot-reload on admin save | 3 test keys in [admin → Env](https://admin.6cubed.app/env) |
+| 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` points at a live store |
+| 3 | **1PageResearch** | €1 report; free tier works today | `ONEPAGE_STRIPE_*` keys |
+
+Until StoryMagic keys land, **print-interest** emails on the preview page are the revenue funnel (`POST /api/print-interest`, `./scripts/query_storybook_print_leads.sh` on the droplet).
+
+The fastest path to **paid revenue** is **StoryMagic** (fixed price, one webhook).
 
 ## 1. Stripe (test mode first)
 

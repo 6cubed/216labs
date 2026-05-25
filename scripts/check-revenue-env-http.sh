@@ -29,6 +29,8 @@ d = json.load(sys.stdin)
 print('  ', d.get('message', ''))
 if d.get('setupUrl'):
     print('   setup:', d['setupUrl'])
+if d.get('operatorHint'):
+    print('   hint:', d['operatorHint'])
 if d.get('missingKeys'):
     print('   missing:', ', '.join(d['missingKeys']))
 " 2>/dev/null || echo "  $body"

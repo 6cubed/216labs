@@ -113,6 +113,33 @@
     .links .name { font-size: 1rem; }
     .links .desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
 
+    .featured {
+      display: block;
+      padding: 1.1rem 1.15rem;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(167, 139, 250, 0.08) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.45);
+      border-radius: var(--radius);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .featured:hover {
+      border-color: var(--accent2);
+      transform: translateY(-1px);
+    }
+    .featured .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent2);
+      margin-bottom: 0.35rem;
+    }
+    .featured .desc { font-size: 0.85rem; color: var(--muted); font-weight: 400; margin-top: 0.35rem; }
+
     .empty-hint {
       font-size: 0.9rem;
       color: var(--muted);
@@ -180,6 +207,11 @@
 
     <section class="section">
       <h2>Shop &amp; paid products</h2>
+      <a class="featured" href="https://storybook.6cubed.app?utm_source=landing&amp;utm_medium=featured" target="_blank" rel="noopener noreferrer">
+        <span class="badge">Try it free</span>
+        <span class="name" style="display:block;font-size:1.15rem">StoryMagic — personalised kids&apos; books</span>
+        <span class="desc">Create a full illustrated story in minutes. Print a hardback when checkout is live, or reserve with your email today.</span>
+      </a>
       <div class="links">
         <a href="https://merch.6cubed.app" target="_blank" rel="noopener noreferrer">
           <span class="name">Merch store</span>
