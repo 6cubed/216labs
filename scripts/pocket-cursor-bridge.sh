@@ -11,6 +11,10 @@
 #   ./scripts/pocket-cursor-bridge.sh --whatsapp
 #   See internal/admin/pocket-cursor-bridge/WHATSAPP.md for Meta links and webhook tunneling.
 #
+# Cursor already open without CDP: quit with Cmd+Q, reopen (or set remote-debugging-port in
+# ~/Library/Application Support/Cursor/argv.json on macOS), then either re-run this script or:
+#   ./scripts/pocket-bridge-wait-cdp.sh
+#
 # Needs Python 3.10+ (default `python3` on older Macs may be 3.7 and WILL fail to
 # install deps). Install: brew install python@3.12  OR set POCKETCURSOR_PYTHON to a 3.10+ binary.
 set -euo pipefail
@@ -111,5 +115,6 @@ if [[ -n "${POCKET_CDP_PORT:-}" ]]; then
   echo "[pocket-cursor-bridge] CDP port: $POCKET_CDP_PORT"
 fi
 
-"$PY" -X utf8 start_cursor.py "${START_ARGS[@]}"
+# Empty array + nounset: "${START_ARGS[@]}" errors on bash 4.4+; use + expansion.
+"$PY" -X utf8 start_cursor.py ${START_ARGS[@]+"${START_ARGS[@]}"}
 exec "$PY" -X utf8 pocket_cursor.py
