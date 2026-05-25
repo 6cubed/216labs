@@ -6,6 +6,7 @@ When **SSH times out** or **all `*.6cubed.app` sites hang**, the VPS is usually 
 
 ```bash
 ./scripts/edge-smoke.sh           # confirm failure from laptop (~10s)
+./scripts/droplet-wedge-check.sh  # ping + SSH class + HTTPS → exact next command
 ./scripts/droplet-recover.sh root@46.101.88.197
 ```
 

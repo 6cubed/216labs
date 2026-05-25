@@ -132,7 +132,12 @@ fi
 
 if [[ "$fail" -ne 0 ]]; then
   echo
-  echo "Edge degraded — ./scripts/droplet-spine-up.sh or ./scripts/droplet-recover.sh" >&2
+  if grep -qE ' (000|000000|FAIL unreachable)' "$tmpdir/summary" 2>/dev/null \
+    && ! grep -qE ' OK ' "$tmpdir/summary" 2>/dev/null; then
+    echo "Edge fully down — ./scripts/droplet-wedge-check.sh for diagnosis" >&2
+  else
+    echo "Edge degraded — ./scripts/droplet-spine-up.sh or ./scripts/droplet-recover.sh" >&2
+  fi
   exit 1
 fi
 echo "edge-smoke: critical hosts reachable"

@@ -40,8 +40,7 @@ if [[ "$smoke_ok" -eq 1 ]]; then
   exit 0
 fi
 
-echo "Next actions:"
-echo "  1. DO reboot → ./scripts/wait-for-droplet.sh"
-echo "  2. Or SSH OK → ./scripts/droplet-recover.sh"
+"$ROOT/scripts/droplet-wedge-check.sh" "$REMOTE" || true
+echo
 echo "See docs/STACK-HEALTH.md and docs/DROPLET-RECOVERY.md"
 exit 1
