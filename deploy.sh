@@ -619,13 +619,16 @@ if [ -n "${FILTERED_RUNTIME:-}" ] && [ "$SHOWROOM" != "1" ]; then
     fi
   done
   echo "==> Phase-2 compose subset (DEPLOY_RUNTIME_APPS): $DEPLOY_PHASE2_SERVICES"
+  DEPLOY_PHASE2_B64=$(printf '%s' "$DEPLOY_PHASE2_SERVICES" | base64 | tr -d '\n')
+else
+  DEPLOY_PHASE2_B64=""
 fi
 # Pass changed-services sentinel as $3, deploy-meta app ids as $4 (single arg), then compose services ($5+).
 # PULL_FROM_GHCR + GHCR_TAGS_B64: droplet pulls ghcr.io/…/short:latest and retags to 216labs/short:latest.
 # GHCR_RECREATE_B64: base64-encoded space-separated compose services to force-recreate after pulls.
 REMOTE_DEPLOY_OK=1
 if ! ssh_retry "Apply deploy on droplet" ssh "${SSH_OPTS[@]}" "$REMOTE" \
-  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" GHCR_RECREATE_B64="${GHCR_RECREATE_B64:-}" DEPLOY_SHOWROOM="$SHOWROOM" DEPLOY_PHASE2_SERVICES="${DEPLOY_PHASE2_SERVICES:-}" \
+  env PULL_FROM_GHCR="$PULL_FROM_GHCR" GHCR_TAGS_B64="$GHCR_TAGS_B64" GHCR_RECREATE_B64="${GHCR_RECREATE_B64:-}" DEPLOY_SHOWROOM="$SHOWROOM" DEPLOY_PHASE2_B64="${DEPLOY_PHASE2_B64:-}" \
   bash -s "$REPO" "$APP_DIR" "$CHANGED_ARG" "$APPS_DEPLOY_META" $COMPOSE_SERVICES <<'REMOTE_SCRIPT'
 set -euo pipefail
 REPO="$1"
@@ -844,6 +847,10 @@ else
   # that redirects cold traffic to activator.6cubed.app returns 502.
   echo "==> Normal deploy — phase 1: Caddy + activator..."
   docker compose --env-file .env --env-file .env.admin up -d --pull never --remove-orphans --no-build caddy activator
+  DEPLOY_PHASE2_SERVICES=""
+  if [ -n "${DEPLOY_PHASE2_B64:-}" ]; then
+    DEPLOY_PHASE2_SERVICES=$(printf '%s' "$DEPLOY_PHASE2_B64" | base64 -d 2>/dev/null || true)
+  fi
   PHASE2_SERVICES="${DEPLOY_PHASE2_SERVICES:-$COMPOSE_SERVICES}"
   if [ -n "${DEPLOY_PHASE2_SERVICES:-}" ]; then
     echo "==> Normal deploy — phase 2: spine + DEPLOY_RUNTIME_APPS subset..."
