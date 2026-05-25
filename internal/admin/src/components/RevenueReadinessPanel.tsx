@@ -52,7 +52,7 @@ export function RevenueReadinessPanel({
           <p className="text-xs text-muted mt-1">
             Edge is up — checkout probes return JSON but{" "}
             <code className="text-[11px]">ready: false</code> until keys are saved.
-            Start with StoryMagic (webhook URL in each card).
+            StoryMagic needs <strong>secret + webhook</strong> only (publishable optional).
           </p>
         </div>
       )}

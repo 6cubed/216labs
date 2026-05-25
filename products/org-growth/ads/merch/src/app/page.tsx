@@ -52,17 +52,31 @@ function ProductVisual({ id, name }: { id: string; name: string }) {
   )
 }
 
-function resolvePurchaseHref(product: MerchProduct): string | null {
-  if (product.purchaseUrl) return product.purchaseUrl
-  const base = process.env.NEXT_PUBLIC_MERCH_STORE_URL?.trim()
-  if (!base) return null
+function withMerchAttribution(raw: string, productId?: string): string {
   try {
-    const u = new URL(base)
-    u.searchParams.set("product", product.id)
+    const u = new URL(raw)
+    if (!u.searchParams.has("utm_source")) {
+      u.searchParams.set("utm_source", "merch")
+    }
+    if (!u.searchParams.has("utm_medium")) {
+      u.searchParams.set("utm_medium", "216labs")
+    }
+    if (productId) {
+      u.searchParams.set("product", productId)
+    }
     return u.toString()
   } catch {
-    return null
+    return raw
   }
+}
+
+function resolvePurchaseHref(product: MerchProduct): string | null {
+  if (product.purchaseUrl) {
+    return withMerchAttribution(product.purchaseUrl, product.id)
+  }
+  const base = process.env.NEXT_PUBLIC_MERCH_STORE_URL?.trim()
+  if (!base) return null
+  return withMerchAttribution(base, product.id)
 }
 
 export default function MerchPage() {
@@ -108,7 +122,7 @@ export default function MerchPage() {
         <ul className="flex flex-col sm:flex-row flex-wrap gap-3 text-sm">
           <li>
             <a
-              href="https://storybook.6cubed.app"
+              href="https://storybook.6cubed.app?utm_source=merch&utm_medium=featured"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-medium text-zinc-100 hover:border-cyan-500/40 hover:text-cyan-200 transition-colors"

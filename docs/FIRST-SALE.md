@@ -6,7 +6,7 @@
 
 | Rank | App | Why | Blocker |
 |------|-----|-----|---------|
-| 1 | **StoryMagic** | Fixed $24.99, one Stripe webhook, hot-reload on admin save | 3 test keys in [admin → Env](https://admin.6cubed.app/env) |
+| 1 | **StoryMagic** | Fixed $24.99, one Stripe webhook, hot-reload on admin save | **2** test keys in [admin → Env](https://admin.6cubed.app/env): `STORYBOOK_STRIPE_SECRET_KEY`, `STORYBOOK_STRIPE_WEBHOOK_SECRET` (publishable optional) |
 | 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` points at a live store |
 | 3 | **1PageResearch** | €1 report; free tier works today | `ONEPAGE_STRIPE_*` keys |
 
@@ -29,9 +29,9 @@ Open [admin → Env](https://admin.6cubed.app/env) and set:
 
 | Key | Value |
 |-----|--------|
-| `NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` |
-| `STORYBOOK_STRIPE_SECRET_KEY` | `sk_test_…` |
-| `STORYBOOK_STRIPE_WEBHOOK_SECRET` | `whsec_…` |
+| `STORYBOOK_STRIPE_SECRET_KEY` | `sk_test_…` **(required)** |
+| `STORYBOOK_STRIPE_WEBHOOK_SECRET` | `whsec_…` **(required)** |
+| `NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` *(optional — checkout is server-side)* |
 | `STORYBOOK_BOOK_PRICE_CENTS` | optional (default `2499`) |
 
 Save. On the live admin host, saving a `STORYBOOK_*` key **recreates the storybook container** with updated `.env.admin` automatically. Otherwise redeploy: `DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197`.

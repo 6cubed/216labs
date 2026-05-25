@@ -34,6 +34,12 @@ export const REVENUE_SETUP_LINKS: Record<
   },
 };
 
+/** StoryMagic Checkout Sessions are server-side; publishable key is optional until client Stripe.js. */
+export const STORYBOOK_CHECKOUT_REQUIRED_KEYS = [
+  "STORYBOOK_STRIPE_SECRET_KEY",
+  "STORYBOOK_STRIPE_WEBHOOK_SECRET",
+] as const;
+
 export const REVENUE_APPS: RevenueAppConfig[] = [
   {
     id: "storybook",
@@ -197,7 +203,10 @@ export async function getRevenueReadiness(
         key,
         set: Boolean(map.get(key)),
       }));
-      const keysReady = keys.every((k) => k.set);
+      const keysReady =
+        cfg.id === "storybook"
+          ? STORYBOOK_CHECKOUT_REQUIRED_KEYS.every((key) => Boolean(map.get(key)))
+          : keys.every((k) => k.set);
 
       let probeOk: boolean | null = null;
       let probeReady: boolean | null = null;

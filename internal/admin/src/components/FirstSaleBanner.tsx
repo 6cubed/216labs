@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { getAllEnvVars } from "@/lib/db";
-import { getRevenueReadiness } from "@/lib/revenue-readiness";
+import {
+  getRevenueReadiness,
+  STORYBOOK_CHECKOUT_REQUIRED_KEYS,
+} from "@/lib/revenue-readiness";
 
 export async function FirstSaleBanner() {
   const data = await getRevenueReadiness(getAllEnvVars());
   if (data.allCheckoutReady) return null;
 
   const story = data.apps.find((a) => a.id === "storybook");
-  const missing =
-    story?.keys.filter((k) => !k.set).map((k) => k.key) ?? [];
+  const missing = STORYBOOK_CHECKOUT_REQUIRED_KEYS.filter(
+    (key) => !story?.keys.find((k) => k.key === key)?.set
+  );
 
   return (
     <div className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3">
@@ -17,8 +21,9 @@ export async function FirstSaleBanner() {
       </p>
       <p className="text-xs text-muted mt-1 max-w-3xl">
         Edge is up; probes return JSON with <code className="text-[11px]">ready: false</code> until
-        Stripe test keys are saved. Saving <code className="text-[11px]">STORYBOOK_*</code>{" "}
-        hot-reloads the storybook container on this host.
+        Add Stripe <strong>test</strong> secret + webhook signing secret (2 keys). Saving{" "}
+        <code className="text-[11px]">STORYBOOK_*</code> hot-reloads storybook on this host.
+        Publishable key is optional (checkout uses server-side Sessions).
       </p>
       {missing.length > 0 && (
         <p className="text-[11px] font-mono text-amber-200/80 mt-2">
