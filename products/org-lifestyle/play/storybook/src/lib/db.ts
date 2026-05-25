@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { existsSync, mkdirSync } from "fs";
+import { existsSync, mkdirSync, statSync, unlinkSync } from "fs";
 import { join } from "path";
 
 const DATA_DIR = process.env.DATA_DIR || join(process.cwd(), "data");
@@ -40,8 +40,26 @@ export interface Order {
 
 let _db: Database.Database | null = null;
 
+/** Drop corrupt zero-byte DB files (can appear after volume mount before first write). */
+function ensureDbFileReady(): void {
+  if (!existsSync(DB_PATH)) return;
+  try {
+    if (statSync(DB_PATH).size === 0) {
+      unlinkSync(DB_PATH);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Called on server boot so print-interest / orders tables exist before first request. */
+export function warmDb(): void {
+  getDb();
+}
+
 export function getDb(): Database.Database {
   if (!_db) {
+    ensureDbFileReady();
     _db = new Database(DB_PATH);
     _db.pragma("journal_mode = WAL");
     _db.pragma("foreign_keys = ON");

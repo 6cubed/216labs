@@ -1,4 +1,5 @@
 import { AdminNav } from "@/components/AdminNav";
+import { FirstSaleBanner } from "@/components/FirstSaleBanner";
 import { infrastructure } from "@/data/apps";
 import { getErrorSignalCount24h, resolveErrorsFeedHref } from "@/lib/admin-errors";
 import { getAllApps, getDb } from "@/lib/db";
@@ -46,7 +47,10 @@ export default async function AdminLayout({
         <AdminNav errorSignalCount={errorSignalCount} errorsHref={errorsHref} />
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-6">{children}</main>
+      <main className="max-w-7xl mx-auto px-6 py-6">
+        <FirstSaleBanner />
+        {children}
+      </main>
 
       <footer className="border-t border-border mt-auto">
         <div className="max-w-7xl mx-auto px-6 py-4">

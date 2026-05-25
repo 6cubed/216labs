@@ -10,7 +10,7 @@
 | 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` points at a live store |
 | 3 | **1PageResearch** | €1 report; free tier works today | `ONEPAGE_STRIPE_*` keys |
 
-Until StoryMagic keys land, **print-interest** emails on the preview page are the revenue funnel (`POST /api/print-interest`, `./scripts/query_storybook_print_leads.sh` on the droplet).
+Until StoryMagic keys land, **print-interest** emails on the preview page are the revenue funnel (`POST /api/print-interest`, `./scripts/query_storybook_print_leads.sh` on the droplet). Admin shows a **First sale** banner on every page until checkout probes pass.
 
 The fastest path to **paid revenue** is **StoryMagic** (fixed price, one webhook).
 
