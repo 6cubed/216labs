@@ -301,8 +301,9 @@ services:
       - ADMIN_DEFAULT_TELEGRAM_BOT_TOKEN=${ADMIN_DEFAULT_TELEGRAM_BOT_TOKEN:-}
     volumes:
       - ./216labs.db:/app/216labs.db
-      # rw: saveEnvVar → syncEnvAdminFromDb writes .env.admin here for compose hot-reload
-      - ./:/workspace:rw
+      - ./:/workspace:ro
+      # rw file only: syncEnvAdminFromDb writes .env.admin for Stripe hot-reload on save
+      - ./.env.admin:/workspace/.env.admin:rw
       - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - "3000"

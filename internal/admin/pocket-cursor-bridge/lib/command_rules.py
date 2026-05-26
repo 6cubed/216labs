@@ -15,9 +15,30 @@ _RULES_FILE = Path(__file__).parent / 'command_rules.json'
 _rules_mtime = 0.0
 _rules = {'allow': [], 'deny': []}
 
-# Button priority: most conservative first. "Allow" grants broader
-# permission (whole directory) -- deliberately excluded for now.
+# Button priority: most conservative first.
 _ACCEPT_KEYWORDS = ('accept', 'confirm', 'run', 'fetch', 'continue', 'execute', 'approve')
+
+# /autoprompt on — user asked for every confirmation to pass; include broader labels.
+_AUTOPROMPT_ACCEPT_KEYWORDS = _ACCEPT_KEYWORDS + (
+    'allow',
+    'yes',
+    'ok',
+    'apply',
+    'trust',
+    'proceed',
+    'submit',
+    'agree',
+    'enable',
+    'install',
+    'save',
+    'add',
+    'use',
+    'got it',
+    'continue anyway',
+    'run anyway',
+    'run command',
+    'approve all',
+)
 
 # Never auto-click these (Cancel is often buttons[0] — do not fall back to it).
 _DENY_KEYWORDS = (
@@ -112,19 +133,19 @@ def is_deny_button(btn: dict) -> bool:
     return any(kw in low for kw in _DENY_KEYWORDS)
 
 
-def find_accept_button(buttons):
-    """Find the most conservative accept button.
-
-    Priority: accept > confirm > run > fetch > …
-    "Allow" is deliberately excluded (grants broader directory permission).
-    """
-    for keyword in _ACCEPT_KEYWORDS:
+def _find_button_by_keywords(buttons, keywords):
+    for keyword in keywords:
         for btn in buttons:
             if is_deny_button(btn):
                 continue
             if keyword in _label_lower(btn):
                 return btn['index'], btn['label']
     return None, None
+
+
+def find_accept_button(buttons):
+    """Find the most conservative accept button (command-rules allowlist path)."""
+    return _find_button_by_keywords(buttons, _ACCEPT_KEYWORDS)
 
 
 def find_fallback_approval_button(buttons):
@@ -138,6 +159,14 @@ def find_fallback_approval_button(buttons):
 def pick_approval_button(buttons):
     """Best button for auto-approve, or (None, None) if unsafe to guess."""
     idx, label = find_accept_button(buttons)
+    if idx is not None:
+        return idx, label
+    return find_fallback_approval_button(buttons)
+
+
+def pick_autoprompt_button(buttons):
+    """Aggressive picker when /autoprompt is on — includes Allow and similar."""
+    idx, label = _find_button_by_keywords(buttons, _AUTOPROMPT_ACCEPT_KEYWORDS)
     if idx is not None:
         return idx, label
     return find_fallback_approval_button(buttons)

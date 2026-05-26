@@ -1319,6 +1319,94 @@ def _confirm_dedup_key(text: str, sec_id: str) -> str:
     return norm if norm else (sec_id or '')
 
 
+def _scrape_live_confirmation_buttons(btns_selector: str, conn=None, iid=None) -> list:
+    """Re-read confirmation buttons from the mirrored chat DOM."""
+    if not btns_selector:
+        return []
+    sel_js = json.dumps(btns_selector)
+    live_btns = cdp_eval(f"""
+        (function() {{
+            const btns = document.querySelectorAll({sel_js});
+            return JSON.stringify(Array.from(btns).map((btn, idx) => ({{
+                label: btn.innerText.trim().replace(/\\s+/g, ' '),
+                index: idx
+            }})));
+        }})();
+    """, conn=conn, iid=iid)
+    try:
+        if live_btns:
+            return json.loads(live_btns)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return []
+
+
+def cdp_click_autoprompt_fallback(
+    btns_selector: str,
+    *,
+    scope_selector: str | None = None,
+    conn=None,
+    iid=None,
+) -> str:
+    """Click the best non-deny button in scope when labels were missing or stale."""
+    scope_js = json.dumps(scope_selector or '')
+    sel_js = json.dumps(btns_selector or '')
+    rel_js = json.dumps(_CONFIRM_SCOPE_BUTTONS)
+    deny_js = json.dumps(list(command_rules._DENY_KEYWORDS))
+    accept_js = json.dumps(list(command_rules._AUTOPROMPT_ACCEPT_KEYWORDS))
+    expr = f"""
+    (function() {{
+        const scopeSel = {scope_js};
+        const btnSel = {sel_js};
+        const relSel = {rel_js};
+        const denyKw = {deny_js};
+        const acceptKw = {accept_js};
+        const norm = (s) => (s || '').trim().replace(/\\s+/g, ' ').toLowerCase();
+        const isDeny = (t) => {{
+            if (!t) return true;
+            return denyKw.some((kw) => t.includes(kw));
+        }};
+        let nodes;
+        const root = scopeSel ? document.querySelector(scopeSel) : null;
+        if (root) {{
+            try {{ nodes = root.querySelectorAll(relSel); }} catch (e) {{ nodes = []; }}
+            if (!nodes.length && btnSel) {{
+                try {{ nodes = root.querySelectorAll(btnSel); }} catch (e) {{ nodes = []; }}
+            }}
+            if (!nodes.length) {{
+                try {{ nodes = root.querySelectorAll('button:not([disabled])'); }} catch (e) {{
+                    nodes = [];
+                }}
+            }}
+        }} else if (btnSel) {{
+            try {{ nodes = document.querySelectorAll(btnSel); }} catch (e) {{
+                return 'ERROR: invalid selector';
+            }}
+        }} else {{
+            return 'ERROR: no selector';
+        }}
+        const candidates = [];
+        for (let i = 0; i < nodes.length; i++) {{
+            const t = norm(nodes[i].innerText);
+            if (!isDeny(t)) candidates.push({{ node: nodes[i], text: t, idx: i }});
+        }}
+        if (!candidates.length) return 'ERROR: no safe button';
+        for (const kw of acceptKw) {{
+            for (const c of candidates) {{
+                if (c.text.includes(kw)) {{
+                    c.node.click();
+                    return 'OK:' + c.text;
+                }}
+            }}
+        }}
+        candidates[candidates.length - 1].node.click();
+        return 'OK:' + candidates[candidates.length - 1].text;
+    }})();
+    """
+    out = cdp_eval(expr, conn=conn, iid=iid)
+    return (out or '').strip() if isinstance(out, str) else str(out)
+
+
 def _attempt_autoprompt_approve(
     text: str,
     tool_id: str,
@@ -1337,32 +1425,52 @@ def _attempt_autoprompt_approve(
     section_stable: dict,
 ) -> bool:
     """Auto-click Run/confirm when autoprompt is on. Reads toggle from disk each call."""
-    if not auto_approve_prompts_file.exists() or not btns_selector or not buttons:
+    if not auto_approve_prompts_file.exists() or not btns_selector:
         return False
-    accept_idx, accept_label = command_rules.pick_approval_button(buttons)
+    if not buttons:
+        buttons = _scrape_live_confirmation_buttons(btns_selector, conn=mc_conn, iid=mc_iid)
+    accept_idx, accept_label = command_rules.pick_autoprompt_button(buttons)
     if accept_idx is None:
         print(
-            f"[auto-prompt] No safe approval button for {text!r} "
-            f"({[b.get('label') for b in buttons]!r}) — sending to Telegram",
+            f"[auto-prompt] No labeled button for {text!r} "
+            f"({[b.get('label') for b in buttons]!r}) — trying DOM fallback",
         )
-        return False
     png_ap = (
         cdp_screenshot_element(sec_selector, conn=mc_conn, iid=mc_iid)
         if sec_selector
         else None
     )
-    click_result = cdp_click_approval_button(
-        btns_selector,
-        accept_label,
-        scope_selector=scope_sel or None,
-        accept_idx=accept_idx,
-        conn=mc_conn,
-        iid=mc_iid,
-    )
+    click_result = 'ERROR: not attempted'
+    for attempt in range(3):
+        if accept_idx is not None:
+            click_result = cdp_click_approval_button(
+                btns_selector,
+                accept_label,
+                scope_selector=scope_sel or None,
+                accept_idx=accept_idx,
+                conn=mc_conn,
+                iid=mc_iid,
+            )
+        else:
+            click_result = cdp_click_autoprompt_fallback(
+                btns_selector,
+                scope_selector=scope_sel or None,
+                conn=mc_conn,
+                iid=mc_iid,
+            )
+            if click_result.startswith('OK'):
+                accept_label = click_result.split(':', 1)[-1] or accept_label
+                click_result = 'OK'
+        if click_result == 'OK':
+            break
+        if not buttons:
+            buttons = _scrape_live_confirmation_buttons(btns_selector, conn=mc_conn, iid=mc_iid)
+        accept_idx, accept_label = command_rules.pick_autoprompt_button(buttons)
+        time.sleep(0.15)
     if click_result != 'OK':
         print(
             f"[auto-prompt] Auto-approve click failed ({click_result}), "
-            "falling back to keyboard",
+            "falling back to Telegram",
         )
         return False
     print(f"[auto-prompt] Auto-approved: {text} -> {accept_label}")
@@ -3941,20 +4049,9 @@ def monitor_thread():
                         continue
 
                     if not buttons and btns_selector and mc_conn:
-                        live_btns = cdp_eval(f"""
-                            (function() {{
-                                const btns = document.querySelectorAll('{btns_selector}');
-                                return JSON.stringify(Array.from(btns).map((btn, idx) => ({{
-                                    label: btn.innerText.trim().replace(/\\s+/g, ' '),
-                                    index: idx
-                                }})));
-                            }})();
-                        """, conn=mc_conn, iid=mc_iid)
-                        try:
-                            if live_btns:
-                                buttons = json.loads(live_btns)
-                        except (json.JSONDecodeError, TypeError):
-                            pass
+                        buttons = _scrape_live_confirmation_buttons(
+                            btns_selector, conn=mc_conn, iid=mc_iid,
+                        )
 
                     if _attempt_autoprompt_approve(
                         text,
