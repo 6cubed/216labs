@@ -7,7 +7,8 @@
   "internal_port": 5000,
   "memory_limit": "128m",
   "docker_service": "difftinder",
-  "build_context": "./internal/admin/difftinder",
+  "build_context": ".",
+  "build_dockerfile": "internal/admin/difftinder/Dockerfile",
   "stack": {
     "frontend": "Flask + Jinja2",
     "backend": "Flask + Gunicorn",
