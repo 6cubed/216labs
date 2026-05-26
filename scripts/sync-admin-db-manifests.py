@@ -50,7 +50,7 @@ def discover_manifests() -> list[ManifestRow]:
                         abs_dir=abs_dir,
                     )
                 )
-                continue
+            # Keep traversing when a parent also has manifest.json (e.g. internal/admin + difftinder).
             try:
                 entries = list(abs_dir.iterdir())
             except OSError:

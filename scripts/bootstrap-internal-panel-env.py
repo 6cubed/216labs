@@ -23,11 +23,32 @@ def _is_empty(val: str | None) -> bool:
     return not (val or "").strip()
 
 
+_FALLBACK_ENV_ROWS: dict[str, tuple[str, int]] = {
+    "ADMIN_PANEL_PASSWORD": (
+        "Shared password for internal panel login (DiffTinder, etc.).",
+        1,
+    ),
+    "ADMIN_PANEL_SESSION_SECRET": (
+        "Optional HMAC secret for panel cookies (defaults to CRON_RUNNER_SECRET).",
+        1,
+    ),
+}
+
+
 def _ensure_key(conn: sqlite3.Connection, key: str, generator) -> bool:
     row = conn.execute("SELECT value FROM env_vars WHERE key = ?", (key,)).fetchone()
     if not row:
-        print(f"skip {key}: no env_vars row (run sync-admin-db-manifests.py)")
-        return False
+        meta = _FALLBACK_ENV_ROWS.get(key)
+        if not meta:
+            print(f"skip {key}: no env_vars row (run sync-admin-db-manifests.py)")
+            return False
+        desc, is_secret = meta
+        conn.execute(
+            "INSERT INTO env_vars (key, value, description, is_secret, updated_at) VALUES (?, '', ?, ?, NULL)",
+            (key, desc, is_secret),
+        )
+        print(f"insert {key}: created env_vars row")
+        row = ("",)
     if not _is_empty(row[0]):
         print(f"ok {key}: already set")
         return False
