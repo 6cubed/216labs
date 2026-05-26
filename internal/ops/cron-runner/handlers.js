@@ -688,7 +688,8 @@ export async function stackHealthCheck(db) {
   try {
     // Prefer probing Caddy directly inside Docker (stable even if outbound HTTPS is flaky).
     const res = await fetchCaddyHost("admin.6cubed.app", "/", 8000);
-    const ok = res.statusCode === 200 || res.statusCode === 401;
+    // 308 is expected (HTTP→HTTPS redirect); treat as edge-OK.
+    const ok = res.statusCode === 200 || res.statusCode === 401 || res.statusCode === 308;
     external.push({
       id: "admin",
       ok,
@@ -738,7 +739,7 @@ export async function stackHealthCheck(db) {
 
   for (const t of internalTargets) {
     try {
-      const res = await fetchTimeout(t.url, 8000);
+      const res = await fetchTimeout(t.url, t.id === "admin" ? 12_000 : 8000);
       const text = t.needsReadyJson ? await res.text() : "";
       let ok = t.okStatuses ? t.okStatuses.includes(res.status) : res.ok;
       if (t.needsReadyJson) ok = text.includes('"ready"');
