@@ -20,12 +20,14 @@ export const REVENUE_SETUP_LINKS: Record<
   storybook: {
     stripeDashboard: "https://dashboard.stripe.com/test/apikeys",
     webhookUrl: "https://storybook.6cubed.app/api/webhook",
-    deployHint: "DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197",
+    deployHint:
+      "Save STORYBOOK_* below → admin regenerates .env.admin and recreates storybook (no laptop deploy).",
   },
   "1pageresearch": {
     stripeDashboard: "https://dashboard.stripe.com/test/apikeys",
     webhookUrl: "https://1pageresearch.6cubed.app/api/webhook/stripe",
-    deployHint: "DEPLOY_RUNTIME_APPS=1pageresearch ./deploy.sh root@46.101.88.197",
+    deployHint:
+      "Save ONEPAGE_* below → admin recreates 1pageresearch. Fallback: DEPLOY_RUNTIME_APPS=1pageresearch ./deploy.sh",
   },
   merch: {
     stripeDashboard: undefined,

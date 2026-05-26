@@ -536,9 +536,9 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {checkoutReady === false && !interestSent && (
-                  <div className="mb-6 max-w-md mx-auto text-left">
-                    <p className="text-white/90 text-sm mb-3 font-medium">
+                {checkoutReady !== true && !interestSent && (
+                  <div className="mb-6 max-w-lg mx-auto">
+                    <p className="text-white text-base mb-4 font-semibold">
                       Reserve your printed book — we&apos;ll email you when checkout opens.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-2">
@@ -547,17 +547,17 @@ export default function HomePage() {
                         value={interestEmail}
                         onChange={(e) => setInterestEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="flex-1 px-4 py-3 rounded-xl text-gray-900 text-sm border-0"
+                        className="flex-1 px-4 py-3.5 rounded-xl text-gray-900 text-base border-0 shadow-md"
                         autoComplete="email"
                       />
                       <button
                         type="button"
                         onClick={handlePrintInterest}
                         disabled={interestLoading || !interestEmail.trim()}
-                        className="px-6 py-3 bg-story-yellow text-story-purple rounded-xl font-bold text-sm
-                          hover:bg-story-yellow-light disabled:opacity-60 whitespace-nowrap"
+                        className="px-8 py-3.5 bg-story-yellow text-story-purple rounded-xl font-bold text-base
+                          hover:bg-story-yellow-light disabled:opacity-60 whitespace-nowrap shadow-lg"
                       >
-                        {interestLoading ? "Saving…" : "Notify me"}
+                        {interestLoading ? "Saving…" : "Join the waitlist"}
                       </button>
                     </div>
                   </div>
@@ -570,24 +570,26 @@ export default function HomePage() {
                 )}
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <button
-                    onClick={handleOrder}
-                    disabled={isOrdering || checkoutReady === false}
-                    className="flex items-center gap-3 px-8 py-4 bg-white text-story-purple rounded-2xl font-bold text-lg
-                      hover:bg-story-yellow-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    {isOrdering ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Going to checkout…
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="w-5 h-5" />
-                        Order for ${bookPriceUsd}
-                      </>
-                    )}
-                  </button>
+                  {checkoutReady === true && (
+                    <button
+                      onClick={handleOrder}
+                      disabled={isOrdering}
+                      className="flex items-center gap-3 px-8 py-4 bg-white text-story-purple rounded-2xl font-bold text-lg
+                        hover:bg-story-yellow-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-lg"
+                    >
+                      {isOrdering ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Going to checkout…
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-5 h-5" />
+                          Order for ${bookPriceUsd}
+                        </>
+                      )}
+                    </button>
+                  )}
 
                   <button
                     onClick={handleReset}

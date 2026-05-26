@@ -113,16 +113,20 @@ def healthz():
     return jsonify({"ok": True})
 
 
-@app.route("/api/checkout/ready")
-def api_checkout_ready():
-    """Public probe: whether €1 Stripe checkout can run (keys in admin Env)."""
+def stripe_checkout_ready():
+    """True when secret + webhook are both set (matches /api/checkout/ready)."""
     missing = []
     if not STRIPE_SECRET_KEY:
         missing.append("ONEPAGE_STRIPE_SECRET_KEY")
-    webhook = os.environ.get("ONEPAGE_STRIPE_WEBHOOK_SECRET", "").strip()
-    if not webhook:
+    if not STRIPE_WEBHOOK_SECRET.strip():
         missing.append("ONEPAGE_STRIPE_WEBHOOK_SECRET")
-    ready = not missing
+    return not missing, missing
+
+
+@app.route("/api/checkout/ready")
+def api_checkout_ready():
+    """Public probe: whether €1 Stripe checkout can run (keys in admin Env)."""
+    ready, missing = stripe_checkout_ready()
     return jsonify(
         {
             "ready": ready,
@@ -130,16 +134,17 @@ def api_checkout_ready():
             "missingKeys": None if ready else missing,
             "message": None
             if ready
-            else "€1 checkout needs Stripe keys in admin Env. Use a free report until configured, or set keys and redeploy 1pageresearch.",
+            else "€1 checkout needs Stripe keys in admin Env. Use a free report until configured, or save keys in admin (container recreates automatically).",
         }
     )
 
 
 @app.route("/generate", methods=["GET"])
 def generate_page():
+    ready, _missing = stripe_checkout_ready()
     return render_template(
         "generate.html",
-        stripe_configured=bool(STRIPE_SECRET_KEY),
+        stripe_configured=ready,
         base_url=BASE_URL,
     )
 
