@@ -25,3 +25,14 @@ if [[ "$fail" -ne 0 ]]; then
   exit 1
 fi
 echo "OK: all repo-root manifests have build_dockerfile"
+
+for nested_id in difftinder groundtruth workforce; do
+  if ! python3 scripts/app-lookup.py "$nested_id" docker_service >/dev/null 2>&1; then
+    echo "ERROR: nested admin app not discoverable: $nested_id" >&2
+    fail=1
+  fi
+done
+if [[ "$fail" -ne 0 ]]; then
+  exit 1
+fi
+echo "OK: nested internal/admin apps discoverable"
