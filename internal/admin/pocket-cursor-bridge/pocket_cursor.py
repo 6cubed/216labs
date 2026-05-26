@@ -285,6 +285,12 @@ heartbeat_harness.apply_env_on_startup()
 agitweet_harness.init(BRIDGE_DIR)
 agitweet_harness.apply_env_on_startup()
 
+# Agitweet diagnostics (for /agitweet status)
+last_agitweet_lock = threading.Lock()
+last_agitweet_status: str | None = None
+last_agitweet_preview: str | None = None
+last_agitweet_ts: int | None = None
+
 # Private chat (chat_id > 0): default forward ON; this set opts out.
 agent_conversation_off_file = BRIDGE_DIR / ".agent_conversation_off_user_ids"
 # Group/supergroup (chat_id < 0): default forward OFF; this set opts in.
@@ -2874,6 +2880,10 @@ def run_agitweet_post(*, manual: bool = False) -> tuple[bool, str]:
     ok, msg = agitweet_client.post(text)
     label = "manual" if manual else "scheduled"
     print(f"[agitweet] ({label}) {('OK' if ok else 'FAIL')} — {msg} — {text[:120]!r}")
+    with last_agitweet_lock:
+        last_agitweet_status = msg
+        last_agitweet_preview = text[:300]
+        last_agitweet_ts = int(time.time())
     log_event(
         "agitweet_posted",
         ok=ok,
@@ -3521,7 +3531,20 @@ def sender_thread():
                         tg_send(cid, f"{'✅' if ok else '⚠️'} {line}")
                         print(f"[sender] Agitweet now: {line}")
                     else:
-                        tg_send(cid, agitweet_harness.status_summary())
+                        with last_agitweet_lock:
+                            last_line = (
+                                f"Last attempt: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_agitweet_ts))}\n"
+                                f"Result: {last_agitweet_status}\n"
+                                f"Preview: {last_agitweet_preview}"
+                            ) if last_agitweet_ts and last_agitweet_status else "Last attempt: (none yet)"
+                        tg_send(
+                            cid,
+                            agitweet_harness.status_summary()
+                            + "\n\n"
+                            + agitweet_client.config_summary()
+                            + "\n\n"
+                            + last_line,
+                        )
                     continue
 
                 if cmd == '/screenshot':

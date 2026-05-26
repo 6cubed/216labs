@@ -12,6 +12,7 @@ class AgitweetClientConfig:
     api_token: str
     post_path: str
     auth_header: str
+    configured: bool
 
 
 def get_config() -> AgitweetClientConfig | None:
@@ -28,7 +29,22 @@ def get_config() -> AgitweetClientConfig | None:
         api_token=api_token,
         post_path=post_path,
         auth_header=auth_header,
+        configured=True,
     )
+
+
+def config_summary() -> str:
+    """Human-readable config summary (never includes secrets)."""
+    cfg = get_config()
+    if not cfg:
+        missing = []
+        if not os.environ.get("AGITWEET_BASE_URL", "").strip():
+            missing.append("AGITWEET_BASE_URL")
+        if not os.environ.get("AGITWEET_API_TOKEN", "").strip():
+            missing.append("AGITWEET_API_TOKEN")
+        miss = ", ".join(missing) if missing else "AGITWEET_*"
+        return f"Agitweet API: NOT configured (missing {miss})"
+    return f"Agitweet API: POST {cfg.base_url}{cfg.post_path} (auth header: {cfg.auth_header})"
 
 
 def post(text: str, *, timeout_sec: int = 20) -> tuple[bool, str]:
