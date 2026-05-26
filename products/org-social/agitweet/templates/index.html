@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Agitweet{% endblock %}
+
+{% block body %}
+<header>
+  <div class="brand">
+    <h1>
+      <span style="background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent;">
+        Agitweet
+      </span>
+    </h1>
+    <p>216Labs brain dump stream — lightweight, fast, and intentionally minimal.</p>
+  </div>
+  <div class="pill">{{ count }} posts</div>
+</header>
+
+<main class="timeline" aria-label="Timeline">
+  {% if posts %}
+    {% for p in posts %}
+      <article class="post">
+        <div class="meta">
+          <div class="ts">{{ p.created_at_human }}</div>
+          <div class="id">#{{ p.id }}</div>
+        </div>
+        <div class="text">{{ p.text }}</div>
+      </article>
+    {% endfor %}
+  {% else %}
+    <article class="post">
+      <div class="meta">
+        <div class="ts">No posts yet</div>
+      </div>
+      <div class="text">Send a first post via <code>POST /api/posts</code> (Bearer token required).</div>
+    </article>
+  {% endif %}
+</main>
+{% endblock %}
+

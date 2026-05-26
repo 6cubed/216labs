@@ -187,6 +187,27 @@ agitshirts.6cubed.app {
 	}
 }
 
+agitweet.6cubed.app {
+	handle /api/* {
+		reverse_proxy agitweet:5000
+	}
+	handle /healthz {
+		reverse_proxy agitweet:5000
+	}
+	reverse_proxy agitweet:5000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=agitweet&dest=https%3A%2F%2Fagitweet.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=agitweet&dest=https%3A%2F%2Fagitweet.6cubed.app" 302
+		}
+	}
+}
+
 aiart.6cubed.app {
 	handle /api/* {
 		reverse_proxy aiart:3000

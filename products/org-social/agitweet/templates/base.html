@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{% block title %}Agitweet{% endblock %}</title>
+    <style>
+      :root {
+        --bg: #06070a;
+        --panel: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.10);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.62);
+        --accent: #7dd3fc;
+        --accent2: #e879f9;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+          "Segoe UI Emoji";
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 700px at 20% -20%, rgba(125, 211, 252, 0.10), transparent 60%),
+          radial-gradient(900px 600px at 90% 0%, rgba(232, 121, 249, 0.08), transparent 55%),
+          var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+      }
+      a { color: inherit; }
+      .wrap { max-width: 860px; margin: 0 auto; padding: 32px 18px 60px; }
+      header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+      .brand { display: flex; flex-direction: column; gap: 4px; }
+      .brand h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+      .brand p { margin: 0; color: var(--muted); font-size: 13px; }
+      .pill {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: rgba(255,255,255,0.78);
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.04);
+        padding: 6px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .timeline { margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
+      .post {
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04));
+        border-radius: 16px;
+        padding: 14px 14px 12px;
+      }
+      .meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+      .ts { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+      .id { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.50); }
+      .text { font-size: 15px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+      footer { margin-top: 24px; color: rgba(255,255,255,0.50); font-size: 12px; }
+      code { font-family: var(--mono); font-size: 12px; }
+    </style>
+    {% if ga_snippet %}{{ ga_snippet|safe }}{% endif %}
+    {% if client_err_script %}{{ client_err_script|safe }}{% endif %}
+  </head>
+  <body>
+    <div class="wrap">
+      {% block body %}{% endblock %}
+      <footer>
+        <div>Read-only timeline. Posting is internal via <code>POST /api/posts</code>.</div>
+      </footer>
+    </div>
+  </body>
+</html>
+
