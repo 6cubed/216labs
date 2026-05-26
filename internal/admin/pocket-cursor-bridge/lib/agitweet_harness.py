@@ -43,7 +43,13 @@ def init(bridge_dir: Path) -> None:
 
 
 def apply_env_on_startup() -> None:
-    """Sync .agitweet_enabled from POCKET_AGITWEET_ENABLED when set."""
+    """
+    Sync .agitweet_enabled from POCKET_AGITWEET_ENABLED when set.
+
+    If POCKET_AGITWEET_ENABLED is unset, default ON *only when* the Agitweet API
+    is configured (AGITWEET_BASE_URL + AGITWEET_API_TOKEN) and there is no
+    existing persisted choice on disk.
+    """
     if _enabled_file is None:
         return
     raw = os.environ.get("POCKET_AGITWEET_ENABLED", "").strip().lower()
@@ -51,6 +57,13 @@ def apply_env_on_startup() -> None:
         _enabled_file.touch()
     elif raw in ("0", "false", "no", "off"):
         _enabled_file.unlink(missing_ok=True)
+    else:
+        if _enabled_file.exists():
+            return
+        base = os.environ.get("AGITWEET_BASE_URL", "").strip()
+        tok = os.environ.get("AGITWEET_API_TOKEN", "").strip()
+        if base and tok:
+            _enabled_file.touch()
 
 
 def is_enabled() -> bool:
