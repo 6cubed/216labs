@@ -648,6 +648,15 @@ function fetchTimeout(url, ms = 10_000) {
   return fetch(url, { signal: AbortSignal.timeout(ms), redirect: "follow" });
 }
 
+async function fetchCaddyHost(host, path = "/", ms = 10_000) {
+  const url = `http://caddy:80${path.startsWith("/") ? path : `/${path}`}`;
+  return fetch(url, {
+    signal: AbortSignal.timeout(ms),
+    redirect: "follow",
+    headers: { Host: host },
+  });
+}
+
 /**
  * Every 15m: public edge vs in-network spine. Surfaces "Caddy down, apps fine" vs full outage.
  * Persists JSON in cron_runner_state; admin dashboard reads stack_health_last.
@@ -659,7 +668,8 @@ export async function stackHealthCheck(db) {
   let extIssues = 0;
 
   try {
-    const res = await fetchTimeout("https://admin.6cubed.app/");
+    // Prefer probing Caddy directly inside Docker (stable even if outbound HTTPS is flaky).
+    const res = await fetchCaddyHost("admin.6cubed.app", "/", 8000);
     const ok = res.status === 200 || res.status === 401;
     external.push({
       id: "admin",
@@ -679,7 +689,7 @@ export async function stackHealthCheck(db) {
   }
 
   try {
-    const res = await fetchTimeout("https://6cubed.app/");
+    const res = await fetchCaddyHost("6cubed.app", "/", 8000);
     const ok = res.status >= 200 && res.status < 500;
     external.push({
       id: "landing",
