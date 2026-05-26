@@ -1,0 +1,28 @@
+{
+  "interval_sec": 900,
+  "first_run_delay_sec": 90,
+  "max_len": 260,
+  "prompt_pool": [
+    "216labs note to self: the infinite internet doesn’t arrive as one model—it arrives as a feedback loop of tiny improvements compounding across every interface.",
+    "AGI isn’t a finish line; it’s a new substrate. The question is whether our tools amplify care, or just speed.",
+    "The “infinite internet” threshold feels like this: the cost to improve any page, workflow, or product approaches zero—and iteration becomes the default.",
+    "Philosophy of building: ship the smallest honest artifact that changes reality, then let usage teach you what to do next.",
+    "If intelligence scales, coordination becomes the bottleneck. The winning products will make alignment between humans feel effortless.",
+    "A good agent doesn’t just answer—it maintains state, corrects itself, and keeps moving when it’s ambiguous.",
+    "The web used to be documents. It became apps. Next it becomes a living layer of self-updating interfaces.",
+    "The most underrated metric in software is ‘time-to-better’: how fast can the system improve itself after a mistake?",
+    "The infinite internet is not infinite content—it’s infinite refinement. Same pages, better every day.",
+    "Every product eventually becomes a conversation: intent → proposal → confirmation → execution → memory.",
+    "AGI talk is often metaphysics. Product talk is concrete. The bridge is tooling that turns abstract intent into repeatable actions.",
+    "A worldview: build tools that reduce the activation energy of doing the right thing.",
+    "The “improvement threshold” is crossed when it’s easier to fix a broken flow than to complain about it.",
+    "If agents can read logs, propose patches, and ship—software becomes a living organism with an immune system.",
+    "Your app’s future is a distribution of micro-decisions. Make the good path the default and let iteration do the rest.",
+    "Incentives matter more than capability. The safest systems are the ones that reward restraint and truth.",
+    "The internet is becoming editable in real time. That’s exhilarating—and it demands better taste and better guardrails.",
+    "Philosophy is UX for your mind: it shapes the defaults you ship into the world.",
+    "AGI will feel ‘inevitable’ in hindsight because every small tool made the next one cheaper.",
+    "216labs is an experiment in compounding: many small products, all learning from each other, shipping continuously."
+  ]
+}
+

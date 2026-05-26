@@ -61,6 +61,8 @@ from start_cursor import get_used_ports
 import chat_detection as _cd
 from lib import command_rules
 from lib import heartbeat_harness
+from lib import agitweet_client
+from lib import agitweet_harness
 
 _cd.ts_print = wrap_ts_print(_cd.ts_print)
 _cd.print = _cd.ts_print
@@ -280,6 +282,8 @@ auto_approve_prompts = auto_approve_prompts_file.exists()
 
 heartbeat_harness.init(BRIDGE_DIR)
 heartbeat_harness.apply_env_on_startup()
+agitweet_harness.init(BRIDGE_DIR)
+agitweet_harness.apply_env_on_startup()
 
 # Private chat (chat_id > 0): default forward ON; this set opts out.
 agent_conversation_off_file = BRIDGE_DIR / ".agent_conversation_off_user_ids"
@@ -757,6 +761,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'play', 'description': 'Resume forwarding'},
     {'command': 'autoprompt', 'description': 'Auto-click Run/confirm (on|off|status)'},
     {'command': 'heartbeat', 'description': 'Agent nudge: on|off|now|status'},
+    {'command': 'agitweet', 'description': 'Post to Agitweet: on|off|now|status'},
     {'command': 'agentconversation', 'description': 'Opt in/out: groups default off, DMs default on'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
     {'command': 'verbose', 'description': 'Mirror agent thinking live (Telegram edits)'},
@@ -2851,6 +2856,54 @@ def heartbeat_thread():
             print(f"[heartbeat] (scheduled) skipped: {line}")
 
 
+# ── Thread: Agitweet harness (periodic social post) ───────────────────────────
+
+def _agitweet_notify_enabled() -> bool:
+    raw = os.environ.get("POCKET_AGITWEET_NOTIFY_TELEGRAM", "").strip().lower()
+    return raw in ("1", "true", "yes", "on")
+
+
+def run_agitweet_post(*, manual: bool = False) -> tuple[bool, str]:
+    """Post one short message to Agitweet. Returns (ok, telegram_status_line)."""
+    cfg = agitweet_harness.get_config()
+    if not manual and not agitweet_harness.is_enabled():
+        return False, "Agitweet is OFF — use /agitweet on or /agitweet now"
+    if not manual and muted:
+        return False, "Bridge is paused — /play first, or /agitweet now"
+    text = agitweet_harness.compose_post()
+    ok, msg = agitweet_client.post(text)
+    label = "manual" if manual else "scheduled"
+    print(f"[agitweet] ({label}) {('OK' if ok else 'FAIL')} — {msg} — {text[:120]!r}")
+    log_event(
+        "agitweet_posted",
+        ok=ok,
+        manual=manual,
+        result=msg[:200],
+        interval_sec=cfg.interval_sec,
+        preview=text[:300],
+    )
+    if ok and not manual and _agitweet_notify_enabled() and chat_id and not muted:
+        preview = text if len(text) <= 160 else text[:157] + "…"
+        tg_send(chat_id, f"📝 Agitweet posted\n\n{preview}")
+    return (True, "Agitweet posted.") if ok else (False, f"Agitweet failed: {msg}")
+
+
+def agitweet_thread():
+    """Post to Agitweet on a fixed interval."""
+    print("[agitweet] thread started")
+    first_run = True
+    while True:
+        cfg = agitweet_harness.get_config()
+        wait_sec = cfg.first_run_delay_sec if first_run else cfg.interval_sec
+        first_run = False
+        time.sleep(wait_sec)
+        if not agitweet_harness.is_enabled():
+            continue
+        ok, line = run_agitweet_post(manual=False)
+        if not ok:
+            print(f"[agitweet] (scheduled) skipped: {line}")
+
+
 # ── Thread 1: Telegram → Cursor (sender) ────────────────────────────────────
 
 def check_owner(user_id, cid):
@@ -2866,11 +2919,13 @@ def tg_bridge_status_text():
     status_line = "⏸ Paused" if muted else "▶ Active"
     ap_line = "⚡ Auto-approve prompts: ON" if auto_approve_prompts else "⛔ Auto-approve prompts: OFF"
     hb_line = "⏰ Heartbeat: ON" if heartbeat_harness.is_enabled() else "💤 Heartbeat: OFF"
+    at_line = "📝 Agitweet: ON" if agitweet_harness.is_enabled() else "📵 Agitweet: OFF"
     instances = len(instance_registry)
     lines = [
         f"PocketCursor is running. {status_line}",
         ap_line,
         hb_line,
+        at_line,
         f"{instances} workspace{'s' if instances != 1 else ''} connected.",
     ]
     if INSTANCE_LABEL:
@@ -3442,6 +3497,31 @@ def sender_thread():
                             heartbeat_harness.status_summary()
                             + "\n\n/heartbeat now — run once immediately",
                         )
+                    continue
+
+                if cmd == '/agitweet' or cmd.startswith('/agitweet '):
+                    parts = text.strip().split(maxsplit=1)
+                    arg = parts[1].strip().lower() if len(parts) > 1 else ''
+                    if arg in ('on', '1', 'true', 'yes'):
+                        agitweet_harness.set_enabled(True)
+                        cfg = agitweet_harness.get_config()
+                        tg_send(
+                            cid,
+                            "✅ Agitweet: ON\n"
+                            f"Every {cfg.interval_sec // 60} minutes the bridge posts one short thought to Agitweet.\n"
+                            "Use /agitweet off to stop, /agitweet now to post once.",
+                        )
+                        print("[sender] Agitweet ON")
+                    elif arg in ('off', '0', 'false', 'no'):
+                        agitweet_harness.set_enabled(False)
+                        tg_send(cid, "📵 Agitweet: OFF\nUse /agitweet on to resume periodic posts.")
+                        print("[sender] Agitweet OFF")
+                    elif arg in ('now', 'run', 'trigger', 'fire'):
+                        ok, line = run_agitweet_post(manual=True)
+                        tg_send(cid, f"{'✅' if ok else '⚠️'} {line}")
+                        print(f"[sender] Agitweet now: {line}")
+                    else:
+                        tg_send(cid, agitweet_harness.status_summary())
                     continue
 
                 if cmd == '/screenshot':
@@ -4666,6 +4746,14 @@ if heartbeat_harness.is_enabled():
     )
 else:
     print("[heartbeat] OFF — /heartbeat on or POCKET_HEARTBEAT_ENABLED=1 to enable")
+if agitweet_harness.is_enabled():
+    _at_cfg = agitweet_harness.get_config()
+    print(
+        f"[agitweet] ON — every {_at_cfg.interval_sec // 60} min "
+        f"(edit lib/agitweet_harness.json or /agitweet off)"
+    )
+else:
+    print("[agitweet] OFF — /agitweet on or POCKET_AGITWEET_ENABLED=1 to enable")
 if tg_reply_thread_id is not None:
     print(
         f"[telegram] Forum topic id {tg_reply_thread_id}: replies go to this topic "
@@ -4704,10 +4792,12 @@ t1 = threading.Thread(target=sender_thread, daemon=True)
 t2 = threading.Thread(target=monitor_thread, daemon=True)
 t3 = threading.Thread(target=overview_thread, daemon=True)
 t4 = threading.Thread(target=heartbeat_thread, daemon=True, name="heartbeat")
+t5 = threading.Thread(target=agitweet_thread, daemon=True, name="agitweet")
 t1.start()
 t2.start()
 t3.start()
 t4.start()
+t5.start()
 
 try:
     while True:
