@@ -15,9 +15,14 @@ export async function GET() {
   const missingKeys = REQUIRED_KEYS.filter((k) => !process.env[k]?.trim());
   const optionalUnset = OPTIONAL_KEYS.filter((k) => !process.env[k]?.trim());
   const ready = missingKeys.length === 0;
+  const priceCents =
+    parseInt(process.env.STORYBOOK_BOOK_PRICE_CENTS ?? "2499", 10) || 2499;
+  const priceUsd = (priceCents / 100).toFixed(2);
 
   return NextResponse.json({
     ready,
+    priceCents,
+    priceUsd,
     setupUrl: ready ? undefined : ADMIN_ENV_URL,
     missingKeys: ready ? undefined : missingKeys,
     optionalUnset: ready && optionalUnset.length > 0 ? optionalUnset : undefined,

@@ -43,6 +43,7 @@ export default function HomePage() {
   const [progressSteps, setProgressSteps] = useState<GenerationProgress[]>([]);
   const [checkoutReady, setCheckoutReady] = useState<boolean | null>(null);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+  const [bookPriceUsd, setBookPriceUsd] = useState("24.99");
   const [interestEmail, setInterestEmail] = useState("");
   const [interestSent, setInterestSent] = useState(false);
   const [interestLoading, setInterestLoading] = useState(false);
@@ -56,10 +57,12 @@ export default function HomePage() {
         const data = (await res.json()) as {
           ready: boolean;
           message?: string;
+          priceUsd?: string;
         };
         if (!cancelled) {
           setCheckoutReady(data.ready);
           setCheckoutMessage(data.message ?? null);
+          if (data.priceUsd) setBookPriceUsd(data.priceUsd);
         }
       } catch {
         if (!cancelled) setCheckoutReady(null);
@@ -500,8 +503,11 @@ export default function HomePage() {
               {/* Order CTA */}
               <div className="mt-10 bg-gradient-to-br from-story-purple to-story-pink rounded-3xl p-8 text-white text-center">
                 <h3 className="text-2xl font-bold mb-2">Love it? Print it! 📚</h3>
+                <p className="text-story-yellow-light text-lg font-semibold mb-2">
+                  Hardback · ${bookPriceUsd} USD
+                </p>
                 <p className="text-white/80 mb-6">
-                  Order a professionally printed, full-colour hardback book delivered to your door.
+                  Order a professionally printed, full-colour book delivered to your door.
                   Makes a perfect gift.
                 </p>
 
@@ -578,7 +584,7 @@ export default function HomePage() {
                     ) : (
                       <>
                         <ShoppingCart className="w-5 h-5" />
-                        Order for $24.99
+                        Order for ${bookPriceUsd}
                       </>
                     )}
                   </button>
