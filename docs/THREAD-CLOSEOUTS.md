@@ -2,15 +2,14 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
-## Production snapshot (2026-05-25 ~20:12 UTC)
+## Production snapshot (2026-05-26 ~22:51 UTC)
 
 | Check | Result |
 |-------|--------|
-| `./scripts/edge-smoke.sh` | **Passing** — admin 401, landing 200, maxlearn feed swipe OK, storybook/1page `ready=false` |
-| VPS git | **`898ceb07`** (`deploy.sh` subset phase-2, post-deploy Caddy reload) |
-| Disk / containers | **~91%**, **~8** running (showroom pool after recover — normal) |
-| `./scripts/droplet-reboot.sh` | **Works** — `DIGITALOCEAN_ACCESS_TOKEN` in repo `.env` (gitignored) |
-| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` in [admin Env](https://admin.6cubed.app/env) |
+| `./scripts/edge-smoke.sh` | **Passing** — admin 401, landing 200, maxlearn OK, storybook/1page `ready=false` |
+| VPS git | **`0bb9002e`** (waitlist-first StoryMagic, admin revenue hints, 1page checkout gate) |
+| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` + `ONEPAGE_STRIPE_*` in [admin Env](https://admin.6cubed.app/env) |
+| Pocket bridge autoprompt | **ON** — `/autoprompt on`; aggressive Allow/Run click + DOM fallback (`7cb64d9b`) |
 
 **If edge all `000` or SSH banner hang:** `./scripts/droplet-reboot.sh` → `./scripts/wait-for-droplet.sh` (runs recover). Diagnose first: `./scripts/droplet-wedge-check.sh`.
 
@@ -60,9 +59,31 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 | Shipped | Blocker |
 |---------|---------|
-| Waitlist / print-interest, `operatorHint` on `/api/checkout/ready`, landing featured CTA, no admin link on public preview | Save **3** test keys → [admin Env](https://admin.6cubed.app/env) |
+| **Waitlist-first** preview CTA (`Join the waitlist`) when checkout off; print-interest → admin ingest; admin **Save** hot-reloads storybook (`7cb64d9b`, `0bb9002e`) | **2** test keys → [admin Env](https://admin.6cubed.app/env) |
 
-Guide: [`docs/FIRST-SALE.md`](FIRST-SALE.md). When keys exist: `./scripts/check-revenue-env-http.sh` → `[StoryMagic] checkout ready`. **No more revenue code** until keys are set.
+Guide: [`docs/FIRST-SALE.md`](FIRST-SALE.md). Verify: `./scripts/check-revenue-env-http.sh` → `[StoryMagic] checkout ready`. **No more revenue UX** until keys are set — only Stripe + Save.
+
+---
+
+## Pocket bridge — auto-approve all confirmations — **CLOSED**
+
+| Item | Status |
+|------|--------|
+| `/autoprompt on` (`.auto_approve_prompts`) | **Default ON** for owner |
+| Allow / Yes / OK labels + live DOM scrape + fallback click + retries | **`7cb64d9b`** |
+| Bridge restart after bridge code changes | `./scripts/pocket-cursor-bridge.sh` |
+
+If confirmations still hit Telegram: note button labels; extend `_AUTOPROMPT_ACCEPT_KEYWORDS` in `lib/command_rules.py`.
+
+---
+
+## Admin revenue env hot-reload — **CLOSED**
+
+| Item | Status |
+|------|--------|
+| `/workspace` **ro** + `.env.admin` **rw** bind on admin container | **`7cb64d9b`** |
+| Save `STORYBOOK_*` / `ONEPAGE_*` → regenerate `.env.admin` + `compose up` service | `env-compose-sync.ts` |
+| Removed `apply-revenue-env-on-droplet.sh` | Use admin Save first |
 
 ---
 
@@ -77,8 +98,8 @@ Guide: [`docs/FIRST-SALE.md`](FIRST-SALE.md). When keys exist: `./scripts/check-
 | Piece | Role |
 |-------|------|
 | `./scripts/edge-smoke.sh` | Heartbeat first check |
-| `./scripts/heartbeat-stack.sh` | Smoke + cron snapshot + recover attempt |
-| Cron `revenue-env-check` | Stripe probe alerts |
+| `./scripts/heartbeat-stack.sh` | Smoke + cron snapshot (`python3` on VPS; no host `sqlite3`) + recover |
+| Cron `revenue-env-check` / `stack-health-check` | Revenue + edge/internal probes (`cron-runner` seeds missing jobs on tick) |
 | Admin **Env** | Revenue readiness panel + hot-reload storybook on `STORYBOOK_*` save |
 
 Targeted deploy:

@@ -198,6 +198,15 @@ function ensureCronRunnerMigrations(db) {
     ('revenue-env-check', 'Revenue & edge smoke', 'HTTP probes for admin + paid apps; Telegram alert only on failure. State key revenue_env_last.', '0 8,20 * * *', 1),
     ('stack-health-check', 'Stack health (edge vs internal)', 'Compares public URLs vs Docker-internal probes; Telegram on failure. State key stack_health_last.', '*/15 * * * *', 1);
   `);
+  // Belt-and-suspenders: older DBs opened before stack-health-check existed.
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled) VALUES (?, ?, ?, ?, 1)`
+  ).run(
+    "stack-health-check",
+    "Stack health (edge vs internal)",
+    "Compares public URLs vs Docker-internal probes; Telegram on failure. State key stack_health_last.",
+    "*/15 * * * *"
+  );
   ensureWorkforceCronEnabledOnce(db);
   return true;
 }

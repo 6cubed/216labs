@@ -473,6 +473,16 @@ async function fetchCheckoutReady(url) {
   };
 }
 
+/** Public edge first; fall back to Docker DNS when outbound HTTPS blips (common during VPS wedge). */
+async function fetchCheckoutReadyResilient(publicUrl, internalUrl) {
+  try {
+    return await fetchCheckoutReady(publicUrl);
+  } catch (e) {
+    if (!internalUrl) throw e;
+    return await fetchCheckoutReady(internalUrl);
+  }
+}
+
 async function fetchMerchStorefront(url) {
   const res = await fetch(url, {
     signal: AbortSignal.timeout(18_000),
@@ -517,30 +527,48 @@ export async function revenueEnvCheck(db) {
     });
     if (!adminOk) issues += 1;
   } catch (e) {
-    results.push({
-      id: "admin",
-      label: "Admin",
-      ok: false,
-      status: 0,
-      error: e instanceof Error ? e.message : "unreachable",
-    });
-    issues += 1;
+    try {
+      const res = await fetch("http://admin:3000/", {
+        signal: AbortSignal.timeout(8_000),
+        redirect: "follow",
+      });
+      const adminOk = res.status === 200 || res.status === 401;
+      results.push({
+        id: "admin",
+        label: "Admin",
+        ok: adminOk,
+        status: res.status,
+        error: adminOk ? null : `HTTP ${res.status} (internal)`,
+      });
+      if (!adminOk) issues += 1;
+    } catch (e2) {
+      results.push({
+        id: "admin",
+        label: "Admin",
+        ok: false,
+        status: 0,
+        error: e instanceof Error ? e.message : "unreachable",
+      });
+      issues += 1;
+    }
   }
 
-  for (const { id, label, url } of [
+  for (const { id, label, url, internalUrl } of [
     {
       id: "storybook",
       label: "StoryMagic",
       url: "https://storybook.6cubed.app/api/checkout/ready",
+      internalUrl: "http://storybook:3000/api/checkout/ready",
     },
     {
       id: "1pageresearch",
       label: "1PageResearch",
       url: "https://1pageresearch.6cubed.app/api/checkout/ready",
+      internalUrl: "http://1pageresearch:5000/api/checkout/ready",
     },
   ]) {
     try {
-      const p = await fetchCheckoutReady(url);
+      const p = await fetchCheckoutReadyResilient(url, internalUrl);
       const row = {
         id,
         label,
@@ -566,7 +594,7 @@ export async function revenueEnvCheck(db) {
   }
 
   try {
-    const p = await fetchMerchStorefront("https://merch.6cubed.app/");
+    let p = await fetchMerchStorefront("https://merch.6cubed.app/");
     results.push({
       id: "merch",
       label: "Merch",
@@ -578,15 +606,29 @@ export async function revenueEnvCheck(db) {
     });
     if (!p.ok) issues += 1;
   } catch (e) {
-    results.push({
-      id: "merch",
-      label: "Merch",
-      ok: false,
-      status: 0,
-      ready: null,
-      error: e instanceof Error ? e.message : "unreachable",
-    });
-    issues += 1;
+    try {
+      const p = await fetchMerchStorefront("http://merch:3000/");
+      results.push({
+        id: "merch",
+        label: "Merch",
+        ok: p.ok,
+        status: p.status,
+        ready: p.ready,
+        message: p.message,
+        error: p.error,
+      });
+      if (!p.ok) issues += 1;
+    } catch (e2) {
+      results.push({
+        id: "merch",
+        label: "Merch",
+        ok: false,
+        status: 0,
+        ready: null,
+        error: e instanceof Error ? e.message : "unreachable",
+      });
+      issues += 1;
+    }
   }
 
   const snapshot = { at, issues, results };

@@ -14,24 +14,59 @@ if "$ROOT/scripts/edge-smoke.sh"; then
 fi
 
 echo
-echo "=== Droplet cron snapshot (stack_health_last) ==="
-if ssh "${SSH_OPTS[@]}" "$REMOTE" "sqlite3 /opt/216labs/216labs.db \"SELECT value FROM cron_runner_state WHERE key='stack_health_last' LIMIT 1\"" 2>/dev/null | python3 -c "
+echo "=== Droplet cron snapshot ==="
+# Host often has no sqlite3 CLI; use python3 against /opt/216labs/216labs.db.
+CRON_SNAPSHOT=$(
+  ssh "${SSH_OPTS[@]}" "$REMOTE" 'python3 - <<'"'"'PY'"'"'
+import json
+import sqlite3
+
+keys = ("stack_health_last", "revenue_env_last")
+try:
+    conn = sqlite3.connect("/opt/216labs/216labs.db")
+except OSError:
+    raise SystemExit(1)
+out = {}
+for key in keys:
+    row = conn.execute(
+        "SELECT value FROM cron_runner_state WHERE key = ? LIMIT 1", (key,)
+    ).fetchone()
+    if row and row[0]:
+        out[key] = row[0]
+print(json.dumps(out))
+PY
+' 2>/dev/null || true
+)
+
+if [[ -n "$CRON_SNAPSHOT" ]]; then
+  printf '%s' "$CRON_SNAPSHOT" | python3 -c "
 import sys, json
 raw = sys.stdin.read().strip()
 if not raw:
-    print('  (no snapshot — cron-runner may be down or job not run yet)')
-    sys.exit(0)
-d = json.loads(raw)
-print('  diagnosis:', d.get('diagnosis'))
-print('  at:', d.get('at'))
-for side in ('external', 'internal'):
-    for r in d.get(side) or []:
-        st = 'OK' if r.get('ok') else 'FAIL'
-        print(f\"  {side[:3]} {r.get('id')}: {st} ({r.get('error') or r.get('status')})\")
-" 2>/dev/null; then
-  :
+    print('  (no snapshot rows in cron_runner_state)')
+    raise SystemExit(0)
+data = json.loads(raw)
+for key in ('stack_health_last', 'revenue_env_last'):
+    if key not in data:
+        print(f'  {key}: (not set yet)')
+        continue
+    d = json.loads(data[key])
+    print(f'  [{key}] at {d.get(\"at\", \"?\")}')
+    if key == 'stack_health_last':
+        print('    diagnosis:', d.get('diagnosis'))
+        for side in ('external', 'internal'):
+            for r in d.get(side) or []:
+                st = 'OK' if r.get('ok') else 'FAIL'
+                print(f\"    {side[:3]} {r.get('id')}: {st} ({r.get('error') or r.get('status')})\")
+    elif key == 'revenue_env_last':
+        issues = d.get('issues', 0)
+        print(f'    issues: {issues}')
+        for r in d.get('results') or []:
+            if not r.get('ok'):
+                print(f\"    {r.get('id')}: {r.get('error') or r.get('status')}\")
+" 2>/dev/null || echo "  (could not parse cron snapshot)"
 else
-  echo "  (SSH unavailable — skip DB snapshot)"
+  echo "  (SSH unavailable or DB unreadable — skip cron snapshot)"
 fi
 
 echo

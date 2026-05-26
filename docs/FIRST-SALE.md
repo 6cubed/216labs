@@ -34,21 +34,21 @@ Open [admin → Env](https://admin.6cubed.app/env) and set:
 | `NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` *(optional — checkout is server-side)* |
 | `STORYBOOK_BOOK_PRICE_CENTS` | optional (default `2499`) |
 
-Save. On the live admin host, saving a `STORYBOOK_*` key **recreates the storybook container** with updated `.env.admin` automatically. Otherwise redeploy: `DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197`.
+Save. On the live admin host, saving a `STORYBOOK_*` key **recreates the storybook container** with updated `.env.admin` automatically (no laptop deploy in the normal path).
 
-## 3. Redeploy StoryMagic
-
-```bash
-DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197
-```
-
-## 4. Verify
+## 3. Verify (after Save)
 
 ```bash
 ./scripts/check-revenue-env-http.sh
 ```
 
 Expect `[StoryMagic] checkout ready`. In the browser: create a book → **Order** → Stripe Checkout (test card `4242 4242 4242 4242`).
+
+## 4. Fallback redeploy (only if Save did not recreate storybook)
+
+```bash
+DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197
+```
 
 ## 5. Go live
 
