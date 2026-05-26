@@ -79,6 +79,10 @@ function resolvePurchaseHref(product: MerchProduct): string | null {
   return withMerchAttribution(base, product.id)
 }
 
+function resolveFallbackHref(product: MerchProduct): string {
+  return withMerchAttribution("https://storybook.6cubed.app", product.id)
+}
+
 export default function MerchPage() {
   const defaultStore = process.env.NEXT_PUBLIC_MERCH_STORE_URL?.trim()
 
@@ -116,8 +120,8 @@ export default function MerchPage() {
           Checkout live now
         </h2>
         <p className="text-sm text-[var(--muted)] leading-relaxed max-w-2xl mb-4">
-          Apparel checkout on this page needs <code className="text-zinc-400">NEXT_PUBLIC_MERCH_STORE_URL</code> in
-          admin Env. These paid products are shipping today:
+          Want to support the project today? These paid products are shipping now. If a card routes you to
+          StoryMagic, you’ll complete checkout there.
         </p>
         <ul className="flex flex-col sm:flex-row flex-wrap gap-3 text-sm">
           <li>
@@ -148,6 +152,7 @@ export default function MerchPage() {
         <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {products.map((p) => {
             const href = resolvePurchaseHref(p)
+            const fallbackHref = resolveFallbackHref(p)
             return (
               <li key={p.id}>
                 <article className="group h-full flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur-sm overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)] hover:border-cyan-500/25 transition-colors">
@@ -174,12 +179,12 @@ export default function MerchPage() {
                         </a>
                       ) : (
                         <a
-                          href="https://storybook.6cubed.app"
+                          href={fallbackHref}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center rounded-lg border border-cyan-500/30 bg-cyan-950/40 px-4 py-2 text-sm font-medium text-cyan-200 hover:border-cyan-400/50 transition-colors"
                         >
-                          Shop StoryMagic
+                          Shop via StoryMagic
                         </a>
                       )}
                     </div>
@@ -216,7 +221,14 @@ export default function MerchPage() {
             Open storefront →
           </a>
         ) : (
-          <span className="text-zinc-600">Set NEXT_PUBLIC_MERCH_STORE_URL to enable default checkout.</span>
+          <a
+            href="https://storybook.6cubed.app?utm_source=merch&utm_medium=fallback_footer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-500 hover:text-cyan-400/90"
+          >
+            Support via StoryMagic →
+          </a>
         )}
       </footer>
     </div>
