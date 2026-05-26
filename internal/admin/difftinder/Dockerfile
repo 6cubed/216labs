@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY internal/python/client_error_report.py /app/client_error_report.py
 COPY internal/python/admin_session.py /app/admin_session.py
+COPY internal/python/agitweet_post.py /app/agitweet_post.py
 
 COPY internal/admin/difftinder/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

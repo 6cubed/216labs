@@ -30,6 +30,11 @@
       "key": "DIFFTINDER_INGEST_SECRET",
       "description": "Bearer token for cron-runner POST /api/internal/daily-idea (defaults to CRON_RUNNER_SECRET).",
       "is_secret": true
+    },
+    {
+      "key": "AGITWEET_API_TOKEN",
+      "description": "Same token as Agitweet — on swipe yes, DiffTinder POSTs the idea to Agitweet (internal URL http://agitweet:5000).",
+      "is_secret": true
     }
   ]
 }

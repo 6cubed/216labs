@@ -16,6 +16,7 @@ from admin_session import (
     session_valid,
     verify_password,
 )
+from agitweet_post import agitweet_publish_configured, publish_approved_idea
 from client_error_report import client_error_script, report_server_error
 
 APP_ID = "difftinder"
@@ -232,10 +233,28 @@ def api_vote():
             """,
             (vote, now, idea_id),
         )
-        conn.commit()
         if cur.rowcount == 0:
             return jsonify({"error": "not_found_or_already_voted"}), 404
-    return jsonify({"ok": True, "status": vote})
+        row = None
+        if vote == "yes":
+            row = conn.execute(
+                "SELECT day_utc, title, body FROM ideas WHERE id = ?",
+                (idea_id,),
+            ).fetchone()
+        conn.commit()
+
+    out: dict = {"ok": True, "status": vote}
+    if vote == "yes" and row:
+        if agitweet_publish_configured():
+            posted, detail = publish_approved_idea(
+                day_utc=str(row["day_utc"]),
+                title=row["title"],
+                body=str(row["body"]),
+            )
+            out["agitweet"] = {"posted": posted, "detail": detail}
+        else:
+            out["agitweet"] = {"posted": False, "detail": "not_configured"}
+    return jsonify(out)
 
 
 @app.get("/api/internal/today")
