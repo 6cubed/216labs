@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/todos", label: "Todos" },
   { href: "/orders", label: "Orders" },
   { href: "/architecture", label: "Architecture" },
+  { href: "https://difftinder.6cubed.app", label: "DiffTinder", external: true },
 ] as const;
 
 type AdminNavProps = {
@@ -35,22 +36,42 @@ export function AdminNav({
   return (
     <nav className="flex items-center gap-1 border-b border-border">
       <div className="max-w-7xl mx-auto px-6 w-full flex gap-1">
-        {NAV_ITEMS.map(({ href, label }) => {
+        {NAV_ITEMS.map((item) => {
+          const { href, label } = item;
+          const external = "external" in item && item.external;
           const isActive =
-            href === "/"
+            !external &&
+            (href === "/"
               ? pathname === "/"
-              : pathname === href || pathname?.startsWith(href + "/");
+              : pathname === href || pathname?.startsWith(href + "/"));
           const showBadge = href === "/errors" && errorSignalCount > 0;
           const linkHref = href === "/errors" ? errorsHref : href;
+          const className = `px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${
+            isActive
+              ? "border-accent text-foreground"
+              : "border-transparent text-muted hover:text-foreground"
+          }`;
+          if (external) {
+            return (
+              <a
+                key={href}
+                href={linkHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={className}
+              >
+                {label}
+                <span className="text-[10px] opacity-60" aria-hidden>
+                  ↗
+                </span>
+              </a>
+            );
+          }
           return (
             <Link
               key={href}
               href={linkHref}
-              className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${
-                isActive
-                  ? "border-accent text-foreground"
-                  : "border-transparent text-muted hover:text-foreground"
-              }`}
+              className={className}
             >
               {label}
               {showBadge ? (

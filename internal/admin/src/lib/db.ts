@@ -243,6 +243,7 @@ function initSchema(db: Database.Database) {
   ensureWorkforceTelegramCronBootstrapped(db);
   ensureEdgeVisitorRollupCronJob(db);
   ensureRevenueEnvCheckCronJob(db);
+  ensureDifftinderDailyIdeaCronJob(db);
 
   ensureDeploymentEventsTable(db);
   backfillDeploymentEventsFromApps(db);
@@ -997,6 +998,19 @@ function ensureEdgeVisitorRollupCronJob(db: Database.Database): void {
   ).run();
 }
 
+function ensureDifftinderDailyIdeaCronJob(db: Database.Database): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+     VALUES (
+       'difftinder-daily-idea',
+       'DiffTinder daily idea',
+       'Adds one speculative monorepo idea per UTC day for admin swipe review at difftinder.6cubed.app.',
+       '0 7 * * *',
+       1
+     )`
+  ).run();
+}
+
 /** Partial or legacy DBs may lack cron_jobs; keep admin cron UI and toggles working. */
 function ensureCronJobsTable(db: Database.Database): void {
   db.exec(`
@@ -1019,6 +1033,7 @@ function ensureCronJobsTable(db: Database.Database): void {
   ensureEdgeVisitorRollupCronJob(db);
   ensureClientErrorPruneCronJob(db);
   ensureRevenueEnvCheckCronJob(db);
+  ensureDifftinderDailyIdeaCronJob(db);
 }
 
 function ensureClientErrorPruneCronJob(db: Database.Database): void {

@@ -800,6 +800,130 @@ export async function stackHealthCheck(db) {
   return `[Stack health]\n${lines.join("\n")}`;
 }
 
+const DIFFTINDER_IDEA_POOL = [
+  "Add a revenue readiness score to admin Overview that ranks apps by env keys + last deploy + edge traffic.",
+  "Ship a single shared ADMIN_PANEL_PASSWORD login across workforce, groundtruth, and difftinder (retire Caddy basic auth for sub-apps).",
+  "Wire agitweet autopost to difftinder-approved ideas only — closed loop from swipe yes to public brain dump.",
+  "Add Stripe tip jar to tortellini with a one-click €3 preset; measure conversion in edge_visitor_day.",
+  "Expose GHCR image digest + build time on each app card in admin Applications.",
+  "Cron job: weekly 'stale manifest' report when docker_service in compose ≠ manifest id.",
+  "Landing page section: 'Shipped this week' fed from deployment-feed API with deep links.",
+  "Add Pocket bridge command /deploy <app_id> that triggers activator warmup + health probe.",
+  "Hivefind: export mystery timeline as printable PDF for B2B workshops.",
+  "OneFit: affiliate deep-link generator in admin with UTM templates per campaign.",
+];
+
+async function difftinderGenerateBody(db) {
+  const key =
+    getEnvVar(db, "OPENAI_API_KEY") ||
+    getEnvVar(db, "TELEGRAM_GROUP_HOURLY_OPENAI_API_KEY") ||
+    process.env.OPENAI_API_KEY ||
+    "";
+  if (!key) {
+    const pick = DIFFTINDER_IDEA_POOL[Math.floor(Math.random() * DIFFTINDER_IDEA_POOL.length)];
+    return { title: "Speculative idea", body: pick };
+  }
+  const model =
+    getEnvVar(db, "DIFFTINDER_OPENAI_MODEL") ||
+    getEnvVar(db, "TELEGRAM_GROUP_HOURLY_OPENAI_MODEL") ||
+    "gpt-4o-mini";
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You generate one concise speculative product/engineering idea for the 216labs monorepo (many small apps on *.6cubed.app). Output JSON only: {\"title\":\"short title\",\"body\":\"2-4 sentences, actionable, high leverage\"}. No markdown.",
+        },
+        {
+          role: "user",
+          content:
+            "Today's idea should be novel, shippable within a day or two, and relevant to revenue, reliability, or developer velocity.",
+        },
+      ],
+      max_tokens: 280,
+      temperature: 0.85,
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`OpenAI ${res.status}: ${errBody.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const raw = data.choices?.[0]?.message?.content || "";
+  try {
+    const parsed = JSON.parse(String(raw).trim());
+    if (parsed?.body) {
+      return {
+        title: String(parsed.title || "Speculative idea").slice(0, 120),
+        body: String(parsed.body).slice(0, 2000),
+      };
+    }
+  } catch {
+    // fall through
+  }
+  const pick = DIFFTINDER_IDEA_POOL[Math.floor(Math.random() * DIFFTINDER_IDEA_POOL.length)];
+  return { title: "Speculative idea", body: pick };
+}
+
+/** Insert today's difftinder card if missing (cron-runner → difftinder internal API). */
+export async function difftinderDailyIdea(db) {
+  const base =
+    process.env.DIFFTINDER_INTERNAL_URL?.trim() || "http://difftinder:5000";
+  const secret =
+    getEnvVar(db, "DIFFTINDER_INGEST_SECRET") ||
+    getEnvVar(db, "CRON_RUNNER_SECRET") ||
+    process.env.CRON_RUNNER_SECRET ||
+    "";
+  if (!secret) {
+    return "[DiffTinder] skipped — set CRON_RUNNER_SECRET or DIFFTINDER_INGEST_SECRET";
+  }
+  const day = new Date().toISOString().slice(0, 10);
+  const headers = {
+    Authorization: `Bearer ${secret}`,
+    "Content-Type": "application/json",
+  };
+  const check = await fetch(`${base.replace(/\/$/, "")}/api/internal/today`, {
+    headers,
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!check.ok) {
+    return `[DiffTinder] today check failed HTTP ${check.status}`;
+  }
+  const checkData = await check.json();
+  if (checkData.exists) {
+    return `[DiffTinder] ${day}: idea already present`;
+  }
+  const idea = await difftinderGenerateBody(db);
+  const post = await fetch(`${base.replace(/\/$/, "")}/api/internal/daily-idea`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      day_utc: day,
+      title: idea.title,
+      body: idea.body,
+      source: "cron",
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!post.ok) {
+    const t = await post.text();
+    return `[DiffTinder] ingest failed ${post.status}: ${t.slice(0, 160)}`;
+  }
+  const posted = await post.json();
+  if (posted.skipped) {
+    return `[DiffTinder] ${day}: skipped (${posted.reason || "duplicate"})`;
+  }
+  return `[DiffTinder] ${day}: new idea — ${idea.title}`;
+}
+
 /** Drop client/server error rows older than 14 days. */
 export async function clientErrorPrune(ctx) {
   const db = ctx.db;
@@ -822,4 +946,5 @@ export const HANDLERS = {
   "client-error-prune": clientErrorPrune,
   "revenue-env-check": revenueEnvCheck,
   "stack-health-check": stackHealthCheck,
+  "difftinder-daily-idea": difftinderDailyIdea,
 };

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}DiffTinder — History{% endblock %}
+{% block body %}
+<header>
+  <div>
+    <h1>History</h1>
+    <p class="muted">Recent ideas and votes.</p>
+  </div>
+  <a class="btn" href="/">← Deck</a>
+</header>
+<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px">
+  {% for row in rows %}
+  <li style="border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--panel)">
+    <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">
+      <span class="muted" style="font-family:var(--mono);font-size:11px">{{ row.day_utc }}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:{% if row.status == 'yes' %}var(--yes){% elif row.status == 'no' %}var(--no){% else %}var(--muted){% endif %}">
+        {{ row.status }}
+      </span>
+    </div>
+    {% if row.title %}<strong>{{ row.title }}</strong><br />{% endif %}
+    <span style="font-size:0.92rem;line-height:1.45">{{ row.body[:280] }}{% if row.body|length > 280 %}…{% endif %}</span>
+  </li>
+  {% else %}
+  <li class="muted">No ideas yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

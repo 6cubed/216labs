@@ -326,6 +326,27 @@ services:
       - "3000"
     mem_limit: 128m
 
+  # ── DiffTinder (daily speculative ideas, admin swipe) ───────────
+  difftinder:
+    image: 216labs/difftinder:latest
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: ./internal/admin/difftinder/Dockerfile
+    restart: unless-stopped
+    environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
+      - PORT=5000
+      - ADMIN_PANEL_PASSWORD=${ADMIN_PANEL_PASSWORD:-}
+      - ADMIN_PANEL_SESSION_SECRET=${ADMIN_PANEL_SESSION_SECRET:-${CRON_RUNNER_SECRET:-}}
+      - DIFFTINDER_INGEST_SECRET=${DIFFTINDER_INGEST_SECRET:-${CRON_RUNNER_SECRET:-}}
+      - DIFFTINDER_DB_PATH=/app/data/difftinder.db
+    volumes:
+      - ./internal/admin/difftinder/data:/app/data
+    expose:
+      - "5000"
+    mem_limit: 128m
+
   # ── Groundtruth (data labeling workflows) ───────────────────────
   groundtruth:
     image: 216labs/groundtruth:latest

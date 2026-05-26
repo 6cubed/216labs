@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{% block title %}DiffTinder{% endblock %}</title>
+    <style>
+      :root {
+        --bg: #07080c;
+        --panel: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.58);
+        --yes: #34d399;
+        --no: #f87171;
+        --accent: #a78bfa;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: radial-gradient(900px 500px at 10% -10%, rgba(167, 139, 250, 0.12), transparent 55%),
+          radial-gradient(700px 400px at 100% 0%, rgba(52, 211, 153, 0.08), transparent 50%),
+          var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+      }
+      .wrap { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; }
+      header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+      h1 { margin: 0; font-size: 1.25rem; letter-spacing: -0.02em; }
+      .muted { color: var(--muted); font-size: 0.85rem; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border);
+        background: rgba(255,255,255,0.06); color: var(--text); font-weight: 600;
+        cursor: pointer; font-size: 0.95rem;
+      }
+      .btn-primary { background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: transparent; }
+      .btn-yes { border-color: rgba(52,211,153,0.45); color: var(--yes); }
+      .btn-no { border-color: rgba(248,113,113,0.45); color: var(--no); }
+      input[type="password"], input[type="text"] {
+        width: 100%; padding: 10px 12px; border-radius: 10px;
+        border: 1px solid var(--border); background: rgba(0,0,0,0.35);
+        color: var(--text); font-size: 1rem;
+      }
+      .err { color: var(--no); font-size: 0.85rem; margin-top: 8px; }
+      {% block extra_css %}{% endblock %}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      {% block body %}{% endblock %}
+    </div>
+  </body>
+</html>

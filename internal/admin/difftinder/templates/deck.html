@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}DiffTinder — Swipe{% endblock %}
+{% block extra_css %}
+.card-stack { position: relative; min-height: 320px; margin: 12px 0 20px; touch-action: none; }
+.card {
+  position: absolute; inset: 0; border-radius: 18px; padding: 18px;
+  border: 1px solid var(--border);
+  background: linear-gradient(165deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04));
+  box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  cursor: grab; user-select: none;
+}
+.card.dragging { cursor: grabbing; transition: none; }
+.card h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.card .day { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+.card .body { font-size: 0.98rem; line-height: 1.55; white-space: pre-wrap; }
+.stamp {
+  position: absolute; top: 16px; font-size: 1.4rem; font-weight: 800; letter-spacing: 0.08em;
+  opacity: 0; border: 3px solid; padding: 4px 10px; border-radius: 8px; transform: rotate(-12deg);
+}
+.stamp.yes { right: 16px; color: var(--yes); border-color: var(--yes); }
+.stamp.no { left: 16px; color: var(--no); border-color: var(--no); transform: rotate(12deg); }
+.actions { display: flex; gap: 12px; justify-content: center; }
+.actions .btn { flex: 1; max-width: 140px; padding: 14px; font-size: 1.05rem; }
+.stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-family: var(--mono); font-size: 11px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border); }
+.empty { text-align: center; padding: 40px 12px; border: 1px dashed var(--border); border-radius: 16px; }
+{% endblock %}
+{% block body %}
+<header>
+  <div>
+    <h1>DiffTinder</h1>
+    <p class="muted">One speculative idea per day — swipe or tap.</p>
+  </div>
+  <form method="post" action="/logout" style="margin:0">
+    <button class="btn" type="submit">Logout</button>
+  </form>
+</header>
+
+<div class="stats">
+  <span class="pill">pending {{ counts.pending }}</span>
+  <span class="pill">yes {{ counts.yes }}</span>
+  <span class="pill">no {{ counts.no }}</span>
+</div>
+
+{% if idea %}
+<section class="card-stack" id="stack" data-id="{{ idea.id }}">
+  <article class="card" id="card">
+    <div class="stamp yes" id="stamp-yes">YES</div>
+    <div class="stamp no" id="stamp-no">NO</div>
+    <div class="day">{{ idea.day_utc }}{% if idea.title %} · {{ idea.title }}{% endif %}</div>
+    <div class="body">{{ idea.body }}</div>
+  </article>
+</section>
+<div class="actions">
+  <button class="btn btn-no" type="button" id="btn-no" aria-label="Reject">✕ No</button>
+  <button class="btn btn-yes" type="button" id="btn-yes" aria-label="Approve">✓ Yes</button>
+</div>
+{% else %}
+<div class="empty">
+  <p class="muted">No pending ideas. The daily cron adds one at 07:00 UTC, or run it from admin Cron.</p>
+  <p class="muted" style="margin-top:8px"><a href="/history">View history</a></p>
+</div>
+{% endif %}
+
+<p class="muted" style="margin-top:20px;text-align:center">
+  <a href="/history">History</a> · <a href="https://admin.6cubed.app/cron">Cron jobs</a>
+</p>
+
+{% if idea %}
+<script>
+(() => {
+  const stack = document.getElementById('stack');
+  const card = document.getElementById('card');
+  const id = stack.dataset.id;
+  const stampYes = document.getElementById('stamp-yes');
+  const stampNo = document.getElementById('stamp-no');
+  let startX = 0, dx = 0, dragging = false;
+
+  async function vote(choice) {
+    const res = await fetch('/api/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: Number(id), vote: choice }),
+    });
+    if (!res.ok) {
+      alert('Vote failed — try again');
+      return;
+    }
+    window.location.reload();
+  }
+
+  function setTransform(x) {
+    const rot = x * 0.06;
+    card.style.transform = `translateX(${x}px) rotate(${rot}deg)`;
+    stampYes.style.opacity = Math.min(1, Math.max(0, x / 80));
+    stampNo.style.opacity = Math.min(1, Math.max(0, -x / 80));
+  }
+
+  card.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    card.classList.add('dragging');
+    startX = e.clientX;
+    card.setPointerCapture(e.pointerId);
+  });
+  card.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    dx = e.clientX - startX;
+    setTransform(dx);
+  });
+  const end = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    card.classList.remove('dragging');
+    try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (dx > 90) vote('yes');
+    else if (dx < -90) vote('no');
+    else setTransform(0);
+    dx = 0;
+  };
+  card.addEventListener('pointerup', end);
+  card.addEventListener('pointercancel', end);
+  document.getElementById('btn-yes').onclick = () => vote('yes');
+  document.getElementById('btn-no').onclick = () => vote('no');
+})();
+</script>
+{% endif %}
+{% endblock %}

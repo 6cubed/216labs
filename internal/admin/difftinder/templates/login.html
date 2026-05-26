@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}DiffTinder — Login{% endblock %}
+{% block body %}
+<header>
+  <div>
+    <h1>DiffTinder</h1>
+    <p class="muted">216Labs admin — cookie login (no browser Basic Auth prompt).</p>
+  </div>
+</header>
+<form method="post" action="/login">
+  <label class="muted" for="password">Admin panel password</label>
+  <input id="password" name="password" type="password" autocomplete="current-password" required style="margin-top:8px" />
+  {% if error %}<p class="err">{{ error }}</p>{% endif %}
+  <p class="muted" style="margin-top:12px">
+    Set <code>ADMIN_PANEL_PASSWORD</code> in <a href="https://admin.6cubed.app/env" target="_blank" rel="noopener">admin Env</a>.
+    Optional: <code>ADMIN_PANEL_SESSION_SECRET</code> (defaults to <code>CRON_RUNNER_SECRET</code>).
+  </p>
+  <button class="btn btn-primary" type="submit" style="margin-top:16px;width:100%">Sign in</button>
+</form>
+{% endblock %}

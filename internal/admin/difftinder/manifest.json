@@ -1,0 +1,34 @@
+{
+  "id": "difftinder",
+  "name": "DiffTinder",
+  "tagline": "Swipe yes/no on daily speculative ideas for the monorepo.",
+  "description": "Internal admin app: one new repo idea per day (cron-generated), admins swipe to approve or reject. Uses cookie login (ADMIN_PANEL_PASSWORD) instead of browser HTTP Basic Auth.",
+  "category": "admin",
+  "internal_port": 5000,
+  "memory_limit": "128m",
+  "docker_service": "difftinder",
+  "build_context": "./internal/admin/difftinder",
+  "stack": {
+    "frontend": "Flask + Jinja2",
+    "backend": "Flask + Gunicorn",
+    "database": "SQLite (volume)",
+    "other": null
+  },
+  "env_vars": [
+    {
+      "key": "ADMIN_PANEL_PASSWORD",
+      "description": "Shared password for difftinder (and other panel) login — set once in admin Env.",
+      "is_secret": true
+    },
+    {
+      "key": "ADMIN_PANEL_SESSION_SECRET",
+      "description": "Optional HMAC secret for session cookies (defaults to CRON_RUNNER_SECRET).",
+      "is_secret": true
+    },
+    {
+      "key": "DIFFTINDER_INGEST_SECRET",
+      "description": "Bearer token for cron-runner POST /api/internal/daily-idea (defaults to CRON_RUNNER_SECRET).",
+      "is_secret": true
+    }
+  ]
+}
