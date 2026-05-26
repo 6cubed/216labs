@@ -5,6 +5,7 @@
  */
 
 import { createHash } from "crypto";
+import http from "http";
 import { existsSync, openSync, closeSync, readSync, readFileSync, statSync } from "fs";
 
 const STATE_KEY_LAST_UPDATE = "telegram-group-hourly:last_update_id";
@@ -649,11 +650,28 @@ function fetchTimeout(url, ms = 10_000) {
 }
 
 async function fetchCaddyHost(host, path = "/", ms = 10_000) {
-  const url = `http://caddy:80${path.startsWith("/") ? path : `/${path}`}`;
-  return fetch(url, {
-    signal: AbortSignal.timeout(ms),
-    redirect: "follow",
-    headers: { Host: host },
+  return new Promise((resolve, reject) => {
+    const p = path.startsWith("/") ? path : `/${path}`;
+    const req = http.request(
+      {
+        host: "caddy",
+        port: 80,
+        method: "GET",
+        path: p,
+        headers: {
+          Host: host,
+          Connection: "close",
+        },
+      },
+      (res) => {
+        // Drain body; only status matters for probes.
+        res.on("data", () => {});
+        res.on("end", () => resolve(res));
+      }
+    );
+    req.setTimeout(ms, () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+    req.end();
   });
 }
 
@@ -670,12 +688,12 @@ export async function stackHealthCheck(db) {
   try {
     // Prefer probing Caddy directly inside Docker (stable even if outbound HTTPS is flaky).
     const res = await fetchCaddyHost("admin.6cubed.app", "/", 8000);
-    const ok = res.status === 200 || res.status === 401;
+    const ok = res.statusCode === 200 || res.statusCode === 401;
     external.push({
       id: "admin",
       ok,
-      status: res.status,
-      error: ok ? null : `HTTP ${res.status}`,
+      status: res.statusCode,
+      error: ok ? null : `HTTP ${res.statusCode}`,
     });
     if (!ok) extIssues += 1;
   } catch (e) {
@@ -690,12 +708,12 @@ export async function stackHealthCheck(db) {
 
   try {
     const res = await fetchCaddyHost("6cubed.app", "/", 8000);
-    const ok = res.status >= 200 && res.status < 500;
+    const ok = res.statusCode >= 200 && res.statusCode < 500;
     external.push({
       id: "landing",
       ok,
-      status: res.status,
-      error: ok ? null : `HTTP ${res.status}`,
+      status: res.statusCode,
+      error: ok ? null : `HTTP ${res.statusCode}`,
     });
     if (!ok) extIssues += 1;
   } catch (e) {
