@@ -959,6 +959,84 @@ export async function agitweetAutopost(db) {
   return `[Agitweet] posted id=${data.id}: ${preview}${preview.length >= 100 ? "…" : ""}`;
 }
 
+const LEAD_NOTIFY_STATE_KEY = "lead-notify:seen_ids";
+
+/**
+ * Telegram ping for new rows in lead_event (landing hire form, etc.).
+ * Dedupes by id in cron_runner_state; returns empty string when nothing new.
+ */
+export async function leadNotify(db) {
+  let tableOk = true;
+  try {
+    db.prepare("SELECT 1 FROM lead_event LIMIT 1").get();
+  } catch {
+    tableOk = false;
+  }
+  if (!tableOk) return "";
+
+  const rows = db
+    .prepare(
+      `SELECT id, created_at, kind, email, message, source_app_id
+       FROM lead_event
+       ORDER BY created_at ASC
+       LIMIT 50`
+    )
+    .all();
+
+  let seen = new Set();
+  try {
+    const raw = getCronState(db, LEAD_NOTIFY_STATE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        for (const id of parsed) seen.add(String(id));
+      }
+    }
+  } catch {
+    seen = new Set();
+  }
+
+  // First run: mark existing leads as seen (avoid a backlog spam on deploy).
+  if (seen.size === 0 && rows.length > 0) {
+    for (const r of rows) {
+      if (r?.id) seen.add(String(r.id));
+    }
+    setCronState(db, LEAD_NOTIFY_STATE_KEY, JSON.stringify([...seen].slice(-200)));
+    return "";
+  }
+
+  const fresh = rows.filter((r) => r?.id && !seen.has(String(r.id)));
+  if (fresh.length === 0) return "";
+
+  for (const r of rows) {
+    if (r?.id) seen.add(String(r.id));
+  }
+  const seenArr = [...seen].slice(-200);
+  setCronState(db, LEAD_NOTIFY_STATE_KEY, JSON.stringify(seenArr));
+
+  const blocks = fresh.map((r) => {
+    const email = String(r.email || "").trim();
+    const kind = String(r.kind || "lead").trim();
+    const src = String(r.source_app_id || "landing").trim();
+    const when = String(r.created_at || "").trim();
+    const msg = String(r.message || "").trim();
+    const preview = msg ? (msg.length > 240 ? `${msg.slice(0, 237)}…` : msg) : "(no message)";
+    return (
+      `📩 New lead (${kind})\n` +
+      `${email}\n` +
+      `${preview}\n` +
+      `Source: ${src} · ${when}\n` +
+      `https://admin.6cubed.app/leads`
+    );
+  });
+
+  const header =
+    fresh.length === 1
+      ? "216labs — 1 new lead"
+      : `216labs — ${fresh.length} new leads`;
+  return `${header}\n\n${blocks.join("\n\n")}`;
+}
+
 /** Drop client/server error rows older than 14 days. */
 export async function clientErrorPrune(ctx) {
   const db = ctx.db;
@@ -983,4 +1061,5 @@ export const HANDLERS = {
   "stack-health-check": stackHealthCheck,
   "difftinder-daily-idea": difftinderDailyIdea,
   "agitweet-autopost": agitweetAutopost,
+  "lead-notify": leadNotify,
 };

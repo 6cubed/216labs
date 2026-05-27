@@ -259,6 +259,7 @@ function initSchema(db: Database.Database) {
   ensureRevenueEnvCheckCronJob(db);
   ensureDifftinderDailyIdeaCronJob(db);
   ensureAgitweetAutopostCronJob(db);
+  ensureLeadNotifyCronJob(db);
 
   ensureDeploymentEventsTable(db);
   backfillDeploymentEventsFromApps(db);
@@ -1063,6 +1064,7 @@ function ensureCronJobsTable(db: Database.Database): void {
   ensureRevenueEnvCheckCronJob(db);
   ensureDifftinderDailyIdeaCronJob(db);
   ensureAgitweetAutopostCronJob(db);
+  ensureLeadNotifyCronJob(db);
 }
 
 function ensureClientErrorPruneCronJob(db: Database.Database): void {
@@ -1073,6 +1075,19 @@ function ensureClientErrorPruneCronJob(db: Database.Database): void {
        'Prune old client error events',
        'Deletes client_error_event rows older than 14 days.',
        '15 4 * * *',
+       1
+     )`
+  ).run();
+}
+
+function ensureLeadNotifyCronJob(db: Database.Database): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+     VALUES (
+       'lead-notify',
+       'Lead notify (Telegram)',
+       'Pings Telegram when new rows appear in lead_event (landing hire form).',
+       '*/5 * * * *',
        1
      )`
   ).run();

@@ -68,6 +68,6 @@ Repeat with **live** keys in Stripe, switch admin Env to `pk_live_` / `sk_live_`
 |-----|-----|
 | Merch storefront | `NEXT_PUBLIC_MERCH_STORE_URL` in `docs/REVENUE-ENV.md` |
 | 1PageResearch €1 report | `ONEPAGE_STRIPE_*` keys |
-| Leads without payment | StoryMagic `POST /api/print-interest`; 1Page free requests |
+| Leads without payment | **Landing** hire form → `lead_event` in `216labs.db` ([admin → Leads](https://admin.6cubed.app/leads)); Telegram **`lead-notify`** cron every 5m. StoryMagic `POST /api/print-interest`; 1Page free requests |
 
 **Monetization heartbeat:** this doc is the checklist; the commit that ships revenue is **keys in admin + redeploy**, not the markdown alone.
