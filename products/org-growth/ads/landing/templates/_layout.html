@@ -108,6 +108,75 @@
     .btn.secondary { font-weight: 700; border-color: var(--border); background: rgba(255,255,255,0.04); }
     .btn.secondary:hover { border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
 
+    /* Home page legacy modules (index.html) */
+    .repo-link { margin-bottom: 2rem; }
+    .section { margin-bottom: 2rem; }
+    .section h2 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .links a {
+      display: block;
+      padding: 0.85rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .links a:hover {
+      border-color: var(--accent);
+      background: rgba(139, 92, 246, 0.06);
+    }
+    .links .name { font-size: 1rem; }
+    .links .desc { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; font-weight: 500; }
+    .featured {
+      display: block;
+      padding: 1.1rem 1.15rem;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(167, 139, 250, 0.08) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.45);
+      border-radius: var(--radius);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .featured:hover {
+      border-color: var(--accent2);
+      transform: translateY(-1px);
+    }
+    .featured .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent2);
+      margin-bottom: 0.35rem;
+    }
+    .featured .desc { font-size: 0.88rem; color: var(--muted); font-weight: 500; margin-top: 0.35rem; }
+    .empty-hint { font-size: 0.9rem; color: var(--muted); }
+    .cta-card {
+      margin-top: 0.75rem;
+      padding: 1rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: var(--radius);
+    }
+    .cta-actions { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.75rem; }
+
     footer {
       margin-top: 3rem;
       padding-top: 1.5rem;
