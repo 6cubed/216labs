@@ -23,6 +23,7 @@ const EXACT_KEY_TO_SERVICES: Record<string, string[]> = {
   ADMIN_PANEL_PASSWORD: ["difftinder"],
   ADMIN_PANEL_SESSION_SECRET: ["difftinder"],
   AGITWEET_API_TOKEN: ["agitweet", "difftinder"],
+  STORYBOOK_ADMIN_TOKEN: ["storybook", "admin"],
 };
 
 const PREFIX_TO_DOCKER_SERVICE: Array<[string, string]> = [
