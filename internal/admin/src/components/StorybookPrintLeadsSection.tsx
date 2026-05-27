@@ -22,6 +22,7 @@ export function StorybookPrintLeadsSection({ leads }: { leads: StorybookPrintLea
             <tr className="text-xs text-muted uppercase tracking-wide">
               <th className="px-4 py-3 text-left font-medium">Email</th>
               <th className="px-4 py-3 text-left font-medium">Book</th>
+              <th className="px-4 py-3 text-left font-medium">Campaign</th>
               <th className="px-4 py-3 text-left font-medium">Date</th>
             </tr>
           </thead>
@@ -44,6 +45,23 @@ export function StorybookPrintLeadsSection({ leads }: { leads: StorybookPrintLea
                   {lead.bookChildName ? (
                     <span className="text-xs text-muted block">for {lead.bookChildName}</span>
                   ) : null}
+                </td>
+                <td className="px-4 py-3 text-xs text-muted max-w-[12rem]">
+                  {lead.utmSource || lead.utmMedium || lead.utmCampaign ? (
+                    <>
+                      {lead.utmSource ? <span className="block">{lead.utmSource}</span> : null}
+                      {lead.utmMedium ? (
+                        <span className="block text-muted/80">{lead.utmMedium}</span>
+                      ) : null}
+                      {lead.utmCampaign ? (
+                        <span className="block truncate" title={lead.utmCampaign ?? ""}>
+                          {lead.utmCampaign}
+                        </span>
+                      ) : null}
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted">
                   {new Date(lead.createdAt).toLocaleString()}

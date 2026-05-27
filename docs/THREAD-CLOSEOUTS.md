@@ -2,6 +2,17 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-05-28 ~00:40 UTC)
+
+| Check | Result |
+|-------|--------|
+| Edge / stack | `./scripts/heartbeat-stack.sh` — lights on (admin 401, landing/storybook/maxlearn OK) |
+| StoryMagic ads attribution | **Shipped** — UTM capture on waitlist → admin Orders **Campaign** column |
+| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` in [admin Env](https://admin.6cubed.app/env) |
+| Meta/Google Ads API in repo | **None** — run campaigns in platform UIs; measure via GA4 + admin leads |
+
+---
+
 ## Production snapshot (2026-05-28 ~00:15 UTC)
 
 | Check | Result |
@@ -71,7 +82,7 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | Shipped | Blocker |
 |---------|---------|
 | Waitlist-first preview; print-interest → admin **Leads**; admin Save hot-reloads storybook | **2** test keys → [admin Env](https://admin.6cubed.app/env) |
-| **GA4 funnel events** (`generate_start`, `story_preview_ready`, `waitlist_signup`, `begin_checkout`, `purchase`) | Mark conversions in GA4 |
+| **GA4 funnel events** + **UTM on waitlist** (admin Orders campaign column) | Mark conversions in GA4 |
 | CEO ads playbook | [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md) |
 
 Guide: [`docs/FIRST-SALE.md`](FIRST-SALE.md). Verify checkout: `./scripts/check-revenue-env-http.sh` → `[StoryMagic] checkout ready`. **Next revenue unlock:** paste Stripe keys + Save (not more funnel UX).

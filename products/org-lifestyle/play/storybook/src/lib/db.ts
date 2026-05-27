@@ -102,6 +102,15 @@ function initSchema(db: Database.Database) {
     );
     CREATE INDEX IF NOT EXISTS idx_print_interest_book ON print_interest(book_id);
   `);
+  ensurePrintInterestUtmColumns(db);
+}
+
+function ensurePrintInterestUtmColumns(db: Database.Database) {
+  const cols = db.prepare("PRAGMA table_info(print_interest)").all() as { name: string }[];
+  const names = new Set(cols.map((c) => c.name));
+  if (!names.has("utm_source")) db.exec("ALTER TABLE print_interest ADD COLUMN utm_source TEXT");
+  if (!names.has("utm_medium")) db.exec("ALTER TABLE print_interest ADD COLUMN utm_medium TEXT");
+  if (!names.has("utm_campaign")) db.exec("ALTER TABLE print_interest ADD COLUMN utm_campaign TEXT");
 }
 
 export interface PrintInterest {
@@ -111,20 +120,44 @@ export interface PrintInterest {
   createdAt: string;
   bookTitle: string;
   bookChildName: string;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
 }
 
-export function createPrintInterest(bookId: string, email: string): void {
+export type PrintInterestUtm = {
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+};
+
+export function createPrintInterest(
+  bookId: string,
+  email: string,
+  utm?: PrintInterestUtm
+): void {
   getDb()
     .prepare(
-      `INSERT INTO print_interest (book_id, email, created_at) VALUES (?, ?, ?)`
+      `INSERT INTO print_interest
+       (book_id, email, created_at, utm_source, utm_medium, utm_campaign)
+       VALUES (?, ?, ?, ?, ?, ?)`
     )
-    .run(bookId, email.trim().toLowerCase(), new Date().toISOString());
+    .run(
+      bookId,
+      email.trim().toLowerCase(),
+      new Date().toISOString(),
+      utm?.utmSource?.trim() || null,
+      utm?.utmMedium?.trim() || null,
+      utm?.utmCampaign?.trim() || null
+    );
 }
 
 export function getAllPrintInterests(): PrintInterest[] {
   const rows = getDb()
     .prepare(
-      `SELECT p.id, p.book_id, p.email, p.created_at, b.title AS book_title, b.child_name AS book_child_name
+      `SELECT p.id, p.book_id, p.email, p.created_at,
+              p.utm_source, p.utm_medium, p.utm_campaign,
+              b.title AS book_title, b.child_name AS book_child_name
        FROM print_interest p
        LEFT JOIN books b ON p.book_id = b.id
        ORDER BY p.created_at DESC
@@ -137,6 +170,9 @@ export function getAllPrintInterests(): PrintInterest[] {
       created_at: string;
       book_title: string | null;
       book_child_name: string | null;
+      utm_source: string | null;
+      utm_medium: string | null;
+      utm_campaign: string | null;
     }>;
 
   return rows.map((r) => ({
@@ -146,6 +182,9 @@ export function getAllPrintInterests(): PrintInterest[] {
     createdAt: r.created_at,
     bookTitle: r.book_title ?? "—",
     bookChildName: r.book_child_name ?? "",
+    utmSource: r.utm_source,
+    utmMedium: r.utm_medium,
+    utmCampaign: r.utm_campaign,
   }));
 }
 

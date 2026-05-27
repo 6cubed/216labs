@@ -8,6 +8,9 @@ export interface StorybookPrintLead {
   createdAt: string;
   bookTitle: string;
   bookChildName: string;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
 }
 
 export interface StorybookOrder {

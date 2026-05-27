@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import BookViewer, { BookPage } from "@/components/BookViewer";
 import { trackStorybookEvent } from "@/lib/analytics";
+import { captureUtmFromUrl, getStoredUtm } from "@/lib/utm";
 
 type Step = "form" | "generating" | "preview";
 
@@ -49,6 +50,10 @@ export default function HomePage() {
   const [interestEmail, setInterestEmail] = useState("");
   const [interestSent, setInterestSent] = useState(false);
   const [interestLoading, setInterestLoading] = useState(false);
+
+  useEffect(() => {
+    captureUtmFromUrl();
+  }, []);
 
   useEffect(() => {
     if (step !== "preview") return;
@@ -179,16 +184,22 @@ export default function HomePage() {
     setInterestLoading(true);
     setError(null);
     try {
+      const utm = getStoredUtm();
       const res = await fetch("/api/print-interest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookId, email: interestEmail.trim() }),
+        body: JSON.stringify({
+          bookId,
+          email: interestEmail.trim(),
+          ...utm,
+        }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) {
         throw new Error(data.error ?? "Could not save your email");
       }
       setInterestSent(true);
+      trackStorybookEvent("waitlist_signup", { book_id: bookId, ...utm });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg);
