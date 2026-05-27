@@ -118,11 +118,12 @@ _DEFAULT_TRACKERS = (
 
 
 def seed_default_trackers(conn: sqlite3.Connection) -> None:
-    """One starter tracker when the DB has none (week-over-week snapshots from Mon cron)."""
-    n = conn.execute("SELECT COUNT(*) AS c FROM trackers").fetchone()["c"]
-    if n:
-        return
+    """Ensure built-in example trackers exist (idempotent by slug)."""
     for t in _DEFAULT_TRACKERS:
+        if conn.execute(
+            "SELECT 1 FROM trackers WHERE slug = ?", (t["slug"],)
+        ).fetchone():
+            continue
         conn.execute(
             """
             INSERT INTO trackers (
