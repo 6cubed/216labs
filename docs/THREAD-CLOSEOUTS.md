@@ -2,14 +2,15 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
-## Production snapshot (2026-05-26 ~22:51 UTC)
+## Production snapshot (2026-05-27 ~21:45 UTC)
 
 | Check | Result |
 |-------|--------|
-| `./scripts/edge-smoke.sh` | **Passing** — admin 401, landing 200, maxlearn OK, storybook/1page `ready=false` |
-| VPS git | **`0bb9002e`** (waitlist-first StoryMagic, admin revenue hints, 1page checkout gate) |
+| `./scripts/edge-smoke.sh` | Re-run after recover — admin/landing expected up |
+| VPS DB | **Restored** from `216labs.db.bak.202605271702` (corrupt DB + WAL dir mounts) |
+| Admin **Org metrics** | **Shipped** `fe48a9bb` — https://admin.6cubed.app/org-metrics after admin up |
 | First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` + `ONEPAGE_STRIPE_*` in [admin Env](https://admin.6cubed.app/env) |
-| Pocket bridge autoprompt | **ON** — `/autoprompt on`; aggressive Allow/Run click + DOM fallback (`7cb64d9b`) |
+| Pocket bridge autoprompt | **ON** — `/autoprompt on` |
 
 **If edge all `000` or SSH banner hang:** `./scripts/droplet-reboot.sh` → `./scripts/wait-for-droplet.sh` (runs recover). Diagnose first: `./scripts/droplet-wedge-check.sh`.
 
@@ -90,6 +91,18 @@ If confirmations still hit Telegram: note button labels; extend `_AUTOPROMPT_ACC
 ## Deploy — subset flapped Caddy — **CLOSED (`898ceb07`)**
 
 `DEPLOY_RUNTIME_APPS=storybook landing` (etc.) without `DEPLOY_SHOWROOM=1` used to `compose up` the **full catalogue** (missing images e.g. groundtruth) and briefly kill edge. **Now:** phase 2 = spine + subset only; post-deploy Caddy regen/reload.
+
+---
+
+## Admin deploy / `216labs.db-shm` mount — **CLOSED (fix shipped)**
+
+| Symptom | Fix |
+|---------|-----|
+| `mount ... 216labs.db-shm: not a directory` | Docker created **directories** for missing WAL bind targets |
+| DB `unable to open` / corrupt | Restored from **`216labs.db.bak.202605271702`** |
+| cron-runner restart loop | Compose: drop `-wal`/`-shm` mounts; **`journal_mode=DELETE`** |
+
+**Verify:** `./scripts/fix-sqlite-wal-mounts.sh root@46.101.88.197` then `docker compose up -d admin activator cron-runner`. **Org metrics:** https://admin.6cubed.app/org-metrics
 
 ---
 
