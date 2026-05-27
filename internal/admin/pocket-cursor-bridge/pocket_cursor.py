@@ -862,6 +862,7 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
 
 
 POCKET_CURSOR_COMMANDS = [
+    {'command': 'now', 'description': 'Quick snapshot: stack, revenue, leads, links'},
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
     {'command': 'chats', 'description': 'Show all chats across instances'},
     {'command': 'deleteoldchats', 'description': 'Close non-active chat tabs'},
@@ -3100,6 +3101,60 @@ def tg_pocket_commands_help_text():
     return "\n".join(lines)
 
 
+def _run_cmd_quick(cmd: list[str], timeout_sec: int = 12) -> tuple[bool, str]:
+    """Run a small local command and return (ok, stdout_or_err)."""
+    try:
+        p = sp.run(
+            cmd,
+            stdout=sp.PIPE,
+            stderr=sp.STDOUT,
+            timeout=timeout_sec,
+            text=True,
+        )
+        out = (p.stdout or "").strip()
+        return (p.returncode == 0), out
+    except Exception as e:
+        return False, str(e)
+
+
+def _now_text() -> str:
+    """Telegram /now: fast status + links for on-the-move."""
+    lines: list[str] = []
+    lines.append("📍 Now — 216labs")
+
+    # Stack snapshot (local heartbeat script includes edge probes + last cron states).
+    ok, out = _run_cmd_quick(["bash", "-lc", "./scripts/heartbeat-stack.sh"], timeout_sec=18)
+    if out:
+        # Keep it short: last ~12 lines are usually the actionable bits.
+        tail = "\n".join(out.splitlines()[-12:])
+        lines.append("\n🩺 Stack")
+        lines.append(tail)
+    else:
+        lines.append("\n🩺 Stack\n(no local stack snapshot)")
+
+    # Revenue readiness via public HTTP (no SSH).
+    ok2, out2 = _run_cmd_quick(["bash", "-lc", "./scripts/check-revenue-env-http.sh"], timeout_sec=18)
+    if out2:
+        lines.append("\n💳 Revenue / checkout")
+        lines.append("\n".join(out2.splitlines()[-12:]))
+
+    # Recent inbound messages (leads).
+    ok3, out3 = _run_cmd_quick(["bash", "-lc", "./scripts/query_leads.sh 5"], timeout_sec=10)
+    if out3:
+        lines.append("\n📩 Inbound (latest leads)")
+        lines.append("\n".join(out3.splitlines()[:6]))
+
+    # Quick links.
+    lines.append("\n🔗 Links")
+    lines.append("• Admin overview: https://admin.6cubed.app/")
+    lines.append("• Admin todos: https://admin.6cubed.app/todos")
+    lines.append("• Admin leads: https://admin.6cubed.app/leads")
+    lines.append("• Checkout setup: https://admin.6cubed.app/checkout-setup")
+    lines.append("• Homepage: https://6cubed.app/")
+
+    return "\n".join(lines).strip()
+
+
 def telegram_command_base(text: str) -> str:
     """Telegram groups send /cmd@BotUsername; strip @suffix so routing matches /cmd.
 
@@ -3487,6 +3542,10 @@ def sender_thread():
 
                 if cmd == '/commands':
                     tg_send(cid, tg_pocket_commands_help_text())
+                    continue
+
+                if cmd == '/now':
+                    tg_send(cid, _now_text())
                     continue
 
                 if cmd == '/bridges':
