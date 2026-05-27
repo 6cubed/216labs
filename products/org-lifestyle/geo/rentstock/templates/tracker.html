@@ -12,11 +12,47 @@
   </p>
   <div class="stat">{{ active_count }} active now</div>
   {% if history %}
-    <div class="chart" aria-label="Weekly stock history">
-      {% set max_c = history|map(attribute='active_count')|max or 1 %}
-      {% for h in history %}
-      <div class="bar" style="height: {{ (h.active_count / max_c * 100)|int }}%" title="{{ h.counted_at }}: {{ h.active_count }}"></div>
-      {% endfor %}
+    {% set max_c = history|map(attribute='active_count')|max or 1 %}
+    {% set min_c = history|map(attribute='active_count')|min or 0 %}
+    {% set n = history|length %}
+    {% set w = 980 %}
+    {% set h = 120 %}
+    {% set pad_l = 46 %}
+    {% set pad_r = 10 %}
+    {% set pad_t = 10 %}
+    {% set pad_b = 28 %}
+    {% set inner_w = w - pad_l - pad_r %}
+    {% set inner_h = h - pad_t - pad_b %}
+    {% set denom = (max_c - min_c) if (max_c - min_c) else 1 %}
+    <div class="chart-wrap" aria-label="Weekly stock history (date on x-axis, count on y-axis)">
+      <svg class="chart" viewBox="0 0 {{ w }} {{ h }}" preserveAspectRatio="none" role="img" aria-label="Weekly stock history chart">
+        <line x1="{{ pad_l }}" y1="{{ pad_t }}" x2="{{ pad_l }}" y2="{{ pad_t + inner_h }}" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
+        <line x1="{{ pad_l }}" y1="{{ pad_t + inner_h }}" x2="{{ pad_l + inner_w }}" y2="{{ pad_t + inner_h }}" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
+        {% set y_mid = pad_t + (inner_h / 2) %}
+        <line x1="{{ pad_l }}" y1="{{ y_mid }}" x2="{{ pad_l + inner_w }}" y2="{{ y_mid }}" stroke="rgba(255,255,255,0.06)" stroke-width="1" />
+        <text x="10" y="{{ pad_t + 4 }}" fill="rgba(154,171,207,0.9)" font-size="12">{{ max_c }}</text>
+        <text x="10" y="{{ y_mid + 4 }}" fill="rgba(154,171,207,0.75)" font-size="12">{{ ((max_c + min_c) // 2) }}</text>
+        <text x="10" y="{{ pad_t + inner_h + 4 }}" fill="rgba(154,171,207,0.9)" font-size="12">{{ min_c }}</text>
+
+        {% set ns = namespace(d="") %}
+        {% for i in range(n) %}
+          {% set v = history[i].active_count %}
+          {% set x = pad_l + (inner_w * (i / (n - 1 if n > 1 else 1))) %}
+          {% set y = pad_t + inner_h - (inner_h * ((v - min_c) / denom)) %}
+          {% if i == 0 %}
+            {% set ns.d = "M %.2f %.2f"|format(x, y) %}
+          {% else %}
+            {% set ns.d = ns.d + (" L %.2f %.2f"|format(x, y)) %}
+          {% endif %}
+        {% endfor %}
+        <path d="{{ ns.d }}" fill="none" stroke="rgba(96,165,250,0.95)" stroke-width="2.2" />
+        <path d="{{ ns.d }} L {{ pad_l + inner_w }} {{ pad_t + inner_h }} L {{ pad_l }} {{ pad_t + inner_h }} Z"
+              fill="rgba(96,165,250,0.10)" stroke="none" />
+      </svg>
+      <div class="chart-axis">
+        <div>{{ history[0].counted_at }}</div>
+        <div>{{ history[-1].counted_at }}</div>
+      </div>
     </div>
     <p class="criteria">Weekly snapshots (Mon 00:05 UTC). Showing up to {{ history|length }} weeks.</p>
   {% else %}

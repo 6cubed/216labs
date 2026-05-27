@@ -15,11 +15,39 @@
       {% endif %}
     </p>
     {% if m.history %}
-    <div class="chart" aria-hidden="true">
-      {% set max_c = m.history|map(attribute='active_count')|max or 1 %}
-      {% for h in m.history %}
-      <div class="bar" style="height: {{ (h.active_count / max_c * 100)|int }}%" title="{{ h.counted_at }}: {{ h.active_count }}"></div>
-      {% endfor %}
+    {% set max_c = m.history|map(attribute='active_count')|max or 1 %}
+    {% set min_c = m.history|map(attribute='active_count')|min or 0 %}
+    {% set n = m.history|length %}
+    {% set w = 980 %}
+    {% set h = 120 %}
+    {% set pad_l = 46 %}
+    {% set pad_r = 10 %}
+    {% set pad_t = 10 %}
+    {% set pad_b = 28 %}
+    {% set inner_w = w - pad_l - pad_r %}
+    {% set inner_h = h - pad_t - pad_b %}
+    {% set denom = (max_c - min_c) if (max_c - min_c) else 1 %}
+    <div class="chart-wrap" aria-hidden="true">
+      <svg class="chart" viewBox="0 0 {{ w }} {{ h }}" preserveAspectRatio="none">
+        <line x1="{{ pad_l }}" y1="{{ pad_t }}" x2="{{ pad_l }}" y2="{{ pad_t + inner_h }}" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
+        <line x1="{{ pad_l }}" y1="{{ pad_t + inner_h }}" x2="{{ pad_l + inner_w }}" y2="{{ pad_t + inner_h }}" stroke="rgba(255,255,255,0.10)" stroke-width="1" />
+        {% set ns = namespace(d="") %}
+        {% for i in range(n) %}
+          {% set v = m.history[i].active_count %}
+          {% set x = pad_l + (inner_w * (i / (n - 1 if n > 1 else 1))) %}
+          {% set y = pad_t + inner_h - (inner_h * ((v - min_c) / denom)) %}
+          {% if i == 0 %}
+            {% set ns.d = "M %.2f %.2f"|format(x, y) %}
+          {% else %}
+            {% set ns.d = ns.d + (" L %.2f %.2f"|format(x, y)) %}
+          {% endif %}
+        {% endfor %}
+        <path d="{{ ns.d }}" fill="none" stroke="rgba(94,234,212,0.95)" stroke-width="2.2" />
+      </svg>
+      <div class="chart-axis">
+        <div>{{ m.history[0].counted_at }}</div>
+        <div>{{ m.history[-1].counted_at }}</div>
+      </div>
     </div>
     {% endif %}
     {% if m.last_sync and m.last_sync.finished_at %}
