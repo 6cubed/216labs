@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/todos", label: "Todos" },
   { href: "/orders", label: "Orders" },
   { href: "/leads", label: "Leads" },
+  { href: "/checkout-setup", label: "Checkout setup" },
   { href: "/architecture", label: "Architecture" },
   { href: "https://difftinder.6cubed.app", label: "DiffTinder", external: true },
   { href: "https://agitweet.6cubed.app", label: "Agitweet", external: true },
