@@ -14,6 +14,7 @@ Default path: 216labs.db in the current working directory.
 """
 from __future__ import annotations
 
+import base64
 import sqlite3
 import sys
 
@@ -33,6 +34,11 @@ def main() -> int:
     finally:
         conn.close()
     for key, value in rows:
+        if key == "ADMIN_PASSWORD_HASH":
+            # Avoid docker-compose `$` interpolation issues by exporting base64.
+            b64 = base64.b64encode(str(value).encode("utf-8")).decode("ascii")
+            sys.stdout.write("ADMIN_PASSWORD_HASH_B64=" + b64 + "\n")
+            continue
         sys.stdout.write(key + "=" + escape_compose_env_value(value) + "\n")
     return 0
 

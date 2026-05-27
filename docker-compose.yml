@@ -9,11 +9,10 @@ services:
       - "443:443/udp"
     environment:
       - ADMIN_USER=${ADMIN_USER:-admin}
-      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
-    # Caddy may accept either (a) a PHC string from `caddy hash-password` ($2a$…, $argon2id$…)
-    # or (b) legacy base64-wrapped hashes. Never run tr . + on (a): bcrypt uses '.' in the
-    # encoded payload; rewriting breaks login. Only normalize dot-for-plus + padding for (b).
-    command: sh -c 'if [ -n "$$ADMIN_PASSWORD_HASH" ] && [ "$(printf %.1s "$$ADMIN_PASSWORD_HASH")" != "$$" ]; then ADMIN_PASSWORD_HASH="$(printf %s "$$ADMIN_PASSWORD_HASH" | tr . +)"; LEN="$(printf %s "$$ADMIN_PASSWORD_HASH" | wc -c | tr -d " ")"; if [ $((LEN % 4)) -eq 2 ]; then ADMIN_PASSWORD_HASH="$$ADMIN_PASSWORD_HASH=="; elif [ $((LEN % 4)) -eq 3 ]; then ADMIN_PASSWORD_HASH="$$ADMIN_PASSWORD_HASH="; fi; export ADMIN_PASSWORD_HASH; fi; exec caddy run --config /etc/caddy/Caddyfile'
+      # bcrypt hashes contain lots of `$` which docker-compose tries to interpolate.
+      # Provide base64 instead and decode at runtime.
+      - ADMIN_PASSWORD_HASH_B64=${ADMIN_PASSWORD_HASH_B64:-}
+    command: sh -c 'if [ -n "$$ADMIN_PASSWORD_HASH_B64" ]; then ADMIN_PASSWORD_HASH="$$(printf %s "$$ADMIN_PASSWORD_HASH_B64" | base64 -d 2>/dev/null || true)"; export ADMIN_PASSWORD_HASH; fi; exec caddy run --config /etc/caddy/Caddyfile'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
