@@ -64,6 +64,64 @@ from lib import heartbeat_harness
 from lib import agitweet_client
 from lib import agitweet_harness
 
+
+def _repo_root() -> str:
+    # pocket_cursor.py lives at internal/admin/pocket-cursor-bridge/pocket_cursor.py
+    return str(BRIDGE_DIR.parent.parent.parent)
+
+
+def adminpass_reset(*, cid: int) -> None:
+    """
+    Rotate admin.6cubed.app basic auth and paste the new password to Telegram.
+
+    Owner-only: requires sender to be in allowed_user_ids (same as pairing).
+    """
+    root = _repo_root()
+    script = os.path.join(root, "scripts", "reset-admin-basic-auth.sh")
+    if not os.path.isfile(script):
+        tg_send(cid, f"⚠️ Missing script: {script}")
+        return
+    remote = os.environ.get("POCKET_REMOTE", "").strip() or "root@46.101.88.197"
+    user = os.environ.get("ADMIN_USER", "").strip() or "admin"
+    try:
+        tg_send(cid, "🔐 Rotating admin password… (this takes ~10–30s)")
+        p = sp.run(
+            [script],
+            cwd=root,
+            env={**os.environ, "POCKET_REMOTE": remote, "ADMIN_USER": user},
+            stdout=sp.PIPE,
+            stderr=sp.STDOUT,
+            text=True,
+            timeout=180,
+        )
+        out = p.stdout or ""
+    except Exception as e:
+        tg_send(cid, f"⚠️ Failed to reset admin password: {e}")
+        return
+    if p.returncode != 0:
+        tail = "\n".join(out.strip().splitlines()[-14:])
+        tg_send(cid, f"⚠️ Admin password reset failed.\n\n{tail}")
+        return
+    # Parse "User: ..." and "Pass: ..." lines (printed by the script).
+    new_user = user
+    new_pass = ""
+    for line in out.splitlines():
+        if line.startswith("User:"):
+            new_user = line.split(":", 1)[1].strip() or new_user
+        elif line.startswith("Pass:"):
+            new_pass = line.split(":", 1)[1].strip()
+    if not new_pass:
+        tg_send(cid, "⚠️ Admin password rotated but could not parse the new password from output.")
+        return
+    tg_send(
+        cid,
+        "✅ Admin basic auth rotated.\n"
+        "URL: https://admin.6cubed.app/\n"
+        f"User: {new_user}\n"
+        f"Pass: {new_pass}\n\n"
+        "Tip: save this in a password manager.",
+    )
+
 _cd.ts_print = wrap_ts_print(_cd.ts_print)
 _cd.print = _cd.ts_print
 from chat_detection import install_chat_listener, start_chat_listener, list_chats
@@ -768,6 +826,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'autoprompt', 'description': 'Auto-click Run/confirm (on|off|status)'},
     {'command': 'heartbeat', 'description': 'Agent nudge: on|off|now|status'},
     {'command': 'agitweet', 'description': 'Post to Agitweet: on|off|now|status'},
+    {'command': 'adminpass', 'description': 'Rotate admin basic auth: reset'},
     {'command': 'agentconversation', 'description': 'Opt in/out: groups default off, DMs default on'},
     {'command': 'screenshot', 'description': 'Screenshot your Cursor window'},
     {'command': 'verbose', 'description': 'Mirror agent thinking live (Telegram edits)'},
@@ -3544,6 +3603,19 @@ def sender_thread():
                             + agitweet_client.config_summary()
                             + "\n\n"
                             + last_line,
+                        )
+                    continue
+
+                if cmd == '/adminpass' or cmd.startswith('/adminpass '):
+                    parts = text.strip().split(maxsplit=1)
+                    arg = parts[1].strip().lower() if len(parts) > 1 else ''
+                    if arg in ('reset', 'rotate', 'new'):
+                        adminpass_reset(cid=cid)
+                    else:
+                        tg_send(
+                            cid,
+                            "Admin password helper:\n"
+                            "/adminpass reset — rotate admin.6cubed.app basic auth and paste the new password here",
                         )
                     continue
 
