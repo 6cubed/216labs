@@ -3140,9 +3140,12 @@ def _now_text() -> str:
 
     # Recent inbound messages (leads).
     ok3, out3 = _run_cmd_quick(["bash", "-lc", "./scripts/query_leads.sh 5"], timeout_sec=10)
-    if out3:
+    if ok3 and out3 and "(no leads)" not in out3:
         lines.append("\n📩 Inbound (latest leads)")
         lines.append("\n".join(out3.splitlines()[:6]))
+    else:
+        lines.append("\n📩 Inbound")
+        lines.append("Open admin → Leads: https://admin.6cubed.app/leads")
 
     # Quick links.
     lines.append("\n🔗 Links")
