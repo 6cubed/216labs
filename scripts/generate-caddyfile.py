@@ -46,7 +46,7 @@ lines = [
     "\t\treverse_proxy admin:3000",
     "\t}",
     "\thandle {",
-    "\t\tbasicauth {",
+    "\t\tbasic_auth {",
     "\t\t\t{env.ADMIN_USER} {env.ADMIN_PASSWORD_HASH}",
     "\t\t}",
     "\t\treverse_proxy admin:3000",

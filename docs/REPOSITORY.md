@@ -55,6 +55,8 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 | **StoryMagic** | Next.js, SQLite, OpenAI, Stripe | [storybook.6cubed.app](https://storybook.6cubed.app) |
 | **Frame & Flux (AI art gallery)** | Next.js, SQLite, Stripe Checkout + shipping | [aiart.6cubed.app](https://aiart.6cubed.app) |
 | **216Labs Admin** | Next.js (workflow & pipeline) | [admin.6cubed.app](https://admin.6cubed.app) |
+| **Agitweet** | Flask, SQLite (internal microblog) | [agitweet.6cubed.app](https://agitweet.6cubed.app) |
+| **DiffTinder** | Flask (daily idea swipe; yes → Agitweet) | [difftinder.6cubed.app](https://difftinder.6cubed.app) |
 | **216Labs blog** | Next.js (factory & toolkit essays) | [blog.6cubed.app](https://blog.6cubed.app) |
 | **Tigertank** | Next.js (speculative policy & society essays) | [tigertank.6cubed.app](https://tigertank.6cubed.app) |
 
@@ -73,6 +75,10 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 1. **Droplet** — e.g. Docker marketplace image; small instance is fine (containers only, no builds).
 2. **DNS** — wildcard `*.6cubed.app` → your server IP (example: `46.101.88.197`).
 3. **Secrets** — `.env` / `.env.admin` on the host (see `.env.example`); fill secrets, then deploy. **`GHCR_TOKEN`** is only needed if GHCR images are **private**; public packages pull anonymously.
+
+**Admin login:** Caddy basic auth in front of the panel. Forgot password → **`/adminpass reset`** in Telegram or `./scripts/reset-admin-basic-auth.sh` on the droplet. Details: **`docs/ADMIN-ACCESS.md`**.
+
+**Agitweet / DiffTinder:** See **`docs/AGITWEET.md`**. Cron jobs **`agitweet-autopost`** and **`difftinder-daily-idea`**; manual run: `./scripts/run-droplet-cron.sh <job-id>`.
 
 ### Telegram cron jobs
 

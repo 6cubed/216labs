@@ -504,6 +504,11 @@ async function fetchMerchStorefront(url) {
   };
 }
 
+/** Caddy may return 401 (gate) or 308 (redirect) before the admin app responds. */
+function adminEdgeStatusOk(status) {
+  return status === 200 || status === 401 || status === 308;
+}
+
 /**
  * Twice-daily edge + revenue probe; Telegram only when something is broken.
  * Persists JSON in cron_runner_state for admin Env page.
@@ -518,7 +523,7 @@ export async function revenueEnvCheck(db) {
       signal: AbortSignal.timeout(12_000),
       redirect: "follow",
     });
-    const adminOk = res.status === 200 || res.status === 401;
+    const adminOk = adminEdgeStatusOk(res.status);
     results.push({
       id: "admin",
       label: "Admin",
@@ -533,7 +538,7 @@ export async function revenueEnvCheck(db) {
         signal: AbortSignal.timeout(8_000),
         redirect: "follow",
       });
-      const adminOk = res.status === 200 || res.status === 401;
+      const adminOk = adminEdgeStatusOk(res.status);
       results.push({
         id: "admin",
         label: "Admin",

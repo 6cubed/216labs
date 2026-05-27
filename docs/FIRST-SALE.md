@@ -12,6 +12,8 @@
 
 Until StoryMagic keys land, **print-interest** emails on the preview page are the revenue funnel (`POST /api/print-interest`, `./scripts/query_storybook_print_leads.sh` on the droplet). Admin shows a **First sale** banner on every page until checkout probes pass.
 
+**Admin access:** If you cannot open [admin → Env](https://admin.6cubed.app/env) to paste keys, reset credentials first — **`docs/ADMIN-ACCESS.md`** (`/adminpass reset` in Telegram).
+
 The fastest path to **paid revenue** is **StoryMagic** (fixed price, one webhook).
 
 ## 1. Stripe (test mode first)

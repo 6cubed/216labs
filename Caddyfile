@@ -17,7 +17,7 @@ admin.6cubed.app {
 		reverse_proxy admin:3000
 	}
 	handle {
-		basicauth {
+		basic_auth {
 			{env.ADMIN_USER} {env.ADMIN_PASSWORD_HASH}
 		}
 		reverse_proxy admin:3000
