@@ -2,8 +2,11 @@
 """
 Emit KEY=value lines for docker compose --env-file .env.admin from 216labs.db.
 
-Uses stdlib sqlite3 only (no Node). Escaping matches
-scripts/write-env-admin-from-db.js: each literal $ in a value becomes $$.
+Uses stdlib sqlite3 only (no Node).
+
+Note: we do **not** escape `$` → `$$`. Compose `--env-file` treats `$` as a
+literal character, and escaping breaks values like Caddy bcrypt hashes
+(`$2a$…`) used for admin basic auth.
 
 Usage:
   python3 scripts/export-env-admin-from-db.py [path/to/216labs.db]
@@ -16,7 +19,8 @@ import sys
 
 
 def escape_compose_env_value(v: str) -> str:
-    return str(v).replace("$", "$$")
+    # Keep literal `$` intact for values like $2a$... password hashes.
+    return str(v)
 
 
 def main() -> int:
