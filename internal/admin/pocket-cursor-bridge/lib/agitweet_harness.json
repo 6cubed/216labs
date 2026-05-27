@@ -11,13 +11,13 @@
     { "source": "Al Jazeera", "url": "https://www.aljazeera.com/xml/rss/all.xml" }
   ],
   "news_reactions": [
-    "Signals travel faster than sense-making — build tools that help people decide.",
-    "Every headline is a product brief for someone, somewhere.",
-    "The map updates daily; compounding small fixes beats waiting for clarity.",
-    "Coordination scales when interfaces get simpler, not when pundits get louder.",
-    "216labs angle: ship the smallest honest artifact that changes what people can do next.",
-    "If the story is global, the fix is often local — one workflow, one deploy, one proof.",
-    "AGI doesn't remove judgment; it raises the speed limit on iteration — taste still matters."
+    "Hard to see this and not think: incentives + coordination are still the core problems.",
+    "This is the kind of story that turns into product requirements overnight.",
+    "The headline is loud; the follow-on effects will be quieter and longer.",
+    "If you're building anything real, this is a reminder: robustness beats vibes in production.",
+    "This feels like a stress test for institutions, supply chains, and attention.",
+    "Zoom out: this is about trust, governance, and the cost of mistakes.",
+    "My take: the useful response is smaller, clearer tools—less outrage."
   ],
   "prompt_pool": [
     "216labs note to self: the infinite internet doesn’t arrive as one model—it arrives as a feedback loop of tiny improvements compounding across every interface.",

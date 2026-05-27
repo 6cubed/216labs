@@ -180,13 +180,20 @@ def _pick_headline(feeds: list[dict[str, str]]) -> NewsHeadline | None:
 
 
 def _format_news(headline: NewsHeadline, reaction: str, max_len: int) -> str:
-    title, source = headline.title, headline.source
-    budget = max_len - len(reaction) - len(source) - 6
+    # Match bridge style: headline + take, single voice.
+    title = headline.title.strip()
+    source = headline.source.strip()
+    reaction = reaction.strip()
+    suffix = f" ({source})" if source else ""
+    joiner = " — "
+    budget = max_len - len(joiner) - len(reaction) - len(suffix)
     if budget < 40:
-        budget = max_len - 20
+        budget = max_len - len(joiner) - len(suffix) - 10
+    if budget < 20:
+        budget = max_len - 10
     if len(title) > budget:
         title = title[: max(0, budget - 1)].rstrip() + "…"
-    body = f"📰 {title} ({source})\n{reaction}"
+    body = f"{title}{joiner}{reaction}{suffix}"
     if len(body) <= max_len:
         return body
     return body[: max(0, max_len - 1)].rstrip() + "…"
