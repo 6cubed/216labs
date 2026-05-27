@@ -511,9 +511,12 @@ function adminEdgeStatusOk(status) {
 
 /** Docker DNS first — avoids false "admin fetch failed" when outbound HTTPS blips. */
 async function probeAdminResilient() {
+  // Root (/) can be slow/hang due to heavy SSR; use a lightweight public API route.
+  // GET returns 405 but proves the app is reachable.
+  const path = "/api/public/leads";
   const attempts = [
-    { url: "http://admin:3000/", via: "internal" },
-    { url: "https://admin.6cubed.app/", via: "external" },
+    { url: `http://admin:3000${path}`, via: "internal" },
+    { url: `https://admin.6cubed.app${path}`, via: "external" },
   ];
   let lastErr = "unreachable";
   for (const { url, via } of attempts) {
@@ -522,7 +525,7 @@ async function probeAdminResilient() {
         signal: AbortSignal.timeout(10_000),
         redirect: "follow",
       });
-      const adminOk = adminEdgeStatusOk(res.status);
+      const adminOk = res.status === 204 || res.status === 200 || res.status === 201 || res.status === 405;
       if (adminOk) {
         return {
           ok: true,
