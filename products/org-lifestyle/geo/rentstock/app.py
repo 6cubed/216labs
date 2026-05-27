@@ -102,7 +102,7 @@ def index():
     with get_db() as conn:
         trackers = conn.execute(
             """
-            SELECT id, slug, name, market_slug, min_beds, max_price_eur, created_at
+            SELECT id, slug, name, market_slug, radius_m, min_beds, max_price_eur, created_at
             FROM trackers
             ORDER BY id DESC
             LIMIT 50
@@ -129,14 +129,27 @@ def trackers_page():
     if request.method == "POST":
         name = (request.form.get("name") or "").strip()
         market_slug = (request.form.get("market_slug") or "").strip()
+        radius_km_raw = (request.form.get("radius_km") or "").strip()
         min_beds_raw = (request.form.get("min_beds") or "").strip()
         max_price_raw = (request.form.get("max_price_eur") or "").strip()
 
         if not name or market_slug not in MARKETS:
             return redirect(url_for("trackers_page"))
 
+        market = MARKETS[market_slug]
         min_beds = int(min_beds_raw) if min_beds_raw.isdigit() else None
         max_price = int(max_price_raw) if max_price_raw.isdigit() else None
+        radius_m = None
+        if radius_km_raw:
+            try:
+                km = float(radius_km_raw)
+                # Clamp to a sane range.
+                km = max(0.5, min(50.0, km))
+                radius_m = int(km * 1000)
+            except Exception:
+                radius_m = None
+        if radius_m is None:
+            radius_m = int(market.radius_m)
 
         base = _slugify(name)
         slug = base
@@ -150,17 +163,17 @@ def trackers_page():
                 i += 1
             conn.execute(
                 """
-                INSERT INTO trackers (slug, name, market_slug, min_beds, max_price_eur, created_at)
-                VALUES (?, ?, ?, ?, ?, datetime('now'))
+                INSERT INTO trackers (slug, name, market_slug, radius_m, min_beds, max_price_eur, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
                 """,
-                (slug, name, market_slug, min_beds, max_price),
+                (slug, name, market_slug, radius_m, min_beds, max_price),
             )
         return redirect(url_for("tracker_page", slug=slug))
 
     with get_db() as conn:
         trackers = conn.execute(
             """
-            SELECT id, slug, name, market_slug, min_beds, max_price_eur, created_at
+            SELECT id, slug, name, market_slug, radius_m, min_beds, max_price_eur, created_at
             FROM trackers
             ORDER BY id DESC
             """
@@ -172,7 +185,7 @@ def tracker_dashboard(tracker_slug: str) -> dict:
     with get_db() as conn:
         t = conn.execute(
             """
-            SELECT id, slug, name, market_slug, min_beds, max_price_eur, created_at
+            SELECT id, slug, name, market_slug, radius_m, min_beds, max_price_eur, created_at
             FROM trackers WHERE slug = ?
             """,
             (tracker_slug,),
@@ -181,8 +194,13 @@ def tracker_dashboard(tracker_slug: str) -> dict:
             return {"tracker": None}
 
         market_slug = t["market_slug"]
+        market = MARKETS.get(market_slug)
         where = ["market_slug = ?", "active = 1"]
         params = [market_slug]
+        if market:
+            radius_m = int(t["radius_m"] or market.radius_m)
+            where.append("distance_m IS NOT NULL AND distance_m <= ?")
+            params.append(radius_m)
         if t["min_beds"] is not None:
             where.append("beds IS NOT NULL AND beds >= ?")
             params.append(int(t["min_beds"]))
@@ -207,7 +225,13 @@ def tracker_dashboard(tracker_slug: str) -> dict:
         ).fetchall()
         history = list(reversed(history))
 
-    return {"tracker": t, "market": MARKETS.get(market_slug), "active_count": active_count, "history": history}
+    return {
+        "tracker": t,
+        "market": market,
+        "active_count": active_count,
+        "history": history,
+        "radius_m": int(t["radius_m"] or (market.radius_m if market else 0)),
+    }
 
 
 @app.route("/tracker/<slug>")
@@ -222,10 +246,17 @@ def snapshot_trackers() -> None:
     """Weekly snapshot of tracker stock (active count)."""
     ensure_db()
     with get_db() as conn:
-        trackers = conn.execute("SELECT id, market_slug, min_beds, max_price_eur FROM trackers").fetchall()
+        trackers = conn.execute(
+            "SELECT id, market_slug, radius_m, min_beds, max_price_eur FROM trackers"
+        ).fetchall()
         for t in trackers:
             where = ["market_slug = ?", "active = 1"]
             params = [t["market_slug"]]
+            market = MARKETS.get(t["market_slug"])
+            if market:
+                radius_m = int(t["radius_m"] or market.radius_m)
+                where.append("distance_m IS NOT NULL AND distance_m <= ?")
+                params.append(radius_m)
             if t["min_beds"] is not None:
                 where.append("beds IS NOT NULL AND beds >= ?")
                 params.append(int(t["min_beds"]))

@@ -70,6 +70,7 @@ def init_db() -> None:
                 slug TEXT NOT NULL UNIQUE,
                 name TEXT NOT NULL,
                 market_slug TEXT NOT NULL,
+                radius_m INTEGER,
                 min_beds INTEGER,
                 max_price_eur INTEGER,
                 created_at TEXT NOT NULL
@@ -86,3 +87,8 @@ def init_db() -> None:
                 ON tracker_snapshots (tracker_id, counted_at);
             """
         )
+
+        # Migration: older DBs may not have radius_m yet.
+        cols = [r["name"] for r in conn.execute("PRAGMA table_info(trackers)").fetchall()]
+        if "radius_m" not in cols:
+            conn.execute("ALTER TABLE trackers ADD COLUMN radius_m INTEGER")

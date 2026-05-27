@@ -78,6 +78,7 @@
           <tr>
             <th>Name</th>
             <th>Market</th>
+            <th>Radius</th>
             <th>Min beds</th>
             <th>Max €</th>
             <th>Created</th>
@@ -88,6 +89,7 @@
           <tr>
             <td><a href="{{ url_for('tracker_page', slug=t.slug) }}">{{ t.name }}</a></td>
             <td>{{ t.market_slug }}</td>
+            <td>{% if t.radius_m is not none %}{{ (t.radius_m / 1000)|round(1) }} km{% else %}—{% endif %}</td>
             <td>{% if t.min_beds is not none %}{{ t.min_beds }}{% else %}—{% endif %}</td>
             <td>{% if t.max_price_eur is not none %}€{{ t.max_price_eur }}{% else %}—{% endif %}</td>
             <td>{{ t.created_at }}</td>
