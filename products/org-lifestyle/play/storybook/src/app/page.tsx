@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import BookViewer, { BookPage } from "@/components/BookViewer";
+import { trackStorybookEvent } from "@/lib/analytics";
 
 type Step = "form" | "generating" | "preview";
 
@@ -81,6 +82,7 @@ export default function HomePage() {
     if (!topic.trim()) return;
 
     setError(null);
+    trackStorybookEvent("generate_start", { child_age: age });
     setStep("generating");
     setPages([]);
     setProgressSteps([
@@ -161,6 +163,10 @@ export default function HomePage() {
       }
 
       setStep("preview");
+      trackStorybookEvent("story_preview_ready", {
+        book_id: genData.bookId,
+        page_count: genData.pages.length,
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg);
@@ -209,6 +215,7 @@ export default function HomePage() {
         throw new Error(data.error ?? "Checkout failed");
       }
 
+      trackStorybookEvent("begin_checkout", { book_id: bookId });
       window.location.href = data.url;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Checkout failed";

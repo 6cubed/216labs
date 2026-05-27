@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, BookOpen, Package, Mail, MapPin } from "lucide-react";
 import { getOrderBySession, getBook } from "@/lib/db";
+import PurchaseConversion from "@/components/PurchaseConversion";
 
 export default async function SuccessPage({
   searchParams,
@@ -13,6 +14,7 @@ export default async function SuccessPage({
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-story-purple-light via-white to-story-teal-light flex items-center justify-center px-6 py-16">
+      <PurchaseConversion sessionId={sessionId} />
       <div className="w-full max-w-lg">
         {/* Success icon */}
         <div className="flex justify-center mb-8">

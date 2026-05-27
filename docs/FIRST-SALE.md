@@ -10,7 +10,9 @@
 | 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` points at a live store |
 | 3 | **1PageResearch** | €1 report; free tier works today | `ONEPAGE_STRIPE_*` keys |
 
-Until StoryMagic keys land, **print-interest** emails on the preview page are the revenue funnel (`POST /api/print-interest`, `./scripts/query_storybook_print_leads.sh` on the droplet). Admin shows a **First sale** banner on every page until checkout probes pass.
+Until StoryMagic keys land, **print-interest** emails on the preview page are the revenue funnel (`POST /api/print-interest`, admin **Leads**). Admin shows a **First sale** banner on every page until checkout probes pass.
+
+**Paid traffic:** CEO playbook [`STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). GA4 events: `generate_start`, `story_preview_ready`, `waitlist_signup`, `begin_checkout`, `purchase` — mark the funnel step you optimize for as a conversion in GA4.
 
 **Admin access:** If you cannot open [admin → Env](https://admin.6cubed.app/env) to paste keys, reset credentials first — **`docs/ADMIN-ACCESS.md`** (`/adminpass reset` in Telegram).
 

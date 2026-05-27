@@ -2,6 +2,16 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-05-28 ~00:15 UTC)
+
+| Check | Result |
+|-------|--------|
+| StoryMagic monetization beat | **Shipped** — GA4 conversion events + [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md) |
+| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` in [admin Env](https://admin.6cubed.app/env) |
+| Closest live revenue app | **StoryMagic** — waitlist + ads-ready measurement; purchase after Stripe |
+
+---
+
 ## Production snapshot (2026-05-27 ~21:45 UTC)
 
 | Check | Result |
@@ -56,13 +66,15 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
-## StoryMagic revenue — **CLOSED (product); blocked on Stripe keys**
+## StoryMagic revenue — **CLOSED (product + measurement); blocked on Stripe keys**
 
 | Shipped | Blocker |
 |---------|---------|
-| **Waitlist-first** preview CTA (`Join the waitlist`) when checkout off; print-interest → admin ingest; admin **Save** hot-reloads storybook (`7cb64d9b`, `0bb9002e`) | **2** test keys → [admin Env](https://admin.6cubed.app/env) |
+| Waitlist-first preview; print-interest → admin **Leads**; admin Save hot-reloads storybook | **2** test keys → [admin Env](https://admin.6cubed.app/env) |
+| **GA4 funnel events** (`generate_start`, `story_preview_ready`, `waitlist_signup`, `begin_checkout`, `purchase`) | Mark conversions in GA4 |
+| CEO ads playbook | [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md) |
 
-Guide: [`docs/FIRST-SALE.md`](FIRST-SALE.md). Verify: `./scripts/check-revenue-env-http.sh` → `[StoryMagic] checkout ready`. **No more revenue UX** until keys are set — only Stripe + Save.
+Guide: [`docs/FIRST-SALE.md`](FIRST-SALE.md). Verify checkout: `./scripts/check-revenue-env-http.sh` → `[StoryMagic] checkout ready`. **Next revenue unlock:** paste Stripe keys + Save (not more funnel UX).
 
 ---
 
