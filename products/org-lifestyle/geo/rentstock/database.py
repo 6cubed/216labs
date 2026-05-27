@@ -98,3 +98,47 @@ def init_db() -> None:
             conn.execute("ALTER TABLE trackers ADD COLUMN center_lat REAL")
         if "center_lon" not in cols:
             conn.execute("ALTER TABLE trackers ADD COLUMN center_lon REAL")
+
+        seed_default_trackers(conn)
+
+
+# Dublin city center (GPO / O'Connell), not Temple Bar — example tracker from product brief.
+_DEFAULT_TRACKERS = (
+    {
+        "slug": "dublin-3-bed-700k",
+        "name": "Dublin 3-bed ≤ €700k",
+        "market_slug": "dublin",
+        "center_lat": 53.3498,
+        "center_lon": -6.2603,
+        "radius_m": 3000,
+        "min_beds": 3,
+        "max_price_eur": 700_000,
+    },
+)
+
+
+def seed_default_trackers(conn: sqlite3.Connection) -> None:
+    """One starter tracker when the DB has none (week-over-week snapshots from Mon cron)."""
+    n = conn.execute("SELECT COUNT(*) AS c FROM trackers").fetchone()["c"]
+    if n:
+        return
+    for t in _DEFAULT_TRACKERS:
+        conn.execute(
+            """
+            INSERT INTO trackers (
+                slug, name, market_slug, center_lat, center_lon,
+                radius_m, min_beds, max_price_eur, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            """,
+            (
+                t["slug"],
+                t["name"],
+                t["market_slug"],
+                t["center_lat"],
+                t["center_lon"],
+                t["radius_m"],
+                t["min_beds"],
+                t["max_price_eur"],
+            ),
+        )

@@ -32,6 +32,12 @@ export async function FirstSaleBanner() {
       )}
       <div className="mt-3 flex flex-wrap gap-3 text-xs">
         <Link
+          href="/checkout-setup"
+          className="font-semibold text-accent hover:underline"
+        >
+          Checkout setup →
+        </Link>
+        <Link
           href="/env"
           className="font-semibold text-accent hover:underline"
         >

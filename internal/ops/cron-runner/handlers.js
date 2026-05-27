@@ -509,6 +509,36 @@ function adminEdgeStatusOk(status) {
   return status === 200 || status === 401 || status === 308;
 }
 
+/** Docker DNS first — avoids false "admin fetch failed" when outbound HTTPS blips. */
+async function probeAdminResilient() {
+  const attempts = [
+    { url: "http://admin:3000/", via: "internal" },
+    { url: "https://admin.6cubed.app/", via: "external" },
+  ];
+  let lastErr = "unreachable";
+  for (const { url, via } of attempts) {
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(10_000),
+        redirect: "follow",
+      });
+      const adminOk = adminEdgeStatusOk(res.status);
+      if (adminOk) {
+        return {
+          ok: true,
+          status: res.status,
+          error: null,
+          via,
+        };
+      }
+      lastErr = `HTTP ${res.status} (${via})`;
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : String(e);
+    }
+  }
+  return { ok: false, status: 0, error: lastErr, via: null };
+}
+
 /**
  * Twice-daily edge + revenue probe; Telegram only when something is broken.
  * Persists JSON in cron_runner_state for admin Env page.
@@ -518,45 +548,17 @@ export async function revenueEnvCheck(db) {
   const results = [];
   let issues = 0;
 
-  try {
-    const res = await fetch("https://admin.6cubed.app/", {
-      signal: AbortSignal.timeout(12_000),
-      redirect: "follow",
-    });
-    const adminOk = adminEdgeStatusOk(res.status);
+  {
+    const admin = await probeAdminResilient();
     results.push({
       id: "admin",
       label: "Admin",
-      ok: adminOk,
-      status: res.status,
-      error: adminOk ? null : `HTTP ${res.status}`,
+      ok: admin.ok,
+      status: admin.status,
+      error: admin.error,
+      via: admin.via ?? undefined,
     });
-    if (!adminOk) issues += 1;
-  } catch (e) {
-    try {
-      const res = await fetch("http://admin:3000/", {
-        signal: AbortSignal.timeout(8_000),
-        redirect: "follow",
-      });
-      const adminOk = adminEdgeStatusOk(res.status);
-      results.push({
-        id: "admin",
-        label: "Admin",
-        ok: adminOk,
-        status: res.status,
-        error: adminOk ? null : `HTTP ${res.status} (internal)`,
-      });
-      if (!adminOk) issues += 1;
-    } catch (e2) {
-      results.push({
-        id: "admin",
-        label: "Admin",
-        ok: false,
-        status: 0,
-        error: e instanceof Error ? e.message : "unreachable",
-      });
-      issues += 1;
-    }
+    if (!admin.ok) issues += 1;
   }
 
   for (const { id, label, url, internalUrl } of [
@@ -600,7 +602,12 @@ export async function revenueEnvCheck(db) {
   }
 
   try {
-    let p = await fetchMerchStorefront("https://merch.6cubed.app/");
+    let p;
+    try {
+      p = await fetchMerchStorefront("https://merch.6cubed.app/");
+    } catch (e) {
+      p = await fetchMerchStorefront("http://merch:3000/");
+    }
     results.push({
       id: "merch",
       label: "Merch",

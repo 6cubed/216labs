@@ -43,6 +43,7 @@ export default function HomePage() {
   const [progressSteps, setProgressSteps] = useState<GenerationProgress[]>([]);
   const [checkoutReady, setCheckoutReady] = useState<boolean | null>(null);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+  const [checkoutSetupUrl, setCheckoutSetupUrl] = useState<string | null>(null);
   const [bookPriceUsd, setBookPriceUsd] = useState("24.99");
   const [interestEmail, setInterestEmail] = useState("");
   const [interestSent, setInterestSent] = useState(false);
@@ -58,10 +59,12 @@ export default function HomePage() {
           ready: boolean;
           message?: string;
           priceUsd?: string;
+          setupUrl?: string;
         };
         if (!cancelled) {
           setCheckoutReady(data.ready);
           setCheckoutMessage(data.message ?? null);
+          setCheckoutSetupUrl(data.setupUrl ?? null);
           if (data.priceUsd) setBookPriceUsd(data.priceUsd);
         }
       } catch {
@@ -532,7 +535,22 @@ export default function HomePage() {
                 {checkoutReady === false && checkoutMessage && (
                   <div className="flex items-start gap-2 bg-amber-500/15 border border-amber-400/30 rounded-xl p-3 mb-4 text-white/90 text-sm text-left max-w-lg mx-auto">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span>{checkoutMessage}</span>
+                    <span>
+                      {checkoutMessage}
+                      {checkoutSetupUrl && (
+                        <>
+                          {" "}
+                          <a
+                            href={checkoutSetupUrl}
+                            className="underline font-semibold text-story-yellow-light"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Add Stripe keys in admin
+                          </a>
+                        </>
+                      )}
+                    </span>
                   </div>
                 )}
 
