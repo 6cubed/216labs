@@ -18,6 +18,8 @@ RUN npm install \
 RUN npm run build
 
 FROM node:20-alpine
+# Org metrics reads /workspace via PROJECTS_ROOT (deploy bind-mounts repo).
+RUN apk add --no-cache git
 WORKDIR /app
 COPY --from=builder /repo/internal/admin/.next/standalone ./
 COPY --from=builder /repo/internal/admin/.next/static ./.next/static

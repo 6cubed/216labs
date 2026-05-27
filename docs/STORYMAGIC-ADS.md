@@ -37,7 +37,7 @@ In **GA4 → Admin → Events**, mark `waitlist_signup` (Path A) or `purchase` (
 
 **UTM example:** `?utm_source=meta&utm_medium=paid&utm_campaign=storymagic_may26`
 
-UTMs are **stored on each waitlist lead** (session first-touch) and shown in [admin → Orders](https://admin.6cubed.app/orders) under StoryMagic print leads — no scripts required to see which ad drove an email.
+UTMs are **stored on each waitlist lead** (session first-touch) and shown in [admin → Leads](https://admin.6cubed.app/leads) (and **Orders**) under StoryMagic print leads — no scripts required to see which ad drove an email.
 
 ---
 

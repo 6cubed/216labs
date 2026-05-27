@@ -1,4 +1,6 @@
+import { StorybookPrintLeadsSection } from "@/components/StorybookPrintLeadsSection";
 import { getDb } from "@/lib/db";
+import { fetchStorybookPrintLeads } from "@/lib/storybook";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +35,7 @@ export default async function LeadsPage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Leads</h1>
           <p className="text-sm text-muted">
-            Captured from public funnels (e.g. <span className="font-mono">6cubed.app</span>).
+            Hire form, StoryMagic waitlist (with ad UTMs), and other public funnels.
           </p>
         </div>
         <div className="text-xs text-muted">
@@ -41,9 +43,15 @@ export default async function LeadsPage() {
         </div>
       </div>
 
+      <StorybookPrintLeadsSection leads={storybookPrintLeads} />
+
       {rows.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted">
-          No leads yet. Send one from <a className="underline" href="https://6cubed.app/">6cubed.app</a>.
+          No ingest leads yet. StoryMagic waitlist may still appear above. Hire form:{" "}
+          <a className="underline" href="https://6cubed.app/">
+            6cubed.app
+          </a>
+          .
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">

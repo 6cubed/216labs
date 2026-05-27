@@ -2,6 +2,27 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-05-28 ~01:10 UTC)
+
+| Check | Result |
+|-------|--------|
+| **Org metrics git** | **Shipped** — `git` in admin image; commits populate at `/org-metrics` |
+| **CEO leads hub** | **Shipped** — StoryMagic print leads + UTMs on [admin → Leads](https://admin.6cubed.app/leads) |
+| Droplet disk | **Watch** — deploys saw **~92%**; run `./scripts/prune-droplet-docker.sh root@46.101.88.197` if SSH/transfer flaps |
+
+---
+
+## Meta / Google Ads API — **CLOSED**
+
+| Question | Answer |
+|----------|--------|
+| “Is there an ads API?” | **No** in-repo Marketing API. Run Meta/Google ads in their UIs. |
+| Measure + attribute | GA4 events on StoryMagic; **UTM → waitlist** → admin **Leads** / **Orders** |
+
+Playbook: [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). **Verify:** ad URL with `utm_campaign=test` → waitlist → **Campaign** column on Leads.
+
+---
+
 ## Production snapshot (2026-05-28 ~00:40 UTC)
 
 | Check | Result |
