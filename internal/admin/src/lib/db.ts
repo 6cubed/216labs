@@ -207,6 +207,20 @@ function initSchema(db: Database.Database) {
     );
   `);
   ensureActivatorRuntimeColumns(db);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lead_event (
+      id TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL,
+      source_app_id TEXT NOT NULL DEFAULT '',
+      kind TEXT NOT NULL DEFAULT 'lead', -- lead | hire | merch | other
+      email TEXT NOT NULL DEFAULT '',
+      message TEXT NOT NULL DEFAULT '',
+      referrer TEXT,
+      user_agent TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_lead_event_created_at ON lead_event(created_at);
+    CREATE INDEX IF NOT EXISTS idx_lead_event_email ON lead_event(email);
+  `);
   // env_vars: secrets (e.g. PIPESECURE_GITHUB_TOKEN) live here. Never bulk-delete or
   // truncate this table; only INSERT OR IGNORE new keys from manifests and UPDATE value on user save.
   db.exec(`
