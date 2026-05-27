@@ -54,6 +54,16 @@ export function RevenueReadinessPanel({
             <code className="text-[11px]">ready: false</code> until keys are saved.
             StoryMagic needs <strong>secret + webhook</strong> only (publishable optional).
           </p>
+          {data.storybookPrintLeadCount != null && data.storybookPrintLeadCount > 0 && (
+            <p className="text-xs text-amber-200/80 mt-2">
+              <strong>{data.storybookPrintLeadCount}</strong> print-interest lead
+              {data.storybookPrintLeadCount === 1 ? "" : "s"} waiting —{" "}
+              <a href="/orders" className="text-accent hover:underline">
+                view on Orders
+              </a>
+              . Stripe keys unlock checkout for this waitlist.
+            </p>
+          )}
         </div>
       )}
 

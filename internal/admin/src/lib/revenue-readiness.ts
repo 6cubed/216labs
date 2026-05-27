@@ -1,5 +1,6 @@
 import type { DbEnvVar } from "@/lib/db";
 import { getCronRunnerState } from "@/lib/db";
+import { fetchStorybookPrintLeads } from "@/lib/storybook";
 
 /** Matches cron-runner `revenueEnvCheck` state key. */
 export const REVENUE_CRON_STATE_KEY = "revenue_env_last";
@@ -102,6 +103,8 @@ export type RevenueReadinessSnapshot = {
   apps: RevenueAppStatus[];
   allCheckoutReady: boolean;
   lastCronProbe: RevenueCronSnapshot | null;
+  /** Print-interest emails while StoryMagic checkout is off (internal storybook API). */
+  storybookPrintLeadCount: number | null;
 };
 
 export function parseRevenueCronSnapshot(
@@ -252,5 +255,16 @@ export async function getRevenueReadiness(
     getCronRunnerState(REVENUE_CRON_STATE_KEY)
   );
 
-  return { apps, allCheckoutReady, lastCronProbe };
+  let storybookPrintLeadCount: number | null = null;
+  const storybookApp = apps.find((a) => a.id === "storybook");
+  if (storybookApp && storybookApp.probeReady !== true) {
+    try {
+      const leads = await fetchStorybookPrintLeads();
+      storybookPrintLeadCount = leads.length;
+    } catch {
+      storybookPrintLeadCount = null;
+    }
+  }
+
+  return { apps, allCheckoutReady, lastCronProbe, storybookPrintLeadCount };
 }
