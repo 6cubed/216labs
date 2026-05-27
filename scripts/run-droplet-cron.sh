@@ -32,12 +32,23 @@ if not row:
     raise SystemExit('CRON_RUNNER_SECRET missing in env_vars')
 print(row[0].strip())
 " "$DB")"
-BODY="$(docker exec 216labs-cron-runner-1 wget -qO- \
-  --method=POST \
-  --header="Authorization: Bearer ${SECRET}" \
-  "${CRON_URL}/run/${JOB_ID}" 2>&1)" || {
-  echo "cron POST failed: $BODY" >&2
-  exit 1
-}
+BODY="$(docker exec -e CRON_RUNNER_SECRET="$SECRET" 216labs-cron-runner-1 node -e '
+const job = process.argv[1];
+const base = String(process.argv[2] || "").replace(/\/$/, "");
+const secret = process.env.CRON_RUNNER_SECRET || "";
+fetch(`${base}/run/${job}`, {
+  method: "POST",
+  headers: { Authorization: `Bearer ${secret}` },
+})
+  .then(async (r) => {
+    const t = await r.text();
+    if (!r.ok) throw new Error(`HTTP ${r.status}: ${t}`);
+    console.log(t);
+  })
+  .catch((e) => {
+    console.error(e.message || e);
+    process.exit(1);
+  });
+' "$JOB_ID" "$CRON_URL")"
 echo "$BODY"
 REMOTE
