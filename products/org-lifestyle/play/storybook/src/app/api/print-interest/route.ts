@@ -4,7 +4,7 @@ import { createPrintInterest, getBook } from "@/lib/db";
 const INGEST_URL =
   process.env.CLIENT_ERROR_REPORT_URL ??
   process.env.STORYBOOK_ERROR_INGEST_URL ??
-  "http://admin:3000/api/public/report-error";
+  "http://admin:3000/api/public/leads";
 
 async function notifyAdminLead(email: string, bookId: string, bookTitle: string) {
   try {
@@ -12,10 +12,10 @@ async function notifyAdminLead(email: string, bookId: string, bookTitle: string)
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        app_id: "storybook",
-        kind: "server",
-        message: `[Print lead] ${email} · book "${bookTitle}" (${bookId})`,
-        url: "/api/print-interest",
+        email,
+        kind: "lead",
+        source_app_id: "storybook",
+        message: `[Print lead] book "${bookTitle}" (${bookId})`,
       }),
       signal: AbortSignal.timeout(4000),
     });
