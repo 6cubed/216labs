@@ -13,6 +13,7 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | Ads API in repo | **No** — closed; Meta/Google UIs only |
 | Org-metrics git broken | **No** — fixed (`git` in admin image) |
 | `revenue_env_last` admin failed | **Stale cron row** — probe uses internal admin first; refresh via `revenue-env-check` |
+| Droplet disk **93%** | **Pruned** — now **~92%**, **~2.1G** free (`prune-droplet-docker.sh`) |
 
 **Shipped this beat:** Telegram **lead-notify** includes ad **campaign** line for StoryMagic print leads.
 
