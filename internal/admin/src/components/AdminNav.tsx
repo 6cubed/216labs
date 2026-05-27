@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: "/orders", label: "Orders" },
   { href: "/architecture", label: "Architecture" },
   { href: "https://difftinder.6cubed.app", label: "DiffTinder", external: true },
+  { href: "https://agitweet.6cubed.app", label: "Agitweet", external: true },
 ] as const;
 
 type AdminNavProps = {
