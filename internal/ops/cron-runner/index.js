@@ -197,7 +197,8 @@ function ensureCronRunnerMigrations(db) {
     ('client-error-prune', 'Prune old client error events', 'Deletes client_error_event rows older than 14 days.', '15 4 * * *', 1),
     ('revenue-env-check', 'Revenue & edge smoke', 'HTTP probes for admin + paid apps; Telegram alert only on failure. State key revenue_env_last.', '0 8,20 * * *', 1),
     ('stack-health-check', 'Stack health (edge vs internal)', 'Compares public URLs vs Docker-internal probes; Telegram on failure. State key stack_health_last.', '*/15 * * * *', 1),
-    ('difftinder-daily-idea', 'DiffTinder daily idea', 'Adds one speculative monorepo idea per UTC day for admin swipe review.', '0 7 * * *', 1);
+    ('difftinder-daily-idea', 'DiffTinder daily idea', 'Adds one speculative monorepo idea per UTC day for admin swipe review.', '0 7 * * *', 1),
+    ('agitweet-autopost', 'Agitweet autopost', 'Composes one post (world RSS + 216labs prompts) and publishes to agitweet.6cubed.app.', '*/15 * * * *', 1);
   `);
   // Belt-and-suspenders: older DBs opened before stack-health-check existed.
   db.prepare(

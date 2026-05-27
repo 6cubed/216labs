@@ -924,6 +924,36 @@ export async function difftinderDailyIdea(db) {
   return `[DiffTinder] ${day}: new idea — ${idea.title}`;
 }
 
+/** Compose + publish one Agitweet post (RSS news mix + prompts on the agitweet service). */
+export async function agitweetAutopost(db) {
+  const base =
+    process.env.AGITWEET_INTERNAL_URL?.trim() || "http://agitweet:5000";
+  const secret =
+    getEnvVar(db, "AGITWEET_API_TOKEN") ||
+    getEnvVar(db, "CRON_RUNNER_SECRET") ||
+    process.env.CRON_RUNNER_SECRET ||
+    "";
+  if (!secret) {
+    return "[Agitweet] skipped — set AGITWEET_API_TOKEN in admin Env";
+  }
+  const res = await fetch(`${base.replace(/\/$/, "")}/api/internal/autopost`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "Content-Type": "application/json",
+    },
+    body: "{}",
+    signal: AbortSignal.timeout(90_000),
+  });
+  if (!res.ok) {
+    const errBody = (await res.text()).slice(0, 160);
+    return `[Agitweet] autopost failed HTTP ${res.status}: ${errBody}`;
+  }
+  const data = await res.json();
+  const preview = String(data.text || "").slice(0, 100);
+  return `[Agitweet] posted id=${data.id}: ${preview}${preview.length >= 100 ? "…" : ""}`;
+}
+
 /** Drop client/server error rows older than 14 days. */
 export async function clientErrorPrune(ctx) {
   const db = ctx.db;
@@ -947,4 +977,5 @@ export const HANDLERS = {
   "revenue-env-check": revenueEnvCheck,
   "stack-health-check": stackHealthCheck,
   "difftinder-daily-idea": difftinderDailyIdea,
+  "agitweet-autopost": agitweetAutopost,
 };

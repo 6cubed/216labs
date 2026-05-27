@@ -9,6 +9,7 @@ from typing import Any
 
 from flask import Flask, jsonify, render_template, request
 
+from autopost import compose_post as compose_autopost
 from client_error_report import client_error_script, report_server_error
 
 app = Flask(__name__)
@@ -144,6 +145,15 @@ def api_list_posts():
     )
 
 
+def _create_post_from_text(text: str) -> tuple[dict[str, Any], int]:
+    if not text:
+        return {"error": "text_required"}, 400
+    if len(text) > 1000:
+        return {"error": "text_too_long", "max_len": 1000}, 400
+    pid = _insert_post(text)
+    return {"ok": True, "id": pid, "text": text}, 201
+
+
 @app.post("/api/posts")
 def api_create_post():
     if not _require_write_auth():
@@ -151,13 +161,18 @@ def api_create_post():
 
     payload: dict[str, Any] = request.get_json(force=True, silent=True) or {}
     text = str(payload.get("text") or "").strip()
-    if not text:
-        return jsonify({"error": "text_required"}), 400
-    if len(text) > 1000:
-        return jsonify({"error": "text_too_long", "max_len": 1000}), 400
+    body, status = _create_post_from_text(text)
+    return jsonify(body), status
 
-    pid = _insert_post(text)
-    return jsonify({"ok": True, "id": pid}), 201
+
+@app.post("/api/internal/autopost")
+def api_internal_autopost():
+    """Cron-runner: compose (news RSS + prompts) and publish one post."""
+    if not _require_write_auth():
+        return jsonify({"error": "unauthorized"}), 401
+    text = compose_autopost()
+    body, status = _create_post_from_text(text)
+    return jsonify(body), status
 
 
 @app.errorhandler(500)

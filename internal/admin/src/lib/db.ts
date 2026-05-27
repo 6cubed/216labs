@@ -244,6 +244,7 @@ function initSchema(db: Database.Database) {
   ensureEdgeVisitorRollupCronJob(db);
   ensureRevenueEnvCheckCronJob(db);
   ensureDifftinderDailyIdeaCronJob(db);
+  ensureAgitweetAutopostCronJob(db);
 
   ensureDeploymentEventsTable(db);
   backfillDeploymentEventsFromApps(db);
@@ -1011,6 +1012,19 @@ function ensureDifftinderDailyIdeaCronJob(db: Database.Database): void {
   ).run();
 }
 
+function ensureAgitweetAutopostCronJob(db: Database.Database): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled)
+     VALUES (
+       'agitweet-autopost',
+       'Agitweet autopost',
+       'Composes one post (world RSS headlines + 216labs prompts) on agitweet.6cubed.app every 15 minutes.',
+       '*/15 * * * *',
+       1
+     )`
+  ).run();
+}
+
 /** Partial or legacy DBs may lack cron_jobs; keep admin cron UI and toggles working. */
 function ensureCronJobsTable(db: Database.Database): void {
   db.exec(`
@@ -1034,6 +1048,7 @@ function ensureCronJobsTable(db: Database.Database): void {
   ensureClientErrorPruneCronJob(db);
   ensureRevenueEnvCheckCronJob(db);
   ensureDifftinderDailyIdeaCronJob(db);
+  ensureAgitweetAutopostCronJob(db);
 }
 
 function ensureClientErrorPruneCronJob(db: Database.Database): void {
