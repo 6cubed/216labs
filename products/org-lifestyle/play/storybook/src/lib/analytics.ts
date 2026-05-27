@@ -1,6 +1,6 @@
 /** GA4 conversion events (requires Ga4Script / GA_MEASUREMENT_ID on the host). */
 
-type EventParams = Record<string, string | number | boolean | undefined>;
+type EventParams = Record<string, string | number | undefined>;
 
 declare global {
   interface Window {
@@ -13,7 +13,7 @@ export function trackStorybookEvent(name: string, params?: EventParams): void {
   const clean: Record<string, string | number> = {};
   if (params) {
     for (const [k, v] of Object.entries(params)) {
-      if (v !== undefined) clean[k] = v;
+      if (v != null) clean[k] = v;
     }
   }
   window.gtag("event", name, clean);
