@@ -181,8 +181,22 @@ rows.forEach(r => process.stdout.write(r.id + ' '));
     echo "==> Fallback enabled apps: $ENABLED_APPS"
   fi
 elif [ -f "$DB_FILE" ]; then
-  ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1 OR id = 'admin'" | tr '\n' ' ')
-  echo "==> Deploy config (from local DB): $ENABLED_APPS"
+  set +e
+  ENABLED_APPS=$(sqlite3 "$DB_FILE" "SELECT id FROM apps WHERE deploy_enabled = 1 OR id = 'admin'" 2>/dev/null | tr '\n' ' ')
+  _db_rc=$?
+  set -e
+  if [ "$_db_rc" -ne 0 ] || [ -z "$ENABLED_APPS" ]; then
+    echo "==> WARN: local DB query failed or returned no apps; falling back to toolkit defaults"
+    TOOLKIT_DEFAULTS="config/toolkit-default-enabled.txt"
+    if [ -f "$TOOLKIT_DEFAULTS" ]; then
+      ENABLED_APPS=$(grep -v '^[[:space:]]*#' "$TOOLKIT_DEFAULTS" | sed '/^[[:space:]]*$/d' | tr '\n' ' ')
+    else
+      ENABLED_APPS="admin activator landing hello-nextjs hello-flask"
+    fi
+    echo "==> Fallback enabled apps: $ENABLED_APPS"
+  else
+    echo "==> Deploy config (from local DB): $ENABLED_APPS"
+  fi
 else
   TOOLKIT_DEFAULTS="config/toolkit-default-enabled.txt"
   if [ -f "$TOOLKIT_DEFAULTS" ]; then
