@@ -58,8 +58,8 @@ export function RevenueReadinessPanel({
             <p className="text-xs text-amber-200/80 mt-2">
               <strong>{data.storybookPrintLeadCount}</strong> print-interest lead
               {data.storybookPrintLeadCount === 1 ? "" : "s"} waiting —{" "}
-              <a href="/orders" className="text-accent hover:underline">
-                view on Orders
+              <a href="/leads" className="text-accent hover:underline">
+                view on Leads
               </a>
               . Stripe keys unlock checkout for this waitlist.
             </p>

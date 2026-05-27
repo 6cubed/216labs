@@ -2,6 +2,22 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-05-28 ~01:40 UTC)
+
+| Assumption (earlier today) | Still true? |
+|----------------------------|-------------|
+| Stack / edge up | **Yes** — `heartbeat-stack.sh` OK |
+| StoryMagic closest to revenue | **Yes** — waitlist + GA4 + UTMs shipped |
+| Stripe blocks first sale | **Yes** — `ready: false`; keys in admin Env |
+| Merch storefront dead | **No** — `[Merch] storefront URL appears configured` |
+| Ads API in repo | **No** — closed; Meta/Google UIs only |
+| Org-metrics git broken | **No** — fixed (`git` in admin image) |
+| `revenue_env_last` admin failed | **Stale cron row** — probe uses internal admin first; refresh via `revenue-env-check` |
+
+**Shipped this beat:** Telegram **lead-notify** includes ad **campaign** line for StoryMagic print leads.
+
+---
+
 ## Production snapshot (2026-05-28 ~01:10 UTC)
 
 | Check | Result |

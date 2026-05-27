@@ -971,6 +971,20 @@ export async function agitweetAutopost(db) {
 
 const LEAD_NOTIFY_STATE_KEY = "lead-notify:seen_ids";
 
+/** Parse StoryMagic print-lead UTMs from ingest message (`| src=… med=… camp=…`). */
+function formatPrintLeadCampaign(message) {
+  const msg = String(message || "");
+  const src = msg.match(/\bsrc=([^\s|]+)/)?.[1];
+  const med = msg.match(/\bmed=([^\s|]+)/)?.[1];
+  const camp = msg.match(/\bcamp=([^\s|]+)/)?.[1];
+  if (!src && !med && !camp) return "";
+  const parts = [];
+  if (src) parts.push(`source: ${src}`);
+  if (med) parts.push(`medium: ${med}`);
+  if (camp) parts.push(`campaign: ${camp}`);
+  return `\n📣 ${parts.join(" · ")}`;
+}
+
 /**
  * Telegram ping for new rows in lead_event (landing hire form, etc.).
  * Dedupes by id in cron_runner_state; returns empty string when nothing new.
@@ -1031,10 +1045,12 @@ export async function leadNotify(db) {
     const when = String(r.created_at || "").trim();
     const msg = String(r.message || "").trim();
     const preview = msg ? (msg.length > 240 ? `${msg.slice(0, 237)}…` : msg) : "(no message)";
+    const campaign =
+      src === "storybook" || msg.includes("[Print lead]") ? formatPrintLeadCampaign(msg) : "";
     return (
       `📩 New lead (${kind})\n` +
       `${email}\n` +
-      `${preview}\n` +
+      `${preview}${campaign}\n` +
       `Source: ${src} · ${when}\n` +
       `https://admin.6cubed.app/leads`
     );
