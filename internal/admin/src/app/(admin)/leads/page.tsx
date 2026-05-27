@@ -19,6 +19,7 @@ function safeTrim(s: unknown): string {
 }
 
 export default async function LeadsPage() {
+  const storybookPrintLeads = await fetchStorybookPrintLeads();
   const db = getDb();
   const rows = db
     .prepare(
