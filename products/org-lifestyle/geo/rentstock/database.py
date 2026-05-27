@@ -64,5 +64,25 @@ def init_db() -> None:
                 ON listings (market_slug, active);
             CREATE INDEX IF NOT EXISTS idx_snapshots_market_time
                 ON stock_snapshots (market_slug, counted_at);
+
+            CREATE TABLE IF NOT EXISTS trackers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                market_slug TEXT NOT NULL,
+                min_beds INTEGER,
+                max_price_eur INTEGER,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS tracker_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tracker_id INTEGER NOT NULL REFERENCES trackers(id) ON DELETE CASCADE,
+                counted_at TEXT NOT NULL,
+                active_count INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_tracker_snapshots_tracker_time
+                ON tracker_snapshots (tracker_id, counted_at);
             """
         )

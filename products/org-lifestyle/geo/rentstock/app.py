@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, jsonify, redirect, render_template, request, url_for
@@ -98,7 +99,16 @@ def healthz():
 @app.route("/")
 def index():
     markets = [market_dashboard(slug) for slug in MARKETS]
-    return render_template("index.html", markets=markets)
+    with get_db() as conn:
+        trackers = conn.execute(
+            """
+            SELECT id, slug, name, market_slug, min_beds, max_price_eur, created_at
+            FROM trackers
+            ORDER BY id DESC
+            LIMIT 50
+            """
+        ).fetchall()
+    return render_template("index.html", markets=markets, trackers=trackers)
 
 
 @app.route("/market/<slug>")
@@ -107,6 +117,129 @@ def market_page(slug: str):
         return "Unknown market", 404
     data = market_dashboard(slug)
     return render_template("market.html", **data)
+
+
+def _slugify(s: str) -> str:
+    s = re.sub(r"[^a-z0-9]+", "-", (s or "").strip().lower()).strip("-")
+    return s or "tracker"
+
+
+@app.route("/trackers", methods=["GET", "POST"])
+def trackers_page():
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        market_slug = (request.form.get("market_slug") or "").strip()
+        min_beds_raw = (request.form.get("min_beds") or "").strip()
+        max_price_raw = (request.form.get("max_price_eur") or "").strip()
+
+        if not name or market_slug not in MARKETS:
+            return redirect(url_for("trackers_page"))
+
+        min_beds = int(min_beds_raw) if min_beds_raw.isdigit() else None
+        max_price = int(max_price_raw) if max_price_raw.isdigit() else None
+
+        base = _slugify(name)
+        slug = base
+        with get_db() as conn:
+            i = 2
+            while (
+                conn.execute("SELECT 1 FROM trackers WHERE slug = ?", (slug,)).fetchone()
+                is not None
+            ):
+                slug = f"{base}-{i}"
+                i += 1
+            conn.execute(
+                """
+                INSERT INTO trackers (slug, name, market_slug, min_beds, max_price_eur, created_at)
+                VALUES (?, ?, ?, ?, ?, datetime('now'))
+                """,
+                (slug, name, market_slug, min_beds, max_price),
+            )
+        return redirect(url_for("tracker_page", slug=slug))
+
+    with get_db() as conn:
+        trackers = conn.execute(
+            """
+            SELECT id, slug, name, market_slug, min_beds, max_price_eur, created_at
+            FROM trackers
+            ORDER BY id DESC
+            """
+        ).fetchall()
+    return render_template("trackers.html", trackers=trackers, markets=MARKETS)
+
+
+def tracker_dashboard(tracker_slug: str) -> dict:
+    with get_db() as conn:
+        t = conn.execute(
+            """
+            SELECT id, slug, name, market_slug, min_beds, max_price_eur, created_at
+            FROM trackers WHERE slug = ?
+            """,
+            (tracker_slug,),
+        ).fetchone()
+        if not t:
+            return {"tracker": None}
+
+        market_slug = t["market_slug"]
+        where = ["market_slug = ?", "active = 1"]
+        params = [market_slug]
+        if t["min_beds"] is not None:
+            where.append("beds IS NOT NULL AND beds >= ?")
+            params.append(int(t["min_beds"]))
+        if t["max_price_eur"] is not None:
+            where.append("price_eur IS NOT NULL AND price_eur <= ?")
+            params.append(int(t["max_price_eur"]))
+
+        active_count = conn.execute(
+            f"SELECT COUNT(*) AS c FROM listings WHERE {' AND '.join(where)}",
+            tuple(params),
+        ).fetchone()["c"]
+
+        history = conn.execute(
+            """
+            SELECT counted_at, active_count
+            FROM tracker_snapshots
+            WHERE tracker_id = ?
+            ORDER BY counted_at DESC
+            LIMIT 52
+            """,
+            (t["id"],),
+        ).fetchall()
+        history = list(reversed(history))
+
+    return {"tracker": t, "market": MARKETS.get(market_slug), "active_count": active_count, "history": history}
+
+
+@app.route("/tracker/<slug>")
+def tracker_page(slug: str):
+    data = tracker_dashboard(slug)
+    if not data.get("tracker"):
+        return "Unknown tracker", 404
+    return render_template("tracker.html", **data)
+
+
+def snapshot_trackers() -> None:
+    """Weekly snapshot of tracker stock (active count)."""
+    ensure_db()
+    with get_db() as conn:
+        trackers = conn.execute("SELECT id, market_slug, min_beds, max_price_eur FROM trackers").fetchall()
+        for t in trackers:
+            where = ["market_slug = ?", "active = 1"]
+            params = [t["market_slug"]]
+            if t["min_beds"] is not None:
+                where.append("beds IS NOT NULL AND beds >= ?")
+                params.append(int(t["min_beds"]))
+            if t["max_price_eur"] is not None:
+                where.append("price_eur IS NOT NULL AND price_eur <= ?")
+                params.append(int(t["max_price_eur"]))
+            c = conn.execute(
+                f"SELECT COUNT(*) AS c FROM listings WHERE {' AND '.join(where)}",
+                tuple(params),
+            ).fetchone()["c"]
+            conn.execute(
+                "INSERT INTO tracker_snapshots (tracker_id, counted_at, active_count) VALUES (?, datetime('now'), ?)",
+                (t["id"], int(c)),
+            )
 
 
 @app.route("/api/markets")
@@ -168,6 +301,16 @@ def start_scheduler() -> BackgroundScheduler | None:
         "interval",
         hours=interval_hours,
         id="rentstock_sync",
+        replace_existing=True,
+    )
+    # Weekly tracker snapshots (Mon 00:05 UTC).
+    scheduler.add_job(
+        snapshot_trackers,
+        "cron",
+        day_of_week="mon",
+        hour=0,
+        minute=5,
+        id="rentstock_weekly_snapshots",
         replace_existing=True,
     )
     scheduler.start()

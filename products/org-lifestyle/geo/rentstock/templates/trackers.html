@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Trackers — Rentstock{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('index') }}">← Back</a></p>
+
+<div class="card" style="margin-bottom:1rem">
+  <h2>Create a tracker</h2>
+  <p class="criteria">
+    A tracker is a saved criteria set. Rentstock will take weekly snapshots (Mon 00:05 UTC) so you can compare week-to-week stock.
+  </p>
+  <form method="post" action="{{ url_for('trackers_page') }}" style="display:grid; gap:0.6rem; max-width:520px">
+    <label>
+      <div class="criteria" style="margin:0 0 0.25rem">Name</div>
+      <input name="name" required placeholder="e.g. Dublin 3-bed ≤ €700k" style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
+    </label>
+    <label>
+      <div class="criteria" style="margin:0 0 0.25rem">Market</div>
+      <select name="market_slug" required style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
+        {% for slug, m in markets.items() %}
+          <option value="{{ slug }}">{{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem">
+      <label>
+        <div class="criteria" style="margin:0 0 0.25rem">Min beds (optional)</div>
+        <input name="min_beds" inputmode="numeric" placeholder="3" style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
+      </label>
+      <label>
+        <div class="criteria" style="margin:0 0 0.25rem">Max price € (optional)</div>
+        <input name="max_price_eur" inputmode="numeric" placeholder="700000" style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
+      </label>
+    </div>
+    <button class="btn" type="submit">Create tracker</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Existing trackers</h2>
+  {% if trackers %}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Market</th>
+          <th>Min beds</th>
+          <th>Max €</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in trackers %}
+        <tr>
+          <td><a href="{{ url_for('tracker_page', slug=t.slug) }}">{{ t.name }}</a></td>
+          <td>{{ t.market_slug }}</td>
+          <td>{% if t.min_beds is not none %}{{ t.min_beds }}{% else %}—{% endif %}</td>
+          <td>{% if t.max_price_eur is not none %}€{{ t.max_price_eur }}{% else %}—{% endif %}</td>
+          <td>{{ t.created_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="criteria">No trackers yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
+

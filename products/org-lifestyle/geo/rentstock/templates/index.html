@@ -34,4 +34,42 @@
   </article>
   {% endfor %}
 </div>
+
+{% if trackers is defined %}
+  <div class="card" style="margin-top:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <h2 style="margin:0">Trackers</h2>
+      <a class="btn" href="{{ url_for('trackers_page') }}">Create / manage</a>
+    </div>
+    <p class="criteria" style="margin-top:0.35rem">
+      Track any subset of listings over time (weekly snapshots). Trackers run on top of the synced market listings.
+    </p>
+    {% if trackers %}
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Market</th>
+            <th>Min beds</th>
+            <th>Max €</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in trackers %}
+          <tr>
+            <td><a href="{{ url_for('tracker_page', slug=t.slug) }}">{{ t.name }}</a></td>
+            <td>{{ t.market_slug }}</td>
+            <td>{% if t.min_beds is not none %}{{ t.min_beds }}{% else %}—{% endif %}</td>
+            <td>{% if t.max_price_eur is not none %}€{{ t.max_price_eur }}{% else %}—{% endif %}</td>
+            <td>{{ t.created_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="criteria">No trackers yet — click “Create / manage”.</p>
+    {% endif %}
+  </div>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ tracker.name }} — Rentstock{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('trackers_page') }}">← Trackers</a></p>
+
+<article class="card" style="margin-bottom:1rem">
+  <h2>{{ tracker.name }}</h2>
+  <p class="criteria">
+    Market: <span class="badge">{{ tracker.market_slug }}</span>
+    {% if tracker.min_beds is not none %} · beds ≥ {{ tracker.min_beds }}{% endif %}
+    {% if tracker.max_price_eur is not none %} · price ≤ €{{ tracker.max_price_eur }}{% endif %}
+  </p>
+  <div class="stat">{{ active_count }} active now</div>
+  {% if history %}
+    <div class="chart" aria-label="Weekly stock history">
+      {% set max_c = history|map(attribute='active_count')|max or 1 %}
+      {% for h in history %}
+      <div class="bar" style="height: {{ (h.active_count / max_c * 100)|int }}%" title="{{ h.counted_at }}: {{ h.active_count }}"></div>
+      {% endfor %}
+    </div>
+    <p class="criteria">Weekly snapshots (Mon 00:05 UTC). Showing up to {{ history|length }} weeks.</p>
+  {% else %}
+    <p class="criteria">No weekly snapshots yet. First snapshot runs on schedule.</p>
+  {% endif %}
+</article>
+
+{% endblock %}
+
