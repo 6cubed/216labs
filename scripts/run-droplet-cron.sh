@@ -17,7 +17,11 @@ REMOTE="${POCKET_REMOTE:-root@46.101.88.197}"
 REMOTE_DB="${POCKET_REMOTE_DB:-/opt/216labs/216labs.db}"
 CRON_URL="${CRON_RUNNER_INTERNAL_URL:-http://127.0.0.1:3029}"
 
-ssh -o BatchMode=yes -o ConnectTimeout=25 "$REMOTE" bash -s -- "$REMOTE_DB" "$JOB_ID" "$CRON_URL" <<'REMOTE'
+ssh \
+  -o BatchMode=yes \
+  -o ConnectTimeout=25 \
+  -o StrictHostKeyChecking=accept-new \
+  "$REMOTE" bash -s -- "$REMOTE_DB" "$JOB_ID" "$CRON_URL" <<'REMOTE'
 set -euo pipefail
 DB="$1"
 JOB_ID="$2"
