@@ -7,7 +7,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "admin",
-  "build_context": "./internal/admin",
+  "build_context": ".",
+  "build_dockerfile": "internal/admin/Dockerfile",
   "stack": {
     "frontend": "Next.js",
     "backend": null,
