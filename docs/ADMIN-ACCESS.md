@@ -12,7 +12,7 @@ The factory dashboard at [admin.6cubed.app](https://admin.6cubed.app) is protect
 cd /opt/216labs && ./scripts/reset-admin-basic-auth.sh
 ```
 
-The script prints `User:` and `Pass:` lines; it also updates the DB and `.env.admin`.
+The script prints `User:` and `Pass:` lines; it also updates the DB and `.env.admin`. The bcrypt hash is sent to the droplet **base64-encoded** so shell `$` expansion cannot corrupt `$2a$…` hashes (a common cause of “new password does not work”). **`ADMIN_PANEL_PASSWORD`** is set to the same plaintext so DiffTinder and similar apps match.
 
 ## Internal apps that share admin login
 

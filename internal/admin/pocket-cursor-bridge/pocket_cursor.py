@@ -119,7 +119,9 @@ def adminpass_reset(*, cid: int) -> None:
         "URL: https://admin.6cubed.app/\n"
         f"User: {new_user}\n"
         f"Pass: {new_pass}\n\n"
-        "Tip: save this in a password manager.",
+        "Use the browser HTTP Basic Auth prompt (not ADMIN_PANEL_PASSWORD from Env).\n"
+        "If login still fails, clear saved passwords for admin.6cubed.app and try again.\n"
+        "Same pass works for DiffTinder cookie login.",
     )
 
 _cd.ts_print = wrap_ts_print(_cd.ts_print)
