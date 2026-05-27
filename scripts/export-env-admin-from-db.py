@@ -28,9 +28,16 @@ def main() -> int:
     path = sys.argv[1] if len(sys.argv) > 1 else "216labs.db"
     conn = sqlite3.connect(path)
     try:
-        rows = conn.execute(
-            "SELECT key, value FROM env_vars WHERE value IS NOT NULL AND length(trim(value)) > 0"
-        ).fetchall()
+        try:
+            rows = conn.execute(
+                "SELECT key, value FROM env_vars WHERE value IS NOT NULL AND length(trim(value)) > 0"
+            ).fetchall()
+        except sqlite3.OperationalError as e:
+            # If the db exists but hasn't been initialized yet (e.g. empty file),
+            # treat as "no env" rather than crashing.
+            if "no such table: env_vars" in str(e):
+                return 0
+            raise
     finally:
         conn.close()
     for key, value in rows:
