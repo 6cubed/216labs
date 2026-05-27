@@ -64,6 +64,17 @@ def index():
     return render_template("index.html", live_apps=live_apps, blog_posts=blog_posts)
 
 
+@app.route("/about")
+def about():
+    live_apps = _fetch_live_apps()
+    return render_template("about.html", live_apps=live_apps)
+
+
+@app.route("/careers")
+def careers():
+    return render_template("careers.html")
+
+
 @app.errorhandler(500)
 def internal_error(exc: Exception):
     report_server_error(

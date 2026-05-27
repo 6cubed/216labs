@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}216Labs{% endblock %}</title>
+  <meta name="description" content="{% block description %}At 216Labs we are building the toolkit for production grade vibes.{% endblock %}" />
+  {% include '_ga.html' %}
+  {{ client_error_script_html | safe }}
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0c;
+      --surface: #121216;
+      --border: #222228;
+      --accent: #8b5cf6;
+      --accent2: #a78bfa;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --radius: 12px;
+      --font: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; }
+
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 6rem;
+    }
+
+    .topbar {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 1rem;
+      margin-bottom: 2.25rem;
+    }
+
+    .brand a {
+      text-decoration: none;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      font-size: 1.05rem;
+      background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    nav { display:flex; gap: 0.85rem; flex-wrap:wrap; justify-content:flex-end; }
+    nav a {
+      text-decoration: none;
+      font-weight: 700;
+      color: rgba(255,255,255,0.74);
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
+    }
+    nav a:hover { color: #fff; border-bottom-color: rgba(167,139,250,0.6); }
+    nav a.active { color:#fff; border-bottom-color: rgba(167,139,250,0.8); }
+
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.65rem;
+    }
+    .lead {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-bottom: 1.25rem;
+      max-width: 62ch;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.15rem;
+    }
+    .stack { display:flex; flex-direction:column; gap: 0.85rem; }
+
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:0.4rem;
+      padding:0.7rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid rgba(139, 92, 246, 0.55);
+      background: rgba(139, 92, 246, 0.18);
+      color: var(--text);
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.2s, background 0.2s;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: var(--accent2); background: rgba(139, 92, 246, 0.26); }
+    .btn.secondary { font-weight: 700; border-color: var(--border); background: rgba(255,255,255,0.04); }
+    .btn.secondary:hover { border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+      display:flex;
+      flex-wrap:wrap;
+      gap: 0.75rem;
+      align-items:center;
+      justify-content:space-between;
+    }
+    footer a { color: var(--accent2); text-decoration: none; font-weight: 700; }
+    footer a:hover { text-decoration: underline; }
+    .foot-links { display:flex; gap: 0.75rem; flex-wrap:wrap; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand"><a href="/">216Labs</a></div>
+      <nav>
+        <a href="/" class="{% if active_nav == 'home' %}active{% endif %}">Home</a>
+        <a href="/about" class="{% if active_nav == 'about' %}active{% endif %}">About</a>
+        <a href="/careers" class="{% if active_nav == 'careers' %}active{% endif %}">Careers</a>
+        <a href="https://storybook.6cubed.app?utm_source=landing&utm_medium=nav" target="_blank" rel="noopener noreferrer">StoryMagic</a>
+      </nav>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <footer>
+      <div class="foot-links">
+        <a href="/about">About</a>
+        <a href="/careers">Careers</a>
+        <a href="https://bugbounty.6cubed.app">Bug bounty</a>
+      </div>
+      <div>All apps at <code>*.6cubed.app</code></div>
+    </footer>
+  </div>
+</body>
+</html>
+

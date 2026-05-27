@@ -1,0 +1,50 @@
+{% extends "_layout.html" %}
+{% set active_nav = "careers" %}
+
+{% block title %}Careers — 216Labs{% endblock %}
+{% block description %}Careers at 216Labs: small team, high ownership, shipping to production.{% endblock %}
+
+{% block content %}
+  <h1>Careers</h1>
+  <p class="lead">
+    We’re building a lab that ships continuously. If you like turning ideas into production and tightening loops,
+    we’d love to hear from you.
+  </p>
+
+  <div class="stack">
+    <div class="card">
+      <div style="font-weight:900; margin-bottom:0.35rem;">What we value</div>
+      <ul style="margin-left:1.15rem; color: var(--muted); display:flex; flex-direction:column; gap:0.25rem;">
+        <li>Shipping real things (deploys beat decks)</li>
+        <li>Clear writing and tight feedback loops</li>
+        <li>Owning problems end-to-end (product + code + ops)</li>
+        <li>Pragmatic quality: reliability where it matters</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900; margin-bottom:0.35rem;">Open roles</div>
+      <div style="color: var(--muted);">
+        No formal reqs posted yet. If you’re strong in any of these, reach out:
+        <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <span style="border:1px solid var(--border); border-radius:999px; padding:0.3rem 0.6rem; background:rgba(255,255,255,0.03);">Full-stack</span>
+          <span style="border:1px solid var(--border); border-radius:999px; padding:0.3rem 0.6rem; background:rgba(255,255,255,0.03);">AI product engineering</span>
+          <span style="border:1px solid var(--border); border-radius:999px; padding:0.3rem 0.6rem; background:rgba(255,255,255,0.03);">Growth & funnels</span>
+          <span style="border:1px solid var(--border); border-radius:999px; padding:0.3rem 0.6rem; background:rgba(255,255,255,0.03);">DevOps / reliability</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900; margin-bottom:0.35rem;">Contact</div>
+      <div style="color: var(--muted); margin-bottom:0.75rem;">
+        Use the homepage contact form and mention “careers” (it lands in admin → Leads).
+      </div>
+      <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+        <a class="btn" href="/#leadForm">Open contact form →</a>
+        <a class="btn secondary" href="/about">About 216Labs</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

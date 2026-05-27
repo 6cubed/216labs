@@ -1,0 +1,49 @@
+{% extends "_layout.html" %}
+{% set active_nav = "about" %}
+
+{% block title %}About — 216Labs{% endblock %}
+{% block description %}About 216Labs: a monorepo of small products, shipped continuously.{% endblock %}
+
+{% block content %}
+  <h1>About</h1>
+  <p class="lead">
+    216Labs is a shipping lab. We build small, real products, keep them online, and let usage teach us what to build next.
+    One monorepo, one deploy, lots of experiments — the ones that earn their keep stay.
+  </p>
+
+  <div class="stack">
+    <div class="card">
+      <div style="font-weight:900; margin-bottom:0.35rem;">What we do</div>
+      <div style="color: var(--muted);">
+        We ship consumer and internal tools across AI, ops, and “small internet” products — with tight feedback loops and a bias to production.
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900; margin-bottom:0.35rem;">How we work</div>
+      <div style="color: var(--muted);">
+        Fast iteration, visible progress, and a single source of truth. When something is broken, we fix it and deploy.
+        When a funnel works, we improve it and measure.
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900; margin-bottom:0.5rem;">Try something</div>
+      <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+        <a class="btn" href="https://storybook.6cubed.app?utm_source=landing&utm_medium=about" target="_blank" rel="noopener noreferrer">Try StoryMagic →</a>
+        <a class="btn secondary" href="https://agitweet.6cubed.app?utm_source=landing&utm_medium=about" target="_blank" rel="noopener noreferrer">Read Agitweet</a>
+        <a class="btn secondary" href="https://blog.6cubed.app?utm_source=landing&utm_medium=about" target="_blank" rel="noopener noreferrer">Read the blog</a>
+      </div>
+    </div>
+
+    {% if live_apps %}
+    <div class="card">
+      <div style="font-weight:900; margin-bottom:0.35rem;">What’s live right now</div>
+      <div style="color: var(--muted);">
+        The live app list is dynamic (from admin). Explore: <code>{{ live_apps|length }}</code> apps currently enabled.
+      </div>
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
