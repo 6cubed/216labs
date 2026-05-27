@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/activity", label: "Activity" },
   { href: "/errors", label: "Errors" },
   { href: "/applications", label: "Applications" },
+  { href: "/org-metrics", label: "Org metrics" },
   { href: "/analytics", label: "Analytics" },
   { href: "/data-lab", label: "Data Lab" },
   { href: "/tv-studio", label: "TV Studio" },
