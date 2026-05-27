@@ -145,6 +145,29 @@ def _execution_floor() -> str:
     return DEFAULT_EXECUTION_FLOOR
 
 
+def _closeouts_first_enabled() -> bool:
+    env = os.environ.get("POCKET_HEARTBEAT_CLOSEOUTS_FIRST", "").strip().lower()
+    if env in ("0", "false", "no", "off"):
+        return False
+    if env in ("1", "true", "yes", "on"):
+        return True
+    return _truthy(_harness.get("closeouts_first_enabled"), True)
+
+
+def _closeouts_first_text() -> str:
+    env = os.environ.get("POCKET_HEARTBEAT_CLOSEOUTS_FIRST_TEXT", "").strip()
+    if env:
+        return env
+    raw = _harness.get("closeouts_first_text")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return (
+        "Closeouts-first: before any new work, scan docs/THREAD-CLOSEOUTS.md. "
+        "If any thread is still open/unclear, either (a) close it decisively as CLOSED with a verify step, "
+        "or (b) mark it BLOCKED with the blocker + next concrete move. Then proceed."
+    )
+
+
 def pick_reflect_prompt() -> str:
     """Random critical-thinking nudge (reflect / prioritize / ideate / execute)."""
     return random.choice(_reflect_prompts())
@@ -157,6 +180,8 @@ def compose_message(base: str | None = None) -> tuple[str, str]:
         base = get_config().message
     reflect_line = ""
     parts = [base.strip()]
+    if _closeouts_first_enabled():
+        parts.append(f"\n\n[Closeouts] {_closeouts_first_text()}")
     if _reflect_enabled():
         reflect_line = pick_reflect_prompt()
         parts.append(f"\n\n[Reflect] {reflect_line}")

@@ -5,6 +5,8 @@
   "skip_when_generating": true,
   "notify_telegram": true,
   "reflect_enabled": true,
+  "closeouts_first_enabled": true,
+  "closeouts_first_text": "Closeouts-first: before any new work, scan docs/THREAD-CLOSEOUTS.md. If any thread is still open/unclear, either (a) close it decisively as CLOSED with a verify step, or (b) mark it BLOCKED with the blocker + next concrete move. Then proceed.",
   "execution_floor": "Ship something real this cycle—fix, feature, refactor, commit, push, deploy, or a doc that unlocks the next step. Status-only replies don't count. When blocked, name the blocker and the next concrete move. ~1 in 10 heartbeats should advance revenue (see .cursor/rules/heartbeat-monetization.mdc).",
   "reflect_prompts": [
     "Reflect: what is the highest-leverage unfinished item right now, and what blocks it?",
