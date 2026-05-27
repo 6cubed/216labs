@@ -15,6 +15,8 @@ import random
 from dataclasses import dataclass
 from pathlib import Path
 
+from lib import agitweet_news
+
 _HARNESS_FILE = Path(__file__).parent / "agitweet_harness.json"
 _harness_mtime = 0.0
 _harness: dict = {}
@@ -33,12 +35,14 @@ _DEFAULT_PROMPTS = [
 
 _bridge_dir: Path | None = None
 _enabled_file: Path | None = None
+_news_state_file: Path | None = None
 
 
 def init(bridge_dir: Path) -> None:
-    global _bridge_dir, _enabled_file
+    global _bridge_dir, _enabled_file, _news_state_file
     _bridge_dir = bridge_dir.resolve()
     _enabled_file = _bridge_dir / ".agitweet_enabled"
+    _news_state_file = _bridge_dir / ".agitweet_news_state.json"
     _reload_harness(force=True)
 
 
@@ -112,6 +116,43 @@ def _prompt_pool() -> list[str]:
     return list(_DEFAULT_PROMPTS)
 
 
+def _news_feeds() -> list[dict[str, str]]:
+    raw = _harness.get("news_feeds")
+    if not isinstance(raw, list):
+        return []
+    out: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        url = str(item.get("url") or "").strip()
+        if not url:
+            continue
+        source = str(item.get("source") or item.get("name") or "News").strip()
+        out.append({"url": url, "source": source})
+    return out
+
+
+def _news_reactions() -> list[str]:
+    raw = _harness.get("news_reactions")
+    if isinstance(raw, list):
+        out = [str(p).strip() for p in raw if isinstance(p, str) and str(p).strip()]
+        if out:
+            return out
+    return [
+        "Signals travel faster than sense-making — build tools that help people decide.",
+        "Every headline is a product brief for someone, somewhere.",
+        "The map updates daily; compounding small fixes beats waiting for clarity.",
+        "Coordination scales when interfaces get simpler, not when pundits get louder.",
+    ]
+
+
+def _news_weight() -> float:
+    raw = _harness.get("news_weight")
+    if isinstance(raw, (int, float)):
+        return max(0.0, min(1.0, float(raw)))
+    return 0.55
+
+
 def _clamp_interval(x: int) -> int:
     return max(MIN_INTERVAL_SEC, min(MAX_INTERVAL_SEC, int(x)))
 
@@ -149,11 +190,20 @@ def get_config() -> AgitweetConfig:
 
 def compose_post() -> str:
     _reload_harness()
-    text = random.choice(_prompt_pool()).strip()
     ml = _max_len()
+    feeds = _news_feeds()
+    if feeds and _news_state_file and random.random() < _news_weight():
+        news_text = agitweet_news.compose_from_news(
+            feeds,
+            _news_reactions(),
+            _news_state_file,
+            max_len=ml,
+        )
+        if news_text:
+            return news_text
+    text = random.choice(_prompt_pool()).strip()
     if len(text) <= ml:
         return text
-    # Hard cut with ellipsis; avoid mid-surrogate issues (Python str is unicode-safe).
     return text[: max(0, ml - 1)].rstrip() + "…"
 
 
@@ -162,14 +212,16 @@ def status_summary() -> str:
     mins = cfg.interval_sec // 60
     interval_label = f"{mins} min" if cfg.interval_sec % 60 == 0 else f"{cfg.interval_sec}s"
     n_prompts = len(_prompt_pool())
-    return "\n".join(
-        [
-            f"Agitweet: {'ON' if is_enabled() else 'OFF'}",
-            f"Interval: every {interval_label} (first run {cfg.first_run_delay_sec}s after bridge start)",
-            f"Max post length: {cfg.max_len}",
-            f"Prompt pool: {n_prompts} items (random each post)",
-            "Edit lib/agitweet_harness.json to change prompts/interval (hot-reload).",
-            "Use /agitweet on, /agitweet off, /agitweet now, or /agitweet status",
-        ]
-    )
+    n_feeds = len(_news_feeds())
+    news_pct = int(round(_news_weight() * 100))
+    lines = [
+        f"Agitweet: {'ON' if is_enabled() else 'OFF'}",
+        f"Interval: every {interval_label} (first run {cfg.first_run_delay_sec}s after bridge start)",
+        f"Max post length: {cfg.max_len}",
+        f"Prompt pool: {n_prompts} items",
+        f"News: {n_feeds} RSS feeds (~{news_pct}% of posts, deduped)",
+        "Edit lib/agitweet_harness.json to change prompts/feeds/interval (hot-reload).",
+        "Use /agitweet on, /agitweet off, /agitweet now, or /agitweet status",
+    ]
+    return "\n".join(lines)
 

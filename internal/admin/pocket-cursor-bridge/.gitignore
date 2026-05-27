@@ -12,6 +12,7 @@ __pycache__
 .chat_id
 .active_chat
 .bridge.lock
+.agitweet_news_state.json
 bridge.log
 node_modules
 data/*
