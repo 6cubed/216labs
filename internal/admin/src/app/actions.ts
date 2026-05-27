@@ -18,6 +18,7 @@ import { startContainer, stopContainer, pullLatestGhcrForService } from "@/lib/d
 import {
   canHotReloadEnvOnHost,
   dockerServiceForEnvKey,
+  dockerServicesForEnvKey,
   recreateComposeService,
   syncEnvAdminFromDb,
 } from "@/lib/env-compose-sync";
@@ -241,19 +242,24 @@ export async function saveEnvVar(
   const appDir = getAppDirForKey(key);
   if (appDir) writeEnvLocal(appDir);
 
-  const service = dockerServiceForEnvKey(key);
-  if (service && canHotReloadEnvOnHost()) {
+  const services = dockerServicesForEnvKey(key);
+  if (services.length && canHotReloadEnvOnHost()) {
     try {
       await syncEnvAdminFromDb();
-      await recreateComposeService(service);
+      for (const service of services) {
+        await recreateComposeService(service);
+      }
       revalidateAdminPaths();
-      return { success: true, reloaded: service };
+      return {
+        success: true,
+        reloaded: services.length === 1 ? services[0] : services.join(", "),
+      };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Hot reload failed";
       console.warn("[saveEnvVar] hot-reload:", msg);
       revalidateAdminPaths();
       return {
-        error: `${msg} — keys saved in DB; run deploy or compose up -d ${service} on the VPS`,
+        error: `${msg} — keys saved in DB; run deploy or compose up -d ${services.join(" ")} on the VPS`,
       };
     }
   }

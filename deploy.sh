@@ -764,29 +764,27 @@ if [ "${PULL_FROM_GHCR:-0}" = "1" ]; then
   fi
 fi
 
-# Write env vars from running admin container — the authoritative source.
-ADMIN_CTR=$(docker ps --filter name=admin --format "{{.Names}}" 2>/dev/null | head -1 || true)
-if [ -n "$ADMIN_CTR" ]; then
-  # Escape $ as $$ so Docker Compose does not eat bcrypt ($2a$…) or other literals (see .env.example).
-  docker exec -w /app "$ADMIN_CTR" node /workspace/scripts/write-env-admin-from-db.js /app/216labs.db \
-    > .env.admin 2>/dev/null || : > .env.admin
+# Write compose env from 216labs.db — authoritative for all non-empty env_vars.
+# Prefer host python export (stdlib); admin-container node export can return partial
+# output when better-sqlite3 paths differ, which breaks CRON_RUNNER_SECRET → cron/difftinder.
+: > .env.admin
+if [ -f 216labs.db ] && [ -f scripts/export-env-admin-from-db.py ] && command -v python3 &>/dev/null; then
+  python3 scripts/export-env-admin-from-db.py 216labs.db > .env.admin
   ENV_COUNT=$(wc -l < .env.admin | tr -d ' ')
-  echo "==> Loaded ${ENV_COUNT} env vars from admin container"
+  echo "==> Wrote .env.admin from 216labs.db (${ENV_COUNT} vars)"
 else
-  : > .env.admin
-  # When admin is not running (e.g. limited deploy), still pass env_vars from 216labs.db into compose
-  # so cron-runner and others get TELEGRAM_* / CRON_RUNNER_SECRET (same escaping as write-env-admin-from-db.js).
-  if [ -f 216labs.db ] && [ -f scripts/export-env-admin-from-db.py ] && command -v python3 &>/dev/null; then
-    if python3 scripts/export-env-admin-from-db.py 216labs.db >> .env.admin 2>/dev/null; then
-      ENV_DB=$(wc -l < .env.admin | tr -d ' ')
-      if [ "${ENV_DB:-0}" -gt 0 ]; then
-        echo "==> Loaded ${ENV_DB} env vars from 216labs.db (admin container not running; python export)"
-      fi
-    fi
+  ADMIN_CTR=$(docker ps --filter name=admin --format "{{.Names}}" 2>/dev/null | head -1 || true)
+  if [ -n "$ADMIN_CTR" ]; then
+    docker exec -w /app "$ADMIN_CTR" node /workspace/scripts/write-env-admin-from-db.js /app/216labs.db \
+      > .env.admin 2>/dev/null || : > .env.admin
+    ENV_COUNT=$(wc -l < .env.admin | tr -d ' ')
+    echo "==> Loaded ${ENV_COUNT} env vars from admin container (python export unavailable)"
+  else
+    echo "==> No 216labs.db python export and no admin container; using .env defaults only"
   fi
-  if [ ! -s .env.admin ]; then
-    echo "==> No admin container running yet, using .env defaults only"
-  fi
+fi
+if [ ! -s .env.admin ]; then
+  echo "==> WARNING: .env.admin is empty — cron-runner and panel apps may lack secrets"
 fi
 
 # After GHCR pulls, recreate containers for those images so :latest digest changes actually run.

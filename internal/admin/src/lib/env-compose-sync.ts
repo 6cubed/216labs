@@ -16,7 +16,15 @@ function dbPath(): string {
   return process.env.DATABASE_PATH || join(projectRoot(), "216labs.db");
 }
 
-/** Env keys that should hot-reload a compose service after save (revenue path). */
+/** Env keys that should hot-reload compose service(s) after save. */
+const EXACT_KEY_TO_SERVICES: Record<string, string[]> = {
+  CRON_RUNNER_SECRET: ["cron-runner", "difftinder"],
+  DIFFTINDER_INGEST_SECRET: ["difftinder"],
+  ADMIN_PANEL_PASSWORD: ["difftinder"],
+  ADMIN_PANEL_SESSION_SECRET: ["difftinder"],
+  AGITWEET_API_TOKEN: ["agitweet", "difftinder"],
+};
+
 const PREFIX_TO_DOCKER_SERVICE: Array<[string, string]> = [
   ["NEXT_PUBLIC_STORYBOOK_", "storybook"],
   ["STORYBOOK_", "storybook"],
@@ -25,10 +33,19 @@ const PREFIX_TO_DOCKER_SERVICE: Array<[string, string]> = [
 ];
 
 export function dockerServiceForEnvKey(key: string): string | null {
+  const exact = EXACT_KEY_TO_SERVICES[key];
+  if (exact?.length) return exact[0];
   for (const [prefix, svc] of PREFIX_TO_DOCKER_SERVICE) {
     if (key.startsWith(prefix)) return svc;
   }
   return null;
+}
+
+export function dockerServicesForEnvKey(key: string): string[] {
+  const exact = EXACT_KEY_TO_SERVICES[key];
+  if (exact?.length) return exact;
+  const one = dockerServiceForEnvKey(key);
+  return one ? [one] : [];
 }
 
 function runCommand(
