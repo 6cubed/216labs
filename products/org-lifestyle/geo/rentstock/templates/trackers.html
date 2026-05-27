@@ -15,16 +15,29 @@
     </label>
     <label>
       <div class="criteria" style="margin:0 0 0.25rem">Market</div>
-      <select name="market_slug" required style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
+      <select id="market_slug" name="market_slug" required style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
         {% for slug, m in markets.items() %}
-          <option value="{{ slug }}">{{ m.name }}</option>
+          <option value="{{ slug }}"
+            data-lat="{{ m.center_lat }}"
+            data-lon="{{ m.center_lon }}"
+            data-radius-km="{{ (m.radius_m / 1000)|round(1) }}">{{ m.name }}</option>
         {% endfor %}
       </select>
     </label>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem">
+      <label>
+        <div class="criteria" style="margin:0 0 0.25rem">Search center lat</div>
+        <input id="center_lat" name="center_lat" inputmode="decimal" placeholder="53.3456" style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
+      </label>
+      <label>
+        <div class="criteria" style="margin:0 0 0.25rem">Search center lon</div>
+        <input id="center_lon" name="center_lon" inputmode="decimal" placeholder="-6.2675" style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
+      </label>
+    </div>
     <label>
       <div class="criteria" style="margin:0 0 0.25rem">Geo radius (km)</div>
-      <input name="radius_km" inputmode="decimal" placeholder="3" style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
-      <div class="criteria" style="margin:0.35rem 0 0">Uses the market center point. 0.5–50 km.</div>
+      <input id="radius_km" name="radius_km" inputmode="decimal" placeholder="3" style="width:100%;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text)">
+      <div class="criteria" style="margin:0.35rem 0 0">Counts listings within this radius of the center (haversine). Prefilled from market; edit for “Dublin city center” vs Temple Bar. 0.5–50 km.</div>
     </label>
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem">
       <label>
@@ -71,5 +84,23 @@
     <p class="criteria">No trackers yet.</p>
   {% endif %}
 </div>
+<script>
+(function () {
+  const market = document.getElementById("market_slug");
+  const lat = document.getElementById("center_lat");
+  const lon = document.getElementById("center_lon");
+  const radius = document.getElementById("radius_km");
+  if (!market || !lat || !lon) return;
+  function applyMarketDefaults() {
+    const opt = market.selectedOptions[0];
+    if (!opt) return;
+    lat.value = opt.dataset.lat || "";
+    lon.value = opt.dataset.lon || "";
+    if (radius && !radius.value) radius.value = opt.dataset.radiusKm || "";
+  }
+  market.addEventListener("change", applyMarketDefaults);
+  applyMarketDefaults();
+})();
+</script>
 {% endblock %}
 

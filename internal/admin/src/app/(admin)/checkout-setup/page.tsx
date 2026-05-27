@@ -12,6 +12,33 @@ function isSet(env: Map<string, string>, key: string): boolean {
   return Boolean(env.get(key)?.trim());
 }
 
+type CheckoutProbe = {
+  ok: boolean;
+  ready: boolean;
+  priceUsd?: string;
+  missingKeys?: string[];
+  error?: string;
+};
+
+async function probeStorybookCheckout(url: string): Promise<CheckoutProbe> {
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    const data = (await res.json()) as {
+      ready?: boolean;
+      priceUsd?: string;
+      missingKeys?: string[];
+    };
+    return {
+      ok: res.ok,
+      ready: Boolean(data.ready),
+      priceUsd: data.priceUsd,
+      missingKeys: data.missingKeys,
+    };
+  } catch (e) {
+    return { ok: false, ready: false, error: e instanceof Error ? e.message : "fetch failed" };
+  }
+}
+
 export default async function CheckoutSetupPage() {
   const envRows = getAllEnvVars();
   const env = new Map(envRows.map((r) => [r.key, (r.value || "").trim()]));
@@ -20,6 +47,7 @@ export default async function CheckoutSetupPage() {
   const storyLinks = REVENUE_SETUP_LINKS.storybook;
 
   const missingRequired = STORYBOOK_CHECKOUT_REQUIRED_KEYS.filter((k) => !isSet(env, k));
+  const liveProbe = await probeStorybookCheckout(`${story.publicUrl}/api/checkout/ready`);
 
   return (
     <section className="animate-fade-in space-y-6">
@@ -75,6 +103,29 @@ export default async function CheckoutSetupPage() {
           })}
         </div>
 
+        <div className="rounded-lg border border-border px-3 py-2 text-xs">
+          <div className="font-semibold text-muted">Live probe (storybook container)</div>
+          {liveProbe.error ? (
+            <div className="text-amber-200 mt-1">
+              Could not reach checkout API: {liveProbe.error}
+            </div>
+          ) : liveProbe.ready ? (
+            <div className="text-emerald-300 mt-1 font-semibold">
+              ready: true — checkout can run
+              {liveProbe.priceUsd ? ` (${liveProbe.priceUsd} USD)` : ""}
+            </div>
+          ) : (
+            <div className="text-amber-200 mt-1">
+              ready: false
+              {liveProbe.missingKeys?.length
+                ? ` — missing in runtime: ${liveProbe.missingKeys.join(", ")}`
+                : missingRequired.length
+                  ? " — keys not in admin Env yet"
+                  : " — keys in Env but storybook may need a save/recreate"}
+            </div>
+          )}
+        </div>
+
         {missingRequired.length > 0 ? (
           <div className="pt-2 text-xs">
             <div className="text-amber-200 font-semibold">Next move</div>
@@ -83,13 +134,13 @@ export default async function CheckoutSetupPage() {
               <span className="font-mono">{missingRequired.join(", ")}</span>
             </div>
           </div>
+        ) : !liveProbe.ready ? (
+          <div className="pt-2 text-xs text-amber-200">
+            Env keys look set in the DB; save Env again to hot-reload storybook, then refresh this page.
+          </div>
         ) : (
           <div className="pt-2 text-xs text-emerald-300 font-semibold">
-            Required keys are set. If checkout still isn’t live, check{" "}
-            <a className="underline" href={`${story.publicUrl}/api/checkout/ready`} target="_blank" rel="noreferrer">
-              /api/checkout/ready
-            </a>
-            .
+            Env + live probe agree — first sale path is open.
           </div>
         )}
       </div>

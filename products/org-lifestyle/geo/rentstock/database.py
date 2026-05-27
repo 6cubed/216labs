@@ -70,6 +70,8 @@ def init_db() -> None:
                 slug TEXT NOT NULL UNIQUE,
                 name TEXT NOT NULL,
                 market_slug TEXT NOT NULL,
+                center_lat REAL,
+                center_lon REAL,
                 radius_m INTEGER,
                 min_beds INTEGER,
                 max_price_eur INTEGER,
@@ -92,3 +94,7 @@ def init_db() -> None:
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(trackers)").fetchall()]
         if "radius_m" not in cols:
             conn.execute("ALTER TABLE trackers ADD COLUMN radius_m INTEGER")
+        if "center_lat" not in cols:
+            conn.execute("ALTER TABLE trackers ADD COLUMN center_lat REAL")
+        if "center_lon" not in cols:
+            conn.execute("ALTER TABLE trackers ADD COLUMN center_lon REAL")

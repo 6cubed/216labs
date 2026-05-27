@@ -7,6 +7,8 @@
   <h2>{{ tracker.name }}</h2>
   <p class="criteria">
     Market: <span class="badge">{{ tracker.market_slug }}</span>
+    · center {{ "%.4f"|format(center_lat) }}, {{ "%.4f"|format(center_lon) }}
+    {% if tracker.center_lat is not none %}<span class="badge">custom</span>{% endif %}
     {% if radius_m %} · radius {{ (radius_m / 1000)|round(1) }} km{% endif %}
     {% if tracker.min_beds is not none %} · beds ≥ {{ tracker.min_beds }}{% endif %}
     {% if tracker.max_price_eur is not none %} · price ≤ €{{ tracker.max_price_eur }}{% endif %}

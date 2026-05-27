@@ -9,6 +9,7 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from criteria import MARKETS
 from database import get_db, init_db
+from geo import count_listings_for_tracker, tracker_center
 from scraper import sync_all_markets, sync_market
 
 logging.basicConfig(level=logging.INFO)
@@ -130,6 +131,8 @@ def trackers_page():
         name = (request.form.get("name") or "").strip()
         market_slug = (request.form.get("market_slug") or "").strip()
         radius_km_raw = (request.form.get("radius_km") or "").strip()
+        center_lat_raw = (request.form.get("center_lat") or "").strip()
+        center_lon_raw = (request.form.get("center_lon") or "").strip()
         min_beds_raw = (request.form.get("min_beds") or "").strip()
         max_price_raw = (request.form.get("max_price_eur") or "").strip()
 
@@ -151,6 +154,14 @@ def trackers_page():
         if radius_m is None:
             radius_m = int(market.radius_m)
 
+        center_lat = center_lon = None
+        if center_lat_raw and center_lon_raw:
+            try:
+                center_lat = float(center_lat_raw)
+                center_lon = float(center_lon_raw)
+            except ValueError:
+                center_lat = center_lon = None
+
         base = _slugify(name)
         slug = base
         with get_db() as conn:
@@ -163,17 +174,21 @@ def trackers_page():
                 i += 1
             conn.execute(
                 """
-                INSERT INTO trackers (slug, name, market_slug, radius_m, min_beds, max_price_eur, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+                INSERT INTO trackers (
+                    slug, name, market_slug, center_lat, center_lon,
+                    radius_m, min_beds, max_price_eur, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                 """,
-                (slug, name, market_slug, radius_m, min_beds, max_price),
+                (slug, name, market_slug, center_lat, center_lon, radius_m, min_beds, max_price),
             )
         return redirect(url_for("tracker_page", slug=slug))
 
     with get_db() as conn:
         trackers = conn.execute(
             """
-            SELECT id, slug, name, market_slug, radius_m, min_beds, max_price_eur, created_at
+            SELECT id, slug, name, market_slug, center_lat, center_lon,
+                   radius_m, min_beds, max_price_eur, created_at
             FROM trackers
             ORDER BY id DESC
             """
@@ -185,7 +200,8 @@ def tracker_dashboard(tracker_slug: str) -> dict:
     with get_db() as conn:
         t = conn.execute(
             """
-            SELECT id, slug, name, market_slug, radius_m, min_beds, max_price_eur, created_at
+            SELECT id, slug, name, market_slug, center_lat, center_lon,
+                   radius_m, min_beds, max_price_eur, created_at
             FROM trackers WHERE slug = ?
             """,
             (tracker_slug,),
@@ -195,23 +211,9 @@ def tracker_dashboard(tracker_slug: str) -> dict:
 
         market_slug = t["market_slug"]
         market = MARKETS.get(market_slug)
-        where = ["market_slug = ?", "active = 1"]
-        params = [market_slug]
-        if market:
-            radius_m = int(t["radius_m"] or market.radius_m)
-            where.append("distance_m IS NOT NULL AND distance_m <= ?")
-            params.append(radius_m)
-        if t["min_beds"] is not None:
-            where.append("beds IS NOT NULL AND beds >= ?")
-            params.append(int(t["min_beds"]))
-        if t["max_price_eur"] is not None:
-            where.append("price_eur IS NOT NULL AND price_eur <= ?")
-            params.append(int(t["max_price_eur"]))
-
-        active_count = conn.execute(
-            f"SELECT COUNT(*) AS c FROM listings WHERE {' AND '.join(where)}",
-            tuple(params),
-        ).fetchone()["c"]
+        active_count = count_listings_for_tracker(conn, t, market)
+        radius_m = int(t["radius_m"] or (market.radius_m if market else 0))
+        clat, clon = tracker_center(t["center_lat"], t["center_lon"], market)
 
         history = conn.execute(
             """
@@ -230,7 +232,9 @@ def tracker_dashboard(tracker_slug: str) -> dict:
         "market": market,
         "active_count": active_count,
         "history": history,
-        "radius_m": int(t["radius_m"] or (market.radius_m if market else 0)),
+        "radius_m": radius_m,
+        "center_lat": clat,
+        "center_lon": clon,
     }
 
 
@@ -247,26 +251,15 @@ def snapshot_trackers() -> None:
     ensure_db()
     with get_db() as conn:
         trackers = conn.execute(
-            "SELECT id, market_slug, radius_m, min_beds, max_price_eur FROM trackers"
+            """
+            SELECT id, market_slug, center_lat, center_lon,
+                   radius_m, min_beds, max_price_eur
+            FROM trackers
+            """
         ).fetchall()
         for t in trackers:
-            where = ["market_slug = ?", "active = 1"]
-            params = [t["market_slug"]]
             market = MARKETS.get(t["market_slug"])
-            if market:
-                radius_m = int(t["radius_m"] or market.radius_m)
-                where.append("distance_m IS NOT NULL AND distance_m <= ?")
-                params.append(radius_m)
-            if t["min_beds"] is not None:
-                where.append("beds IS NOT NULL AND beds >= ?")
-                params.append(int(t["min_beds"]))
-            if t["max_price_eur"] is not None:
-                where.append("price_eur IS NOT NULL AND price_eur <= ?")
-                params.append(int(t["max_price_eur"]))
-            c = conn.execute(
-                f"SELECT COUNT(*) AS c FROM listings WHERE {' AND '.join(where)}",
-                tuple(params),
-            ).fetchone()["c"]
+            c = count_listings_for_tracker(conn, t, market)
             conn.execute(
                 "INSERT INTO tracker_snapshots (tracker_id, counted_at, active_count) VALUES (?, datetime('now'), ?)",
                 (t["id"], int(c)),
