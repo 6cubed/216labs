@@ -25,6 +25,7 @@ import base64
 import json
 import os
 import re
+import signal
 import unicodedata
 import subprocess as sp
 import threading
@@ -63,6 +64,9 @@ from lib import command_rules
 from lib import heartbeat_harness
 from lib import agitweet_client
 from lib import agitweet_harness
+
+# Owner-only process stop (Telegram /killswitch).
+_KILLSWITCH = threading.Event()
 
 
 def _repo_root() -> str:
@@ -123,6 +127,49 @@ def adminpass_reset(*, cid: int) -> None:
         "If login still fails, clear saved passwords for admin.6cubed.app and try again.\n"
         "Same pass works for DiffTinder cookie login.",
     )
+
+
+def killswitch(*, cid: int, reason: str = "killswitch") -> None:
+    """
+    Hard stop the bridge: disable periodic harnesses, close CDP websockets, and exit.
+
+    Owner-only: caller must be in allowed_user_ids.
+    """
+    try:
+        tg_send(
+            cid,
+            "🛑 Kill switch: shutting down the bridge now.\n"
+            "To restart: run ./scripts/pocket-cursor-bridge.sh on the laptop.",
+        )
+    except Exception:
+        pass
+    try:
+        _KILLSWITCH.set()
+    except Exception:
+        pass
+    try:
+        heartbeat_harness.set_enabled(False)
+    except Exception:
+        pass
+    try:
+        agitweet_harness.set_enabled(False)
+    except Exception:
+        pass
+    try:
+        for info in list(instance_registry.values()):
+            try:
+                ws = info.get("ws")
+                if ws:
+                    ws.close()
+            except Exception:
+                pass
+    except Exception:
+        pass
+    # Prefer a signal so all threads unwind quickly.
+    try:
+        os.kill(os.getpid(), signal.SIGTERM)
+    except Exception:
+        raise SystemExit(f"bridge shutdown: {reason}")
 
 _cd.ts_print = wrap_ts_print(_cd.ts_print)
 _cd.print = _cd.ts_print
@@ -2912,10 +2959,14 @@ def heartbeat_thread():
     print("[heartbeat] thread started")
     first_run = True
     while True:
+        if _KILLSWITCH.is_set():
+            return
         cfg = heartbeat_harness.get_config()
         wait_sec = cfg.first_run_delay_sec if first_run else cfg.interval_sec
         first_run = False
         time.sleep(wait_sec)
+        if _KILLSWITCH.is_set():
+            return
         if not heartbeat_harness.is_enabled():
             continue
         ok, line = run_heartbeat_inject(manual=False)
@@ -2964,10 +3015,14 @@ def agitweet_thread():
     print("[agitweet] thread started")
     first_run = True
     while True:
+        if _KILLSWITCH.is_set():
+            return
         cfg = agitweet_harness.get_config()
         wait_sec = cfg.first_run_delay_sec if first_run else cfg.interval_sec
         first_run = False
         time.sleep(wait_sec)
+        if _KILLSWITCH.is_set():
+            return
         if not agitweet_harness.is_enabled():
             continue
         ok, line = run_agitweet_post(manual=False)
@@ -3619,6 +3674,12 @@ def sender_thread():
                             "Admin password helper:\n"
                             "/adminpass reset — rotate admin.6cubed.app basic auth and paste the new password here",
                         )
+                    continue
+
+                if cmd == '/killswitch' or cmd.startswith('/killswitch '):
+                    parts = text.strip().split(maxsplit=1)
+                    arg = parts[1].strip() if len(parts) > 1 else ''
+                    killswitch(cid=cid, reason=arg or "killswitch")
                     continue
 
                 if cmd == '/screenshot':
