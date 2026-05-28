@@ -11,7 +11,7 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **Verify:** `grep CRON_RUNNER_SECRET /opt/216labs/.env.admin` on VPS (value not printed). `deploy.sh` now bootstraps empty panel secrets before export.
 
-**Note:** `heartbeat-stack.sh` runs `PRAGMA wal_checkpoint` before reading `cron_runner_state` (cron-runner uses WAL; naive host reads were stale).
+**Note:** `heartbeat-stack.sh` reads `cron_runner_state` via **docker exec cron-runner** (WAL-safe). Do not `PRAGMA wal_checkpoint(TRUNCATE)` on the host DB while containers are up.
 
 ---
 

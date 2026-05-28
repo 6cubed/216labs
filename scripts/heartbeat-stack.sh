@@ -15,29 +15,20 @@ fi
 
 echo
 echo "=== Droplet cron snapshot ==="
-# Host often has no sqlite3 CLI; use python3 against /opt/216labs/216labs.db.
+# Read via cron-runner container: it uses WAL on 216labs.db; host sqlite3 can be stale or
+# TRUNCATE checkpoint while containers run risks corruption.
 CRON_SNAPSHOT=$(
-  ssh "${SSH_OPTS[@]}" "$REMOTE" 'python3 - <<'"'"'PY'"'"'
-import json
-import sqlite3
-
-keys = ("stack_health_last", "revenue_env_last")
-try:
-    conn = sqlite3.connect("/opt/216labs/216labs.db")
-    # cron-runner uses WAL; host sqlite3 without checkpoint can read stale cron_runner_state.
-    conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
-except OSError:
-    raise SystemExit(1)
-out = {}
-for key in keys:
-    row = conn.execute(
-        "SELECT value FROM cron_runner_state WHERE key = ? LIMIT 1", (key,)
-    ).fetchone()
-    if row and row[0]:
-        out[key] = row[0]
-print(json.dumps(out))
-PY
-' 2>/dev/null || true
+  ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker exec 216labs-cron-runner-1 node -e "
+const Database = require(\"better-sqlite3\");
+const db = new Database(process.env.DATABASE_PATH || \"/app/216labs.db\");
+const keys = [\"stack_health_last\", \"revenue_env_last\"];
+const out = {};
+for (const key of keys) {
+  const row = db.prepare(\"SELECT value FROM cron_runner_state WHERE key = ? LIMIT 1\").get(key);
+  if (row && row.value) out[key] = row.value;
+}
+console.log(JSON.stringify(out));
+"' 2>/dev/null || true
 )
 
 if [[ -n "$CRON_SNAPSHOT" ]]; then
