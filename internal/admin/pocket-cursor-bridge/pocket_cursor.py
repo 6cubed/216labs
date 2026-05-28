@@ -912,6 +912,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'probe', 'description': 'Fast stack probe (edge + services + checkout)'},
     {'command': 'inbox', 'description': 'CEO inbox: show pending owner messages'},
     {'command': 'done', 'description': 'CEO inbox: mark message done (/done <id>)'},
+    {'command': 'blogdraft', 'description': 'Draft a blog post from latest CEO message'},
     {'command': 'lockdown', 'description': 'Emergency: pause forwarding + disable autoprompt'},
     {'command': 'panic', 'description': 'Emergency: lockdown + stop bridge process'},
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
@@ -3260,6 +3261,113 @@ def _inbox_text() -> str:
     return "\n".join(lines).strip()
 
 
+def _ts_escape_single(s: str) -> str:
+    return s.replace("\\", "\\\\").replace("'", "\\'")
+
+
+def _ts_escape_template(s: str) -> str:
+    # For a TS template literal: escape backticks and ${...} interpolation.
+    return s.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
+
+
+def _blog_posts_ts_path() -> str:
+    root = _repo_root()
+    return os.path.join(root, "products", "org-media", "blog", "src", "lib", "posts.ts")
+
+
+def _insert_blog_post_into_posts_ts(post: dict) -> tuple[bool, str]:
+    """
+    Insert a post object at the top of `export const posts: Post[] = [` in posts.ts.
+    Returns (ok, message).
+    """
+    path = _blog_posts_ts_path()
+    try:
+        raw = Path(path).read_text(encoding="utf-8")
+    except Exception as e:
+        return False, f"Could not read posts.ts: {e}"
+
+    marker = "export const posts: Post[] = ["
+    idx = raw.find(marker)
+    if idx < 0:
+        return False, "Could not find posts array marker in posts.ts"
+    insert_at = raw.find("\n", idx)
+    if insert_at < 0:
+        return False, "Unexpected posts.ts format"
+    insert_at += 1
+
+    slug = _ts_escape_single(str(post["slug"]))
+    title = _ts_escape_single(str(post["title"]))
+    excerpt = _ts_escape_single(str(post["excerpt"]))
+    date = _ts_escape_single(str(post["date"]))
+    body = _ts_escape_template(str(post["body"]))
+
+    block = (
+        "  {\n"
+        f"    slug: '{slug}',\n"
+        f"    title: '{title}',\n"
+        f"    excerpt: '{excerpt}',\n"
+        f"    date: '{date}',\n"
+        "    body: `\n"
+        f"{body}\n"
+        "    `.trim(),\n"
+        "  },\n"
+    )
+
+    if f"slug: '{slug}'" in raw:
+        return False, f"Post already exists: {post['slug']}"
+
+    out = raw[:insert_at] + block + raw[insert_at:]
+    try:
+        Path(path).write_text(out, encoding="utf-8")
+    except Exception as e:
+        return False, f"Could not write posts.ts: {e}"
+    return True, f"Drafted post '{post['slug']}' in {path}"
+
+
+def _blogdraft_text() -> str:
+    rows = _ceo_inbox_pending(1)
+    if not rows:
+        return "✍️ Blog draft\nNo CEO messages in /inbox to draft from."
+    src = rows[-1]
+    src_id = str(src.get("id", "?"))
+    raw = str(src.get("text", "")).strip()
+    if not raw:
+        return "✍️ Blog draft\nLatest CEO message is empty."
+
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    short = re.sub(r"[^a-z0-9]+", "-", raw.lower()).strip("-")
+    short = short[:48] if short else "ceo-note"
+    slug = f"{today}-{short}"
+
+    title = raw.splitlines()[0].strip()
+    if len(title) > 72:
+        title = title[:69] + "…"
+    excerpt = raw.replace("\n", " ").strip()
+    if len(excerpt) > 160:
+        excerpt = excerpt[:157] + "…"
+
+    body = (
+        f"**CEO note (source #{src_id})**\n\n"
+        f"{raw}\n\n"
+        "## Why this matters\n\n"
+        "- \n\n"
+        "## What we’ll do next\n\n"
+        "- \n"
+    )
+    ok, msg = _insert_blog_post_into_posts_ts(
+        {"slug": slug, "title": title, "excerpt": excerpt, "date": today, "body": body}
+    )
+    if not ok:
+        return f\"✍️ Blog draft\n{msg}\"
+    return (
+        "✍️ Blog draft created\n"
+        f"• slug: {slug}\n"
+        f"• source: #{src_id}\n"
+        f"{msg}\n\n"
+        "Next: open the file and edit; then commit + deploy blog."
+    )
+
+
 def _lockdown(muted_file, auto_approve_prompts_file) -> None:
     """Best-effort emergency lockdown: pause forwarding and disable auto-prompt."""
     global muted, auto_approve_prompts
@@ -3688,6 +3796,10 @@ def sender_thread():
                         continue
                     _ceo_inbox_mark_done(mid_arg)
                     tg_send(cid, f"✅ Marked done: #{mid_arg}")
+                    continue
+
+                if cmd == '/blogdraft':
+                    tg_send(cid, _blogdraft_text())
                     continue
 
                 if cmd == '/bridges':
