@@ -2,7 +2,7 @@
 
 **First paid checkout:** step-by-step Stripe + deploy → [`docs/FIRST-SALE.md`](FIRST-SALE.md).
 
-Paid flows read secrets from **admin → Env** ([`https://admin.6cubed.app/env`](https://admin.6cubed.app/env) — revenue readiness panel + key editor). Saving `STORYBOOK_*`, `ONEPAGE_*`, or `NEXT_PUBLIC_MERCH_*` on the **production admin** host regenerates `.env.admin` and **force-recreates** that compose service (no laptop deploy required). Fallback: `./deploy.sh` or `docker compose up -d --force-recreate <svc>` on the VPS.
+Paid flows read secrets from admin. For Stripe checkout setup, use **[admin → Checkout setup](https://admin.6cubed.app/checkout-setup)** (it tells you exactly what to paste), then **[admin → Env](https://admin.6cubed.app/env)** for the actual key editor. Saving `STORYBOOK_*`, `ONEPAGE_*`, or `NEXT_PUBLIC_MERCH_*` on the **production admin** host regenerates `.env.admin` and **force-recreates** that compose service (no laptop deploy required). Fallback: `./deploy.sh` or `docker compose up -d --force-recreate <svc>` on the VPS.
 
 | App | Keys | Unblocks |
 |-----|------|----------|

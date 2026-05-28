@@ -17,7 +17,7 @@ Link previews (Meta/Twitter) use **Open Graph** metadata on the homepage — tit
 | Site loads | https://storybook.6cubed.app |
 | GA4 on host | `GA_MEASUREMENT_ID` in manifest / env (pageviews already) |
 | Conversion events | Shipped in app — see **GA4 events** below |
-| Stripe (optional for Path B) | [admin → Env](https://admin.6cubed.app/env) — `STORYBOOK_STRIPE_*` — see [`FIRST-SALE.md`](FIRST-SALE.md) |
+| Stripe (optional for Path B) | [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) — `STORYBOOK_STRIPE_*` — see [`FIRST-SALE.md`](FIRST-SALE.md) |
 
 **Path A — Waitlist ads (now):** Run Meta/TikTok to preview + waitlist. Measure **waitlist_signup** CPA.
 
@@ -71,6 +71,6 @@ UTMs are **stored on each waitlist lead** (session first-touch) and shown in [ad
 
 | Blocker | Next move |
 |---------|-----------|
-| No Stripe keys | Paste test keys in [admin Env](https://admin.6cubed.app/env) → Save → verify checkout |
+| No Stripe keys | Paste test keys in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) → Save → verify checkout |
 | No GA4 ID on storybook host | Set `GA_MEASUREMENT_ID` in admin Env for `storybook` app |
 | Ads with no measurement | Enable conversions above + UTMs on every ad link |

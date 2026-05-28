@@ -39,7 +39,7 @@ Exception: CEO explicitly says they are in **engineering mode** ("I'll run it", 
 | Org / investor metrics | [admin → Org metrics](https://admin.6cubed.app/org-metrics) |
 | Errors & reliability | [admin → Errors](https://admin.6cubed.app/errors) |
 | Portfolio & deploy | [admin → Overview](https://admin.6cubed.app/) / [Applications](https://admin.6cubed.app/applications) |
-| Revenue / Stripe readiness | [admin → Env](https://admin.6cubed.app/env) |
+| Revenue / Stripe readiness | [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) (then Env) |
 | Edge / cron health | [admin → Cron](https://admin.6cubed.app/cron) |
 | Quick stack pulse (Telegram) | Bridge `/now` (no repo commands for CEO) |
 
@@ -74,4 +74,4 @@ Reference doc (for employees, not CEO): `docs/INVESTOR-METRICS.md`.
 
 - Answering "dashboard?" with CLI instructions.
 - Leaving metrics only in `quality-reports/` or gitignored paths CEO will never open.
-- Asking CEO to set env vars on the droplet — use [admin Env](https://admin.6cubed.app/env) or say what key is missing and that you'll wire it on deploy.
+- Asking CEO to set env vars on the droplet — use [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) / [admin → Env](https://admin.6cubed.app/env) or say what key is missing and that you'll wire it on deploy.

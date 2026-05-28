@@ -19,7 +19,7 @@ echo
 if "$ROOT/scripts/check-revenue-env-http.sh" 2>/dev/null; then
   echo "Revenue: checkout ready"
 else
-  echo "Revenue: keys pending — https://admin.6cubed.app/env (StoryMagic: 2 Stripe keys)"
+  echo "Revenue: keys pending — https://admin.6cubed.app/checkout-setup (StoryMagic: 2 Stripe keys)"
 fi
 
 echo

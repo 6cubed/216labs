@@ -7,7 +7,7 @@ echo "=== First sale (StoryMagic) ==="
 echo "Guide: $ROOT/docs/FIRST-SALE.md"
 echo
 echo "1. Stripe test keys + webhook → https://storybook.6cubed.app/api/webhook"
-echo "2. Admin Env → https://admin.6cubed.app/env"
+echo "2. Checkout setup → https://admin.6cubed.app/checkout-setup"
 echo "   STORYBOOK_STRIPE_SECRET_KEY, STORYBOOK_STRIPE_WEBHOOK_SECRET (required)"
 echo "   NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY (optional)"
 echo "3. Deploy: DEPLOY_RUNTIME_APPS=storybook ./deploy.sh root@46.101.88.197"

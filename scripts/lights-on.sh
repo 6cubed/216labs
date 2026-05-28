@@ -20,6 +20,6 @@ if "$ROOT/scripts/check-revenue-env-http.sh"; then
 fi
 
 echo
-echo "Next revenue move: https://admin.6cubed.app/env — set STORYBOOK_STRIPE_* (Save hot-reloads storybook)."
+echo "Next revenue move: https://admin.6cubed.app/checkout-setup — paste STORYBOOK_STRIPE_* and Save (hot-reloads storybook)."
 echo "Guide: $ROOT/docs/FIRST-SALE.md"
 exit 0

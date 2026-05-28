@@ -63,7 +63,7 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 |-------|--------|
 | Stack | `heartbeat-stack.sh` OK |
 | Cron ops | **Shipped** — bootstrap on deploy + `ensure-droplet-cron-secret.sh` + `run-droplet-cron` fallbacks |
-| First paid checkout | **BLOCKED (you)** — `STORYBOOK_STRIPE_*` in admin Env |
+| First paid checkout | **BLOCKED (you)** — `STORYBOOK_STRIPE_*` in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) |
 
 ---
 
@@ -73,7 +73,7 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 |----------------------------|-------------|
 | Stack / edge up | **Yes** — `heartbeat-stack.sh` OK |
 | StoryMagic closest to revenue | **Yes** — waitlist + GA4 + UTMs shipped |
-| Stripe blocks first sale | **Yes** — `ready: false`; keys in admin Env |
+| Stripe blocks first sale | **Yes** — `ready: false`; keys in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) |
 | Merch storefront dead | **No** — `[Merch] storefront URL appears configured` |
 | Ads API in repo | **No** — closed; Meta/Google UIs only |
 | Org-metrics git broken | **No** — fixed (`git` in admin image) |
@@ -111,7 +111,7 @@ Playbook: [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). **Verify:** ad URL with
 |-------|--------|
 | Edge / stack | `./scripts/heartbeat-stack.sh` — lights on (admin 401, landing/storybook/maxlearn OK) |
 | StoryMagic ads attribution | **Shipped** — UTM capture on waitlist → admin Orders **Campaign** column |
-| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` in [admin Env](https://admin.6cubed.app/env) |
+| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) |
 | Meta/Google Ads API in repo | **None** — run campaigns in platform UIs; measure via GA4 + admin leads |
 
 ---
@@ -121,7 +121,7 @@ Playbook: [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). **Verify:** ad URL with
 | Check | Result |
 |-------|--------|
 | StoryMagic monetization beat | **Shipped** — GA4 conversion events + [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md) |
-| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` in [admin Env](https://admin.6cubed.app/env) |
+| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) |
 | Closest live revenue app | **StoryMagic** — waitlist + ads-ready measurement; purchase after Stripe |
 
 ---
@@ -133,7 +133,7 @@ Playbook: [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). **Verify:** ad URL with
 | `./scripts/edge-smoke.sh` | Re-run after recover — admin/landing expected up |
 | VPS DB | **Restored** from `216labs.db.bak.202605271702` (corrupt DB + WAL dir mounts) |
 | Admin **Org metrics** | **Shipped** `fe48a9bb` — https://admin.6cubed.app/org-metrics after admin up |
-| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` + `ONEPAGE_STRIPE_*` in [admin Env](https://admin.6cubed.app/env) |
+| First paid checkout | **Blocked (you)** — `STORYBOOK_STRIPE_*` + `ONEPAGE_STRIPE_*` in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) |
 | Pocket bridge autoprompt | **ON** — `/autoprompt on` |
 
 **If edge all `000` or SSH banner hang:** `./scripts/droplet-reboot.sh` → `./scripts/wait-for-droplet.sh` (runs recover). Diagnose first: `./scripts/droplet-wedge-check.sh`.
@@ -184,7 +184,7 @@ Playbook: [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). **Verify:** ad URL with
 
 | Shipped | Blocker |
 |---------|---------|
-| Waitlist-first preview; print-interest → admin **Leads**; admin Save hot-reloads storybook | **2** test keys → [admin Env](https://admin.6cubed.app/env) |
+| Waitlist-first preview; print-interest → admin **Leads**; admin Save hot-reloads storybook | **2** test keys → [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) |
 | **GA4 funnel events** + **UTM on waitlist** (admin Orders campaign column) | Mark conversions in GA4 |
 | CEO ads playbook | [`docs/STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md) |
 
