@@ -7,7 +7,7 @@ Paid flows read secrets from admin. For Stripe checkout setup, use **[admin → 
 | App | Keys | Unblocks |
 |-----|------|----------|
 | **merch** | `NEXT_PUBLIC_MERCH_STORE_URL` — Printful (or other) storefront base URL | Buy buttons on https://merch.6cubed.app |
-| **storybook** | `STORYBOOK_STRIPE_SECRET_KEY`, `STORYBOOK_STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY`; optional `STORYBOOK_BOOK_PRICE_CENTS` (default `2499`) | Stripe Checkout on https://storybook.6cubed.app |
+| **storybook** | **Preorder (no webhook):** `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` (Payment Link). **Full checkout:** `STORYBOOK_STRIPE_SECRET_KEY`, `STORYBOOK_STRIPE_WEBHOOK_SECRET`; optional `NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY`, `STORYBOOK_BOOK_PRICE_CENTS` (default `2499`) | Payment Link or Stripe Checkout on https://storybook.6cubed.app |
 | **1pageresearch** | `ONEPAGE_STRIPE_SECRET_KEY`, `ONEPAGE_STRIPE_WEBHOOK_SECRET`; optional `ONEPAGE_ADMIN_SECRET`, `ONEPAGE_BASE_URL` | €1 Stripe checkout on https://1pageresearch.6cubed.app/generate |
 | **onefit** / **emailgpt** | Product-specific keys in each manifest | Subscriptions and paid tiers |
 
@@ -35,7 +35,7 @@ curl -sS -X POST "https://storybook.6cubed.app/api/checkout" -H 'Content-Type: a
 
 **Blocker today:** merch and StoryMagic UI can ship without keys, but checkout stays disabled until the rows above are set in admin and images are redeployed.
 
-**UX when keys are missing:** StoryMagic preview calls `GET /api/checkout/ready` and disables Order with a clear message; merch Buy falls back to a StoryMagic link until `NEXT_PUBLIC_MERCH_STORE_URL` is set.
+**UX when keys are missing:** StoryMagic calls `GET /api/checkout/ready` (`ready`, `preorderConfigured`, `preorderUrl` at runtime). Preview shows **Preorder now** when a Payment Link is set; otherwise waitlist. Merch Buy falls back to StoryMagic until `NEXT_PUBLIC_MERCH_STORE_URL` is set. Admin **Checkout setup** has an amber nav dot until StoryMagic has checkout or preorder live.
 
 **Leads without Stripe:** StoryMagic stores **print interest** emails (`POST /api/print-interest`, table `print_interest` in `storybook.db`) and pings admin ingest with `[Print lead]`. **1PageResearch** accepts **free report requests** on `/generate` (`POST /api/request-free`) — review at `/admin/requests` when `ONEPAGE_ADMIN_SECRET` is set.
 

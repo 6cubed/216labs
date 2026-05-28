@@ -100,6 +100,26 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Docs vs code (preorder / monitoring) — **CLOSED**
+
+| Stale | Fix |
+|-------|-----|
+| `FIRST-SALE.md` / `REVENUE-ENV.md` implied keys-only; manifest omitted Payment Link | **Shipped** — docs + storybook manifest describe preorder + Checkout setup inline save |
+| `revenue_env_last` hours old in heartbeat | Cron every 4h; heartbeat warns if **>2h**; refresh: `./scripts/run-droplet-cron.sh revenue-env-check` |
+
+**Verify:** `./scripts/check-revenue-env-http.sh` documents preorder LIVE line; `./scripts/heartbeat-stack.sh` prints `storybook: preorder live` when configured.
+
+---
+
+## Production snapshot (2026-05-28 ~20:20 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| Docs / monitoring | **Shipped** — revenue docs aligned with code; heartbeat stale threshold 2h |
+
+---
+
 ## Production snapshot (2026-05-28 ~20:05 UTC)
 
 | Highest leverage | Blocker |

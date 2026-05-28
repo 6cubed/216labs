@@ -6,13 +6,13 @@
 
 | Rank | App | Why | Blocker |
 |------|-----|-----|---------|
-| 1 | **StoryMagic** | Fixed $24.99, one Stripe webhook, hot-reload on admin save | **2** test keys in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup): `STORYBOOK_STRIPE_SECRET_KEY`, `STORYBOOK_STRIPE_WEBHOOK_SECRET` (publishable optional) |
+| 1 | **StoryMagic** | Fixed $24.99; Payment Link **or** full Stripe checkout; hot-reload on admin save | **Fast:** Payment Link on [Checkout setup](https://admin.6cubed.app/checkout-setup). **Full:** `STORYBOOK_STRIPE_SECRET_KEY` + `STORYBOOK_STRIPE_WEBHOOK_SECRET` |
 | 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` points at a live store |
 | 3 | **1PageResearch** | €1 report; free tier works today | `ONEPAGE_STRIPE_*` keys |
 
-Until StoryMagic keys land, **print-interest** emails on the preview page are the revenue funnel (`POST /api/print-interest`, admin **Leads**). Admin shows a **First sale** banner on every page until checkout probes pass.
+Until StoryMagic can take money, the funnel is **waitlist** (`POST /api/print-interest`) or **Preorder now** when `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` is set (admin **Leads** + Stripe Payment Link). Admin shows a **First sale** banner (or green preorder banner) until checkout or preorder is live.
 
-**Paid traffic:** CEO playbook [`STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). GA4 events: `generate_start`, `story_preview_ready`, `waitlist_signup`, `begin_checkout`, `purchase` — mark the funnel step you optimize for as a conversion in GA4.
+**Paid traffic:** CEO playbook [`STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). GA4: `generate_start`, `story_preview_ready`, `waitlist_signup`, `preorder_click`, `begin_checkout`, `purchase`.
 
 **Admin access:** If you cannot open [admin → Env](https://admin.6cubed.app/env) to paste keys, reset credentials first — **`docs/ADMIN-ACCESS.md`** (`/adminpass reset` in Telegram).
 
@@ -56,7 +56,7 @@ Full checkout + order emails in admin still need the two Stripe keys above.
 ./scripts/check-revenue-env-http.sh
 ```
 
-Expect `[StoryMagic] checkout ready` when keys are set. With only preorder URL: test **Preorder now** on https://storybook.6cubed.app after creating a book.
+Expect `[StoryMagic] checkout ready` when keys are set, or `[StoryMagic] preorder LIVE` when only the Payment Link is set. Telegram **`/checkout`** and `./scripts/heartbeat-stack.sh` show `storybook: preorder live` vs `checkout not ready`.
 
 ## 4. Fallback redeploy (only if Save did not recreate storybook)
 

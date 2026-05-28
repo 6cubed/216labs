@@ -77,8 +77,8 @@ for key in ('stack_health_last', 'revenue_env_last'):
                 from datetime import datetime, timezone
                 ts = datetime.fromisoformat(at.replace('Z', '+00:00'))
                 age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600
-                if age_h > 5:
-                    print(f'    (stale — {age_h:.0f}h old; run ./scripts/run-droplet-cron.sh revenue-env-check)')
+                if age_h > 2:
+                    print(f'    (stale — {age_h:.1f}h old; run ./scripts/run-droplet-cron.sh revenue-env-check)')
             except Exception:
                 pass
         for r in d.get('results') or []:
