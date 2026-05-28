@@ -49,6 +49,19 @@ export function storybookPreorderConfigured(env: Map<string, string>): boolean {
   return Boolean(env.get(STORYBOOK_PREORDER_ENV_KEY)?.trim());
 }
 
+/** True when StoryMagic has no checkout and no preorder (CEO should open Checkout setup). */
+export function storymagicNeedsRevenueAttention(
+  env: Map<string, string>,
+  cron: RevenueCronSnapshot | null
+): boolean {
+  const story = cron?.results.find((r) => r.id === "storybook");
+  if (story?.ready === true) return false;
+  if (storybookPreorderConfigured(env) || story?.preorderConfigured === true) {
+    return false;
+  }
+  return true;
+}
+
 /** Stripe Dashboard → Webhooks → “Select events” for StoryMagic. */
 export const STORYBOOK_STRIPE_WEBHOOK_EVENTS = ["checkout.session.completed"] as const;
 

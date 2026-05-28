@@ -17,8 +17,10 @@ echo
 echo "=== Droplet cron snapshot ==="
 # Read via cron-runner container: it uses WAL on 216labs.db; host sqlite3 can be stale or
 # TRUNCATE checkpoint while containers run risks corruption.
-CRON_SNAPSHOT=$(
-  ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker exec 216labs-cron-runner-1 node -e "
+CRON_SNAPSHOT=""
+for attempt in 1 2 3; do
+  CRON_SNAPSHOT=$(
+    ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker exec 216labs-cron-runner-1 node -e "
 const Database = require(\"better-sqlite3\");
 const db = new Database(process.env.DATABASE_PATH || \"/app/216labs.db\");
 const keys = [\"stack_health_last\", \"revenue_env_last\"];
@@ -29,7 +31,12 @@ for (const key of keys) {
 }
 console.log(JSON.stringify(out));
 "' 2>/dev/null || true
-)
+  )
+  if [[ -n "$CRON_SNAPSHOT" ]]; then
+    break
+  fi
+  [[ "$attempt" -lt 3 ]] && sleep 2
+done
 
 if [[ -n "$CRON_SNAPSHOT" ]]; then
   printf '%s' "$CRON_SNAPSHOT" | python3 -c "
@@ -47,6 +54,16 @@ for key in ('stack_health_last', 'revenue_env_last'):
     print(f'  [{key}] at {d.get(\"at\", \"?\")}')
     if key == 'stack_health_last':
         print('    diagnosis:', d.get('diagnosis'))
+        at = d.get('at', '')
+        if at:
+            try:
+                from datetime import datetime, timezone
+                ts = datetime.fromisoformat(at.replace('Z', '+00:00'))
+                age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600
+                if age_h > 1:
+                    print(f'    (stale — {age_h:.0f}h old; cron stack-health-check should run every 15m)')
+            except Exception:
+                pass
         for side in ('external', 'internal'):
             for r in d.get(side) or []:
                 st = 'OK' if r.get('ok') else 'FAIL'

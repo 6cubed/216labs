@@ -3229,6 +3229,19 @@ def _checkout_text() -> str:
         lines.append(out)
     else:
         lines.append("(probe script produced no output)")
+    _ok_sm, sm_line = _run_cmd_quick(
+        [
+            "bash",
+            "-lc",
+            "curl -sS -m 12 https://storybook.6cubed.app/api/checkout/ready | python3 -c \""
+            "import sys,json; d=json.load(sys.stdin); "
+            "print('StoryMagic live:', 'checkout open' if d.get('ready') else "
+            "('preorder live' if d.get('preorderConfigured') else 'needs Payment Link or Stripe keys'))\"",
+        ],
+        timeout_sec=16,
+    )
+    if sm_line:
+        lines.append(sm_line.strip())
     lines.append("\n🔗 Checkout setup: https://admin.6cubed.app/checkout-setup")
     lines.append("📚 StoryMagic: https://storybook.6cubed.app")
     return "\n".join(lines).strip()

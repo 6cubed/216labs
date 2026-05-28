@@ -2,7 +2,12 @@ import { AdminNav } from "@/components/AdminNav";
 import { FirstSaleBanner } from "@/components/FirstSaleBanner";
 import { infrastructure } from "@/data/apps";
 import { getErrorSignalCount24h, resolveErrorsFeedHref } from "@/lib/admin-errors";
-import { getAllApps, getDb } from "@/lib/db";
+import { getAllApps, getAllEnvVars, getCronRunnerState, getDb } from "@/lib/db";
+import {
+  parseRevenueCronSnapshot,
+  REVENUE_CRON_STATE_KEY,
+  storymagicNeedsRevenueAttention,
+} from "@/lib/revenue-readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +22,11 @@ export default async function AdminLayout({
   ).length;
   const errorSignalCount = getErrorSignalCount24h();
   const errorsHref = resolveErrorsFeedHref(getDb());
+  const envMap = new Map(getAllEnvVars().map((r) => [r.key, (r.value ?? "").trim()]));
+  const revenueCron = parseRevenueCronSnapshot(
+    getCronRunnerState(REVENUE_CRON_STATE_KEY)
+  );
+  const revenueAttention = storymagicNeedsRevenueAttention(envMap, revenueCron);
 
   return (
     <div className="min-h-screen">
@@ -44,7 +54,11 @@ export default async function AdminLayout({
             </div>
           </div>
         </div>
-        <AdminNav errorSignalCount={errorSignalCount} errorsHref={errorsHref} />
+        <AdminNav
+          errorSignalCount={errorSignalCount}
+          errorsHref={errorsHref}
+          revenueAttention={revenueAttention}
+        />
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6">

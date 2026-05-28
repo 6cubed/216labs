@@ -29,11 +29,14 @@ type AdminNavProps = {
   errorSignalCount?: number;
   /** When set, the Errors tab links here (e.g. /errors?app=blog). */
   errorsHref?: string;
+  /** Highlight Checkout setup when StoryMagic has no paid path yet. */
+  revenueAttention?: boolean;
 };
 
 export function AdminNav({
   errorSignalCount = 0,
   errorsHref = "/errors",
+  revenueAttention = false,
 }: AdminNavProps) {
   const pathname = usePathname();
 
@@ -49,6 +52,8 @@ export function AdminNav({
               ? pathname === "/"
               : pathname === href || pathname?.startsWith(href + "/"));
           const showBadge = href === "/errors" && errorSignalCount > 0;
+          const showRevenueDot =
+            href === "/checkout-setup" && revenueAttention;
           const linkHref = href === "/errors" ? errorsHref : href;
           const className = `px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${
             isActive
@@ -82,6 +87,13 @@ export function AdminNav({
                 <span className="min-w-[1.25rem] rounded-full bg-red-500/90 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
                   {errorSignalCount > 99 ? "99+" : errorSignalCount}
                 </span>
+              ) : null}
+              {showRevenueDot ? (
+                <span
+                  className="w-2 h-2 rounded-full bg-amber-400 shrink-0"
+                  title="StoryMagic needs Payment Link or Stripe keys"
+                  aria-label="Revenue setup needed"
+                />
               ) : null}
             </Link>
           );
