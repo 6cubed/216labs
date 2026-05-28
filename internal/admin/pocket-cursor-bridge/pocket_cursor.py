@@ -3789,7 +3789,7 @@ def sender_thread():
                     tg_send(cid, _now_text())
                     continue
 
-                if cmd == '/checkout':
+                if cmd == '/checkout' or cmd == '/revenue':
                     tg_send(cid, _checkout_text())
                     continue
 
@@ -4190,7 +4190,7 @@ def sender_thread():
                         tg_send(
                             cid,
                             f"✅ Received (#{ack_id}). I’m on it.\n"
-                            f"Use /probe for stack, /checkout for Stripe readiness, /lockdown or /panic for emergencies.",
+                            f"Use /probe for stack, /checkout or /revenue for Stripe readiness, /lockdown or /panic for emergencies.",
                         )
                 except Exception:
                     pass

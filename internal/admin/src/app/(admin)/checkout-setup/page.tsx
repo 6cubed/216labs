@@ -8,6 +8,7 @@ import {
   STORYBOOK_CHECKOUT_REQUIRED_KEYS,
   STORYBOOK_STRIPE_WEBHOOK_EVENTS,
 } from "@/lib/revenue-readiness";
+import { fetchStorybookPrintLeads } from "@/lib/storybook";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,8 @@ export default async function CheckoutSetupPage() {
 
   const missingOnepage = onepage.keys.filter((k) => !isSet(env, k));
   const onepageProbe = onepage.probeUrl ? await probeGenericCheckout(onepage.probeUrl) : null;
+  const waitlist = await fetchStorybookPrintLeads();
+  const needsPaidPath = !liveProbe.ready && !liveProbe.preorderConfigured;
 
   return (
     <section className="animate-fade-in space-y-6">
@@ -92,6 +95,21 @@ export default async function CheckoutSetupPage() {
           . This page tells you exactly what to paste in <Link className="underline" href="/env">Env</Link>.
         </p>
       </div>
+
+      {needsPaidPath && waitlist.length > 0 ? (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-5 space-y-2">
+          <p className="text-sm font-semibold text-amber-100">
+            {waitlist.length} famil{waitlist.length === 1 ? "y" : "ies"} on the StoryMagic waitlist — no paid path yet
+          </p>
+          <p className="text-xs text-muted">
+            Fastest unlock: paste a Stripe Payment Link below (~2 min). Full checkout needs webhook keys in the
+            section after that.
+          </p>
+          <Link href="/leads" className="text-xs font-semibold text-accent hover:underline">
+            View waitlist in Leads →
+          </Link>
+        </div>
+      ) : null}
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-2">
         <div className="flex items-start justify-between gap-4">

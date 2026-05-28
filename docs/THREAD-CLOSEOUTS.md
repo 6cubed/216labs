@@ -111,6 +111,15 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-28 ~20:50 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — [Checkout setup](https://admin.6cubed.app/checkout-setup) (waitlist count shown when &gt;0) |
+| Ops | **Shipped** — Telegram `/revenue` alias; checkout-setup waitlist urgency card |
+
+---
+
 ## Production snapshot (2026-05-28 ~20:20 UTC)
 
 | Highest leverage | Blocker |

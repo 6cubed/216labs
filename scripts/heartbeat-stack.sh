@@ -101,6 +101,68 @@ else
   echo "  (SSH unavailable or DB unreadable — skip cron snapshot)"
 fi
 
+# Refresh revenue snapshot when stale (cron is every 4h; heartbeats should not show 2h+ old data).
+if [[ -n "${CRON_SNAPSHOT:-}" ]] && [[ "${HEARTBEAT_SKIP_REVENUE_REFRESH:-}" != "1" ]]; then
+  stale_rev=$(
+    printf '%s' "$CRON_SNAPSHOT" | python3 -c "
+import sys, json
+from datetime import datetime, timezone
+raw = sys.stdin.read().strip()
+if not raw:
+    raise SystemExit(1)
+data = json.loads(raw)
+if 'revenue_env_last' not in data:
+    raise SystemExit(1)
+d = json.loads(data['revenue_env_last'])
+at = d.get('at', '')
+if not at:
+    raise SystemExit(1)
+ts = datetime.fromisoformat(at.replace('Z', '+00:00'))
+age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600
+print('yes' if age_h > 2 else 'no')
+" 2>/dev/null || echo "no"
+  )
+  if [[ "$stale_rev" == "yes" ]]; then
+    if "$ROOT/scripts/run-droplet-cron.sh" revenue-env-check >/dev/null 2>&1; then
+      echo "  (refreshed stale revenue_env_last via revenue-env-check)"
+      CRON_SNAPSHOT=$(
+        ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker exec 216labs-cron-runner-1 node -e "
+const Database = require(\"better-sqlite3\");
+const db = new Database(process.env.DATABASE_PATH || \"/app/216labs.db\");
+const keys = [\"stack_health_last\", \"revenue_env_last\"];
+const out = {};
+for (const key of keys) {
+  const row = db.prepare(\"SELECT value FROM cron_runner_state WHERE key = ? LIMIT 1\").get(key);
+  if (row && row.value) out[key] = row.value;
+}
+console.log(JSON.stringify(out));
+"' 2>/dev/null || true
+      )
+      if [[ -n "$CRON_SNAPSHOT" ]]; then
+        printf '%s' "$CRON_SNAPSHOT" | python3 -c "
+import sys, json
+raw = sys.stdin.read().strip()
+data = json.loads(raw)
+d = json.loads(data['revenue_env_last'])
+print(f\"  [revenue_env_last] at {d.get('at', '?')} (refreshed)\")
+print(f\"    issues: {d.get('issues', 0)}\")
+for r in d.get('results') or []:
+    rid = r.get('id')
+    if rid in ('storybook', '1pageresearch'):
+        ready = r.get('ready')
+        pre = r.get('preorderConfigured')
+        if ready:
+            print(f'    {rid}: checkout ready')
+        elif pre:
+            print(f'    {rid}: preorder live')
+        elif r.get('ok'):
+            print(f'    {rid}: checkout not ready')
+" 2>/dev/null || true
+      fi
+    fi
+  fi
+fi
+
 echo
 if [[ "$smoke_ok" -eq 1 ]]; then
   echo "Lights on. Revenue: ./scripts/check-revenue-env-http.sh"
