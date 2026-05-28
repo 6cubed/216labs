@@ -24,6 +24,8 @@ import sqlite3
 keys = ("stack_health_last", "revenue_env_last")
 try:
     conn = sqlite3.connect("/opt/216labs/216labs.db")
+    # cron-runner uses WAL; host sqlite3 without checkpoint can read stale cron_runner_state.
+    conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
 except OSError:
     raise SystemExit(1)
 out = {}
