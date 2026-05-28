@@ -2,6 +2,16 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Revenue probe — merch false negative — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `revenue_env_last` → `merch: fetch failed` while edge OK | **Shipped** — `probeMerchStorefront()` uses **Caddy Host** routing (same as stack-health), not outbound HTTPS from cron-runner |
+
+**Verify:** `./scripts/run-droplet-cron.sh revenue-env-check` then `./scripts/heartbeat-stack.sh` → `revenue_env_last` issues **0** (StoryMagic/1Page may still show `ready: false` until Stripe keys).
+
+---
+
 ## Droplet cron secret — **CLOSED**
 
 | Symptom | Fix |
@@ -12,6 +22,16 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 **Verify:** `grep CRON_RUNNER_SECRET /opt/216labs/.env.admin` on VPS (value not printed). `deploy.sh` now bootstraps empty panel secrets before export.
 
 **Note:** `heartbeat-stack.sh` reads `cron_runner_state` via **docker exec cron-runner** (WAL-safe). Do not `PRAGMA wal_checkpoint(TRUNCATE)` on the host DB while containers are up.
+
+---
+
+## Production snapshot (2026-05-28 ~02:40 UTC)
+
+| Check | Result |
+|-------|--------|
+| Stack | OK — `stack_health_last` fresh |
+| Revenue cron probe | **Fixed** — merch via Caddy internal route |
+| First paid checkout | **BLOCKED (you)** — `STORYBOOK_STRIPE_*` |
 
 ---
 

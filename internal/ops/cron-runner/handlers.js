@@ -504,6 +504,85 @@ async function fetchMerchStorefront(url) {
   };
 }
 
+/** Read HTML via Caddy (merch container may be stopped; edge route still answers). */
+function fetchCaddyHostBody(host, path = "/", ms = 12_000) {
+  return new Promise((resolve, reject) => {
+    const p = path.startsWith("/") ? path : `/${path}`;
+    const chunks = [];
+    const req = http.request(
+      {
+        host: "caddy",
+        port: 80,
+        method: "GET",
+        path: p,
+        headers: { Host: host, Connection: "close" },
+      },
+      (res) => {
+        res.on("data", (c) => chunks.push(c));
+        res.on("end", () => {
+          resolve({
+            statusCode: res.statusCode || 0,
+            body: Buffer.concat(chunks).toString("utf8"),
+          });
+        });
+      }
+    );
+    req.setTimeout(ms, () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+function merchProbeFromHtml(statusCode, html, via) {
+  const transportOk =
+    (statusCode >= 200 && statusCode < 400) ||
+    statusCode === 401 ||
+    statusCode === 308;
+  if (!transportOk) {
+    return {
+      ok: false,
+      status: statusCode,
+      ready: null,
+      error: `HTTP ${statusCode}`,
+      via,
+    };
+  }
+  const fallback =
+    html.includes("Checkout URL not configured") || html.includes("Shop StoryMagic");
+  return {
+    ok: true,
+    status: statusCode,
+    ready: !fallback,
+    message: fallback ? "merch fallback CTA" : "storefront ok",
+    error: null,
+    via,
+  };
+}
+
+/** VPS cron often cannot reach outbound HTTPS; Caddy + Host header matches stack-health. */
+async function probeMerchStorefront() {
+  try {
+    const { statusCode, body } = await fetchCaddyHostBody("merch.6cubed.app", "/", 12_000);
+    return merchProbeFromHtml(statusCode, body, "caddy");
+  } catch (e) {
+    try {
+      return { ...(await fetchMerchStorefront("https://merch.6cubed.app/")), via: "external" };
+    } catch (e2) {
+      try {
+        return { ...(await fetchMerchStorefront("http://merch:3000/")), via: "internal" };
+      } catch {
+        return {
+          ok: false,
+          status: 0,
+          ready: null,
+          error: e instanceof Error ? e.message : "unreachable",
+          via: null,
+        };
+      }
+    }
+  }
+}
+
 /** Caddy may return 401 (gate) or 308 (redirect) before the admin app responds. */
 function adminEdgeStatusOk(status) {
   return status === 200 || status === 401 || status === 308;
@@ -604,13 +683,8 @@ export async function revenueEnvCheck(db) {
     }
   }
 
-  try {
-    let p;
-    try {
-      p = await fetchMerchStorefront("https://merch.6cubed.app/");
-    } catch (e) {
-      p = await fetchMerchStorefront("http://merch:3000/");
-    }
+  {
+    const p = await probeMerchStorefront();
     results.push({
       id: "merch",
       label: "Merch",
@@ -619,32 +693,9 @@ export async function revenueEnvCheck(db) {
       ready: p.ready,
       message: p.message,
       error: p.error,
+      via: p.via ?? undefined,
     });
     if (!p.ok) issues += 1;
-  } catch (e) {
-    try {
-      const p = await fetchMerchStorefront("http://merch:3000/");
-      results.push({
-        id: "merch",
-        label: "Merch",
-        ok: p.ok,
-        status: p.status,
-        ready: p.ready,
-        message: p.message,
-        error: p.error,
-      });
-      if (!p.ok) issues += 1;
-    } catch (e2) {
-      results.push({
-        id: "merch",
-        label: "Merch",
-        ok: false,
-        status: 0,
-        ready: null,
-        error: e instanceof Error ? e.message : "unreachable",
-      });
-      issues += 1;
-    }
   }
 
   const snapshot = { at, issues, results };
