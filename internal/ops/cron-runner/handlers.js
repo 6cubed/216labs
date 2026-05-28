@@ -559,17 +559,17 @@ function merchProbeFromHtml(statusCode, html, via) {
   };
 }
 
-/** VPS cron often cannot reach outbound HTTPS; Caddy + Host header matches stack-health. */
+/** Prefer in-network merch app (avoids Caddy 308→HTTPS with empty body); then Caddy Host; then edge. */
 async function probeMerchStorefront() {
   try {
-    const { statusCode, body } = await fetchCaddyHostBody("merch.6cubed.app", "/", 12_000);
-    return merchProbeFromHtml(statusCode, body, "caddy");
-  } catch (e) {
+    return { ...(await fetchMerchStorefront("http://merch:3000/")), via: "internal" };
+  } catch {
     try {
-      return { ...(await fetchMerchStorefront("https://merch.6cubed.app/")), via: "external" };
-    } catch (e2) {
+      const { statusCode, body } = await fetchCaddyHostBody("merch.6cubed.app", "/", 12_000);
+      return merchProbeFromHtml(statusCode, body, "caddy");
+    } catch (e) {
       try {
-        return { ...(await fetchMerchStorefront("http://merch:3000/")), via: "internal" };
+        return { ...(await fetchMerchStorefront("https://merch.6cubed.app/")), via: "external" };
       } catch {
         return {
           ok: false,
