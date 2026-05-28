@@ -12,6 +12,9 @@ if [ ! -f 216labs.db ]; then
   echo "ERROR: /opt/216labs/216labs.db missing" >&2
   exit 1
 fi
+if [ -f scripts/sync-admin-db-manifests.py ]; then
+  python3 scripts/sync-admin-db-manifests.py 216labs.db || true
+fi
 if [ -f scripts/bootstrap-internal-panel-env.py ]; then
   python3 scripts/bootstrap-internal-panel-env.py 216labs.db
 else

@@ -24,6 +24,14 @@ def _is_empty(val: str | None) -> bool:
 
 
 _FALLBACK_ENV_ROWS: dict[str, tuple[str, int]] = {
+    "CRON_RUNNER_SECRET": (
+        "Bearer token for cron-runner POST /run (admin Run now, scripts/run-droplet-cron.sh).",
+        1,
+    ),
+    "AGITWEET_API_TOKEN": (
+        "Bearer token for Agitweet POST /api/posts (cron autopost).",
+        1,
+    ),
     "ADMIN_PANEL_PASSWORD": (
         "Shared password for internal panel login (DiffTinder, etc.).",
         1,
