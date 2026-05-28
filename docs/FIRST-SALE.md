@@ -27,9 +27,9 @@ The fastest path to **paid revenue** is **StoryMagic** (fixed price, one webhook
    - Events: `checkout.session.completed` (and `payment_intent.succeeded` if you use Payment Intents later).
 4. Copy the **Signing secret** (`whsec_…`).
 
-## 2. Admin Env
+## 2. Checkout setup (Admin)
 
-Open [admin → Env](https://admin.6cubed.app/env) and set:
+Open [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) (or [admin → Env](https://admin.6cubed.app/env)) and set:
 
 | Key | Value |
 |-----|--------|

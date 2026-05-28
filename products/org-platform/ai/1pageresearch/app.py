@@ -130,7 +130,7 @@ def api_checkout_ready():
     return jsonify(
         {
             "ready": ready,
-            "setupUrl": None if ready else "https://admin.6cubed.app/env",
+            "setupUrl": None if ready else "https://admin.6cubed.app/checkout-setup",
             "missingKeys": None if ready else missing,
             "message": None
             if ready

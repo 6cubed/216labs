@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const ADMIN_ENV_URL = "https://admin.6cubed.app/env";
+const ADMIN_CHECKOUT_SETUP_URL = "https://admin.6cubed.app/checkout-setup";
 
 /** Server-side Checkout Sessions only need secret + webhook; publishable is optional (no client Stripe.js yet). */
 const REQUIRED_KEYS = [
@@ -23,7 +23,7 @@ export async function GET() {
     ready,
     priceCents,
     priceUsd,
-    setupUrl: ready ? undefined : ADMIN_ENV_URL,
+    setupUrl: ready ? undefined : ADMIN_CHECKOUT_SETUP_URL,
     missingKeys: ready ? undefined : missingKeys,
     optionalUnset: ready && optionalUnset.length > 0 ? optionalUnset : undefined,
     message: ready
