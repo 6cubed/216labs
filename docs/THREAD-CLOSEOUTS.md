@@ -56,6 +56,16 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
+## SSH refused while edge OK — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `ssh: connect ... port 22: Connection refused` while `admin.6cubed.app` still responds | **Shipped** — `./scripts/wait-for-ssh.sh` to make post-reboot recovery one-command (use `wait-for-droplet.sh` when you also want auto-recover) |
+
+**Verify:** `./scripts/wait-for-ssh.sh root@46.101.88.197` exits 0; then `./scripts/heartbeat-stack.sh`.
+
+---
+
 ## Production snapshot (2026-05-28 ~07:40 UTC)
 
 | Highest leverage | Blocker |
