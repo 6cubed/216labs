@@ -3972,6 +3972,19 @@ def sender_thread():
                     )
                     continue
 
+                # CEO accountability: immediately ACK owner messages so nothing feels "ignored" while work happens.
+                # This runs for non-command messages that will be forwarded to Cursor.
+                try:
+                    if cmd == '' and check_owner(user_id, cid) == 'ok':
+                        ack_id = f"{mid}"
+                        tg_send(
+                            cid,
+                            f"✅ Received (#{ack_id}). I’m on it.\n"
+                            f"Use /probe for stack, /checkout for Stripe readiness, /lockdown or /panic for emergencies.",
+                        )
+                except Exception:
+                    pass
+
                 # Record what we're sending (so monitor knows which turn is ours)
                 with last_sent_lock:
                     last_sent_text = text
