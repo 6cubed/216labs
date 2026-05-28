@@ -101,6 +101,11 @@ export default async function CheckoutSetupPage() {
           </Link>
         </div>
         <RunRevenueProbeButton />
+        <p className="text-[11px] text-muted">
+          Reusing keys: you can reuse the same <strong>Stripe account</strong> and the same{" "}
+          <code className="text-[10px]">sk_test_…</code> secret key across apps, but each app needs its{" "}
+          <strong>own webhook endpoint</strong> and signing secret (<code className="text-[10px]">whsec_…</code>).
+        </p>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
