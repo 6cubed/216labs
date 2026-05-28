@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAllEnvVars } from "@/lib/db";
+import { RunRevenueProbeButton } from "@/components/RunRevenueProbeButton";
 import {
   REVENUE_APPS,
   REVENUE_SETUP_LINKS,
@@ -85,6 +86,21 @@ export default async function CheckoutSetupPage() {
           </a>
           . This page tells you exactly what to paste in <Link className="underline" href="/env">Env</Link>.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-sm font-semibold">Refresh probes</div>
+            <p className="text-xs text-muted mt-1">
+              After you paste keys and hit Save on Env, you can run the droplet probe immediately (no waiting for cron).
+            </p>
+          </div>
+          <Link className="text-xs font-semibold text-accent hover:underline" href="/cron">
+            Cron →
+          </Link>
+        </div>
+        <RunRevenueProbeButton />
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
