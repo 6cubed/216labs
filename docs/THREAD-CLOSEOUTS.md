@@ -36,6 +36,25 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
+## Merch revenue probe false negative (Caddy 308) — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `revenue_env_last` → `merch: fetch failed` while edge OK | **Shipped** — `probeMerchStorefront()` tries **`http://merch:3000/`** first; local **cron-runner** deploy when GHCR image lags |
+
+**Verify:** `./scripts/run-droplet-cron.sh revenue-env-check` → `issues: 0` in `./scripts/heartbeat-stack.sh`.
+
+---
+
+## Production snapshot (2026-05-28 ~07:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| Ops compounding | **Shipped** — Telegram `/checkout`; revenue cron **every 4h**; merch probe fixed |
+
+---
+
 ## Production snapshot (2026-05-28 ~07:25 UTC)
 
 | Highest leverage | Blocker |
