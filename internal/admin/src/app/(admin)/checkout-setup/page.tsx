@@ -135,8 +135,17 @@ export default async function CheckoutSetupPage() {
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 space-y-4">
           <div className="text-sm font-semibold text-emerald-100">Fast path: preorder without webhook keys</div>
           <p className="text-xs text-muted">
-            Stripe → <strong>Payment Links</strong> → paste the link here. StoryMagic shows{" "}
-            <strong>Preorder now</strong> on the preview page (hot-reloads on save — no laptop deploy).
+            Stripe →{" "}
+            <a
+              className="underline text-accent"
+              href="https://dashboard.stripe.com/test/payment-links/create"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Payment Links (test)
+            </a>{" "}
+            → product ~$24.99 → paste the link here. StoryMagic shows <strong>Preorder now</strong> on hero,
+            form, and preview (hot-reloads on save).
           </p>
           <CheckoutSetupEnvField
             envKey="NEXT_PUBLIC_STORYBOOK_PREORDER_URL"

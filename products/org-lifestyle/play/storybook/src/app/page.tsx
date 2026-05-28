@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import BookViewer, { BookPage } from "@/components/BookViewer";
 import { trackStorybookEvent } from "@/lib/analytics";
-import { captureUtmFromUrl, getStoredUtm } from "@/lib/utm";
+import { appendUtmToPaymentUrl, captureUtmFromUrl, getStoredUtm } from "@/lib/utm";
 
 type Step = "form" | "generating" | "preview";
 
@@ -300,11 +300,7 @@ export default function HomePage() {
           {preorderUrl && checkoutReady !== true ? (
             <button
               type="button"
-              onClick={() => {
-                const utm = getStoredUtm();
-                trackStorybookEvent("preorder_click", { placement: "hero", ...utm });
-                window.open(preorderUrl, "_blank", "noopener,noreferrer");
-              }}
+              onClick={() => openPreorder("hero")}
               className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-story-purple font-bold text-sm shadow-lg hover:bg-story-yellow-light transition-colors"
             >
               <ShoppingCart className="w-4 h-4" />
@@ -431,6 +427,23 @@ export default function HomePage() {
                     <Sparkles className="w-5 h-5" />
                     Generate My Storybook
                   </button>
+
+                  {preorderUrl && checkoutReady !== true ? (
+                    <div className="pt-2 border-t border-gray-100">
+                      <p className="text-xs text-gray-500 text-center mb-2">
+                        Already know you want the printed book?
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => openPreorder("form")}
+                        className="w-full py-3 rounded-xl font-semibold text-sm border-2 border-story-purple text-story-purple
+                          hover:bg-story-purple-light transition-colors flex items-center justify-center gap-2"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        Preorder hardcover — ${bookPriceUsd}
+                      </button>
+                    </div>
+                  ) : null}
                 </form>
               </div>
 
@@ -620,7 +633,7 @@ export default function HomePage() {
                         </p>
                         <button
                           type="button"
-                          onClick={handlePreorder}
+                          onClick={() => openPreorder("preview")}
                           className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white text-story-purple font-bold text-lg shadow-lg hover:bg-story-yellow-light transition-colors"
                         >
                           <ShoppingCart className="w-5 h-5" />

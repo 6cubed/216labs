@@ -54,3 +54,19 @@ export function formatUtmForMessage(utm: UtmFields): string {
   if (utm.utm_campaign) parts.push(`camp=${utm.utm_campaign}`);
   return parts.length ? ` | ${parts.join(" ")}` : "";
 }
+
+/** Append session UTMs to Stripe Payment Link URLs for dashboard attribution. */
+export function appendUtmToPaymentUrl(baseUrl: string, utm: UtmFields): string {
+  const raw = baseUrl.trim();
+  if (!raw) return raw;
+  try {
+    const u = new URL(raw);
+    if (utm.utm_source) u.searchParams.set("utm_source", utm.utm_source);
+    if (utm.utm_medium) u.searchParams.set("utm_medium", utm.utm_medium);
+    if (utm.utm_campaign) u.searchParams.set("utm_campaign", utm.utm_campaign);
+    u.searchParams.set("client_reference_id", "storymagic_preorder");
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
