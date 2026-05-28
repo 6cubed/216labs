@@ -397,6 +397,12 @@ createServer(async (req, res) => {
   const match = url.pathname.match(/^\/run\/([a-z0-9-]+)$/);
   const method = (req.method || "").toUpperCase();
 
+  if (method === "GET" && url.pathname === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, service: "cron-runner" }));
+    return;
+  }
+
   if (method === "GET" && url.pathname === "/telegram-env") {
     const db = await getDb();
     try {
@@ -466,7 +472,7 @@ createServer(async (req, res) => {
   console.log(
     "[cron-runner] HTTP on port",
     RUN_SERVER_PORT,
-    "(POST /run/:id, GET /telegram-env)"
+    "(GET /health, POST /run/:id, GET /telegram-env)"
   );
 });
 
