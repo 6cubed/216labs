@@ -68,6 +68,51 @@ from lib import agitweet_harness
 # Owner-only process stop (Telegram /killswitch).
 _KILLSWITCH = threading.Event()
 
+# CEO accountability inbox (local JSONL; lives in BRIDGE_DIR so spawned instances isolate).
+CEO_INBOX_JSONL = BRIDGE_DIR / "ceo_inbox.jsonl"
+
+
+def _ceo_inbox_append(obj: dict) -> None:
+    try:
+        CEO_INBOX_JSONL.parent.mkdir(parents=True, exist_ok=True)
+        with CEO_INBOX_JSONL.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(obj, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+def _ceo_inbox_pending(limit: int = 10) -> list[dict]:
+    """
+    Return latest pending CEO messages (not done). We store events as JSONL:
+      {"type":"msg","id":"<mid>","ts":"...","text":"..."}
+      {"type":"done","id":"<mid>","ts":"..."}
+    """
+    if not CEO_INBOX_JSONL.exists():
+        return []
+    done: set[str] = set()
+    msgs: list[dict] = []
+    try:
+        lines = CEO_INBOX_JSONL.read_text(encoding="utf-8", errors="replace").splitlines()
+    except Exception:
+        return []
+    for line in lines:
+        try:
+            ev = json.loads(line)
+        except Exception:
+            continue
+        if not isinstance(ev, dict):
+            continue
+        if ev.get("type") == "done" and ev.get("id"):
+            done.add(str(ev["id"]))
+        if ev.get("type") == "msg" and ev.get("id"):
+            msgs.append(ev)
+    pending = [m for m in msgs if str(m.get("id")) not in done]
+    return pending[-max(1, limit):]
+
+
+def _ceo_inbox_mark_done(mid: str) -> None:
+    _ceo_inbox_append({"type": "done", "id": str(mid), "ts": datetime.utcnow().isoformat() + "Z"})
+
 
 def _repo_root() -> str:
     # pocket_cursor.py lives at internal/admin/pocket-cursor-bridge/pocket_cursor.py
@@ -865,6 +910,8 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'now', 'description': 'Quick snapshot: stack, revenue, leads, links'},
     {'command': 'checkout', 'description': 'Paid checkout probes (StoryMagic, 1Page, merch)'},
     {'command': 'probe', 'description': 'Fast stack probe (edge + services + checkout)'},
+    {'command': 'inbox', 'description': 'CEO inbox: show pending owner messages'},
+    {'command': 'done', 'description': 'CEO inbox: mark message done (/done <id>)'},
     {'command': 'lockdown', 'description': 'Emergency: pause forwarding + disable autoprompt'},
     {'command': 'panic', 'description': 'Emergency: lockdown + stop bridge process'},
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
@@ -3197,6 +3244,22 @@ def _probe_text() -> str:
     return f"{prefix}\n{tail}".strip()
 
 
+def _inbox_text() -> str:
+    rows = _ceo_inbox_pending(12)
+    if not rows:
+        return "📥 CEO inbox\n(no pending messages)"
+    lines = ["📥 CEO inbox (pending)"]
+    for r in rows:
+        mid = str(r.get("id", "?"))
+        ts = str(r.get("ts", ""))[:19].replace("T", " ")
+        text = str(r.get("text", "")).strip().replace("\n", " ")
+        if len(text) > 140:
+            text = text[:137] + "…"
+        lines.append(f"• #{mid} {ts} — {text}")
+    lines.append("\nMark done: /done <id>")
+    return "\n".join(lines).strip()
+
+
 def _lockdown(muted_file, auto_approve_prompts_file) -> None:
     """Best-effort emergency lockdown: pause forwarding and disable auto-prompt."""
     global muted, auto_approve_prompts
@@ -3613,6 +3676,20 @@ def sender_thread():
                     tg_send(cid, _probe_text())
                     continue
 
+                if cmd == '/inbox':
+                    tg_send(cid, _inbox_text())
+                    continue
+
+                if cmd == '/done' or cmd.startswith('/done '):
+                    parts = raw_text.strip().split(maxsplit=1)
+                    mid_arg = parts[1].strip() if len(parts) > 1 else ""
+                    if not mid_arg:
+                        tg_send(cid, "Usage: /done <id>\nExample: /done 1234")
+                        continue
+                    _ceo_inbox_mark_done(mid_arg)
+                    tg_send(cid, f"✅ Marked done: #{mid_arg}")
+                    continue
+
                 if cmd == '/bridges':
                     tg_send(cid, tg_bridges_federation_text())
                     continue
@@ -3977,6 +4054,14 @@ def sender_thread():
                 try:
                     if cmd == '' and check_owner(user_id, cid) == 'ok':
                         ack_id = f"{mid}"
+                        _ceo_inbox_append(
+                            {
+                                "type": "msg",
+                                "id": ack_id,
+                                "ts": datetime.utcnow().isoformat() + "Z",
+                                "text": (raw_text or "")[:4000],
+                            }
+                        )
                         tg_send(
                             cid,
                             f"✅ Received (#{ack_id}). I’m on it.\n"
