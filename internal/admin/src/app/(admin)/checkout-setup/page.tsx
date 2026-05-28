@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAllEnvVars } from "@/lib/db";
+import { CheckoutSetupEnvField } from "@/components/CheckoutSetupEnvField";
 import { RunRevenueProbeButton } from "@/components/RunRevenueProbeButton";
 import {
   REVENUE_APPS,
@@ -109,21 +110,29 @@ export default async function CheckoutSetupPage() {
         </p>
       </div>
 
-      {!liveProbe.ready && preorderUrl ? (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 space-y-3">
+      {!liveProbe.ready ? (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 space-y-4">
           <div className="text-sm font-semibold text-emerald-100">Fast path: preorder without webhook keys</div>
           <p className="text-xs text-muted">
-            StoryMagic already shows a <strong>Preorder now</strong> button when{" "}
-            <code className="text-[11px]">NEXT_PUBLIC_STORYBOOK_PREORDER_URL</code> is set (public URL — no secrets).
-            Create a Payment Link in Stripe, paste the URL below, Save on Env — the site updates on next deploy.
+            Stripe → <strong>Payment Links</strong> → paste the link here. StoryMagic shows{" "}
+            <strong>Preorder now</strong> on the preview page (hot-reloads on save — no laptop deploy).
           </p>
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background/40 px-3 py-2">
-            <code className="text-[11px] break-all text-muted flex-1">{preorderUrl}</code>
-            <span className="text-xs font-semibold text-emerald-300 shrink-0">configured</span>
-          </div>
-          <p className="text-[11px] text-muted">
-            Env → add or edit <code className="text-[11px]">NEXT_PUBLIC_STORYBOOK_PREORDER_URL</code> (not secret). Full checkout still needs the two Stripe keys below.
-          </p>
+          <CheckoutSetupEnvField
+            envKey="NEXT_PUBLIC_STORYBOOK_PREORDER_URL"
+            initialValue={preorderUrl}
+            label="Stripe Payment Link (public URL)"
+            placeholder="https://buy.stripe.com/test_…"
+            hint="Not a secret. Full in-app checkout still needs the two Stripe keys in the section below."
+          />
+          {preorderUrl ? (
+            <p className="text-[11px] text-emerald-300">
+              Live test: create a book on{" "}
+              <a className="underline" href={story.publicUrl} target="_blank" rel="noreferrer">
+                StoryMagic
+              </a>{" "}
+              → confirm <strong>Preorder now</strong> opens your link.
+            </p>
+          ) : null}
         </div>
       ) : null}
 

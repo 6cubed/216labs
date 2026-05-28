@@ -590,9 +590,7 @@ function adminEdgeStatusOk(status) {
 
 /** Docker DNS first — avoids false "admin fetch failed" when outbound HTTPS blips. */
 async function probeAdminResilient() {
-  // Root (/) can be slow/hang due to heavy SSR; use a lightweight public API route.
-  // GET returns 405 but proves the app is reachable.
-  const path = "/api/public/leads";
+  const path = "/api/public/live-apps";
   const attempts = [
     { url: `http://admin:3000${path}`, via: "internal" },
     { url: `https://admin.6cubed.app${path}`, via: "external" },
@@ -604,7 +602,12 @@ async function probeAdminResilient() {
         signal: AbortSignal.timeout(10_000),
         redirect: "follow",
       });
-      const adminOk = res.status === 204 || res.status === 200 || res.status === 201 || res.status === 405;
+      // 401 = Caddy basic auth in front of admin (edge path still proves routing).
+      const adminOk =
+        res.status === 200 ||
+        res.status === 204 ||
+        res.status === 201 ||
+        res.status === 401;
       if (adminOk) {
         return {
           ok: true,

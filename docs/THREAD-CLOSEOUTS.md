@@ -76,6 +76,38 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
+## Revenue cron — admin false negative — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `revenue_env_last` → `admin: fetch failed` while edge OK | **Shipped** — `probeAdminResilient()` uses `GET /api/public/live-apps`; treats edge **401** (Caddy gate) as OK |
+
+**Verify:** Checkout setup → **Run revenue probe now** → refresh; `revenue_env_last` issues **0** (StoryMagic may still be `ready: false` until Stripe keys).
+
+---
+
+## StoryMagic preorder (Payment Link) — **BLOCKED (CEO)**
+
+| Item | Status |
+|------|--------|
+| UI + hot-reload on save | **Shipped** — `NEXT_PUBLIC_STORYBOOK_PREORDER_URL`; inline save on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| Money | **You** — create Stripe Payment Link → paste URL → Save |
+
+**Verify:** StoryMagic preview → **Preorder now** opens your link.
+
+Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYBOOK_STRIPE_WEBHOOK_SECRET` on same page.
+
+---
+
+## Production snapshot (2026-05-28 ~17:35 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — [Checkout setup](https://admin.6cubed.app/checkout-setup): Payment Link **or** 2 Stripe keys |
+| Ops | **Shipped** — revenue admin probe fix; preorder inline save |
+
+---
+
 ## Production snapshot (2026-05-28 ~07:40 UTC)
 
 | Highest leverage | Blocker |
