@@ -253,11 +253,12 @@ export default function HomePage() {
     }
   }
 
-  function handlePreorder() {
+  function openPreorder(placement: string) {
     if (!preorderUrl) return;
     const utm = getStoredUtm();
-    trackStorybookEvent("preorder_click", { book_id: bookId ?? "", ...utm });
-    window.open(preorderUrl, "_blank", "noopener,noreferrer");
+    trackStorybookEvent("preorder_click", { book_id: bookId ?? "", placement, ...utm });
+    const url = appendUtmToPaymentUrl(preorderUrl, utm);
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   function handleReset() {
