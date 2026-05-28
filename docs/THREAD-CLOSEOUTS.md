@@ -90,10 +90,11 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 | Item | Status |
 |------|--------|
-| UI + hot-reload on save | **Shipped** — `NEXT_PUBLIC_STORYBOOK_PREORDER_URL`; inline save on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| UI + hot-reload on save | **Shipped** — inline save on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| Runtime URL on site | **Shipped** — client reads `preorderUrl` from `/api/checkout/ready` (no image rebuild after Env save) |
 | Money | **You** — create Stripe Payment Link → paste URL → Save |
 
-**Verify:** StoryMagic preview → **Preorder now** opens your link.
+**Verify:** StoryMagic hero or preview → **Preorder now** opens your link (refresh page after Save).
 
 Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYBOOK_STRIPE_WEBHOOK_SECRET` on same page.
 

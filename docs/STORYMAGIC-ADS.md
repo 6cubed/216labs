@@ -23,6 +23,8 @@ Link previews (Meta/Twitter) use **Open Graph** metadata on the homepage — tit
 
 **Path B — Purchase ads (after keys):** Same creative, optimize for **begin_checkout** / **purchase**. Better revenue signal.
 
+**Path C — Preorder (no webhook):** Stripe **Payment Link** in [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Preorder now** on preview + hero (runtime URL from `/api/checkout/ready`). Measure **preorder_click** CPA.
+
 ---
 
 ## GA4 events (mark as conversions in GA4)
@@ -33,6 +35,7 @@ Link previews (Meta/Twitter) use **Open Graph** metadata on the homepage — tit
 | `story_preview_ready` | Full illustrated preview shown |
 | `waitlist_signup` | Email saved (checkout off) |
 | `begin_checkout` | Redirect to Stripe |
+| `preorder_click` | Payment Link opened (Path C) |
 | `purchase` | Success page after payment |
 
 In **GA4 → Admin → Events**, mark `waitlist_signup` (Path A) or `purchase` (Path B) as **conversions**. Use **Explorations** or **Advertising** reports for campaign UTMs.

@@ -15,9 +15,8 @@ export async function GET() {
   const missingKeys = REQUIRED_KEYS.filter((k) => !process.env[k]?.trim());
   const optionalUnset = OPTIONAL_KEYS.filter((k) => !process.env[k]?.trim());
   const ready = missingKeys.length === 0;
-  const preorderConfigured = Boolean(
-    process.env.NEXT_PUBLIC_STORYBOOK_PREORDER_URL?.trim()
-  );
+  const preorderUrl = process.env.NEXT_PUBLIC_STORYBOOK_PREORDER_URL?.trim() || "";
+  const preorderConfigured = Boolean(preorderUrl);
   const priceCents =
     parseInt(process.env.STORYBOOK_BOOK_PRICE_CENTS ?? "2499", 10) || 2499;
   const priceUsd = (priceCents / 100).toFixed(2);
@@ -25,6 +24,7 @@ export async function GET() {
   return NextResponse.json({
     ready,
     preorderConfigured,
+    preorderUrl: preorderConfigured ? preorderUrl : undefined,
     priceCents,
     priceUsd,
     setupUrl: ready ? undefined : ADMIN_CHECKOUT_SETUP_URL,

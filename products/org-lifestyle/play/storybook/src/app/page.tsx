@@ -52,14 +52,13 @@ export default function HomePage() {
   const [interestSent, setInterestSent] = useState(false);
   const [interestLoading, setInterestLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  const preorderUrl = process.env.NEXT_PUBLIC_STORYBOOK_PREORDER_URL?.trim() || "";
+  const [preorderUrl, setPreorderUrl] = useState("");
 
   useEffect(() => {
     captureUtmFromUrl();
   }, []);
 
   useEffect(() => {
-    if (step !== "preview") return;
     let cancelled = false;
     (async () => {
       try {
@@ -69,12 +68,14 @@ export default function HomePage() {
           message?: string;
           priceUsd?: string;
           setupUrl?: string;
+          preorderUrl?: string;
         };
         if (!cancelled) {
           setCheckoutReady(data.ready);
           setCheckoutMessage(data.message ?? null);
           setCheckoutSetupUrl(data.setupUrl ?? null);
           if (data.priceUsd) setBookPriceUsd(data.priceUsd);
+          setPreorderUrl(data.preorderUrl?.trim() ?? "");
         }
       } catch {
         if (!cancelled) setCheckoutReady(null);
@@ -294,8 +295,22 @@ export default function HomePage() {
             Turn any idea into a beautiful, illustrated children&apos;s book
           </p>
           <p className="text-white/60 text-sm">
-            Powered by AI · Professionally printed · Delivered to your door
+            Powered by AI · Printed hardcover from ${bookPriceUsd} · Delivered to your door
           </p>
+          {preorderUrl && checkoutReady !== true ? (
+            <button
+              type="button"
+              onClick={() => {
+                const utm = getStoredUtm();
+                trackStorybookEvent("preorder_click", { placement: "hero", ...utm });
+                window.open(preorderUrl, "_blank", "noopener,noreferrer");
+              }}
+              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-story-purple font-bold text-sm shadow-lg hover:bg-story-yellow-light transition-colors"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Preorder printed book — ${bookPriceUsd}
+            </button>
+          ) : null}
         </motion.div>
 
         {/* Stars row */}
@@ -598,24 +613,28 @@ export default function HomePage() {
 
                 {checkoutReady !== true && !interestSent && (
                   <div className="mb-6 max-w-lg mx-auto">
-                    <p className="text-white text-base mb-4 font-semibold">
-                      Reserve your printed book — we&apos;ll email you when checkout opens.
-                    </p>
                     {preorderUrl ? (
-                      <div className="mb-3">
+                      <div className="mb-5">
+                        <p className="text-white text-base mb-3 font-semibold">
+                          Love this story? Order the printed hardcover now.
+                        </p>
                         <button
                           type="button"
                           onClick={handlePreorder}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-story-purple font-bold text-base shadow-lg hover:bg-story-yellow-light transition-colors"
+                          className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white text-story-purple font-bold text-lg shadow-lg hover:bg-story-yellow-light transition-colors"
                         >
                           <ShoppingCart className="w-5 h-5" />
-                          Preorder now
+                          Preorder now — ${bookPriceUsd}
                         </button>
-                        <p className="text-white/55 text-xs mt-2">
-                          Prefer not to wait? This opens a secure Stripe payment link.
+                        <p className="text-white/55 text-xs mt-2 text-center">
+                          Secure Stripe payment · Ships when checkout is fully automated
                         </p>
                       </div>
-                    ) : null}
+                    ) : (
+                      <p className="text-white text-base mb-4 font-semibold">
+                        Reserve your printed book — we&apos;ll email you when checkout opens.
+                      </p>
+                    )}
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="email"
