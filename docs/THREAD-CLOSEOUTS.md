@@ -46,6 +46,16 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
+## Cron-runner run-server visibility (half-finished) — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| Unclear if cron-runner HTTP server is up during SSH flaps | **Shipped** — `GET /health` on cron-runner + `./scripts/probe-cron-runner-health.sh` with retries |
+
+**Verify:** `./scripts/probe-cron-runner-health.sh` prints `{"ok":true,"service":"cron-runner"}`.
+
+---
+
 ## Production snapshot (2026-05-28 ~07:40 UTC)
 
 | Highest leverage | Blocker |
