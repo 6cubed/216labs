@@ -15,12 +15,16 @@ export async function GET() {
   const missingKeys = REQUIRED_KEYS.filter((k) => !process.env[k]?.trim());
   const optionalUnset = OPTIONAL_KEYS.filter((k) => !process.env[k]?.trim());
   const ready = missingKeys.length === 0;
+  const preorderConfigured = Boolean(
+    process.env.NEXT_PUBLIC_STORYBOOK_PREORDER_URL?.trim()
+  );
   const priceCents =
     parseInt(process.env.STORYBOOK_BOOK_PRICE_CENTS ?? "2499", 10) || 2499;
   const priceUsd = (priceCents / 100).toFixed(2);
 
   return NextResponse.json({
     ready,
+    preorderConfigured,
     priceCents,
     priceUsd,
     setupUrl: ready ? undefined : ADMIN_CHECKOUT_SETUP_URL,
@@ -28,9 +32,13 @@ export async function GET() {
     optionalUnset: ready && optionalUnset.length > 0 ? optionalUnset : undefined,
     message: ready
       ? undefined
-      : "Printed checkout isn't open yet. Your story is saved — leave your email below and we'll notify you when ordering is live.",
+      : preorderConfigured
+        ? "Preorder is open via Payment Link. In-app Stripe checkout is still being enabled."
+        : "Printed checkout isn't open yet. Your story is saved — leave your email below and we'll notify you when ordering is live.",
     operatorHint: ready
       ? undefined
-      : "Set STORYBOOK_STRIPE_* in admin Env (docs/FIRST-SALE.md); save recreates the storybook container on this host.",
+      : preorderConfigured
+        ? "Optional: add STORYBOOK_STRIPE_* in admin Checkout setup for in-app checkout + Orders."
+        : "Set STORYBOOK_STRIPE_* or NEXT_PUBLIC_STORYBOOK_PREORDER_URL in admin Checkout setup.",
   });
 }

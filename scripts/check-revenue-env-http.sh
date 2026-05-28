@@ -21,9 +21,25 @@ check_json_ready() {
   fi
   if echo "$body" | grep -q '"ready"[[:space:]]*:[[:space:]]*true'; then
     echo "[$label] checkout ready ($url)"
-  else
-    echo "[$label] checkout NOT ready ($url)"
+    return
+  fi
+  preorder="$(echo "$body" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print('yes' if d.get('preorderConfigured') else 'no')
+" 2>/dev/null || echo "no")"
+  if [[ "$preorder" == "yes" && "$label" == "StoryMagic" ]]; then
+    echo "[$label] preorder LIVE (Payment Link) — full checkout still off ($url)"
     echo "$body" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+if d.get('operatorHint'):
+    print('   hint:', d['operatorHint'])
+" 2>/dev/null || true
+    return
+  fi
+  echo "[$label] checkout NOT ready ($url)"
+  echo "$body" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 print('  ', d.get('message', ''))
@@ -34,8 +50,7 @@ if d.get('operatorHint'):
 if d.get('missingKeys'):
     print('   missing:', ', '.join(d['missingKeys']))
 " 2>/dev/null || echo "  $body"
-    fail=1
-  fi
+  fail=1
 }
 
 check_json_ready "StoryMagic" "https://storybook.6cubed.app/api/checkout/ready"

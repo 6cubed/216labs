@@ -43,6 +43,12 @@ export const STORYBOOK_CHECKOUT_REQUIRED_KEYS = [
   "STORYBOOK_STRIPE_WEBHOOK_SECRET",
 ] as const;
 
+export const STORYBOOK_PREORDER_ENV_KEY = "NEXT_PUBLIC_STORYBOOK_PREORDER_URL";
+
+export function storybookPreorderConfigured(env: Map<string, string>): boolean {
+  return Boolean(env.get(STORYBOOK_PREORDER_ENV_KEY)?.trim());
+}
+
 /** Stripe Dashboard → Webhooks → “Select events” for StoryMagic. */
 export const STORYBOOK_STRIPE_WEBHOOK_EVENTS = ["checkout.session.completed"] as const;
 

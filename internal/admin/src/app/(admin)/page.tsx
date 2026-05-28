@@ -1,4 +1,4 @@
-import { getAllApps } from "@/lib/db";
+import { getAllApps, getAllEnvVars, getCronRunnerState, getDb } from "@/lib/db";
 import { dbRowToAppInfo, infrastructure } from "@/data/apps";
 import { MetricCard } from "@/components/MetricCard";
 import { InfraOverview } from "@/components/InfraOverview";
@@ -17,10 +17,10 @@ import {
   countClientErrorEventsSinceHours,
   topReportedErrorAppSinceHours,
 } from "@/lib/client-error-store";
-import { getCronRunnerState, getDb } from "@/lib/db";
 import {
   parseRevenueCronSnapshot,
   REVENUE_CRON_STATE_KEY,
+  storybookPreorderConfigured,
 } from "@/lib/revenue-readiness";
 import { fetchStorybookPrintLeads } from "@/lib/storybook";
 import {
@@ -59,21 +59,34 @@ export default async function DashboardPage() {
   const errorHref = resolveErrorsFeedHref(getDb());
   const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
   const renderedAtIso = new Date().toISOString();
+  const envMap = new Map(getAllEnvVars().map((r) => [r.key, (r.value ?? "").trim()]));
+  const storyPreorder = storybookPreorderConfigured(envMap);
+  const storyCron = parseRevenueCronSnapshot(
+    getCronRunnerState(REVENUE_CRON_STATE_KEY)
+  )?.results.find((r) => r.id === "storybook");
+  const storyCheckoutReady = storyCron?.ready === true;
+
   const [revenueCron, storybookWaitlist] = await Promise.all([
     Promise.resolve(
       parseRevenueCronSnapshot(getCronRunnerState(REVENUE_CRON_STATE_KEY))
     ),
     fetchStorybookPrintLeads(),
   ]);
-  const revenueMetricValue = revenueCron
-    ? revenueCron.issues > 0
-      ? `${revenueCron.issues} edge issue(s)`
-      : "Edge OK"
-    : "—";
+  const revenueMetricValue = storyCheckoutReady
+    ? "Checkout open"
+    : storyPreorder
+      ? "Preorder live"
+      : revenueCron
+        ? revenueCron.issues > 0
+          ? `${revenueCron.issues} edge issue(s)`
+          : "Needs keys"
+        : "—";
   const waitlistPart =
     storybookWaitlist.length > 0
       ? `${storybookWaitlist.length} StoryMagic waitlist`
-      : "StoryMagic keys → Checkout setup";
+      : storyPreorder
+        ? "Full checkout → Checkout setup"
+        : "StoryMagic keys → Checkout setup";
   const revenueMetricSub =
     revenueCron != null
       ? `${waitlistPart} · cron ${revenueCron.at.replace("T", " ").slice(0, 16)} UTC`
