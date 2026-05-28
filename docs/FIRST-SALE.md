@@ -6,7 +6,7 @@
 
 | Rank | App | Why | Blocker |
 |------|-----|-----|---------|
-| 1 | **StoryMagic** | Fixed $24.99, one Stripe webhook, hot-reload on admin save | **2** test keys in [admin → Env](https://admin.6cubed.app/env): `STORYBOOK_STRIPE_SECRET_KEY`, `STORYBOOK_STRIPE_WEBHOOK_SECRET` (publishable optional) |
+| 1 | **StoryMagic** | Fixed $24.99, one Stripe webhook, hot-reload on admin save | **2** test keys in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup): `STORYBOOK_STRIPE_SECRET_KEY`, `STORYBOOK_STRIPE_WEBHOOK_SECRET` (publishable optional) |
 | 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` points at a live store |
 | 3 | **1PageResearch** | €1 report; free tier works today | `ONEPAGE_STRIPE_*` keys |
 
@@ -24,7 +24,7 @@ The fastest path to **paid revenue** is **StoryMagic** (fixed price, one webhook
 2. Copy **Publishable** and **Secret** keys.
 3. **Developers → Webhooks** → Add endpoint:
    - URL: `https://storybook.6cubed.app/api/webhook`
-   - Events: `checkout.session.completed` (and `payment_intent.succeeded` if you use Payment Intents later).
+   - Events: **`checkout.session.completed` only** (StoryMagic ignores other event types).
 4. Copy the **Signing secret** (`whsec_…`).
 
 ## 2. Checkout setup (Admin)

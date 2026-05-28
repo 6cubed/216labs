@@ -36,6 +36,17 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
+## Production snapshot (2026-05-28 ~07:25 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → 2 Stripe keys → Save |
+| Ops compounding | **Shipped** — `revenue-env-check` every **4h** (was 2×/day); Telegram **`/checkout`**; probe script points to Checkout setup |
+
+**Verify:** `./scripts/heartbeat-stack.sh` → fresh `revenue_env_last` after next `0 */4` tick or `./scripts/run-droplet-cron.sh revenue-env-check`.
+
+---
+
 ## Production snapshot (2026-05-28 ~06:55 UTC)
 
 | Highest leverage | Blocker |

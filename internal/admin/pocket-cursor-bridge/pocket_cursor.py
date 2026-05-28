@@ -863,6 +863,7 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
 
 POCKET_CURSOR_COMMANDS = [
     {'command': 'now', 'description': 'Quick snapshot: stack, revenue, leads, links'},
+    {'command': 'checkout', 'description': 'Paid checkout probes (StoryMagic, 1Page, merch)'},
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
     {'command': 'chats', 'description': 'Show all chats across instances'},
     {'command': 'deleteoldchats', 'description': 'Close non-active chat tabs'},
@@ -3169,6 +3170,19 @@ def _now_text() -> str:
     return "\n".join(lines).strip()
 
 
+def _checkout_text() -> str:
+    """Telegram /checkout: revenue probes only (CEO first-sale path)."""
+    lines: list[str] = ["💳 Checkout readiness"]
+    ok, out = _run_cmd_quick(["bash", "-lc", "./scripts/check-revenue-env-http.sh"], timeout_sec=22)
+    if out:
+        lines.append(out)
+    else:
+        lines.append("(probe script produced no output)")
+    lines.append("\n🔗 Checkout setup: https://admin.6cubed.app/checkout-setup")
+    lines.append("📚 StoryMagic: https://storybook.6cubed.app")
+    return "\n".join(lines).strip()
+
+
 def telegram_command_base(text: str) -> str:
     """Telegram groups send /cmd@BotUsername; strip @suffix so routing matches /cmd.
 
@@ -3560,6 +3574,10 @@ def sender_thread():
 
                 if cmd == '/now':
                     tg_send(cid, _now_text())
+                    continue
+
+                if cmd == '/checkout':
+                    tg_send(cid, _checkout_text())
                     continue
 
                 if cmd == '/bridges':

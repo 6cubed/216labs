@@ -18,7 +18,7 @@ Paid flows read secrets from admin. For Stripe checkout setup, use **[admin → 
 ./scripts/check-revenue-env-http.sh  # full revenue checklist (Stripe ready flags)
 ```
 
-**Automated:** cron job `revenue-env-check` (enabled by default, 08:00 & 20:00 UTC) stores results in `cron_runner_state.revenue_env_last` and Telegram-alerts on edge failures. Shown on admin **Env** when live probes from your browser time out.
+**Automated:** cron job `revenue-env-check` (enabled by default, **every 4 hours** UTC: `0 */4 * * *`) stores results in `cron_runner_state.revenue_env_last` and Telegram-alerts on edge failures. Shown on admin **Checkout setup** and Overview when probes fail.
 
 **Droplet check** (keys inside running containers; falls back to HTTP if SSH fails):
 

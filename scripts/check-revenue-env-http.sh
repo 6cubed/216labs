@@ -54,7 +54,7 @@ fi
 
 if [[ "$fail" -ne 0 ]]; then
   echo
-  echo "Set keys in admin Env — see docs/REVENUE-ENV.md"
+  echo "Set keys: https://admin.6cubed.app/checkout-setup — docs/FIRST-SALE.md"
   exit 1
 fi
 echo
