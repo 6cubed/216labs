@@ -40,7 +40,7 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 | Symptom | Fix |
 |---------|-----|
-| `revenue_env_last` → `merch: fetch failed` while edge OK | **Shipped** — `probeMerchStorefront()` tries **`http://merch:3000/`** first; local **cron-runner** deploy when GHCR image lags |
+| `revenue_env_last` → `merch: fetch failed` while edge OK | **Shipped** — `probeMerchStorefront()` tries **`http://merch:3000/`** first (then Caddy Host, then edge) so redirects/empty bodies don’t cause false negatives |
 
 **Verify:** `./scripts/run-droplet-cron.sh revenue-env-check` → `issues: 0` in `./scripts/heartbeat-stack.sh`.
 
@@ -63,6 +63,16 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | `ssh: connect ... port 22: Connection refused` while `admin.6cubed.app` still responds | **Shipped** — `./scripts/wait-for-ssh.sh` to make post-reboot recovery one-command (use `wait-for-droplet.sh` when you also want auto-recover) |
 
 **Verify:** `./scripts/wait-for-ssh.sh root@46.101.88.197` exits 0; then `./scripts/heartbeat-stack.sh`.
+
+---
+
+## Local heartbeat noise (`base64` / `dump_zsh_state`) — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `base64: /dev/stdout: Operation not permitted` and `command not found: dump_zsh_state` lines in local heartbeat output | Not a stack problem — it’s emitted by the local tool wrapper in some sandboxes. Ignore; edge + cron snapshots are still valid. |
+
+**Verify:** `edge-smoke: critical hosts reachable` plus `stack_health_last` / `revenue_env_last` parse normally.
 
 ---
 
