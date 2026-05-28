@@ -4,6 +4,7 @@ import {
   REVENUE_APPS,
   REVENUE_SETUP_LINKS,
   STORYBOOK_CHECKOUT_REQUIRED_KEYS,
+  STORYBOOK_STRIPE_WEBHOOK_EVENTS,
 } from "@/lib/revenue-readiness";
 
 export const dynamic = "force-dynamic";
@@ -109,6 +110,35 @@ export default async function CheckoutSetupPage() {
 
         <div className="text-xs text-muted">
           Paste Stripe <strong>test</strong> keys first. On save, admin hot-reloads StoryMagic on the droplet.
+        </div>
+
+        <div className="rounded-lg border border-border bg-background/40 px-3 py-3 text-xs space-y-2">
+          <div className="font-semibold text-foreground">Stripe webhook (paid orders)</div>
+          <ol className="list-decimal list-inside text-muted space-y-1">
+            <li>
+              Stripe → Developers → Webhooks → <strong>Add endpoint</strong>
+            </li>
+            <li>
+              Endpoint URL:{" "}
+              <code className="text-[11px] break-all">{storyLinks.webhookUrl}</code>
+            </li>
+            <li>
+              Select event:{" "}
+              <code className="text-[11px]">{STORYBOOK_STRIPE_WEBHOOK_EVENTS.join(", ")}</code>{" "}
+              only (StoryMagic ignores other events)
+            </li>
+            <li>
+              Copy the signing secret (<code className="text-[11px]">whsec_…</code>) into Env as{" "}
+              <code className="text-[11px]">STORYBOOK_STRIPE_WEBHOOK_SECRET</code>
+            </li>
+          </ol>
+          <p className="text-muted">
+            Test: complete a $0.50 test checkout in Stripe test mode, then confirm admin{" "}
+            <Link className="underline" href="/orders">
+              Orders
+            </Link>{" "}
+            shows <strong>paid</strong>.
+          </p>
         </div>
 
         <div className="space-y-2">

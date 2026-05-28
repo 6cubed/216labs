@@ -43,6 +43,9 @@ export const STORYBOOK_CHECKOUT_REQUIRED_KEYS = [
   "STORYBOOK_STRIPE_WEBHOOK_SECRET",
 ] as const;
 
+/** Stripe Dashboard → Webhooks → “Select events” for StoryMagic. */
+export const STORYBOOK_STRIPE_WEBHOOK_EVENTS = ["checkout.session.completed"] as const;
+
 export const REVENUE_APPS: RevenueAppConfig[] = [
   {
     id: "storybook",

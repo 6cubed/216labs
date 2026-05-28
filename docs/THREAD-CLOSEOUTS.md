@@ -36,6 +36,19 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
+## Production snapshot (2026-05-28 ~06:55 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — [Checkout setup](https://admin.6cubed.app/checkout-setup) (webhook checklist + live probe) → paste 2 Stripe keys → Save |
+| Funnel | **Ready** — waitlist count on admin Overview + First sale banner |
+
+**Shipped:** Checkout setup Stripe webhook steps (`checkout.session.completed`); admin dashboard waitlist on revenue card; refreshed `revenue_env_last` via cron.
+
+**Stale cron row — CLOSED:** `revenue_env_last` was hours old; `run-droplet-cron.sh revenue-env-check` refreshes it (verify in `./scripts/heartbeat-stack.sh`).
+
+---
+
 ## Production snapshot (2026-05-28 ~06:40 UTC)
 
 | Highest leverage | Blocker |

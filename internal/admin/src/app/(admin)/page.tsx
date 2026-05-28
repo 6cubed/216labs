@@ -22,6 +22,7 @@ import {
   parseRevenueCronSnapshot,
   REVENUE_CRON_STATE_KEY,
 } from "@/lib/revenue-readiness";
+import { fetchStorybookPrintLeads } from "@/lib/storybook";
 import {
   getStackHealthSnapshot,
   stackHealthMetric,
@@ -58,18 +59,25 @@ export default async function DashboardPage() {
   const errorHref = resolveErrorsFeedHref(getDb());
   const errorCounts24h = countClientErrorEventsByAppSinceHours(getDb(), 24);
   const renderedAtIso = new Date().toISOString();
-  const revenueCron = parseRevenueCronSnapshot(
-    getCronRunnerState(REVENUE_CRON_STATE_KEY)
-  );
+  const [revenueCron, storybookWaitlist] = await Promise.all([
+    Promise.resolve(
+      parseRevenueCronSnapshot(getCronRunnerState(REVENUE_CRON_STATE_KEY))
+    ),
+    fetchStorybookPrintLeads(),
+  ]);
   const revenueMetricValue = revenueCron
     ? revenueCron.issues > 0
       ? `${revenueCron.issues} edge issue(s)`
       : "Edge OK"
     : "—";
+  const waitlistPart =
+    storybookWaitlist.length > 0
+      ? `${storybookWaitlist.length} StoryMagic waitlist`
+      : "StoryMagic keys → Checkout setup";
   const revenueMetricSub =
     revenueCron != null
-      ? `cron ${revenueCron.at.replace("T", " ").slice(0, 16)} UTC`
-      : "Stripe keys on Env";
+      ? `${waitlistPart} · cron ${revenueCron.at.replace("T", " ").slice(0, 16)} UTC`
+      : waitlistPart;
   const stackSnap = getStackHealthSnapshot();
   const stackMetric = stackHealthMetric(stackSnap);
 
@@ -101,7 +109,7 @@ export default async function DashboardPage() {
           label="Revenue / checkout"
           value={revenueMetricValue}
           sublabel={revenueMetricSub}
-          href="/env"
+          href="/checkout-setup"
         />
         <MetricCard
           label="Monthly Cost"
