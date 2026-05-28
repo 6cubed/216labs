@@ -909,6 +909,8 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
 POCKET_CURSOR_COMMANDS = [
     {'command': 'now', 'description': 'Quick snapshot: stack, revenue, leads, links'},
     {'command': 'checkout', 'description': 'Paid checkout probes (StoryMagic, 1Page, merch)'},
+    {'command': 'revenue', 'description': 'Alias for /checkout (Stripe + StoryMagic live status)'},
+    {'command': 'waitlist', 'description': 'StoryMagic waitlist count + paid-path status'},
     {'command': 'probe', 'description': 'Fast stack probe (edge + services + checkout)'},
     {'command': 'inbox', 'description': 'CEO inbox: show pending owner messages'},
     {'command': 'done', 'description': 'CEO inbox: mark message done (/done <id>)'},
@@ -3221,6 +3223,28 @@ def _now_text() -> str:
     return "\n".join(lines).strip()
 
 
+def _waitlist_text() -> str:
+    """Telegram /waitlist: StoryMagic print-interest count + whether they can pay yet."""
+    lines: list[str] = ["📚 StoryMagic waitlist"]
+    ok, out = _run_cmd_quick(
+        ["bash", "-lc", "./scripts/query_storybook_waitlist_summary.sh"],
+        timeout_sec=22,
+    )
+    if out:
+        lines.append(out)
+    else:
+        lines.append("(could not load waitlist summary)")
+    ok2, out2 = _run_cmd_quick(
+        ["bash", "-lc", "./scripts/query_storybook_print_leads.sh '' 5"],
+        timeout_sec=18,
+    )
+    if ok2 and out2 and "No leads" not in out2:
+        lines.append("\nLatest:")
+        lines.append("\n".join(out2.splitlines()[:6]))
+    lines.append("\n🔗 https://admin.6cubed.app/checkout-setup")
+    return "\n".join(lines).strip()
+
+
 def _checkout_text() -> str:
     """Telegram /checkout: revenue probes only (CEO first-sale path)."""
     lines: list[str] = ["💳 Checkout readiness"]
@@ -3791,6 +3815,10 @@ def sender_thread():
 
                 if cmd == '/checkout' or cmd == '/revenue':
                     tg_send(cid, _checkout_text())
+                    continue
+
+                if cmd == '/waitlist':
+                    tg_send(cid, _waitlist_text())
                     continue
 
                 if cmd == '/probe':

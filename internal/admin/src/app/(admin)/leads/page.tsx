@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StorybookPrintLeadsSection } from "@/components/StorybookPrintLeadsSection";
 import { getDb } from "@/lib/db";
 import { fetchStorybookPrintLeads } from "@/lib/storybook";
@@ -18,8 +19,34 @@ function safeTrim(s: unknown): string {
   return typeof s === "string" ? s.trim() : "";
 }
 
+async function storybookPaidPath(): Promise<{
+  ready: boolean;
+  preorder: boolean;
+}> {
+  try {
+    const res = await fetch("https://storybook.6cubed.app/api/checkout/ready", {
+      cache: "no-store",
+    });
+    const data = (await res.json()) as {
+      ready?: boolean;
+      preorderConfigured?: boolean;
+    };
+    return {
+      ready: Boolean(data.ready),
+      preorder: Boolean(data.preorderConfigured),
+    };
+  } catch {
+    return { ready: false, preorder: false };
+  }
+}
+
 export default async function LeadsPage() {
-  const storybookPrintLeads = await fetchStorybookPrintLeads();
+  const [storybookPrintLeads, paidPath] = await Promise.all([
+    fetchStorybookPrintLeads(),
+    storybookPaidPath(),
+  ]);
+  const needsPaidPath =
+    storybookPrintLeads.length > 0 && !paidPath.ready && !paidPath.preorder;
   const db = getDb();
   const rows = db
     .prepare(
@@ -43,6 +70,21 @@ export default async function LeadsPage() {
           Showing <span className="font-semibold text-foreground">{rows.length}</span> most recent
         </div>
       </div>
+
+      {needsPaidPath ? (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+          <p className="font-semibold text-amber-100">
+            {storybookPrintLeads.length} on StoryMagic waitlist — they cannot pay yet
+          </p>
+          <p className="text-xs text-muted mt-1">
+            Enable a Payment Link or full Stripe checkout on{" "}
+            <Link href="/checkout-setup" className="underline text-accent">
+              Checkout setup
+            </Link>
+            . Telegram: <code className="text-[11px]">/waitlist</code>
+          </p>
+        </div>
+      ) : null}
 
       <StorybookPrintLeadsSection leads={storybookPrintLeads} />
 
