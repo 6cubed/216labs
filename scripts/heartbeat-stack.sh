@@ -54,9 +54,31 @@ for key in ('stack_health_last', 'revenue_env_last'):
     elif key == 'revenue_env_last':
         issues = d.get('issues', 0)
         print(f'    issues: {issues}')
+        at = d.get('at', '')
+        if at:
+            try:
+                from datetime import datetime, timezone
+                ts = datetime.fromisoformat(at.replace('Z', '+00:00'))
+                age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600
+                if age_h > 5:
+                    print(f'    (stale — {age_h:.0f}h old; run ./scripts/run-droplet-cron.sh revenue-env-check)')
+            except Exception:
+                pass
         for r in d.get('results') or []:
-            if not r.get('ok'):
-                print(f\"    {r.get('id')}: {r.get('error') or r.get('status')}\")
+            rid = r.get('id')
+            if rid in ('storybook', '1pageresearch'):
+                ready = r.get('ready')
+                pre = r.get('preorderConfigured')
+                if ready:
+                    print(f'    {rid}: checkout ready')
+                elif pre:
+                    print(f'    {rid}: preorder live')
+                elif r.get('ok'):
+                    print(f'    {rid}: checkout not ready')
+                else:
+                    print(f\"    {rid}: {r.get('error') or r.get('status')}\")
+            elif not r.get('ok'):
+                print(f\"    {rid}: {r.get('error') or r.get('status')}\")
 " 2>/dev/null || echo "  (could not parse cron snapshot)"
 else
   echo "  (SSH unavailable or DB unreadable — skip cron snapshot)"

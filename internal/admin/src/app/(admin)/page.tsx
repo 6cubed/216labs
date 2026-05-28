@@ -61,20 +61,19 @@ export default async function DashboardPage() {
   const renderedAtIso = new Date().toISOString();
   const envMap = new Map(getAllEnvVars().map((r) => [r.key, (r.value ?? "").trim()]));
   const storyPreorder = storybookPreorderConfigured(envMap);
-  const storyCron = parseRevenueCronSnapshot(
+  const revenueCronParsed = parseRevenueCronSnapshot(
     getCronRunnerState(REVENUE_CRON_STATE_KEY)
-  )?.results.find((r) => r.id === "storybook");
+  );
+  const storyCron = revenueCronParsed?.results.find((r) => r.id === "storybook");
   const storyCheckoutReady = storyCron?.ready === true;
+  const storyPreorderLive =
+    storyPreorder || storyCron?.preorderConfigured === true;
 
-  const [revenueCron, storybookWaitlist] = await Promise.all([
-    Promise.resolve(
-      parseRevenueCronSnapshot(getCronRunnerState(REVENUE_CRON_STATE_KEY))
-    ),
-    fetchStorybookPrintLeads(),
-  ]);
+  const storybookWaitlist = await fetchStorybookPrintLeads();
+  const revenueCron = revenueCronParsed;
   const revenueMetricValue = storyCheckoutReady
     ? "Checkout open"
-    : storyPreorder
+    : storyPreorderLive
       ? "Preorder live"
       : revenueCron
         ? revenueCron.issues > 0
@@ -84,7 +83,7 @@ export default async function DashboardPage() {
   const waitlistPart =
     storybookWaitlist.length > 0
       ? `${storybookWaitlist.length} StoryMagic waitlist`
-      : storyPreorder
+      : storyPreorderLive
         ? "Full checkout → Checkout setup"
         : "StoryMagic keys → Checkout setup";
   const revenueMetricSub =

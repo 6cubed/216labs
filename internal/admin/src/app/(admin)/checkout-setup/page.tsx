@@ -18,6 +18,7 @@ function isSet(env: Map<string, string>, key: string): boolean {
 type CheckoutProbe = {
   ok: boolean;
   ready: boolean;
+  preorderConfigured?: boolean;
   priceUsd?: string;
   missingKeys?: string[];
   error?: string;
@@ -28,12 +29,14 @@ async function probeStorybookCheckout(url: string): Promise<CheckoutProbe> {
     const res = await fetch(url, { cache: "no-store" });
     const data = (await res.json()) as {
       ready?: boolean;
+      preorderConfigured?: boolean;
       priceUsd?: string;
       missingKeys?: string[];
     };
     return {
       ok: res.ok,
       ready: Boolean(data.ready),
+      preorderConfigured: Boolean(data.preorderConfigured),
       priceUsd: data.priceUsd,
       missingKeys: data.missingKeys,
     };
@@ -217,14 +220,19 @@ export default async function CheckoutSetupPage() {
               ready: true — checkout can run
               {liveProbe.priceUsd ? ` (${liveProbe.priceUsd} USD)` : ""}
             </div>
+          ) : liveProbe.preorderConfigured ? (
+            <div className="text-emerald-300 mt-1 font-semibold">
+              preorder: live — Payment Link active on StoryMagic
+              {liveProbe.priceUsd ? ` (${liveProbe.priceUsd} USD)` : ""}
+            </div>
           ) : (
             <div className="text-amber-200 mt-1">
-              ready: false
+              ready: false · preorder: off
               {liveProbe.missingKeys?.length
                 ? ` — missing in runtime: ${liveProbe.missingKeys.join(", ")}`
                 : missingRequired.length
                   ? " — keys not in admin Env yet"
-                  : " — keys in Env but storybook may need a save/recreate"}
+                  : " — paste Payment Link above or add Stripe keys"}
             </div>
           )}
         </div>

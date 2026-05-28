@@ -100,6 +100,7 @@ export type RevenueCronProbeRow = {
   ok: boolean;
   status?: number;
   ready?: boolean | null;
+  preorderConfigured?: boolean;
   error?: string | null;
 };
 

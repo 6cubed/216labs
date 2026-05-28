@@ -469,6 +469,7 @@ async function fetchCheckoutReady(url) {
     ok: true,
     status: res.status,
     ready: Boolean(data.ready),
+    preorderConfigured: Boolean(data.preorderConfigured),
     message: typeof data.message === "string" ? data.message : null,
     error: null,
   };
@@ -668,6 +669,8 @@ export async function revenueEnvCheck(db) {
         ok: p.ok,
         status: p.status,
         ready: p.ready,
+        preorderConfigured:
+          id === "storybook" ? Boolean(p.preorderConfigured) : undefined,
         message: p.message,
         error: p.error,
       };
