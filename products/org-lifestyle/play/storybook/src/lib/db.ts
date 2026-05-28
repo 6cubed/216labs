@@ -152,6 +152,14 @@ export function createPrintInterest(
     );
 }
 
+/** Distinct waitlist rows (print-interest signups). Safe to expose as a public count. */
+export function countPrintInterests(): number {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS n FROM print_interest")
+    .get() as { n: number };
+  return row.n ?? 0;
+}
+
 export function getAllPrintInterests(): PrintInterest[] {
   const rows = getDb()
     .prepare(

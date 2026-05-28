@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { countPrintInterests } from "@/lib/db";
 
 const ADMIN_CHECKOUT_SETUP_URL = "https://admin.6cubed.app/checkout-setup";
 
@@ -21,10 +22,13 @@ export async function GET() {
     parseInt(process.env.STORYBOOK_BOOK_PRICE_CENTS ?? "2499", 10) || 2499;
   const priceUsd = (priceCents / 100).toFixed(2);
 
+  const waitlistCount = countPrintInterests();
+
   return NextResponse.json({
     ready,
     preorderConfigured,
     preorderUrl: preorderConfigured ? preorderUrl : undefined,
+    waitlistCount,
     priceCents,
     priceUsd,
     setupUrl: ready ? undefined : ADMIN_CHECKOUT_SETUP_URL,

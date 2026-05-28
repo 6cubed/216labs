@@ -53,6 +53,7 @@ export default function HomePage() {
   const [interestLoading, setInterestLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [preorderUrl, setPreorderUrl] = useState("");
+  const [waitlistCount, setWaitlistCount] = useState(0);
 
   useEffect(() => {
     captureUtmFromUrl();
@@ -69,6 +70,7 @@ export default function HomePage() {
           priceUsd?: string;
           setupUrl?: string;
           preorderUrl?: string;
+          waitlistCount?: number;
         };
         if (!cancelled) {
           setCheckoutReady(data.ready);
@@ -76,6 +78,7 @@ export default function HomePage() {
           setCheckoutSetupUrl(data.setupUrl ?? null);
           if (data.priceUsd) setBookPriceUsd(data.priceUsd);
           setPreorderUrl(data.preorderUrl?.trim() ?? "");
+          setWaitlistCount(typeof data.waitlistCount === "number" ? data.waitlistCount : 0);
         }
       } catch {
         if (!cancelled) setCheckoutReady(null);
@@ -203,6 +206,7 @@ export default function HomePage() {
         throw new Error(data.error ?? "Could not save your email");
       }
       setInterestSent(true);
+      setWaitlistCount((n) => n + 1);
       trackStorybookEvent("waitlist_signup", { book_id: bookId, ...utm });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
@@ -309,6 +313,14 @@ export default function HomePage() {
               <ShoppingCart className="w-4 h-4" />
               Preorder printed book — ${bookPriceUsd}
             </button>
+          ) : null}
+          {waitlistCount >= 1 ? (
+            <p className="mt-4 text-white/70 text-xs">
+              {waitlistCount === 1
+                ? "1 family on the print waitlist"
+                : `${waitlistCount} families on the print waitlist`}
+              {preorderUrl && checkoutReady !== true ? " — or preorder now above" : ""}
+            </p>
           ) : null}
         </motion.div>
 
@@ -649,6 +661,11 @@ export default function HomePage() {
                     ) : (
                       <p className="text-white text-base mb-4 font-semibold">
                         Reserve your printed book — we&apos;ll email you when checkout opens.
+                        {waitlistCount >= 2 ? (
+                          <span className="block text-white/70 text-sm font-normal mt-1">
+                            Join {waitlistCount}+ families already on the waitlist.
+                          </span>
+                        ) : null}
                       </p>
                     )}
                     <div className="flex flex-col sm:flex-row gap-2">
