@@ -54,6 +54,7 @@ export const REVENUE_APPS: RevenueAppConfig[] = [
       "STORYBOOK_STRIPE_SECRET_KEY",
       "STORYBOOK_STRIPE_WEBHOOK_SECRET",
       "NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY",
+      "NEXT_PUBLIC_STORYBOOK_PREORDER_URL",
     ],
     probeUrl: "https://storybook.6cubed.app/api/checkout/ready",
     publicUrl: "https://storybook.6cubed.app",

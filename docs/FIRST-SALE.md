@@ -40,13 +40,23 @@ Open [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) (or [ad
 
 Save. On the live admin host, saving a `STORYBOOK_*` key **recreates the storybook container** with updated `.env.admin` automatically (no laptop deploy in the normal path).
 
+## 2b. Preorder without webhook keys (shipped)
+
+If you are not ready to paste `STORYBOOK_STRIPE_*` yet:
+
+1. Stripe Dashboard → **Payment Links** → create a link for the printed book price.
+2. Admin → Env → set `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` to that link (public URL).
+3. StoryMagic preview shows **Preorder now** (deployed with commit `9c31f1e7`).
+
+Full checkout + order emails in admin still need the two Stripe keys above.
+
 ## 3. Verify (after Save)
 
 ```bash
 ./scripts/check-revenue-env-http.sh
 ```
 
-Expect `[StoryMagic] checkout ready`. In the browser: create a book → **Order** → Stripe Checkout (test card `4242 4242 4242 4242`).
+Expect `[StoryMagic] checkout ready` when keys are set. With only preorder URL: test **Preorder now** on https://storybook.6cubed.app after creating a book.
 
 ## 4. Fallback redeploy (only if Save did not recreate storybook)
 

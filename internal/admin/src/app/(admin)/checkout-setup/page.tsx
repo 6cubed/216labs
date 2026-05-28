@@ -70,6 +70,7 @@ export default async function CheckoutSetupPage() {
   const onepageLinks = REVENUE_SETUP_LINKS["1pageresearch"];
 
   const missingRequired = STORYBOOK_CHECKOUT_REQUIRED_KEYS.filter((k) => !isSet(env, k));
+  const preorderUrl = env.get("NEXT_PUBLIC_STORYBOOK_PREORDER_URL") || "";
   const liveProbe = await probeStorybookCheckout(`${story.publicUrl}/api/checkout/ready`);
 
   const missingOnepage = onepage.keys.filter((k) => !isSet(env, k));
@@ -108,10 +109,28 @@ export default async function CheckoutSetupPage() {
         </p>
       </div>
 
+      {!liveProbe.ready && preorderUrl ? (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 space-y-3">
+          <div className="text-sm font-semibold text-emerald-100">Fast path: preorder without webhook keys</div>
+          <p className="text-xs text-muted">
+            StoryMagic already shows a <strong>Preorder now</strong> button when{" "}
+            <code className="text-[11px]">NEXT_PUBLIC_STORYBOOK_PREORDER_URL</code> is set (public URL — no secrets).
+            Create a Payment Link in Stripe, paste the URL below, Save on Env — the site updates on next deploy.
+          </p>
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background/40 px-3 py-2">
+            <code className="text-[11px] break-all text-muted flex-1">{preorderUrl}</code>
+            <span className="text-xs font-semibold text-emerald-300 shrink-0">configured</span>
+          </div>
+          <p className="text-[11px] text-muted">
+            Env → add or edit <code className="text-[11px]">NEXT_PUBLIC_STORYBOOK_PREORDER_URL</code> (not secret). Full checkout still needs the two Stripe keys below.
+          </p>
+        </div>
+      ) : null}
+
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold">StoryMagic (required)</div>
+            <div className="text-sm font-semibold">StoryMagic (full checkout)</div>
             <div className="text-xs text-muted">
               Webhook URL:{" "}
               <a className="underline" href={storyLinks.webhookUrl} target="_blank" rel="noreferrer">

@@ -29,9 +29,9 @@ export async function FirstSaleBanner() {
       </p>
       <p className="text-xs text-muted mt-1 max-w-3xl">
         Edge is up; probes return JSON with <code className="text-[11px]">ready: false</code> until
-        Add Stripe <strong>test</strong> secret + webhook signing secret (2 keys). Saving{" "}
-        <code className="text-[11px]">STORYBOOK_*</code> hot-reloads storybook on this host.
-        Publishable key is optional (checkout uses server-side Sessions).
+        Add Stripe <strong>test</strong> secret + webhook signing secret (2 keys), or set{" "}
+        <code className="text-[11px]">NEXT_PUBLIC_STORYBOOK_PREORDER_URL</code> for a Payment Link preorder button on StoryMagic.
+        Saving <code className="text-[11px]">STORYBOOK_*</code> hot-reloads storybook on this host.
       </p>
       {missing.length > 0 && (
         <p className="text-[11px] font-mono text-amber-200/80 mt-2">
