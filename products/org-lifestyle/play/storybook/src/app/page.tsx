@@ -52,6 +52,7 @@ export default function HomePage() {
   const [interestSent, setInterestSent] = useState(false);
   const [interestLoading, setInterestLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const preorderUrl = process.env.NEXT_PUBLIC_STORYBOOK_PREORDER_URL?.trim() || "";
 
   useEffect(() => {
     captureUtmFromUrl();
@@ -249,6 +250,13 @@ export default function HomePage() {
       setError(msg);
       setIsOrdering(false);
     }
+  }
+
+  function handlePreorder() {
+    if (!preorderUrl) return;
+    const utm = getStoredUtm();
+    trackStorybookEvent("preorder_click", { book_id: bookId ?? "", ...utm });
+    window.open(preorderUrl, "_blank", "noopener,noreferrer");
   }
 
   function handleReset() {
@@ -593,6 +601,21 @@ export default function HomePage() {
                     <p className="text-white text-base mb-4 font-semibold">
                       Reserve your printed book — we&apos;ll email you when checkout opens.
                     </p>
+                    {preorderUrl ? (
+                      <div className="mb-3">
+                        <button
+                          type="button"
+                          onClick={handlePreorder}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-story-purple font-bold text-base shadow-lg hover:bg-story-yellow-light transition-colors"
+                        >
+                          <ShoppingCart className="w-5 h-5" />
+                          Preorder now
+                        </button>
+                        <p className="text-white/55 text-xs mt-2">
+                          Prefer not to wait? This opens a secure Stripe payment link.
+                        </p>
+                      </div>
+                    ) : null}
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="email"

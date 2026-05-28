@@ -21,6 +21,7 @@
     { "key": "STORYBOOK_STRIPE_SECRET_KEY", "description": "StoryMagic Stripe secret key (sk_live_...)", "is_secret": true },
     { "key": "STORYBOOK_STRIPE_WEBHOOK_SECRET", "description": "StoryMagic Stripe webhook signing secret (whsec_...)", "is_secret": true },
     { "key": "NEXT_PUBLIC_STORYBOOK_STRIPE_PUBLISHABLE_KEY", "description": "StoryMagic Stripe publishable key (pk_live_...)", "is_secret": false },
+    { "key": "NEXT_PUBLIC_STORYBOOK_PREORDER_URL", "description": "Optional: Stripe Payment Link (or preorder URL) used when checkout is not ready yet (public URL)", "is_secret": false },
     { "key": "STORYBOOK_BOOK_PRICE_CENTS", "description": "StoryMagic printed book price in cents (default: 2499 = $24.99)", "is_secret": false },
     { "key": "STORYBOOK_ADMIN_TOKEN", "description": "StoryMagic shared secret for admin→storybook API calls", "is_secret": true },
     { "key": "STORYBOOK_RESEND_API_KEY", "description": "StoryMagic Resend API key for order notification emails", "is_secret": true },
