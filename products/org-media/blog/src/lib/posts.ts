@@ -8,6 +8,111 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'multi-vp-velocity-in-a-telegram-native-org',
+    title: 'Speed at scale: when 10 visionaries want 1:1 velocity',
+    excerpt:
+      'If funding brings ten VP-level “visionaries” into the loop, the constraint becomes coordination latency. Here is how to keep the 1:1 Pocket Cursor cadence while scaling to many parallel product goals.',
+    date: '2026-05-28',
+    body: `
+Our current cadence has a simple bottleneck: **one agent reply latency** plus **one CEO writing window**. That is fine at the beginning — it keeps the loop tight — but it does not survive success.
+
+Imagine we raise funding and hire **ten visionaries**. Each one owns a product goal (growth, onboarding, retention, reliability, enterprise, etc.). Each one wants the same speed the CEO gets today in a 1:1 thread: *send a message, get execution, ship continuously*.
+
+If we try to scale the current setup by “adding more humans who type into the same chat,” we slow down. The system becomes a meeting. **We trade velocity for consensus.**
+
+So the harder question is: **how do we scale the loop without turning it into a committee?**
+
+## The real constraint is coordination latency
+
+When a single person drives, the loop is:
+
+- direction → execution → feedback → ship
+
+When ten people drive, the loop becomes:
+
+- direction → *routing* → execution → *merge conflicts* → feedback → *status diffusion* → ship
+
+The execution engine can be fast. The danger is everything around it: who has authority, what gets acknowledged, what is “done,” and what is the canonical narrative.
+
+## The architecture: one org, many lanes
+
+If we want ten VPs to move at 1:1 speed, we need **parallel lanes**:
+
+- **One chat per lane** (one product goal), with a clear owner.
+- **One agent context per lane**, so the thread does not thrash.
+- **One canonical publishing mechanism**, so the org does not fragment.
+
+The CEO should be able to drop a thought and have it land immediately. But the same must be true for a VP: they should be able to push their lane forward without waiting for the CEO to be online.
+
+## “Blog posts become gospel” is the governance layer
+
+Chats are high bandwidth but low memory. The org needs memory.
+
+We should treat the daily blog as:
+
+- **the canonical narrative**
+- **the source of truth for direction**
+- **the artifact that converts ambiguity into policy**
+
+In practice:
+
+- a VP chat produces work, commits, and shipped behavior
+- the blog post explains the intent and becomes the reference point
+- tomorrow’s decisions cite the blog post, not “what someone said in Telegram”
+
+This is how we avoid rewriting strategy every day.
+
+## How to keep the 1:1 cadence while scaling to 10 threads
+
+To preserve speed we need three mechanics:
+
+1) **Immediate acknowledgement**
+
+Every directive from a leader should get an ACK instantly (even if execution happens later). That prevents “did you see this?” loops.
+
+2) **An inbox with states**
+
+Messages shouldn’t disappear into the stream. They should become items with states:
+
+- received
+- in progress
+- shipped
+- published (blogged)
+
+This is the difference between “we chat” and “we run an org.”
+
+3) **A routing rule**
+
+Not every message goes to one place. We need a default router:
+
+- CEO message about revenue → revenue lane
+- CEO message about safety → ops lane
+- VP message about onboarding → onboarding lane
+
+When routing is explicit, speed comes from parallelism. When it’s implicit, speed dies in ambiguity.
+
+## The model: a Telegram-native org with a factory backend
+
+The best mental model is:
+
+- Telegram is the **front door** (direction, accountability, approvals)
+- the monorepo is the **factory floor** (code, deploys, measurement)
+- the blog is the **constitution** (gospel, memory, narrative)
+
+If we do this right, “ten visionaries” doesn’t slow us down — it increases throughput. Each VP lane ships independently, and the blog reconciles it into one coherent company.
+
+## The next step
+
+Start small:
+
+- write one post per day
+- each post cites the CEO’s latest “direction” message
+- each lane ships at least one concrete change per day
+
+If we can sustain that at 1 VP, scaling to 10 becomes a system problem — not a willpower problem.
+    `.trim(),
+  },
+  {
     slug: 'pocket-cursor-heartbeat-harness',
     title: 'Pocket Cursor heartbeat: periodic agent nudges from your phone',
     excerpt:
