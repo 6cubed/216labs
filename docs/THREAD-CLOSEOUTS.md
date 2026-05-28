@@ -36,6 +36,17 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
+## Production snapshot (2026-05-28 ~06:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → paste test/live Stripe keys → Save |
+| Funnel (ads + referrals) | **Ready** — post-waitlist **share link** (UTM `share/referral/storymagic_friend`); Telegram `/now` shows StoryMagic waitlist rows with campaign columns |
+
+**Shipped this cycle:** `query_storybook_print_leads.sh` UTMs; pocket `/now` waitlist snippet; StoryMagic share-after-waitlist CTA.
+
+---
+
 ## Production snapshot (2026-05-28 ~03:10 UTC)
 
 | Highest leverage | Blocker |

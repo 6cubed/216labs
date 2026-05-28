@@ -3147,6 +3147,17 @@ def _now_text() -> str:
         lines.append("\n📩 Inbound")
         lines.append("Open admin → Leads: https://admin.6cubed.app/leads")
 
+    # StoryMagic waitlist (print-interest) with campaign UTMs when present.
+    ok4, out4 = _run_cmd_quick(
+        ["bash", "-lc", "./scripts/query_storybook_print_leads.sh"], timeout_sec=12
+    )
+    if ok4 and out4 and "No leads" not in out4:
+        lines.append("\n📚 StoryMagic waitlist (latest)")
+        lines.append("\n".join(out4.splitlines()[:8]))
+    else:
+        lines.append("\n📚 StoryMagic waitlist")
+        lines.append("https://storybook.6cubed.app — see admin Leads for full list")
+
     # Quick links.
     lines.append("\n🔗 Links")
     lines.append("• Admin overview: https://admin.6cubed.app/")

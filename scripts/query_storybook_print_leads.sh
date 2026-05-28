@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# List StoryMagic print-interest leads from the droplet.
-# Usage: ./scripts/query_storybook_print_leads.sh [user@host]
+# List StoryMagic print-interest leads from the droplet (includes ad UTMs when set).
+# Usage: ./scripts/query_storybook_print_leads.sh [user@host] [limit]
 set -euo pipefail
 
 REMOTE="${1:-root@46.101.88.197}"
-SQL="SELECT p.id, p.email, p.created_at, b.title
+LIMIT="${2:-15}"
+SQL="SELECT p.id, p.email,
+       COALESCE(p.utm_source, '') AS utm_source,
+       COALESCE(p.utm_medium, '') AS utm_medium,
+       COALESCE(p.utm_campaign, '') AS utm_campaign,
+       p.created_at, COALESCE(b.title, '') AS book_title
 FROM print_interest p
 LEFT JOIN books b ON p.book_id = b.id
 ORDER BY p.created_at DESC
-LIMIT 50;"
+LIMIT ${LIMIT};"
 
 run_sql() {
   local db_path="$1"

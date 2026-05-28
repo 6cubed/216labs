@@ -11,6 +11,7 @@ import {
   Wand2,
   CheckCircle2,
   AlertCircle,
+  Share2,
 } from "lucide-react";
 import BookViewer, { BookPage } from "@/components/BookViewer";
 import { trackStorybookEvent } from "@/lib/analytics";
@@ -50,6 +51,7 @@ export default function HomePage() {
   const [interestEmail, setInterestEmail] = useState("");
   const [interestSent, setInterestSent] = useState(false);
   const [interestLoading, setInterestLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     captureUtmFromUrl();
@@ -205,6 +207,20 @@ export default function HomePage() {
       setError(msg);
     } finally {
       setInterestLoading(false);
+    }
+  }
+
+  async function handleCopyShareLink() {
+    if (typeof window === "undefined") return;
+    const base = `${window.location.origin}${window.location.pathname}`;
+    const shareUrl = `${base}?utm_source=share&utm_medium=referral&utm_campaign=storymagic_friend`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopied(true);
+      trackStorybookEvent("share_link_copy", { book_id: bookId ?? "" });
+      window.setTimeout(() => setShareCopied(false), 2500);
+    } catch {
+      setError("Could not copy link — try sharing the URL from your browser bar.");
     }
   }
 
@@ -600,9 +616,22 @@ export default function HomePage() {
                 )}
 
                 {interestSent && (
-                  <p className="text-story-yellow-light text-sm font-medium mb-4">
-                    You&apos;re on the list — we&apos;ll email you when printed checkout is live.
-                  </p>
+                  <div className="mb-4 space-y-3">
+                    <p className="text-story-yellow-light text-sm font-medium">
+                      You&apos;re on the list — we&apos;ll email you when printed checkout is live.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyShareLink()}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/30 text-white/90 text-sm font-medium hover:border-white/60 hover:bg-white/10 transition-colors"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      {shareCopied ? "Link copied — paste for a friend" : "Copy link to share StoryMagic"}
+                    </button>
+                    <p className="text-white/45 text-xs">
+                      Shared links include a referral tag so we can see word-of-mouth signups in admin Leads.
+                    </p>
+                  </div>
                 )}
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
