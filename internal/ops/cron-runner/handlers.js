@@ -1125,6 +1125,19 @@ export async function clientErrorPrune(ctx) {
   return "";
 }
 
+/** Daily: nudge the org to publish the CEO-inspired "gospel" blog post. */
+export async function blogDailyGospel(_db, _opts) {
+  const iso = new Date().toISOString().slice(0, 16).replace("T", " ");
+  return (
+    "✍️ Daily gospel (blog)\n\n"
+    "Write today’s blog post based on the CEO’s latest direction.\n"
+    "In Pocket Cursor (Telegram): /blogdraft → edit → ship blog.\n\n"
+    "• Blog: https://blog.6cubed.app\n"
+    "• Direction inbox: /inbox\n"
+    `(${iso} UTC)`
+  );
+}
+
 export const HANDLERS = {
   "telegram-daily-digest": telegramDailyDigest,
   "telegram-happypath-summary": telegramHappypathSummary,
@@ -1135,6 +1148,7 @@ export const HANDLERS = {
   "edge-visitor-rollup": edgeVisitorRollup,
   "client-error-prune": clientErrorPrune,
   "revenue-env-check": revenueEnvCheck,
+  "blog-daily-gospel": blogDailyGospel,
   "stack-health-check": stackHealthCheck,
   "difftinder-daily-idea": difftinderDailyIdea,
   "agitweet-autopost": agitweetAutopost,

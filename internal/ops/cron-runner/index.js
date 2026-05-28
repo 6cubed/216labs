@@ -125,6 +125,7 @@ function ensureCronRunnerMigrations(db) {
     ('edge-visitor-rollup', 'Edge visitor rollup (Caddy logs)', 'Reads Caddy JSON access logs and stores coarse daily unique visitors per app in edge_visitor_day.', '*/15 * * * *', 1),
     ('client-error-prune', 'Prune old client error events', 'Deletes client_error_event rows older than 14 days.', '15 4 * * *', 1),
     ('revenue-env-check', 'Revenue & edge smoke', 'HTTP probes for admin + paid apps; Telegram alert only on failure. State key revenue_env_last.', '0 */4 * * *', 1),
+    ('blog-daily-gospel', 'Daily gospel blog reminder', 'Posts a daily reminder to draft a CEO-inspired blog post (run /blogdraft in Pocket Cursor).', '15 6 * * *', 1),
     ('stack-health-check', 'Stack health (edge vs internal)', 'Compares public URLs vs Docker-internal probes; Telegram on failure. State key stack_health_last.', '*/15 * * * *', 1),
     ('difftinder-daily-idea', 'DiffTinder daily idea', 'Adds one speculative monorepo idea per UTC day for admin swipe review.', '0 7 * * *', 1),
     ('agitweet-autopost', 'Agitweet autopost', 'Composes one post (world RSS + 216labs prompts) and publishes to agitweet.6cubed.app.', '*/15 * * * *', 1),
