@@ -25,7 +25,7 @@ while true; do
   fi
   out="$(
     ssh "${SSH_OPTS[@]}" "$REMOTE" \
-      "docker exec 216labs-activator-1 python3 -c \"import json,urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=6).read().decode('utf-8'))\"" 2>/dev/null || true
+      "docker exec 216labs-activator-1 python3 -c \"import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:3040/healthz', timeout=6).read().decode('utf-8'))\"" 2>/dev/null || true
   )"
   if [[ -n "$out" ]] && echo "$out" | grep -q '"ok"[[:space:]]*:[[:space:]]*true'; then
     echo "[activator] OK: $out"
