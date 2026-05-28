@@ -485,6 +485,23 @@ async function fetchCheckoutReadyResilient(publicUrl, internalUrl) {
   }
 }
 
+function merchStorefrontLiveFromHtml(html) {
+  if (html.includes("Warming up merch") || (html.includes("Starting...") && !html.includes("6³ wordmark"))) {
+    return { live: false, reason: "activator warmup" };
+  }
+  if (
+    html.includes("Shop via StoryMagic") ||
+    html.includes("Support via StoryMagic") ||
+    html.includes("Checkout URL not configured")
+  ) {
+    return { live: false, reason: "merch fallback CTA" };
+  }
+  if (html.includes("Open storefront") || html.includes("6³ wordmark tee")) {
+    return { live: true, reason: "storefront ok" };
+  }
+  return { live: false, reason: "unexpected merch page" };
+}
+
 async function fetchMerchStorefront(url) {
   const res = await fetch(url, {
     signal: AbortSignal.timeout(18_000),
@@ -494,13 +511,12 @@ async function fetchMerchStorefront(url) {
   if (!res.ok) {
     return { ok: false, status: res.status, ready: null, error: `HTTP ${res.status}` };
   }
-  const fallback =
-    html.includes("Checkout URL not configured") || html.includes("Shop StoryMagic");
+  const { live, reason } = merchStorefrontLiveFromHtml(html);
   return {
     ok: true,
     status: res.status,
-    ready: !fallback,
-    message: fallback ? "merch fallback CTA" : "storefront ok",
+    ready: live,
+    message: reason,
     error: null,
   };
 }
@@ -548,13 +564,12 @@ function merchProbeFromHtml(statusCode, html, via) {
       via,
     };
   }
-  const fallback =
-    html.includes("Checkout URL not configured") || html.includes("Shop StoryMagic");
+  const { live, reason } = merchStorefrontLiveFromHtml(html);
   return {
     ok: true,
     status: statusCode,
-    ready: !fallback,
-    message: fallback ? "merch fallback CTA" : "storefront ok",
+    ready: live,
+    message: reason,
     error: null,
     via,
   };

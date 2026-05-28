@@ -10,6 +10,8 @@ type Props = {
   label: string;
   placeholder?: string;
   hint?: string;
+  /** Button label after save (service hot-reload hint). */
+  saveLabel?: string;
 };
 
 export function CheckoutSetupEnvField({
@@ -18,6 +20,7 @@ export function CheckoutSetupEnvField({
   label,
   placeholder,
   hint,
+  saveLabel = "Save & reload StoryMagic",
 }: Props) {
   const router = useRouter();
   const [value, setValue] = useState(initialValue);
@@ -60,7 +63,7 @@ export function CheckoutSetupEnvField({
           disabled={pending}
           className="shrink-0 px-4 py-2 rounded-lg text-xs font-semibold border-2 border-accent bg-accent/30 text-accent hover:bg-accent/50 disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Save & reload StoryMagic"}
+          {pending ? "Saving…" : saveLabel}
         </button>
       </div>
       {hint ? <p className="text-[11px] text-muted">{hint}</p> : null}

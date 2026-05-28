@@ -60,11 +60,43 @@ merch_html="$(curl -sS -m 25 -L "https://merch.6cubed.app/" 2>/dev/null || true)
 if [[ -z "$merch_html" ]]; then
   echo "[Merch] unreachable: https://merch.6cubed.app/"
   fail=1
-elif echo "$merch_html" | grep -qE 'Checkout URL not configured|Shop StoryMagic'; then
-  echo "[Merch] NEXT_PUBLIC_MERCH_STORE_URL not active (Buy uses StoryMagic fallback)"
-  fail=1
 else
-  echo "[Merch] storefront URL appears configured"
+  merch_live="$(echo "$merch_html" | python3 -c "
+import sys
+html = sys.stdin.read()
+warmup = 'Warming up merch' in html or ('Starting...' in html and '6³ wordmark' not in html)
+fallback = (
+    'Shop via StoryMagic' in html
+    or 'Support via StoryMagic' in html
+    or 'Checkout URL not configured' in html
+)
+live = 'Open storefront' in html or '6³ wordmark tee' in html
+if warmup:
+    print('warmup')
+elif fallback:
+    print('fallback')
+elif live:
+    print('live')
+else:
+    print('unknown')
+" 2>/dev/null || echo "unknown")"
+  case "$merch_live" in
+    live)
+      echo "[Merch] storefront URL appears configured"
+      ;;
+    fallback)
+      echo "[Merch] NEXT_PUBLIC_MERCH_STORE_URL not active (Buy uses StoryMagic fallback)"
+      fail=1
+      ;;
+    warmup)
+      echo "[Merch] activator warmup (retry probe in ~30s)"
+      fail=1
+      ;;
+    *)
+      echo "[Merch] could not confirm storefront (unexpected page)"
+      fail=1
+      ;;
+  esac
 fi
 
 if [[ "$fail" -ne 0 ]]; then

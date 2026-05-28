@@ -911,6 +911,8 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'checkout', 'description': 'Paid checkout probes (StoryMagic, 1Page, merch)'},
     {'command': 'revenue', 'description': 'Alias for /checkout (Stripe + StoryMagic live status)'},
     {'command': 'waitlist', 'description': 'StoryMagic waitlist count + paid-path status'},
+    {'command': 'firstsale', 'description': 'StoryMagic Payment Link steps (~2 min to first sale)'},
+    {'command': 'merch', 'description': 'Merch catalog + storefront live vs StoryMagic fallback'},
     {'command': 'probe', 'description': 'Fast stack probe (edge + services + checkout)'},
     {'command': 'inbox', 'description': 'CEO inbox: show pending owner messages'},
     {'command': 'done', 'description': 'CEO inbox: mark message done (/done <id>)'},
@@ -3245,6 +3247,37 @@ def _waitlist_text() -> str:
     return "\n".join(lines).strip()
 
 
+def _firstsale_text() -> str:
+    """Telegram /firstsale: CEO checklist for StoryMagic Payment Link."""
+    ok, out = _run_cmd_quick(
+        ["bash", "-lc", "./scripts/query_first_sale_steps.sh"],
+        timeout_sec=28,
+    )
+    if out:
+        return "💰 " + out
+    return (
+        "💰 First sale — StoryMagic\n"
+        "1. https://dashboard.stripe.com/test/payment-links/create ($24.99)\n"
+        "2. https://admin.6cubed.app/checkout-setup → Save\n"
+        "Docs: docs/STORYMAGIC-WEEK-EXPERIMENT.md"
+    )
+
+
+def _merch_text() -> str:
+    """Telegram /merch: catalog + storefront status."""
+    lines: list[str] = ["👕 Merch"]
+    ok, out = _run_cmd_quick(
+        ["bash", "-lc", "./scripts/query_merch_summary.sh"],
+        timeout_sec=25,
+    )
+    if out:
+        lines.append(out)
+    else:
+        lines.append("(could not load merch summary)")
+    lines.append("\nSetup Printful URL: https://admin.6cubed.app/checkout-setup")
+    return "\n".join(lines).strip()
+
+
 def _checkout_text() -> str:
     """Telegram /checkout: revenue probes only (CEO first-sale path)."""
     lines: list[str] = ["💳 Checkout readiness"]
@@ -3819,6 +3852,14 @@ def sender_thread():
 
                 if cmd == '/waitlist':
                     tg_send(cid, _waitlist_text())
+                    continue
+
+                if cmd == '/firstsale':
+                    tg_send(cid, _firstsale_text())
+                    continue
+
+                if cmd == '/merch':
+                    tg_send(cid, _merch_text())
                     continue
 
                 if cmd == '/probe':

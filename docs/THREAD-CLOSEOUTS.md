@@ -121,6 +121,26 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-29 ~00:44 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — `/firstsale` or [Checkout setup](https://admin.6cubed.app/checkout-setup) → Payment Link |
+| Merch storefront | **You** — Printful URL on Checkout setup (`/merch` for catalog) |
+| Ops | **Shipped** — merch probe false-positive fix; inline merch save on Checkout setup; Telegram `/merch` + `/firstsale` |
+
+---
+
+## Merch revenue probe false positive — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `[Merch] storefront URL appears configured` while Buy still routes to StoryMagic (or activator warmup HTML) | **Shipped** — probes match `Shop via StoryMagic`, warmup page, and positive catalog markers |
+
+**Verify:** `./scripts/check-revenue-env-http.sh` → `[Merch] … not active` until Printful URL saved; `./scripts/query_merch_summary.sh` → `fallback` vs `live`.
+
+---
+
 ## Production snapshot (2026-05-28 ~23:45 UTC)
 
 | Highest leverage | Blocker |

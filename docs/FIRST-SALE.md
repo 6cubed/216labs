@@ -7,7 +7,7 @@
 | Rank | App | Why | Blocker |
 |------|-----|-----|---------|
 | 1 | **StoryMagic** | Fixed $24.99; Payment Link **or** full Stripe checkout; hot-reload on admin save | **Fast:** Payment Link on [Checkout setup](https://admin.6cubed.app/checkout-setup). **Full:** `STORYBOOK_STRIPE_SECRET_KEY` + `STORYBOOK_STRIPE_WEBHOOK_SECRET` |
-| 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` points at a live store |
+| 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` — see [`MERCH-FIRST-SALE.md`](MERCH-FIRST-SALE.md) |
 | 3 | **1PageResearch** | €1 report; free tier works today | `ONEPAGE_STRIPE_*` keys |
 
 Until StoryMagic can take money, the funnel is **waitlist** (`POST /api/print-interest`) or **Preorder now** when `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` is set (admin **Leads** + Stripe Payment Link). Admin shows a **First sale** banner (or green preorder banner) until checkout or preorder is live.

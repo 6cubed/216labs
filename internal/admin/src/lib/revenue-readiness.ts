@@ -183,6 +183,27 @@ async function probeCheckoutReady(url: string): Promise<{
   }
 }
 
+/** True when merch Buy buttons hit a real storefront (not StoryMagic fallback or activator warmup). */
+export function merchStorefrontLiveFromHtml(html: string): {
+  live: boolean;
+  reason: string;
+} {
+  if (html.includes("Warming up merch") || (html.includes("Starting...") && !html.includes("6³ wordmark"))) {
+    return { live: false, reason: "activator warmup — retry in ~30s" };
+  }
+  if (
+    html.includes("Shop via StoryMagic") ||
+    html.includes("Support via StoryMagic") ||
+    html.includes("Checkout URL not configured")
+  ) {
+    return { live: false, reason: "Buy uses StoryMagic fallback until NEXT_PUBLIC_MERCH_STORE_URL is set" };
+  }
+  if (html.includes("Open storefront") || html.includes("6³ wordmark tee")) {
+    return { live: true, reason: "Storefront URL appears active" };
+  }
+  return { live: false, reason: "unexpected page — confirm https://merch.6cubed.app loads the catalog" };
+}
+
 async function probeMerchStorefront(url: string): Promise<{
   ok: boolean;
   ready: boolean | null;
@@ -204,15 +225,11 @@ async function probeMerchStorefront(url: string): Promise<{
         error: `HTTP ${res.status}`,
       };
     }
-    const fallback =
-      html.includes("Checkout URL not configured") ||
-      html.includes("Shop StoryMagic");
+    const { live, reason } = merchStorefrontLiveFromHtml(html);
     return {
       ok: true,
-      ready: !fallback,
-      message: fallback
-        ? "Buy uses StoryMagic fallback until NEXT_PUBLIC_MERCH_STORE_URL is set"
-        : "Storefront URL appears active",
+      ready: live,
+      message: reason,
       error: null,
     };
   } catch (e) {

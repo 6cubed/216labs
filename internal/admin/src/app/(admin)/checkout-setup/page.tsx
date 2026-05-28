@@ -7,6 +7,7 @@ import {
   REVENUE_SETUP_LINKS,
   STORYBOOK_CHECKOUT_REQUIRED_KEYS,
   STORYBOOK_STRIPE_WEBHOOK_EVENTS,
+  merchStorefrontLiveFromHtml,
 } from "@/lib/revenue-readiness";
 import { fetchStorybookPrintLeads } from "@/lib/storybook";
 
@@ -65,6 +66,24 @@ async function probeGenericCheckout(url: string): Promise<CheckoutProbe> {
   }
 }
 
+async function probeMerchPage(url: string): Promise<{ ok: boolean; live: boolean; reason: string }> {
+  try {
+    const res = await fetch(url, { cache: "no-store", redirect: "follow" });
+    const html = await res.text();
+    if (!res.ok) {
+      return { ok: false, live: false, reason: `HTTP ${res.status}` };
+    }
+    const { live, reason } = merchStorefrontLiveFromHtml(html);
+    return { ok: true, live, reason };
+  } catch (e) {
+    return {
+      ok: false,
+      live: false,
+      reason: e instanceof Error ? e.message : "fetch failed",
+    };
+  }
+}
+
 export default async function CheckoutSetupPage() {
   const envRows = getAllEnvVars();
   const env = new Map(envRows.map((r) => [r.key, (r.value || "").trim()]));
@@ -82,6 +101,9 @@ export default async function CheckoutSetupPage() {
   const onepageProbe = onepage.probeUrl ? await probeGenericCheckout(onepage.probeUrl) : null;
   const waitlist = await fetchStorybookPrintLeads();
   const needsPaidPath = !liveProbe.ready && !liveProbe.preorderConfigured;
+  const merchApp = REVENUE_APPS.find((a) => a.id === "merch")!;
+  const merchStoreUrl = env.get("NEXT_PUBLIC_MERCH_STORE_URL") || "";
+  const merchProbe = await probeMerchPage(merchApp.publicUrl);
 
   return (
     <section className="animate-fade-in space-y-6">
@@ -361,13 +383,47 @@ export default async function CheckoutSetupPage() {
         ) : null}
       </div>
 
+      <div className="rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/5 p-5 space-y-4">
+        <div className="text-sm font-semibold text-fuchsia-100">Merch storefront (Printful or partner URL)</div>
+        <p className="text-xs text-muted">
+          Catalog lives at{" "}
+          <a className="underline" href={merchApp.publicUrl} target="_blank" rel="noreferrer">
+            merch.6cubed.app
+          </a>
+          . Until a storefront URL is set, Buy buttons route to StoryMagic. Setup guide:{" "}
+          <code className="text-[10px]">docs/MERCH-FIRST-SALE.md</code> in repo.
+        </p>
+        <ul className="text-xs text-muted list-disc list-inside space-y-0.5">
+          <li>6³ wordmark tee · 216Labs stack tee · Production-grade vibes hoodie</li>
+          <li>Cube snapback · sticker sheet · canvas tote · enamel mug · crew socks</li>
+        </ul>
+        <CheckoutSetupEnvField
+          envKey="NEXT_PUBLIC_MERCH_STORE_URL"
+          initialValue={merchStoreUrl}
+          label="Storefront base URL (public)"
+          placeholder="https://your-store.printful.me/"
+          hint="Not a secret. Save recreates the merch container on the droplet."
+          saveLabel="Save & reload merch"
+        />
+        <div className="rounded-lg border border-border px-3 py-2 text-xs">
+          <div className="font-semibold text-muted">Live probe (merch page)</div>
+          {!merchProbe.ok ? (
+            <div className="text-amber-200 mt-1">Could not reach merch: {merchProbe.reason}</div>
+          ) : merchProbe.live ? (
+            <div className="text-emerald-300 mt-1 font-semibold">storefront live — {merchProbe.reason}</div>
+          ) : (
+            <div className="text-amber-200 mt-1">{merchProbe.reason}</div>
+          )}
+        </div>
+      </div>
+
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <div className="text-sm font-semibold">Other revenue apps</div>
         <div className="text-xs text-muted">
           These are also wired for paid checkout, but StoryMagic is the fastest first sale.
         </div>
         <div className="space-y-3">
-          {REVENUE_APPS.filter((a) => a.id !== "storybook").map((app) => {
+          {REVENUE_APPS.filter((a) => a.id !== "storybook" && a.id !== "merch").map((app) => {
             const links = REVENUE_SETUP_LINKS[app.id as keyof typeof REVENUE_SETUP_LINKS];
             const missing = app.keys.filter((k) => !isSet(env, k));
             return (
