@@ -865,6 +865,8 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'now', 'description': 'Quick snapshot: stack, revenue, leads, links'},
     {'command': 'checkout', 'description': 'Paid checkout probes (StoryMagic, 1Page, merch)'},
     {'command': 'probe', 'description': 'Fast stack probe (edge + services + checkout)'},
+    {'command': 'lockdown', 'description': 'Emergency: pause forwarding + disable autoprompt'},
+    {'command': 'panic', 'description': 'Emergency: lockdown + stop bridge process'},
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
     {'command': 'chats', 'description': 'Show all chats across instances'},
     {'command': 'deleteoldchats', 'description': 'Close non-active chat tabs'},
@@ -3195,6 +3197,21 @@ def _probe_text() -> str:
     return f"{prefix}\n{tail}".strip()
 
 
+def _lockdown(muted_file, auto_approve_prompts_file) -> None:
+    """Best-effort emergency lockdown: pause forwarding and disable auto-prompt."""
+    global muted, auto_approve_prompts
+    muted = True
+    try:
+        muted_file.touch()
+    except Exception:
+        pass
+    auto_approve_prompts = False
+    try:
+        auto_approve_prompts_file.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
 def telegram_command_base(text: str) -> str:
     """Telegram groups send /cmd@BotUsername; strip @suffix so routing matches /cmd.
 
@@ -3671,6 +3688,29 @@ def sender_thread():
                     tg_send(cid, resume_msg)
                     print("[sender] Resumed")
                     continue
+
+                if cmd == '/lockdown':
+                    _lockdown(muted_file, auto_approve_prompts_file)
+                    tg_send(
+                        cid,
+                        "🛑 LOCKDOWN\n"
+                        "Forwarding paused + auto-approve prompts disabled.\n"
+                        "Use /play to resume forwarding.\n"
+                        "If you want to stop the bridge entirely, send /panic.",
+                    )
+                    print("[sender] LOCKDOWN")
+                    continue
+
+                if cmd == '/panic':
+                    _lockdown(muted_file, auto_approve_prompts_file)
+                    tg_send(
+                        cid,
+                        "🚨 PANIC\n"
+                        "Lockdown engaged. Stopping the bridge process now.\n"
+                        "To restart: ./scripts/pocket-cursor-bridge.sh",
+                    )
+                    print("[sender] PANIC -> exiting")
+                    raise SystemExit(0)
 
                 if cmd == '/autoprompt' or cmd.startswith('/autoprompt '):
                     parts = text.strip().split(maxsplit=1)
