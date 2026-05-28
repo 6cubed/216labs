@@ -3358,7 +3358,7 @@ def _blogdraft_text() -> str:
         {"slug": slug, "title": title, "excerpt": excerpt, "date": today, "body": body}
     )
     if not ok:
-        return f\"✍️ Blog draft\n{msg}\"
+        return f"✍️ Blog draft\n{msg}"
     return (
         "✍️ Blog draft created\n"
         f"• slug: {slug}\n"
