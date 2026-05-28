@@ -2,6 +2,27 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Droplet cron secret — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `run-droplet-cron.sh` → `CRON_RUNNER_SECRET missing in env_vars` | `./scripts/ensure-droplet-cron-secret.sh` (bootstrap DB + `.env.admin` + recreate cron-runner) |
+| Stale `revenue_env_last` | After secret fix: `./scripts/run-droplet-cron.sh revenue-env-check` |
+
+**Verify:** `grep CRON_RUNNER_SECRET /opt/216labs/.env.admin` on VPS (value not printed). `deploy.sh` now bootstraps empty panel secrets before export.
+
+---
+
+## Production snapshot (2026-05-28 ~02:10 UTC)
+
+| Check | Result |
+|-------|--------|
+| Stack | `heartbeat-stack.sh` OK |
+| Cron ops | **Shipped** — bootstrap on deploy + `ensure-droplet-cron-secret.sh` + `run-droplet-cron` fallbacks |
+| First paid checkout | **BLOCKED (you)** — `STORYBOOK_STRIPE_*` in admin Env |
+
+---
+
 ## Production snapshot (2026-05-28 ~01:40 UTC)
 
 | Assumption (earlier today) | Still true? |

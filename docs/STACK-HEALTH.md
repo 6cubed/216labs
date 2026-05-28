@@ -28,6 +28,17 @@ Telegram alerts only when external probes fail (same pattern as `revenue-env-che
 
 Runs `edge-smoke.sh` from your laptop and, when SSH works, prints the latest `stack_health_last` snapshot from the droplet.
 
+## Cron secret (Run now / manual jobs)
+
+`./scripts/run-droplet-cron.sh <job-id>` needs `CRON_RUNNER_SECRET` in `env_vars` (exported to `.env.admin`). If it is missing:
+
+```bash
+./scripts/ensure-droplet-cron-secret.sh root@46.101.88.197
+./scripts/run-droplet-cron.sh revenue-env-check
+```
+
+`deploy.sh` runs `bootstrap-internal-panel-env.py` before exporting `.env.admin` so new droplets get a secret automatically.
+
 ## Enable / deploy
 
 Job is registered in `cron-runner` on deploy. After changing handlers:

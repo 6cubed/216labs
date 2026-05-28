@@ -781,6 +781,9 @@ fi
 # Write compose env from 216labs.db — authoritative for all non-empty env_vars.
 # Prefer host python export (stdlib); admin-container node export can return partial
 # output when better-sqlite3 paths differ, which breaks CRON_RUNNER_SECRET → cron/difftinder.
+if [ -f 216labs.db ] && [ -f scripts/bootstrap-internal-panel-env.py ] && command -v python3 &>/dev/null; then
+  python3 scripts/bootstrap-internal-panel-env.py 216labs.db >/dev/null 2>&1 || true
+fi
 : > .env.admin
 if [ -f 216labs.db ] && [ -f scripts/export-env-admin-from-db.py ] && command -v python3 &>/dev/null; then
   python3 scripts/export-env-admin-from-db.py 216labs.db > .env.admin

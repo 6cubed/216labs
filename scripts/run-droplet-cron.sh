@@ -28,21 +28,35 @@ JOB_ID="$2"
 CRON_URL="$3"
 SECRET="$(python3 -c "
 import sqlite3, sys
-c = sqlite3.connect(sys.argv[1])
+db = sys.argv[1]
+c = sqlite3.connect(db)
 row = c.execute(
     \"SELECT value FROM env_vars WHERE key = 'CRON_RUNNER_SECRET' AND trim(value) != ''\"
 ).fetchone()
-if not row:
-    raise SystemExit('CRON_RUNNER_SECRET missing in env_vars')
-print(row[0].strip())
-" "$DB")"
-BODY="$(docker exec -e CRON_RUNNER_SECRET="$SECRET" 216labs-cron-runner-1 node -e '
+if row:
+    print(row[0].strip())
+    raise SystemExit(0)
+" "$DB" 2>/dev/null || true)"
+if [ -z "${SECRET:-}" ]; then
+  SECRET="$(docker exec 216labs-cron-runner-1 printenv CRON_RUNNER_SECRET 2>/dev/null | tr -d '\r' || true)"
+fi
+if [ -z "${SECRET:-}" ] && [ -f /opt/216labs/.env.admin ]; then
+  SECRET="$(grep -E '^CRON_RUNNER_SECRET=' /opt/216labs/.env.admin | head -1 | cut -d= -f2- | tr -d '\r' || true)"
+fi
+if [ -z "${SECRET:-}" ]; then
+  echo "CRON_RUNNER_SECRET missing — run: ./scripts/ensure-droplet-cron-secret.sh" >&2
+  exit 1
+fi
+AUTH_HEADER="Authorization: Bearer ${SECRET}"
+BODY="$(docker exec 216labs-cron-runner-1 node -e '
 const job = process.argv[1];
 const base = String(process.argv[2] || "").replace(/\/$/, "");
-const secret = process.env.CRON_RUNNER_SECRET || "";
+const secret = process.argv[3] || "";
+const headers = {};
+if (secret) headers.Authorization = `Bearer ${secret}`;
 fetch(`${base}/run/${job}`, {
   method: "POST",
-  headers: { Authorization: `Bearer ${secret}` },
+  headers,
 })
   .then(async (r) => {
     const t = await r.text();
@@ -53,6 +67,6 @@ fetch(`${base}/run/${job}`, {
     console.error(e.message || e);
     process.exit(1);
   });
-' "$JOB_ID" "$CRON_URL")"
+' "$JOB_ID" "$CRON_URL" "$SECRET")"
 echo "$BODY"
 REMOTE
