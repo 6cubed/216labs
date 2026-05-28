@@ -111,6 +111,25 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## StoryMagic waitlist Telegram nudge — **CLOSED**
+
+| Item | Status |
+|------|--------|
+| CEO ping when waitlist &gt;0 and no paid path | **Shipped** — `revenue-env-check` → `maybeStorymagicRevenueNudge` (12h cooldown) |
+
+**Verify:** With waitlist rows and no preorder keys, next `revenue-env-check` posts to Telegram with Checkout setup link.
+
+---
+
+## Production snapshot (2026-05-28 ~21:25 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| Ops | **Shipped** — Telegram auto-nudge when waitlist exists without payment path |
+
+---
+
 ## Production snapshot (2026-05-28 ~20:50 UTC)
 
 | Highest leverage | Blocker |

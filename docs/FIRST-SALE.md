@@ -16,6 +16,8 @@ Until StoryMagic can take money, the funnel is **waitlist** (`POST /api/print-in
 
 **Admin access:** If you cannot open [admin → Env](https://admin.6cubed.app/env) to paste keys, reset credentials first — **`docs/ADMIN-ACCESS.md`** (`/adminpass reset` in Telegram).
 
+**Telegram nudge:** Cron `revenue-env-check` pings you (max 1×/12h) when StoryMagic has waitlist signups but no Payment Link or Stripe checkout configured.
+
 The fastest path to **paid revenue** is **StoryMagic** (fixed price, one webhook).
 
 ## 1. Stripe (test mode first)

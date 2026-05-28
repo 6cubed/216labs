@@ -625,8 +625,58 @@ async function probeAdminResilient() {
   return { ok: false, status: 0, error: lastErr, via: null };
 }
 
+const STORYMAGIC_REVENUE_NUDGE_KEY = "storymagic_revenue_nudge_last";
+const STORYMAGIC_NUDGE_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+
+async function fetchStorybookWaitlistCount(db) {
+  const token =
+    getEnvVar(db, "STORYBOOK_ADMIN_TOKEN") ||
+    getEnvVar(db, "CRON_RUNNER_SECRET") ||
+    process.env.CRON_RUNNER_SECRET?.trim() ||
+    "";
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  try {
+    const res = await fetch("http://storybook:3000/api/admin/print-interest", {
+      headers,
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return Array.isArray(data) ? data.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Telegram nudge when StoryMagic has waitlist but no checkout/preorder (max 1× / 12h). */
+async function maybeStorymagicRevenueNudge(db, storyRow) {
+  if (!storyRow || storyRow.id !== "storybook") return "";
+  if (storyRow.ready || storyRow.preorderConfigured) return "";
+
+  const last = getCronState(db, STORYMAGIC_REVENUE_NUDGE_KEY);
+  if (last) {
+    const t = Date.parse(last);
+    if (!Number.isNaN(t) && Date.now() - t < STORYMAGIC_NUDGE_COOLDOWN_MS) return "";
+  }
+
+  const count = await fetchStorybookWaitlistCount(db);
+  if (count < 1) return "";
+
+  setCronState(db, STORYMAGIC_REVENUE_NUDGE_KEY, new Date().toISOString());
+  return [
+    "💰 StoryMagic — waitlist without a paid path",
+    "",
+    `${count} famil${count === 1 ? "y" : "ies"} on the print waitlist; checkout and preorder are still off.`,
+    "",
+    "Fastest fix (~2 min): Stripe Payment Link →",
+    "https://admin.6cubed.app/checkout-setup",
+    "",
+    "Leads: https://admin.6cubed.app/leads",
+  ].join("\n");
+}
+
 /**
- * Twice-daily edge + revenue probe; Telegram only when something is broken.
+ * Edge + revenue probe every 4h; Telegram on probe failure or StoryMagic revenue nudge.
  * Persists JSON in cron_runner_state for admin Env page.
  */
 export async function revenueEnvCheck(db) {
@@ -707,7 +757,12 @@ export async function revenueEnvCheck(db) {
   const snapshot = { at, issues, results };
   setCronState(db, REVENUE_PROBE_STATE_KEY, JSON.stringify(snapshot));
 
-  if (issues === 0) return "";
+  if (issues === 0) {
+    const story = results.find((r) => r.id === "storybook");
+    const nudge = await maybeStorymagicRevenueNudge(db, story);
+    if (nudge) return nudge;
+    return "";
+  }
 
   const lines = results
     .filter((r) => !r.ok)
