@@ -117,9 +117,15 @@
       <div class="cta-card">
         <div style="display:flex; flex-direction:column; gap:0.35rem;">
           <div style="font-size:0.95rem; font-weight:800;">Want the printed hardback?</div>
-          <div style="font-size:0.85rem; color: var(--muted);">
+          <div id="storymagicCtaCopy" style="font-size:0.85rem; color: var(--muted);">
             Try a free preview on StoryMagic, or drop your email for launch updates.
           </div>
+        </div>
+        <div id="storymagicPreorderRow" style="display:none; margin-top:0.75rem;">
+          <a id="storymagicPreorderBtn" class="btn" href="#" target="_blank" rel="noopener noreferrer"
+             style="display:inline-flex; width:100%; justify-content:center; box-sizing:border-box;">
+            Preorder hardcover — $24.99
+          </a>
         </div>
         <form id="printLeadForm" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;">
           <input id="printLeadEmail" name="email" type="email" autocomplete="email" required
@@ -220,6 +226,41 @@
         })();
       </script>
     </section>
+
+    <script>
+      (function () {
+        fetch('https://storybook.6cubed.app/api/checkout/ready')
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d || d.ready || !d.preorderConfigured || !d.preorderUrl) return;
+            var row = document.getElementById('storymagicPreorderRow');
+            var btn = document.getElementById('storymagicPreorderBtn');
+            var copy = document.getElementById('storymagicCtaCopy');
+            var badge = document.querySelector('.featured .badge');
+            if (!row || !btn) return;
+            try {
+              var u = new URL(d.preorderUrl);
+              u.searchParams.set('utm_source', 'landing');
+              u.searchParams.set('utm_medium', 'preorder_cta');
+              u.searchParams.set('utm_campaign', '6cubed_home');
+              if (!u.searchParams.has('client_reference_id')) {
+                u.searchParams.set('client_reference_id', 'storymagic_preorder');
+              }
+              btn.href = u.toString();
+            } catch (e) {
+              btn.href = d.preorderUrl;
+            }
+            var price = d.priceUsd || '24.99';
+            btn.textContent = 'Preorder hardcover — $' + price;
+            row.style.display = 'block';
+            if (copy) {
+              copy.textContent = 'Checkout is open — preorder now or try a free AI preview first.';
+            }
+            if (badge) badge.textContent = 'Preorder live';
+          })
+          .catch(function () {});
+      })();
+    </script>
 
     <script>
       (function () {

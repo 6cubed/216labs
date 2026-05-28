@@ -38,7 +38,8 @@ Creative: 15s screen recording — type topic → preview pages → **Preorder n
 ## If it works
 
 1. Switch Payment Link to **live** mode; update URL on Checkout setup.
-2. Optional: add full checkout keys (`STORYBOOK_STRIPE_*`) for in-app Order + admin Orders.
+2. [Admin → Leads](https://admin.6cubed.app/leads) → **Copy preorder blast** to email waitlist (UTMs included).
+3. Optional: add full checkout keys (`STORYBOOK_STRIPE_*`) for in-app Order + admin Orders.
 
 ## If it doesn’t
 

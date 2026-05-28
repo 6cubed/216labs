@@ -1,7 +1,14 @@
 import type { StorybookPrintLead } from "@/lib/storybook";
 import { ExportStorybookWaitlistButton } from "@/components/ExportStorybookWaitlistButton";
+import { WaitlistPreorderBlastButton } from "@/components/WaitlistPreorderBlastButton";
 
-export function StorybookPrintLeadsSection({ leads }: { leads: StorybookPrintLead[] }) {
+type Props = {
+  leads: StorybookPrintLead[];
+  preorderUrl?: string;
+  priceUsd?: string;
+};
+
+export function StorybookPrintLeadsSection({ leads, preorderUrl, priceUsd }: Props) {
   if (leads.length === 0) {
     return null;
   }
@@ -15,9 +22,18 @@ export function StorybookPrintLeadsSection({ leads }: { leads: StorybookPrintLea
         </h2>
         <div className="flex flex-col items-end gap-1">
         <p className="text-xs text-muted max-w-md text-right">
-          Emails captured while Stripe checkout is off — export for a preorder blast email.
+          {preorderUrl
+            ? "Payment Link live — copy a blast email or export CSV for Resend."
+            : "Emails captured while Stripe checkout is off — export for a preorder blast email."}
         </p>
-        <ExportStorybookWaitlistButton leads={leads} />
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <WaitlistPreorderBlastButton
+            leads={leads}
+            preorderUrl={preorderUrl ?? ""}
+            priceUsd={priceUsd}
+          />
+          <ExportStorybookWaitlistButton leads={leads} />
+        </div>
         </div>
       </div>
       <div className="bg-surface border border-border rounded-xl overflow-hidden">

@@ -22,6 +22,8 @@ function safeTrim(s: unknown): string {
 async function storybookPaidPath(): Promise<{
   ready: boolean;
   preorder: boolean;
+  preorderUrl: string;
+  priceUsd: string;
 }> {
   try {
     const res = await fetch("https://storybook.6cubed.app/api/checkout/ready", {
@@ -30,13 +32,17 @@ async function storybookPaidPath(): Promise<{
     const data = (await res.json()) as {
       ready?: boolean;
       preorderConfigured?: boolean;
+      preorderUrl?: string;
+      priceUsd?: string;
     };
     return {
       ready: Boolean(data.ready),
       preorder: Boolean(data.preorderConfigured),
+      preorderUrl: data.preorderUrl?.trim() ?? "",
+      priceUsd: data.priceUsd ?? "24.99",
     };
   } catch {
-    return { ready: false, preorder: false };
+    return { ready: false, preorder: false, preorderUrl: "", priceUsd: "24.99" };
   }
 }
 
@@ -84,9 +90,22 @@ export default async function LeadsPage() {
             . Telegram: <code className="text-[11px]">/waitlist</code>
           </p>
         </div>
+      ) : paidPath.preorder && storybookPrintLeads.length > 0 ? (
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm">
+          <p className="font-semibold text-emerald-100">
+            Preorder live — {storybookPrintLeads.length} waitlist emails ready to blast
+          </p>
+          <p className="text-xs text-muted mt-1">
+            Use <strong>Copy preorder blast</strong> below (includes BCC list + Payment Link with UTMs).
+          </p>
+        </div>
       ) : null}
 
-      <StorybookPrintLeadsSection leads={storybookPrintLeads} />
+      <StorybookPrintLeadsSection
+        leads={storybookPrintLeads}
+        preorderUrl={paidPath.preorderUrl}
+        priceUsd={paidPath.priceUsd}
+      />
 
       {rows.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted">

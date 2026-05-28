@@ -121,6 +121,15 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-29 ~01:55 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — Payment Link on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| Monetization | **Shipped** — landing preorder CTA when link live; admin **Copy preorder blast** on Leads |
+
+---
+
 ## Production snapshot (2026-05-29 ~01:25 UTC)
 
 | Highest leverage | Blocker |
