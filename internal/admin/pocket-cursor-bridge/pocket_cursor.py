@@ -864,6 +864,7 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
 POCKET_CURSOR_COMMANDS = [
     {'command': 'now', 'description': 'Quick snapshot: stack, revenue, leads, links'},
     {'command': 'checkout', 'description': 'Paid checkout probes (StoryMagic, 1Page, merch)'},
+    {'command': 'probe', 'description': 'Fast stack probe (edge + services + checkout)'},
     {'command': 'newchat', 'description': 'Start a new chat in Cursor'},
     {'command': 'chats', 'description': 'Show all chats across instances'},
     {'command': 'deleteoldchats', 'description': 'Close non-active chat tabs'},
@@ -3183,6 +3184,17 @@ def _checkout_text() -> str:
     return "\n".join(lines).strip()
 
 
+def _probe_text() -> str:
+    """Telegram /probe: end-to-end quick stack probe for on-the-move diagnosis."""
+    ok, out = _run_cmd_quick(["bash", "-lc", "./scripts/probe-stack-fast.sh"], timeout_sec=28)
+    if not out:
+        return "🧪 Probe\n(no output)"
+    # Keep it short for Telegram: last ~25 lines usually contain the failures + next action.
+    tail = "\n".join(out.splitlines()[-25:])
+    prefix = "🧪 Probe — OK" if ok else "🧪 Probe — FAIL"
+    return f"{prefix}\n{tail}".strip()
+
+
 def telegram_command_base(text: str) -> str:
     """Telegram groups send /cmd@BotUsername; strip @suffix so routing matches /cmd.
 
@@ -3578,6 +3590,10 @@ def sender_thread():
 
                 if cmd == '/checkout':
                     tg_send(cid, _checkout_text())
+                    continue
+
+                if cmd == '/probe':
+                    tg_send(cid, _probe_text())
                     continue
 
                 if cmd == '/bridges':
