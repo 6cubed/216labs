@@ -1128,14 +1128,16 @@ export async function clientErrorPrune(ctx) {
 /** Daily: nudge the org to publish the CEO-inspired "gospel" blog post. */
 export async function blogDailyGospel(_db, _opts) {
   const iso = new Date().toISOString().slice(0, 16).replace("T", " ");
-  return (
-    "✍️ Daily gospel (blog)\n\n"
-    "Write today’s blog post based on the CEO’s latest direction.\n"
-    "In Pocket Cursor (Telegram): /blogdraft → edit → ship blog.\n\n"
-    "• Blog: https://blog.6cubed.app\n"
-    "• Direction inbox: /inbox\n"
-    `(${iso} UTC)`
-  );
+  return [
+    "✍️ Daily gospel (blog)",
+    "",
+    "Write today’s blog post based on the CEO’s latest direction.",
+    "In Pocket Cursor (Telegram): /blogdraft → edit → ship blog.",
+    "",
+    "• Blog: https://blog.6cubed.app",
+    "• Direction inbox: /inbox",
+    `(${iso} UTC)`,
+  ].join("\n");
 }
 
 export const HANDLERS = {
