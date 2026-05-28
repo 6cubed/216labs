@@ -121,6 +121,15 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-28 ~23:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — run [`STORYMAGIC-WEEK-EXPERIMENT.md`](STORYMAGIC-WEEK-EXPERIMENT.md) (Payment Link first) |
+| Product | **Shipped** — week experiment doc; OG $24.99 copy; `./scripts/open-first-sale.sh` → Payment Links |
+
+---
+
 ## Production snapshot (2026-05-28 ~23:15 UTC)
 
 | Highest leverage | Blocker |

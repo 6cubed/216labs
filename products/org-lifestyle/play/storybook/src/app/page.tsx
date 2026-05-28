@@ -215,7 +215,9 @@ export default function HomePage() {
   async function handleCopyShareLink() {
     if (typeof window === "undefined") return;
     const base = `${window.location.origin}${window.location.pathname}`;
-    const shareUrl = `${base}?utm_source=share&utm_medium=referral&utm_campaign=storymagic_friend`;
+    const shareUrl = bookId
+      ? `${base}?utm_source=share&utm_medium=referral&utm_campaign=storymagic_friend&ref_book=${encodeURIComponent(bookId)}`
+      : `${base}?utm_source=share&utm_medium=referral&utm_campaign=storymagic_friend`;
     try {
       await navigator.clipboard.writeText(shareUrl);
       setShareCopied(true);

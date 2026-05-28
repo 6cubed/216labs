@@ -10,12 +10,12 @@ const siteUrl =
 export const metadata: Metadata = {
   title: "StoryMagic — AI Children's Storybooks",
   description:
-    "Create a personalised, illustrated children's storybook in minutes. Preview free — join the waitlist for printed copies.",
+    "Create a personalised, illustrated children's storybook. Preview free — printed hardcover $24.99 (preorder via Payment Link or waitlist).",
   metadataBase: new URL(siteUrl),
   openGraph: {
-    title: "StoryMagic — A storybook starring your child",
+    title: "StoryMagic — A storybook starring your child ($24.99 hardcover)",
     description:
-      "Type a topic, watch AI illustrate every page, then reserve a hardback print. Perfect gift for ages 3–10.",
+      "Type a topic, watch AI illustrate every page, then preorder or join the waitlist for a premium hardback. Ages 3–10.",
     url: siteUrl,
     siteName: "StoryMagic",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "StoryMagic — AI children's storybooks",
     description:
-      "Personalised illustrated storybooks in minutes. Preview free on storybook.6cubed.app.",
+      "Personalised illustrated storybooks — preview free, $24.99 hardcover preorder on storybook.6cubed.app.",
     images: ["/og.svg"],
   },
 };

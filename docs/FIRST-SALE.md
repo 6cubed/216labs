@@ -12,7 +12,7 @@
 
 Until StoryMagic can take money, the funnel is **waitlist** (`POST /api/print-interest`) or **Preorder now** when `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` is set (admin **Leads** + Stripe Payment Link). Admin shows a **First sale** banner (or green preorder banner) until checkout or preorder is live.
 
-**Paid traffic:** CEO playbook [`STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). GA4: `generate_start`, `story_preview_ready`, `waitlist_signup`, `preorder_click`, `begin_checkout`, `purchase`.
+**Paid traffic:** CEO playbook [`STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). **One-week test:** [`STORYMAGIC-WEEK-EXPERIMENT.md`](STORYMAGIC-WEEK-EXPERIMENT.md). GA4: `generate_start`, `story_preview_ready`, `waitlist_signup`, `preorder_click`, `begin_checkout`, `purchase`.
 
 **Admin access:** If you cannot open [admin → Env](https://admin.6cubed.app/env) to paste keys, reset credentials first — **`docs/ADMIN-ACCESS.md`** (`/adminpass reset` in Telegram).
 

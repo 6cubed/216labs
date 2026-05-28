@@ -123,7 +123,8 @@ print('yes' if age_h > 2 else 'no')
 " 2>/dev/null || echo "no"
   )
   if [[ "$stale_rev" == "yes" ]]; then
-    if "$ROOT/scripts/run-droplet-cron.sh" revenue-env-check >/dev/null 2>&1; then
+    echo "  (revenue_env_last stale — refreshing…)"
+    if "$ROOT/scripts/run-droplet-cron.sh" revenue-env-check 2>&1 | tail -1; then
       echo "  (refreshed stale revenue_env_last via revenue-env-check)"
       CRON_SNAPSHOT=$(
         ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker exec 216labs-cron-runner-1 node -e "
