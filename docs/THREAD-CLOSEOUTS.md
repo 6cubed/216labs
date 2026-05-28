@@ -2,6 +2,17 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Caddy crash after deploy (missing ADMIN_PASSWORD_HASH) — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| Caddy restart loop: `username and password are required` | `scripts/ensure-admin-caddy-hash.py` on deploy (derives hash from `ADMIN_PANEL_PASSWORD`) |
+| Edge `000` / admin unreachable | `./scripts/reset-admin-basic-auth.sh` if hash still missing |
+
+**Verify:** `deploy.sh` logs no Caddy provision error; `docker ps` shows `caddy` Up; `edge-smoke` admin **401**.
+
+---
+
 ## Revenue probe — merch false negative — **CLOSED**
 
 | Symptom | Fix |
@@ -22,6 +33,17 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 **Verify:** `grep CRON_RUNNER_SECRET /opt/216labs/.env.admin` on VPS (value not printed). `deploy.sh` now bootstraps empty panel secrets before export.
 
 **Note:** `heartbeat-stack.sh` reads `cron_runner_state` via **docker exec cron-runner** (WAL-safe). Do not `PRAGMA wal_checkpoint(TRUNCATE)` on the host DB while containers are up.
+
+---
+
+## Production snapshot (2026-05-28 ~03:10 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — paste `STORYBOOK_STRIPE_SECRET_KEY` + `STORYBOOK_STRIPE_WEBHOOK_SECRET` in [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) → Save |
+| Funnel (ads → waitlist) | **Ready** — GA4, UTMs, [Leads](https://admin.6cubed.app/leads), Telegram pings |
+
+**Shipped:** deploy auto-derives Caddy admin hash; StoryMagic **Open Graph** for Meta link previews.
 
 ---
 

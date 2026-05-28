@@ -784,6 +784,9 @@ fi
 if [ -f 216labs.db ] && [ -f scripts/bootstrap-internal-panel-env.py ] && command -v python3 &>/dev/null; then
   python3 scripts/bootstrap-internal-panel-env.py 216labs.db >/dev/null 2>&1 || true
 fi
+if [ -f 216labs.db ] && [ -f scripts/ensure-admin-caddy-hash.py ] && command -v python3 &>/dev/null && command -v docker &>/dev/null; then
+  python3 scripts/ensure-admin-caddy-hash.py 216labs.db >/dev/null 2>&1 || true
+fi
 : > .env.admin
 if [ -f 216labs.db ] && [ -f scripts/export-env-admin-from-db.py ] && command -v python3 &>/dev/null; then
   python3 scripts/export-env-admin-from-db.py 216labs.db > .env.admin
