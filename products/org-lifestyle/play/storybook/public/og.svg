@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="55%" stop-color="#A21CAF"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- soft blobs -->
+  <circle cx="140" cy="120" r="160" fill="rgba(255,255,255,0.12)" filter="url(#soft)"/>
+  <circle cx="1060" cy="520" r="220" fill="rgba(255,255,255,0.10)" filter="url(#soft)"/>
+  <circle cx="980" cy="120" r="130" fill="rgba(255,255,255,0.08)" filter="url(#soft)"/>
+
+  <!-- content -->
+  <g fill="#ffffff">
+    <text x="92" y="215" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="86" font-weight="800">
+      StoryMagic
+    </text>
+    <text x="92" y="290" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="34" font-weight="600" opacity="0.92">
+      A storybook starring your child  illustrated in minutes
+    </text>
+    <text x="92" y="350" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="26" font-weight="500" opacity="0.85">
+      Preview free " Reserve a hardback print " Perfect gift (ages 310)
+    </text>
+  </g>
+
+  <!-- badge -->
+  <g>
+    <rect x="92" y="420" rx="22" ry="22" width="420" height="64" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.22)"/>
+    <text x="122" y="462" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="24" font-weight="700" fill="#ffffff">
+      storybook.6cubed.app
+    </text>
+  </g>
+</svg>
+

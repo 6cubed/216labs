@@ -8,7 +8,7 @@
 
 ---
 
-Link previews (Meta/Twitter) use **Open Graph** metadata on the homepage — title/description are set for parent-focused ad creative.
+Link previews (Meta/Twitter) use **Open Graph** metadata on the homepage — title/description + `og:image` are set for parent-focused ad creative.
 
 ## Before you spend on ads
 

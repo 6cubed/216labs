@@ -20,12 +20,14 @@ export const metadata: Metadata = {
     siteName: "StoryMagic",
     type: "website",
     locale: "en_US",
+    images: [{ url: "/og.svg", width: 1200, height: 630, alt: "StoryMagic" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "StoryMagic — AI children's storybooks",
     description:
       "Personalised illustrated storybooks in minutes. Preview free on storybook.6cubed.app.",
+    images: ["/og.svg"],
   },
 };
 
