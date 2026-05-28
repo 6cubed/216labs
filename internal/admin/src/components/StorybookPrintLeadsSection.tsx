@@ -1,4 +1,5 @@
 import type { StorybookPrintLead } from "@/lib/storybook";
+import { ExportStorybookWaitlistButton } from "@/components/ExportStorybookWaitlistButton";
 
 export function StorybookPrintLeadsSection({ leads }: { leads: StorybookPrintLead[] }) {
   if (leads.length === 0) {
@@ -7,14 +8,17 @@ export function StorybookPrintLeadsSection({ leads }: { leads: StorybookPrintLea
 
   return (
     <section className="animate-fade-in mt-10">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
         <h2 className="text-lg font-semibold text-foreground">
           StoryMagic print leads
           <span className="ml-2 text-sm font-normal text-muted">({leads.length})</span>
         </h2>
+        <div className="flex flex-col items-end gap-1">
         <p className="text-xs text-muted max-w-md text-right">
-          Emails captured while Stripe checkout is off — follow up before enabling pay.
+          Emails captured while Stripe checkout is off — export for a preorder blast email.
         </p>
+        <ExportStorybookWaitlistButton leads={leads} />
+        </div>
       </div>
       <div className="bg-surface border border-border rounded-xl overflow-hidden">
         <table className="w-full">

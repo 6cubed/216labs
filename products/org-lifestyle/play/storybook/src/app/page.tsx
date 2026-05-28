@@ -674,8 +674,20 @@ export default function HomePage() {
                 {interestSent && (
                   <div className="mb-4 space-y-3">
                     <p className="text-story-yellow-light text-sm font-medium">
-                      You&apos;re on the list — we&apos;ll email you when printed checkout is live.
+                      {preorderUrl && checkoutReady !== true
+                        ? "You're on the list — or preorder the hardcover now if you don't want to wait."
+                        : "You're on the list — we'll email you when printed checkout is live."}
                     </p>
+                    {preorderUrl && checkoutReady !== true ? (
+                      <button
+                        type="button"
+                        onClick={() => openPreorder("post_waitlist")}
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-story-purple font-bold text-sm shadow-lg hover:bg-story-yellow-light transition-colors"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        Preorder now — ${bookPriceUsd}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => void handleCopyShareLink()}
