@@ -851,6 +851,14 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="text-center py-8 text-gray-400 text-sm border-t border-gray-100">
         <p>StoryMagic by 216labs · AI-powered children&apos;s storybooks</p>
+        <p className="mt-2">
+          <a
+            href="https://6cubed.app/#storymagic-partners"
+            className="underline hover:text-story-purple transition-colors"
+          >
+            Schools, daycare &amp; bulk orders →
+          </a>
+        </p>
       </footer>
     </main>
   );

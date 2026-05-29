@@ -133,6 +133,15 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-29 ~15:31 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — `STORYBOOK_STRIPE_SECRET_KEY` → Overview **Create Payment Link** |
+| Product | **Shipped** — StoryMagic footer → 6cubed B2B anchor; legacy partner leads recovered on admin Leads |
+
+---
+
 ## Production snapshot (2026-05-29 ~14:00 UTC)
 
 | Highest leverage | Blocker |

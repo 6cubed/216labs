@@ -19,6 +19,13 @@ function safeTrim(s: unknown): string {
   return typeof s === "string" ? s.trim() : "";
 }
 
+/** Includes legacy rows stored as kind=lead before storymagic_partner was allowed. */
+function isStorymagicPartnerLead(r: LeadRow): boolean {
+  if (safeTrim(r.kind) === "storymagic_partner") return true;
+  const msg = safeTrim(r.message).toLowerCase();
+  return msg.includes("storymagic partnership inquiry");
+}
+
 async function storybookPaidPath(): Promise<{
   ready: boolean;
   preorder: boolean;
@@ -63,8 +70,8 @@ export default async function LeadsPage() {
     )
     .all() as LeadRow[];
 
-  const partnerLeads = rows.filter((r) => safeTrim(r.kind) === "storymagic_partner");
-  const ingestLeads = rows.filter((r) => safeTrim(r.kind) !== "storymagic_partner");
+  const partnerLeads = rows.filter(isStorymagicPartnerLead);
+  const ingestLeads = rows.filter((r) => !isStorymagicPartnerLead(r));
 
   return (
     <section className="animate-fade-in space-y-6">
