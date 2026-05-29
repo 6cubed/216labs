@@ -111,12 +111,30 @@ probe_maxlearn() {
   fail=1
 }
 
+probe_kidgift() {
+  local out="$tmpdir/kidgift"
+  local code body
+  code="$(curl -sS -m "$MAX" -o "$out" -w '%{http_code}' "https://kidgift.6cubed.app/healthz" 2>/dev/null || echo "000")"
+  body="$(cat "$out" 2>/dev/null || true)"
+  if [[ "$code" == "200" && "$body" == *'"ok":true'* ]]; then
+    echo "kidgift OK healthz HTTP $code" >>"$tmpdir/summary"
+    return
+  fi
+  if [[ "$code" == "302" || "$code" == "502" || "$code" == "503" || "$code" == "504" ]]; then
+    echo "kidgift WARN cold/down HTTP $code (start: docker compose up -d kidgift)" >>"$tmpdir/summary"
+    return
+  fi
+  echo "kidgift FAIL HTTP $code" >>"$tmpdir/summary"
+  fail=1
+}
+
 echo "=== Edge smoke (timeout ${MAX}s) ==="
 
 probe_http admin "https://admin.6cubed.app/" &
 probe_landing &
 probe_json_ready storybook "https://storybook.6cubed.app/api/checkout/ready" &
 probe_json_ready onepage "https://1pageresearch.6cubed.app/api/checkout/ready" &
+probe_kidgift &
 probe_maxlearn &
 wait
 

@@ -133,6 +133,26 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## KidGift launch — **CLOSED**
+
+| Item | Status |
+|------|--------|
+| App | **Shipped** — [kidgift.6cubed.app](https://kidgift.6cubed.app) gift finder → StoryMagic upsell |
+| Cold start | **Shipped** — `activator_never_evict` + edge-smoke `kidgift` probe (WARN when cold, not fail) |
+
+**Verify:** `curl -sS https://kidgift.6cubed.app/healthz` → `{"ok":true,"service":"kidgift"}`; StoryMagic footer links KidGift.
+
+---
+
+## Production snapshot (2026-05-29 ~20:48 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — `STORYBOOK_STRIPE_SECRET_KEY` → Overview **Create Payment Link** |
+| Product | **Shipped** — KidGift live; StoryMagic ↔ KidGift cross-links; never-evict for funnel |
+
+---
+
 ## Production snapshot (2026-05-29 ~15:31 UTC)
 
 | Highest leverage | Blocker |

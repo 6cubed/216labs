@@ -4,6 +4,7 @@
   "tagline": "AI gift ideas for kids — find the perfect present in seconds",
   "description": "Enter a child's age and interests to get curated gift ideas. Works instantly with built-in picks; optional OpenAI for richer suggestions. Upsells StoryMagic personalised storybooks as the premium gift.",
   "category": "consumer",
+  "activator_never_evict": true,
   "internal_port": 3000,
   "memory_limit": "128m",
   "docker_service": "kidgift",
