@@ -1,6 +1,16 @@
 /** Avoid hanging the admin Orders page when Storybook is down or misconfigured. */
 const STORYBOOK_FETCH_TIMEOUT_MS = 10_000;
 
+/** Ops/test signups — exclude from blast BCC and CEO-facing counts. */
+export function isProductionWaitlistEmail(email: string): boolean {
+  const e = email.trim().toLowerCase();
+  return !e.endsWith("@example.com") && !e.endsWith("@test.com");
+}
+
+export function productionWaitlistLeads(leads: StorybookPrintLead[]): StorybookPrintLead[] {
+  return leads.filter((l) => isProductionWaitlistEmail(l.email));
+}
+
 export interface StorybookPrintLead {
   id: number;
   bookId: string;

@@ -23,7 +23,7 @@ import {
   REVENUE_CRON_STATE_KEY,
   storybookPreorderConfigured,
 } from "@/lib/revenue-readiness";
-import { fetchStorybookPrintLeads } from "@/lib/storybook";
+import { fetchStorybookPrintLeads, productionWaitlistLeads } from "@/lib/storybook";
 import {
   getStackHealthSnapshot,
   stackHealthMetric,
@@ -70,7 +70,21 @@ export default async function DashboardPage() {
   const storyPreorderLive =
     storyPreorder || storyCron?.preorderConfigured === true;
 
-  const storybookWaitlist = await fetchStorybookPrintLeads();
+  const storybookWaitlistAll = await fetchStorybookPrintLeads();
+  const storybookWaitlist = productionWaitlistLeads(storybookWaitlistAll);
+  const storyStripeSecretSet = Boolean(envMap.get("STORYBOOK_STRIPE_SECRET_KEY")?.trim());
+  let storyPublicWaitlist = storybookWaitlist.length;
+  try {
+    const readyRes = await fetch("https://storybook.6cubed.app/api/checkout/ready", {
+      cache: "no-store",
+    });
+    const readyData = (await readyRes.json()) as { waitlistCount?: number };
+    if (typeof readyData.waitlistCount === "number") {
+      storyPublicWaitlist = readyData.waitlistCount;
+    }
+  } catch {
+    /* use filtered admin count */
+  }
   const revenueCron = revenueCronParsed;
   const revenueMetricValue = storyCheckoutReady
     ? "Checkout open"
@@ -103,7 +117,8 @@ export default async function DashboardPage() {
       <RevenueNextStepCard
         checkoutReady={storyCheckoutReady}
         preorderLive={storyPreorderLive}
-        waitlistCount={storybookWaitlist.length}
+        waitlistCount={storyPublicWaitlist}
+        stripeSecretSet={storyStripeSecretSet}
       />
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 animate-fade-in">

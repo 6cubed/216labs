@@ -1,4 +1,5 @@
 import type { StorybookPrintLead } from "@/lib/storybook";
+import { productionWaitlistLeads } from "@/lib/storybook";
 import { ExportStorybookWaitlistButton } from "@/components/ExportStorybookWaitlistButton";
 import { WaitlistPreorderBlastButton } from "@/components/WaitlistPreorderBlastButton";
 import { WaitlistLaunchBlastButton } from "@/components/WaitlistLaunchBlastButton";
@@ -14,12 +15,17 @@ export function StorybookPrintLeadsSection({ leads, preorderUrl, priceUsd }: Pro
     return null;
   }
 
+  const productionLeads = productionWaitlistLeads(leads);
+
   return (
     <section className="animate-fade-in mt-10">
       <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
         <h2 className="text-lg font-semibold text-foreground">
           StoryMagic print leads
-          <span className="ml-2 text-sm font-normal text-muted">({leads.length})</span>
+          <span className="ml-2 text-sm font-normal text-muted">
+            ({productionLeads.length} production
+            {productionLeads.length !== leads.length ? ` · ${leads.length} total` : ""})
+          </span>
         </h2>
         <div className="flex flex-col items-end gap-1">
         <p className="text-xs text-muted max-w-md text-right">
@@ -29,12 +35,12 @@ export function StorybookPrintLeadsSection({ leads, preorderUrl, priceUsd }: Pro
         </p>
         <div className="flex flex-wrap items-center justify-end gap-3">
           <WaitlistPreorderBlastButton
-            leads={leads}
+            leads={productionLeads}
             preorderUrl={preorderUrl ?? ""}
             priceUsd={priceUsd}
           />
           {!preorderUrl ? (
-            <WaitlistLaunchBlastButton leads={leads} priceUsd={priceUsd} />
+            <WaitlistLaunchBlastButton leads={productionLeads} priceUsd={priceUsd} />
           ) : null}
           <ExportStorybookWaitlistButton leads={leads} />
         </div>

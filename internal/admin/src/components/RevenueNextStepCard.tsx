@@ -4,12 +4,15 @@ type Props = {
   checkoutReady: boolean;
   preorderLive: boolean;
   waitlistCount: number;
+  /** STORYBOOK_STRIPE_SECRET_KEY in admin Env — enables one-click Payment Link on Checkout setup. */
+  stripeSecretSet?: boolean;
 };
 
 export function RevenueNextStepCard({
   checkoutReady,
   preorderLive,
   waitlistCount,
+  stripeSecretSet = false,
 }: Props) {
   if (checkoutReady) return null;
 
@@ -60,25 +63,33 @@ export function RevenueNextStepCard({
         Closest to revenue: StoryMagic ($24.99 hardcover)
       </h2>
         <p className="text-xs text-muted mt-1 max-w-3xl">
-        Funnel is live (preview, waitlist, UTMs, landing CTA, referrals). Blocker: paste a Stripe{" "}
-        <strong className="text-foreground/90">Payment Link</strong> (~2 min). Then Telegram{" "}
-        <code className="text-[11px]">/experiment</code> for this week&apos;s tracked post URL.
+        Funnel is live (preview, waitlist, UTMs, landing CTA, referrals). Blocker: enable StoryMagic{" "}
+        <strong className="text-foreground/90">preorder</strong>
+        {stripeSecretSet
+          ? " — open Checkout setup and click Create Payment Link (one click)."
+          : " — add STORYBOOK_STRIPE_SECRET_KEY in Env, then Create Payment Link on Checkout setup (~2 min)."}
+        {" "}Then Telegram <code className="text-[11px]">/experiment</code> for this week&apos;s post.
         {waitlistCount > 0
-          ? ` ${waitlistCount} famil${waitlistCount === 1 ? "y" : "ies"} already on the waitlist.`
+          ? ` ${waitlistCount} production waitlist email${waitlistCount === 1 ? "" : "s"}.`
           : null}
       </p>
       <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold">
+        <Link href="/checkout-setup" className="text-accent hover:underline">
+          {stripeSecretSet ? "Create Payment Link (one click) →" : "Checkout setup →"}
+        </Link>
+        {!stripeSecretSet ? (
+          <Link href="/env" className="text-accent hover:underline">
+            Add Stripe secret →
+          </Link>
+        ) : null}
         <a
           href="https://dashboard.stripe.com/test/payment-links/create"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-accent hover:underline"
+          className="text-muted hover:text-foreground"
         >
-          Create Payment Link →
+          Stripe dashboard
         </a>
-        <Link href="/checkout-setup" className="text-accent hover:underline">
-          Paste on Checkout setup →
-        </Link>
         {waitlistCount > 0 ? (
           <Link href="/leads" className="text-muted hover:text-foreground">
             View waitlist ({waitlistCount})

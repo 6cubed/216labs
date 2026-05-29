@@ -91,10 +91,11 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | Item | Status |
 |------|--------|
 | UI + hot-reload on save | **Shipped** — inline save on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| One-click Payment Link | **Shipped** — when `STORYBOOK_STRIPE_SECRET_KEY` in Env → **Create Payment Link** on Checkout setup |
 | Runtime URL on site | **Shipped** — client reads `preorderUrl` from `/api/checkout/ready` (no image rebuild after Env save) |
-| Money | **You** — create Stripe Payment Link → paste URL → Save |
+| Money | **You** — Env secret + one click **or** manual Stripe link paste |
 
-**Verify:** StoryMagic hero or preview → **Preorder now** opens your link (refresh page after Save).
+**Verify:** `./scripts/check-revenue-env-http.sh` → preorder LIVE; StoryMagic **Preorder now** opens your link.
 
 Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYBOOK_STRIPE_WEBHOOK_SECRET` on same page.
 
@@ -129,6 +130,15 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 | API still `0` while `sqlite3` on volume showed rows | **Shipped** — lazy `DATA_DIR` + `/app/data` fallback, fresh readonly count in `countPrintInterests()`, `force-dynamic` on checkout/ready |
 
 **Verify:** `curl -sS https://storybook.6cubed.app/api/checkout/ready` → `waitlistCount` matches `./scripts/query_storybook_waitlist_summary.sh`; [6cubed.app](https://6cubed.app) shows “N families on the waitlist” when N ≥ 1.
+
+---
+
+## Production snapshot (2026-05-29 ~10:57 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — `STORYBOOK_STRIPE_SECRET_KEY` → [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link** |
+| Product | **Shipped** — Overview/Leads/Telegram `/firstsale` aligned to one-click path; production-only blast counts |
 
 ---
 

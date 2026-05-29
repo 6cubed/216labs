@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAllEnvVars } from "@/lib/db";
-import { fetchStorybookPrintLeads } from "@/lib/storybook";
+import { fetchStorybookPrintLeads, productionWaitlistLeads } from "@/lib/storybook";
 import {
   getRevenueReadiness,
   STORYBOOK_CHECKOUT_REQUIRED_KEYS,
@@ -14,7 +14,9 @@ export async function FirstSaleBanner() {
 
   const envMap = new Map(envRows.map((r) => [r.key, (r.value ?? "").trim()]));
   const preorderLive = storybookPreorderConfigured(envMap);
-  const waitlist = await fetchStorybookPrintLeads();
+  const waitlistAll = await fetchStorybookPrintLeads();
+  const waitlist = productionWaitlistLeads(waitlistAll);
+  const stripeSecretSet = Boolean(envMap.get("STORYBOOK_STRIPE_SECRET_KEY")?.trim());
   const story = data.apps.find((a) => a.id === "storybook");
   const missing = STORYBOOK_CHECKOUT_REQUIRED_KEYS.filter(
     (key) => !story?.keys.find((k) => k.key === key)?.set
@@ -80,11 +82,34 @@ export async function FirstSaleBanner() {
         ) : null}
       </p>
       <p className="text-xs text-muted mt-1 max-w-3xl">
-        Fastest path: Stripe Payment Link (~2 min) on{" "}
-        <Link href="/checkout-setup" className="underline text-accent">
-          Checkout setup
-        </Link>
-        . Telegram: <code className="text-[11px]">/firstsale</code>
+        {stripeSecretSet ? (
+          <>
+            Fastest path:{" "}
+            <Link href="/checkout-setup" className="underline text-accent">
+              Checkout setup
+            </Link>{" "}
+            → <strong>Create Payment Link ($24.99)</strong> (one click).
+          </>
+        ) : (
+          <>
+            Fastest path: add <code className="text-[11px]">STORYBOOK_STRIPE_SECRET_KEY</code> in{" "}
+            <Link href="/env" className="underline text-accent">
+              Env
+            </Link>
+            , then one-click Payment Link on{" "}
+            <Link href="/checkout-setup" className="underline text-accent">
+              Checkout setup
+            </Link>
+            .
+          </>
+        )}{" "}
+        Telegram: <code className="text-[11px]">/firstsale</code>
+        {waitlistAll.length > waitlist.length ? (
+          <span className="text-muted/80">
+            {" "}
+            ({waitlistAll.length} rows in DB incl. test emails)
+          </span>
+        ) : null}
       </p>
       {missing.length > 0 && (
         <p className="text-[11px] font-mono text-amber-200/80 mt-2">
