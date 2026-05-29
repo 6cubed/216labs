@@ -912,6 +912,7 @@ POCKET_CURSOR_COMMANDS = [
     {'command': 'revenue', 'description': 'Alias for /checkout (Stripe + StoryMagic live status)'},
     {'command': 'waitlist', 'description': 'StoryMagic waitlist count + paid-path status'},
     {'command': 'firstsale', 'description': 'StoryMagic Payment Link steps (~2 min to first sale)'},
+    {'command': 'experiment', 'description': 'Week revenue test: post URL + checklist (StoryMagic)'},
     {'command': 'merch', 'description': 'Merch catalog + storefront live vs StoryMagic fallback'},
     {'command': 'probe', 'description': 'Fast stack probe (edge + services + checkout)'},
     {'command': 'inbox', 'description': 'CEO inbox: show pending owner messages'},
@@ -3220,7 +3221,7 @@ def _now_text() -> str:
     lines.append("• Admin todos: https://admin.6cubed.app/todos")
     lines.append("• Admin leads: https://admin.6cubed.app/leads")
     lines.append("• Checkout setup: https://admin.6cubed.app/checkout-setup")
-    lines.append("• Telegram: /firstsale /merch /waitlist /checkout")
+    lines.append("• Telegram: /firstsale /experiment /merch /waitlist /checkout")
     lines.append("• Homepage: https://6cubed.app/")
 
     return "\n".join(lines).strip()
@@ -3262,6 +3263,17 @@ def _firstsale_text() -> str:
         "2. https://admin.6cubed.app/checkout-setup → Save\n"
         "Docs: docs/STORYMAGIC-WEEK-EXPERIMENT.md"
     )
+
+
+def _experiment_text() -> str:
+    """Telegram /experiment: week revenue test launcher."""
+    ok, out = _run_cmd_quick(
+        ["bash", "-lc", "./scripts/storymagic-week-experiment.sh"],
+        timeout_sec=35,
+    )
+    if out:
+        return "🧪 " + out
+    return "🧪 Week experiment\nRun: ./scripts/storymagic-week-experiment.sh"
 
 
 def _merch_text() -> str:
@@ -3851,6 +3863,10 @@ def sender_thread():
 
                 if cmd == '/firstsale':
                     tg_send(cid, _firstsale_text())
+                    continue
+
+                if cmd == '/experiment':
+                    tg_send(cid, _experiment_text())
                     continue
 
                 if cmd == '/merch':

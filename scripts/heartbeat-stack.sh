@@ -91,7 +91,10 @@ for key in ('stack_health_last', 'revenue_env_last'):
                 elif pre:
                     print(f'    {rid}: preorder live')
                 elif r.get('ok'):
-                    print(f'    {rid}: checkout not ready')
+                    extra = ''
+                    if rid == 'storybook' and r.get('waitlistCount') is not None:
+                        extra = ' · waitlist ' + str(r.get('waitlistCount'))
+                    print(f'    {rid}: checkout not ready' + extra)
                 else:
                     print(f\"    {rid}: {r.get('error') or r.get('status')}\")
             elif not r.get('ok'):
@@ -157,7 +160,10 @@ for r in d.get('results') or []:
         elif pre:
             print(f'    {rid}: preorder live')
         elif r.get('ok'):
-            print(f'    {rid}: checkout not ready')
+            extra = ''
+            if rid == 'storybook' and r.get('waitlistCount') is not None:
+                extra = ' · waitlist ' + str(r.get('waitlistCount'))
+            print(f'    {rid}: checkout not ready' + extra)
 " 2>/dev/null || true
       fi
     fi

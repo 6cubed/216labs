@@ -470,6 +470,8 @@ async function fetchCheckoutReady(url) {
     status: res.status,
     ready: Boolean(data.ready),
     preorderConfigured: Boolean(data.preorderConfigured),
+    waitlistCount:
+      typeof data.waitlistCount === "number" ? data.waitlistCount : undefined,
     message: typeof data.message === "string" ? data.message : null,
     error: null,
   };
@@ -736,6 +738,7 @@ export async function revenueEnvCheck(db) {
         ready: p.ready,
         preorderConfigured:
           id === "storybook" ? Boolean(p.preorderConfigured) : undefined,
+        waitlistCount: id === "storybook" ? p.waitlistCount : undefined,
         message: p.message,
         error: p.error,
       };

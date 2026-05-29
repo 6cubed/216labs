@@ -59,10 +59,10 @@ export function RevenueNextStepCard({
       <h2 className="text-sm font-semibold text-amber-100">
         Closest to revenue: StoryMagic ($24.99 hardcover)
       </h2>
-      <p className="text-xs text-muted mt-1 max-w-3xl">
-        Funnel is live (preview, waitlist, UTMs, landing CTA). Blocker: paste a Stripe{" "}
-        <strong className="text-foreground/90">Payment Link</strong> (~2 min) — no webhook keys
-        required to take the first payment.
+        <p className="text-xs text-muted mt-1 max-w-3xl">
+        Funnel is live (preview, waitlist, UTMs, landing CTA, referrals). Blocker: paste a Stripe{" "}
+        <strong className="text-foreground/90">Payment Link</strong> (~2 min). Then Telegram{" "}
+        <code className="text-[11px]">/experiment</code> for this week&apos;s tracked post URL.
         {waitlistCount > 0
           ? ` ${waitlistCount} famil${waitlistCount === 1 ? "y" : "ies"} already on the waitlist.`
           : null}

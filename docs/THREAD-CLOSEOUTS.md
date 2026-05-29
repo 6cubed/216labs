@@ -121,6 +121,27 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## StoryMagic week experiment — **BLOCKED (CEO)**
+
+| Step | Action |
+|------|--------|
+| 1 | `./scripts/storymagic-week-experiment.sh` or Telegram **`/experiment`** |
+| 2 | Payment Link on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| 3 | Post tracked URL · share links after previews |
+
+**Verify:** `Paid path: preorder live` from `./scripts/query_storybook_waitlist_summary.sh`; heartbeat shows `storybook: preorder live` or waitlist count.
+
+---
+
+## Production snapshot (2026-05-29 ~03:53 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Week experiment** | **You** — `/experiment` then Payment Link |
+| Ops | **Shipped** — cron + heartbeat show StoryMagic waitlist count; Telegram `/experiment` |
+
+---
+
 ## Production snapshot (2026-05-29 ~03:23 UTC)
 
 | Highest leverage | Blocker |
