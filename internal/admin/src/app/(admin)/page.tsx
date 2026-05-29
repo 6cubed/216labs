@@ -75,14 +75,21 @@ export default async function DashboardPage() {
   const storybookWaitlist = productionWaitlistLeads(storybookWaitlistAll);
   const storyStripeSecretSet = Boolean(envMap.get("STORYBOOK_STRIPE_SECRET_KEY")?.trim());
   let storyPublicWaitlist = storybookWaitlist.length;
+  let storyPriceUsd = "24.99";
   try {
     const readyRes = await fetch("https://storybook.6cubed.app/api/checkout/ready", {
       cache: "no-store",
     });
-    const readyData = (await readyRes.json()) as { waitlistCount?: number };
+    const readyData = (await readyRes.json()) as {
+      waitlistCount?: number;
+      priceUsd?: string;
+      preorderConfigured?: boolean;
+    };
     if (typeof readyData.waitlistCount === "number") {
       storyPublicWaitlist = readyData.waitlistCount;
     }
+    if (readyData.priceUsd) storyPriceUsd = readyData.priceUsd;
+    if (readyData.preorderConfigured) storyPreorderLive = true;
   } catch {
     /* use filtered admin count */
   }
