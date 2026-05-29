@@ -167,6 +167,23 @@
     <section class="section">
       <h2>Hire us / get updates</h2>
       <div class="links" style="gap:0.75rem">
+        <div style="background: var(--surface); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius); padding: 1rem;">
+          <div style="display:flex; flex-direction:column; gap:0.6rem;">
+            <div style="font-size:0.95rem; color: var(--text); font-weight:600;">StoryMagic for schools, studios, or wholesale</div>
+            <div style="font-size:0.85rem; color: var(--muted);">
+              B2B / partnership inquiry — we&apos;ll follow up on bulk print, licensing, or co-marketing.
+            </div>
+            <form id="storymagicPartnerForm" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.25rem;">
+              <input id="partnerEmail" name="email" type="email" autocomplete="email" required
+                     placeholder="you@school.com"
+                     style="width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid var(--border); background:#0f0f13; color:var(--text); outline:none;" />
+              <textarea id="partnerMsg" name="message" rows="2" placeholder="Organization, volume, timeline (optional)"
+                        style="width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid var(--border); background:#0f0f13; color:var(--text); outline:none; resize:vertical;"></textarea>
+              <button id="partnerBtn" type="submit" class="btn" style="width:fit-content;">Send partnership inquiry</button>
+              <div id="partnerStatus" style="font-size:0.85rem; color: var(--muted);"></div>
+            </form>
+          </div>
+        </div>
         <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
           <div style="display:flex; flex-direction:column; gap:0.6rem;">
             <div style="font-size:0.95rem; color: var(--text); font-weight:600;">Want a fast build, a fix, or a launch?</div>
@@ -221,6 +238,51 @@
               const data = await res.json().catch(() => ({}));
               if (!res.ok) throw new Error(data && data.error ? data.error : ('HTTP ' + res.status));
               setStatus('Sent. We’ll reply soon.', true);
+              form.reset();
+            } catch (err) {
+              setStatus('Failed: ' + (err && err.message ? err.message : 'unknown error'), false);
+            } finally {
+              btn.disabled = false;
+              btn.style.opacity = '1';
+            }
+          });
+        })();
+      </script>
+      <script>
+        (function () {
+          const form = document.getElementById('storymagicPartnerForm');
+          const emailEl = document.getElementById('partnerEmail');
+          const msgEl = document.getElementById('partnerMsg');
+          const btn = document.getElementById('partnerBtn');
+          const statusEl = document.getElementById('partnerStatus');
+          if (!form || !emailEl || !btn || !statusEl) return;
+
+          function setStatus(text, ok) {
+            statusEl.textContent = text || '';
+            statusEl.style.color = ok ? '#6ee7b7' : 'var(--muted)';
+          }
+
+          form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const email = (emailEl.value || '').trim();
+            const message = (msgEl && msgEl.value ? msgEl.value : '').trim();
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            setStatus('Sending…', true);
+            try {
+              const res = await fetch('https://admin.6cubed.app/api/public/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email,
+                  message: message || 'StoryMagic partnership inquiry from 6cubed.app',
+                  kind: 'storymagic_partner',
+                  source_app_id: 'landing'
+                })
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(data && data.error ? data.error : ('HTTP ' + res.status));
+              setStatus('Sent — we’ll reply about StoryMagic partnerships.', true);
               form.reset();
             } catch (err) {
               setStatus('Failed: ' + (err && err.message ? err.message : 'unknown error'), false);

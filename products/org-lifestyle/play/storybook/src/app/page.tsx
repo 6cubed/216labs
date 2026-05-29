@@ -313,7 +313,7 @@ export default function HomePage() {
     if (!preorderUrl) return;
     const utm = getStoredUtm();
     trackStorybookEvent("preorder_click", { book_id: bookId ?? "", placement, ...utm });
-    const url = appendUtmToPaymentUrl(preorderUrl, utm);
+    const url = appendUtmToPaymentUrl(preorderUrl, utm, bookId ?? undefined);
     window.open(url, "_blank", "noopener,noreferrer");
   }
 

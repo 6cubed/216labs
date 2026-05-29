@@ -75,7 +75,11 @@ export function formatUtmForMessage(utm: UtmFields): string {
 }
 
 /** Append session UTMs to Stripe Payment Link URLs for dashboard attribution. */
-export function appendUtmToPaymentUrl(baseUrl: string, utm: UtmFields): string {
+export function appendUtmToPaymentUrl(
+  baseUrl: string,
+  utm: UtmFields,
+  bookId?: string
+): string {
   const raw = baseUrl.trim();
   if (!raw) return raw;
   try {
@@ -83,7 +87,10 @@ export function appendUtmToPaymentUrl(baseUrl: string, utm: UtmFields): string {
     if (utm.utm_source) u.searchParams.set("utm_source", utm.utm_source);
     if (utm.utm_medium) u.searchParams.set("utm_medium", utm.utm_medium);
     if (utm.utm_campaign) u.searchParams.set("utm_campaign", utm.utm_campaign);
-    u.searchParams.set("client_reference_id", "storymagic_preorder");
+    const ref = bookId?.trim()
+      ? `storymagic_${bookId.trim().slice(0, 40)}`
+      : "storymagic_preorder";
+    u.searchParams.set("client_reference_id", ref);
     return u.toString();
   } catch {
     return raw;

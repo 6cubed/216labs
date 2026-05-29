@@ -7,6 +7,7 @@ import { getUnifiedDeploymentFeed } from "@/lib/deployment-feed";
 import { AppsOverviewTable } from "@/components/AppsOverviewTable";
 import { ProjectOverviewBanner } from "@/components/ProjectOverviewBanner";
 import { RevenueNextStepCard } from "@/components/RevenueNextStepCard";
+import { CreateStorybookPaymentLinkButton } from "@/components/CreateStorybookPaymentLinkButton";
 import { getRunningServices } from "@/lib/docker";
 import {
   getErrorSignalCount24h,
@@ -67,7 +68,7 @@ export default async function DashboardPage() {
   );
   const storyCron = revenueCronParsed?.results.find((r) => r.id === "storybook");
   const storyCheckoutReady = storyCron?.ready === true;
-  const storyPreorderLive =
+  let storyPreorderLive =
     storyPreorder || storyCron?.preorderConfigured === true;
 
   const storybookWaitlistAll = await fetchStorybookPrintLeads();
@@ -120,6 +121,15 @@ export default async function DashboardPage() {
         waitlistCount={storyPublicWaitlist}
         stripeSecretSet={storyStripeSecretSet}
       />
+
+      {!storyCheckoutReady && !storyPreorderLive && storyStripeSecretSet ? (
+        <div className="mb-6">
+          <CreateStorybookPaymentLinkButton
+            priceUsd={storyPriceUsd}
+            waitlistFamilies={storyPublicWaitlist}
+          />
+        </div>
+      ) : null}
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 animate-fade-in">
         <MetricCard
