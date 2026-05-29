@@ -63,13 +63,16 @@ export default async function LeadsPage() {
     )
     .all() as LeadRow[];
 
+  const partnerLeads = rows.filter((r) => safeTrim(r.kind) === "storymagic_partner");
+  const ingestLeads = rows.filter((r) => safeTrim(r.kind) !== "storymagic_partner");
+
   return (
     <section className="animate-fade-in space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Leads</h1>
           <p className="text-sm text-muted">
-            Hire form, StoryMagic waitlist (with ad UTMs), and other public funnels.
+            Hire form, StoryMagic B2B partnerships (6cubed.app), waitlist UTMs, and other funnels.
           </p>
         </div>
         <div className="text-xs text-muted">
@@ -107,15 +110,57 @@ export default async function LeadsPage() {
         priceUsd={paidPath.priceUsd}
       />
 
+      {partnerLeads.length > 0 ? (
+        <div className="rounded-xl border border-violet-500/40 bg-violet-500/10 overflow-hidden">
+          <div className="px-4 py-3 border-b border-violet-500/30">
+            <p className="font-semibold text-violet-100">
+              StoryMagic B2B — {partnerLeads.length} partnership{" "}
+              {partnerLeads.length === 1 ? "inquiry" : "inquiries"}
+            </p>
+            <p className="text-xs text-muted mt-1">
+              From{" "}
+              <a className="underline" href="https://6cubed.app/">
+                6cubed.app
+              </a>{" "}
+              daycare / school / bulk print form.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-[700px] w-full text-sm">
+              <thead className="bg-muted/20">
+                <tr className="text-left">
+                  <th className="px-4 py-2 font-semibold">When</th>
+                  <th className="px-4 py-2 font-semibold">Email</th>
+                  <th className="px-4 py-2 font-semibold">Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {partnerLeads.map((r) => (
+                  <tr key={r.id} className="border-t border-violet-500/20">
+                    <td className="px-4 py-2 whitespace-nowrap text-muted">{safeTrim(r.created_at)}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <a className="underline" href={`mailto:${encodeURIComponent(safeTrim(r.email))}`}>
+                        {safeTrim(r.email)}
+                      </a>
+                    </td>
+                    <td className="px-4 py-2">{safeTrim(r.message) || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
       {rows.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted">
-          No ingest leads yet. StoryMagic waitlist may still appear above. Hire form:{" "}
+          No ingest leads yet. StoryMagic waitlist may still appear above. Forms on{" "}
           <a className="underline" href="https://6cubed.app/">
             6cubed.app
-          </a>
-          .
+          </a>{" "}
+          (hire + B2B partnership).
         </div>
-      ) : (
+      ) : ingestLeads.length === 0 ? null : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-[900px] w-full text-sm">
@@ -129,7 +174,7 @@ export default async function LeadsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => {
+                {ingestLeads.map((r) => {
                   const email = safeTrim(r.email);
                   const message = safeTrim(r.message);
                   const when = safeTrim(r.created_at);

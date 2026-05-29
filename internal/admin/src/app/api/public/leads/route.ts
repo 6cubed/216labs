@@ -96,7 +96,9 @@ export async function POST(req: NextRequest) {
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const message = typeof body.message === "string" ? body.message.trim() : "";
   const kindRaw = typeof body.kind === "string" ? body.kind.trim().toLowerCase() : "lead";
-  const kind = ["lead", "hire", "merch", "other"].includes(kindRaw) ? kindRaw : "lead";
+  const kind = ["lead", "hire", "merch", "storymagic_partner", "other"].includes(kindRaw)
+    ? kindRaw
+    : "lead";
   const sourceApp =
     typeof body.source_app_id === "string" ? body.source_app_id.trim().toLowerCase() : "landing";
 

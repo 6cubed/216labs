@@ -133,6 +133,25 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-29 ~14:00 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — `STORYBOOK_STRIPE_SECRET_KEY` → Overview or Checkout setup → **Create Payment Link** |
+| Product | **Shipped** — B2B `storymagic_partner` kind preserved in leads API + dedicated section on admin Leads |
+
+---
+
+## StoryMagic B2B partner kind dropped — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| 6cubed.app partnership form sent `kind: storymagic_partner` but API coerced unknown kinds to `lead` | **Shipped** — allow `storymagic_partner` in `POST /api/public/leads`; admin Leads shows B2B section |
+
+**Verify:** Submit partnership form on [6cubed.app](https://6cubed.app/) → [admin Leads](https://admin.6cubed.app/leads) shows row under **StoryMagic B2B** with kind `storymagic_partner`.
+
+---
+
 ## Production snapshot (2026-05-29 ~11:59 UTC)
 
 | Highest leverage | Blocker |
