@@ -121,6 +121,15 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-29 ~03:23 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Week experiment** | **You** — `./scripts/storymagic-week-experiment.sh` then Payment Link on Checkout setup |
+| Product | **Shipped** — referral landing (`ref_book` banner + UTMs); week experiment launcher script |
+
+---
+
 ## Production snapshot (2026-05-29 ~02:53 UTC)
 
 | Highest leverage | Blocker |

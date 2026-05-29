@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import BookViewer, { BookPage } from "@/components/BookViewer";
 import { trackStorybookEvent } from "@/lib/analytics";
-import { appendUtmToPaymentUrl, captureUtmFromUrl, getStoredUtm } from "@/lib/utm";
+import { appendUtmToPaymentUrl, captureUtmFromUrl, getStoredRefBook, getStoredUtm } from "@/lib/utm";
 
 type Step = "form" | "generating" | "preview";
 
@@ -54,9 +54,15 @@ export default function HomePage() {
   const [shareCopied, setShareCopied] = useState(false);
   const [preorderUrl, setPreorderUrl] = useState("");
   const [waitlistCount, setWaitlistCount] = useState(0);
+  const [friendReferral, setFriendReferral] = useState(false);
 
   useEffect(() => {
     captureUtmFromUrl();
+    const ref = getStoredRefBook();
+    if (ref) {
+      setFriendReferral(true);
+      trackStorybookEvent("referral_landing", { ref_book: ref });
+    }
   }, []);
 
   useEffect(() => {
@@ -335,6 +341,11 @@ export default function HomePage() {
 
       {/* ─── Main Content ────────────────────────────────────────── */}
       <div className="max-w-3xl mx-auto px-6 py-12">
+        {friendReferral && step === "form" ? (
+          <div className="mb-6 rounded-2xl border border-story-purple/30 bg-story-purple-light/80 px-4 py-3 text-center text-sm text-story-dark">
+            A friend shared their StoryMagic book — create a personalised story for your child below.
+          </div>
+        ) : null}
         <AnimatePresence mode="wait">
           {/* ── Form ── */}
           {step === "form" && (

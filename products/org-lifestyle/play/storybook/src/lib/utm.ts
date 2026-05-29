@@ -7,6 +7,7 @@ export type UtmFields = {
 };
 
 const STORAGE_KEY = "storybook_utm_v1";
+const REF_BOOK_KEY = "storybook_ref_book_v1";
 const MAX_LEN = 120;
 
 function trimUtm(value: string | null): string | undefined {
@@ -19,12 +20,21 @@ export function captureUtmFromUrl(): void {
   if (typeof window === "undefined") return;
   try {
     const params = new URLSearchParams(window.location.search);
+    const refBook = trimUtm(params.get("ref_book"));
+    if (refBook) {
+      sessionStorage.setItem(REF_BOOK_KEY, refBook);
+    }
     const next: UtmFields = {
       utm_source: trimUtm(params.get("utm_source")),
       utm_medium: trimUtm(params.get("utm_medium")),
       utm_campaign: trimUtm(params.get("utm_campaign")),
     };
-    if (!next.utm_source && !next.utm_medium && !next.utm_campaign) return;
+    if (refBook && !next.utm_source && !next.utm_medium && !next.utm_campaign) {
+      next.utm_source = "share";
+      next.utm_medium = "referral";
+      next.utm_campaign = "storymagic_friend";
+    }
+    if (!next.utm_source && !next.utm_medium && !next.utm_campaign && !refBook) return;
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
     /* ignore */
@@ -44,6 +54,15 @@ export function getStoredUtm(): UtmFields {
     };
   } catch {
     return {};
+  }
+}
+
+export function getStoredRefBook(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    return trimUtm(sessionStorage.getItem(REF_BOOK_KEY));
+  } catch {
+    return undefined;
   }
 }
 

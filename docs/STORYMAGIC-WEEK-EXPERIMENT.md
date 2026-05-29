@@ -11,6 +11,8 @@ Run this when engineering is done and you only need **one Payment Link** to test
 
 Or run locally: `./scripts/open-first-sale.sh` (opens Stripe + Checkout setup).
 
+**One command:** `./scripts/storymagic-week-experiment.sh` — prints today’s tracked post URL + revenue status (copies URL on macOS).
+
 ## Traffic (pick one channel)
 
 Post once with UTM:
@@ -19,7 +21,7 @@ Post once with UTM:
 https://storybook.6cubed.app?utm_source=meta&utm_medium=organic&utm_campaign=week_experiment_may28
 ```
 
-Creative: 15s screen recording — type topic → preview pages → **Preorder now** CTA.
+Creative: 15s screen recording — type topic → preview pages → **Preorder now** CTA. After preview, **Copy link to share** turns friends into referral traffic (`ref_book` + share UTMs).
 
 ## Measure (all week)
 
