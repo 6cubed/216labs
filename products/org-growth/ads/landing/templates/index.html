@@ -137,6 +137,12 @@
             <div id="printLeadStatus" style="font-size:0.85rem; color: var(--muted); align-self:center;"></div>
           </div>
         </form>
+        <div id="printLeadShareRow" style="display:none; margin-top:0.65rem; flex-wrap:wrap; gap:0.5rem; align-items:center;">
+          <span style="font-size:0.8rem; color: var(--muted);">Know another parent?</span>
+          <button type="button" id="printLeadShareBtn" class="btn secondary" style="font-size:0.8rem; padding:0.45rem 0.75rem;">
+            Share StoryMagic
+          </button>
+        </div>
       </div>
       <div class="links">
         <a href="https://merch.6cubed.app?utm_source=landing&amp;utm_medium=shop" target="_blank" rel="noopener noreferrer">
@@ -320,6 +326,8 @@
             if (!res.ok) throw new Error(data && data.error ? data.error : ('HTTP ' + res.status));
             setStatus('Saved — we’ll email you when checkout opens.', true);
             if (typeof window.__landingWaitlistBump === 'function') window.__landingWaitlistBump();
+            var shareRow = document.getElementById('printLeadShareRow');
+            if (shareRow) shareRow.style.display = 'flex';
             form.reset();
           } catch (err) {
             setStatus('Failed: ' + (err && err.message ? err.message : 'unknown error'), false);
@@ -328,6 +336,21 @@
             btn.style.opacity = '1';
           }
         });
+
+        var shareBtn = document.getElementById('printLeadShareBtn');
+        if (shareBtn) {
+          shareBtn.addEventListener('click', function () {
+            var url = 'https://storybook.6cubed.app?utm_source=landing&utm_medium=share&utm_campaign=6cubed_home';
+            var text = 'StoryMagic — free AI preview of a personalised kids book ($24.99 hardcover)';
+            if (navigator.share) {
+              navigator.share({ title: 'StoryMagic', text: text, url: url }).catch(function () {});
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(url).then(function () {
+                setStatus('Link copied — share with a friend.', true);
+              });
+            }
+          });
+        }
       })();
     </script>
 

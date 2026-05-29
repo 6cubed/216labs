@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { saveEnvVar } from "@/app/actions";
 
@@ -12,6 +13,8 @@ type Props = {
   hint?: string;
   /** Button label after save (service hot-reload hint). */
   saveLabel?: string;
+  /** Shown after preorder URL save — blast nudge. */
+  waitlistFamilies?: number;
 };
 
 export function CheckoutSetupEnvField({
@@ -21,6 +24,7 @@ export function CheckoutSetupEnvField({
   placeholder,
   hint,
   saveLabel = "Save & reload StoryMagic",
+  waitlistFamilies = 0,
 }: Props) {
   const router = useRouter();
   const [value, setValue] = useState(initialValue);
@@ -70,6 +74,35 @@ export function CheckoutSetupEnvField({
       {message ? (
         <p className={`text-[11px] ${message.ok ? "text-emerald-300" : "text-red-400"}`}>
           {message.text}
+        </p>
+      ) : null}
+      {message?.ok &&
+      envKey === "NEXT_PUBLIC_STORYBOOK_PREORDER_URL" &&
+      value.trim() ? (
+        <p className="text-[11px] text-emerald-200">
+          Preorder is live.{" "}
+          {waitlistFamilies > 0 ? (
+            <>
+              Next:{" "}
+              <Link href="/leads" className="underline font-semibold text-accent">
+                Leads → Copy preorder blast
+              </Link>{" "}
+              ({waitlistFamilies} email{waitlistFamilies === 1 ? "" : "s"}).
+            </>
+          ) : (
+            <>
+              Share{" "}
+              <a
+                href="https://storybook.6cubed.app"
+                target="_blank"
+                rel="noreferrer"
+                className="underline text-accent"
+              >
+                StoryMagic
+              </a>{" "}
+              or run the week experiment (<code className="text-[10px]">/experiment</code>).
+            </>
+          )}
         </p>
       ) : null}
       <code className="text-[10px] text-muted block">{envKey}</code>

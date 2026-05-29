@@ -22,6 +22,7 @@ type CheckoutProbe = {
   ready: boolean;
   preorderConfigured?: boolean;
   priceUsd?: string;
+  waitlistCount?: number;
   missingKeys?: string[];
   error?: string;
 };
@@ -33,6 +34,7 @@ async function probeStorybookCheckout(url: string): Promise<CheckoutProbe> {
       ready?: boolean;
       preorderConfigured?: boolean;
       priceUsd?: string;
+      waitlistCount?: number;
       missingKeys?: string[];
     };
     return {
@@ -40,6 +42,8 @@ async function probeStorybookCheckout(url: string): Promise<CheckoutProbe> {
       ready: Boolean(data.ready),
       preorderConfigured: Boolean(data.preorderConfigured),
       priceUsd: data.priceUsd,
+      waitlistCount:
+        typeof data.waitlistCount === "number" ? data.waitlistCount : undefined,
       missingKeys: data.missingKeys,
     };
   } catch (e) {
@@ -100,6 +104,8 @@ export default async function CheckoutSetupPage() {
   const missingOnepage = onepage.keys.filter((k) => !isSet(env, k));
   const onepageProbe = onepage.probeUrl ? await probeGenericCheckout(onepage.probeUrl) : null;
   const waitlist = await fetchStorybookPrintLeads();
+  const liveWaitlist = liveProbe.waitlistCount ?? 0;
+  const waitlistFamilies = Math.max(waitlist.length, liveWaitlist);
   const needsPaidPath = !liveProbe.ready && !liveProbe.preorderConfigured;
   const merchApp = REVENUE_APPS.find((a) => a.id === "merch")!;
   const merchStoreUrl = env.get("NEXT_PUBLIC_MERCH_STORE_URL") || "";
@@ -118,14 +124,17 @@ export default async function CheckoutSetupPage() {
         </p>
       </div>
 
-      {needsPaidPath && waitlist.length > 0 ? (
+      {needsPaidPath && waitlistFamilies > 0 ? (
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-5 space-y-2">
           <p className="text-sm font-semibold text-amber-100">
-            {waitlist.length} famil{waitlist.length === 1 ? "y" : "ies"} on the StoryMagic waitlist — no paid path yet
+            {waitlistFamilies} famil{waitlistFamilies === 1 ? "y" : "ies"} on the StoryMagic waitlist — no paid path yet
           </p>
           <p className="text-xs text-muted">
-            Fastest unlock: paste a Stripe Payment Link below (~2 min). Full checkout needs webhook keys in the
-            section after that.
+            Fastest unlock: paste a Stripe Payment Link below (~2 min). After Save, use{" "}
+            <Link href="/leads" className="underline text-accent">
+              Leads → Copy preorder blast
+            </Link>{" "}
+            to email them.
           </p>
           <Link href="/leads" className="text-xs font-semibold text-accent hover:underline">
             View waitlist in Leads →
@@ -166,8 +175,8 @@ export default async function CheckoutSetupPage() {
             >
               Payment Links (test)
             </a>{" "}
-            → product ~$24.99 → paste the link here. StoryMagic shows <strong>Preorder now</strong> on hero,
-            form, and preview (hot-reloads on save).
+            → product ~${liveProbe.priceUsd ?? "24.99"} (e.g. &quot;StoryMagic printed hardcover&quot;) → paste the link
+            here. StoryMagic shows <strong>Preorder now</strong> on hero, form, and preview (hot-reloads on save).
           </p>
           <CheckoutSetupEnvField
             envKey="NEXT_PUBLIC_STORYBOOK_PREORDER_URL"
@@ -175,6 +184,7 @@ export default async function CheckoutSetupPage() {
             label="Stripe Payment Link (public URL)"
             placeholder="https://buy.stripe.com/test_…"
             hint="Not a secret. Full in-app checkout still needs the two Stripe keys in the section below."
+            waitlistFamilies={waitlistFamilies}
           />
           {preorderUrl ? (
             <p className="text-[11px] text-emerald-300">
