@@ -234,6 +234,36 @@ export async function fulfillValentineOrder(orderId: string): Promise<ActionResu
   }
 }
 
+/** Create Stripe Payment Link + save NEXT_PUBLIC_STORYBOOK_PREORDER_URL (monetization fast path). */
+export async function createStorybookPaymentLink(): Promise<
+  { error: string } | { success: true; url: string; reloaded?: string }
+> {
+  const secret = getEnvVarValue("STORYBOOK_STRIPE_SECRET_KEY")?.trim();
+  if (!secret) {
+    return {
+      error:
+        "Set STORYBOOK_STRIPE_SECRET_KEY in Env first (sk_test_… or sk_live_…), or paste a Payment Link manually below.",
+    };
+  }
+  const centsRaw = getEnvVarValue("STORYBOOK_BOOK_PRICE_CENTS")?.trim();
+  const priceCents = parseInt(centsRaw ?? "2499", 10) || 2499;
+  try {
+    const { createStripePaymentLinkForStorybook } = await import(
+      "@/lib/stripe-payment-link"
+    );
+    const url = await createStripePaymentLinkForStorybook(secret, priceCents);
+    const saved = await saveEnvVar("NEXT_PUBLIC_STORYBOOK_PREORDER_URL", url);
+    if ("error" in saved) {
+      return { error: saved.error };
+    }
+    return { success: true, url, reloaded: saved.reloaded };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Could not create Payment Link",
+    };
+  }
+}
+
 export async function saveEnvVar(
   key: string,
   value: string

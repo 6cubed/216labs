@@ -44,13 +44,14 @@ Save. On the live admin host, saving a `STORYBOOK_*` key **recreates the storybo
 
 ## 2b. Preorder without webhook keys (shipped)
 
-If you are not ready to paste `STORYBOOK_STRIPE_*` yet:
+If you are not ready for the full webhook flow yet:
 
-1. Stripe Dashboard → **Payment Links** → create a link for the printed book price.
-2. Admin → Env → set `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` to that link (public URL).
-3. StoryMagic preview shows **Preorder now** (deployed with commit `9c31f1e7`).
+1. Admin → **Env** → set `STORYBOOK_STRIPE_SECRET_KEY` (`sk_test_…` or live).
+2. [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link ($24.99)** (one click: creates link, saves Env, reloads StoryMagic).
 
-Full checkout + order emails in admin still need the two Stripe keys above.
+**Manual fallback:** Stripe Dashboard → **Payment Links** → paste URL into `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` on Checkout setup.
+
+Full checkout + order emails in admin still need `STORYBOOK_STRIPE_WEBHOOK_SECRET` as well.
 
 ## 3. Verify (after Save)
 

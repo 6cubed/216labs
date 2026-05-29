@@ -132,6 +132,17 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-29 ~09:56 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — `STORYBOOK_STRIPE_SECRET_KEY` in Env → [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link** (or paste link manually) |
+| Product | **Shipped** — admin one-click Stripe Payment Link → saves preorder URL + hot-reload |
+
+**Verify:** With `sk_test_…` in Env, Checkout setup → Create Payment Link → StoryMagic shows **Preorder now**; `./scripts/check-revenue-env-http.sh` → preorder LIVE.
+
+---
+
 ## Production snapshot (2026-05-29 ~08:56 UTC)
 
 | Highest leverage | Blocker |

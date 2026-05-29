@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAllEnvVars } from "@/lib/db";
 import { CheckoutSetupEnvField } from "@/components/CheckoutSetupEnvField";
+import { CreateStorybookPaymentLinkButton } from "@/components/CreateStorybookPaymentLinkButton";
 import { RunRevenueProbeButton } from "@/components/RunRevenueProbeButton";
 import {
   REVENUE_APPS,
@@ -178,6 +179,20 @@ export default async function CheckoutSetupPage() {
             → product ~${liveProbe.priceUsd ?? "24.99"} (e.g. &quot;StoryMagic printed hardcover&quot;) → paste the link
             here. StoryMagic shows <strong>Preorder now</strong> on hero, form, and preview (hot-reloads on save).
           </p>
+          {isSet(env, "STORYBOOK_STRIPE_SECRET_KEY") ? (
+            <CreateStorybookPaymentLinkButton
+              priceUsd={liveProbe.priceUsd ?? "24.99"}
+              waitlistFamilies={waitlistFamilies}
+            />
+          ) : (
+            <p className="text-[11px] text-muted">
+              Or paste <code className="text-[10px]">STORYBOOK_STRIPE_SECRET_KEY</code> in{" "}
+              <Link href="/env" className="underline text-accent">
+                Env
+              </Link>{" "}
+              first to enable one-click Payment Link creation above.
+            </p>
+          )}
           <CheckoutSetupEnvField
             envKey="NEXT_PUBLIC_STORYBOOK_PREORDER_URL"
             initialValue={preorderUrl}
