@@ -4,7 +4,11 @@ import { join } from "path";
 
 /** Resolve at connection time — Next standalone can load route chunks before cwd/env are final. */
 function resolveDataDir(): string {
-  return process.env.DATA_DIR?.trim() || join(process.cwd(), "data");
+  const fromEnv = process.env.DATA_DIR?.trim();
+  if (fromEnv) return fromEnv;
+  // Compose volume mount when cwd/env differ across duplicated route bundles.
+  if (existsSync("/app/data")) return "/app/data";
+  return join(process.cwd(), "data");
 }
 
 function resolveDbPath(): string {
@@ -186,10 +190,14 @@ export function createPrintInterest(
 
 /** Distinct waitlist rows (print-interest signups). Safe to expose as a public count. */
 export function countPrintInterests(): number {
-  const row = getDb()
-    .prepare("SELECT COUNT(*) AS n FROM print_interest")
-    .get() as { n: number };
-  return row.n ?? 0;
+  const dbPath = resolveDbPath();
+  const db = new Database(dbPath, { readonly: true });
+  try {
+    const row = db.prepare("SELECT COUNT(*) AS n FROM print_interest").get() as { n: number };
+    return Number(row?.n ?? 0);
+  } finally {
+    db.close();
+  }
 }
 
 export function getAllPrintInterests(): PrintInterest[] {

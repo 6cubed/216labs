@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { countPrintInterests } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 const ADMIN_CHECKOUT_SETUP_URL = "https://admin.6cubed.app/checkout-setup";
 
 /** Server-side Checkout Sessions only need secret + webhook; publishable is optional (no client Stripe.js yet). */
