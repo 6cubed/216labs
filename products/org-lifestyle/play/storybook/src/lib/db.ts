@@ -188,12 +188,18 @@ export function createPrintInterest(
     );
 }
 
+/** Ops/test signups — excluded from public social-proof count (still in admin Leads). */
+const PUBLIC_WAITLIST_COUNT_EXCLUDE =
+  "email NOT LIKE '%@example.com' AND email NOT LIKE '%@test.com'";
+
 /** Distinct waitlist rows (print-interest signups). Safe to expose as a public count. */
 export function countPrintInterests(): number {
   const dbPath = resolveDbPath();
   const db = new Database(dbPath, { readonly: true });
   try {
-    const row = db.prepare("SELECT COUNT(*) AS n FROM print_interest").get() as { n: number };
+    const row = db
+      .prepare(`SELECT COUNT(*) AS n FROM print_interest WHERE ${PUBLIC_WAITLIST_COUNT_EXCLUDE}`)
+      .get() as { n: number };
     return Number(row?.n ?? 0);
   } finally {
     db.close();

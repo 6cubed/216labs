@@ -42,6 +42,18 @@ else:
 print(path)
 " 2>/dev/null || echo "unknown")"
 
-echo "StoryMagic waitlist: ${COUNT} families"
+PUBLIC="$(echo "$READY_JSON" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    d = {}
+print(d.get('waitlistCount', ''))
+" 2>/dev/null || true)"
+if [[ -n "$PUBLIC" && "$PUBLIC" != "$COUNT" ]]; then
+  echo "StoryMagic waitlist: ${PUBLIC} families (public social proof; ${COUNT} rows in DB incl. test)"
+else
+  echo "StoryMagic waitlist: ${COUNT} families"
+fi
 echo "Paid path: ${PARSED}"
 echo "Checkout setup: https://admin.6cubed.app/checkout-setup"

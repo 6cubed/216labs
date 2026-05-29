@@ -31,11 +31,17 @@ export function CheckoutSetupEnvField({
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
+  const trimmed = value.trim();
+  const stripeLinkWarning =
+    envKey === "NEXT_PUBLIC_STORYBOOK_PREORDER_URL" &&
+    trimmed &&
+    !/^https:\/\/(buy\.stripe\.com|checkout\.stripe\.com)\//i.test(trimmed);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     startTransition(async () => {
-      const result = await saveEnvVar(envKey, value.trim());
+      const result = await saveEnvVar(envKey, trimmed);
       if (result && "error" in result) {
         setMessage({ ok: false, text: result.error });
         return;
@@ -71,6 +77,12 @@ export function CheckoutSetupEnvField({
         </button>
       </div>
       {hint ? <p className="text-[11px] text-muted">{hint}</p> : null}
+      {stripeLinkWarning ? (
+        <p className="text-[11px] text-amber-300">
+          This does not look like a Stripe Payment Link (
+          <code className="text-[10px]">https://buy.stripe.com/…</code>). Double-check before Save.
+        </p>
+      ) : null}
       {message ? (
         <p className={`text-[11px] ${message.ok ? "text-emerald-300" : "text-red-400"}`}>
           {message.text}

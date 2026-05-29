@@ -262,13 +262,23 @@ export default function HomePage() {
     const shareUrl = bookId
       ? `${base}?utm_source=share&utm_medium=referral&utm_campaign=storymagic_friend&ref_book=${encodeURIComponent(bookId)}`
       : `${base}?utm_source=share&utm_medium=referral&utm_campaign=storymagic_friend`;
+    const shareText = childName
+      ? `StoryMagic — a personalised AI storybook starring ${childName}`
+      : "StoryMagic — free AI preview of a personalised kids book";
     try {
+      if (navigator.share) {
+        await navigator.share({ title: "StoryMagic", text: shareText, url: shareUrl });
+        trackStorybookEvent("share_link_copy", { book_id: bookId ?? "", method: "web_share" });
+        return;
+      }
       await navigator.clipboard.writeText(shareUrl);
       setShareCopied(true);
-      trackStorybookEvent("share_link_copy", { book_id: bookId ?? "" });
+      trackStorybookEvent("share_link_copy", { book_id: bookId ?? "", method: "clipboard" });
       window.setTimeout(() => setShareCopied(false), 2500);
     } catch {
-      setError("Could not copy link — try sharing the URL from your browser bar.");
+      if (!navigator.share) {
+        setError("Could not copy link — try sharing the URL from your browser bar.");
+      }
     }
   }
 
