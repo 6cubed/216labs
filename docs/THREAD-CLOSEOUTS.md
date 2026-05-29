@@ -126,8 +126,9 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 | Symptom | Fix |
 |---------|-----|
 | `waitlistCount: 0` while admin Leads had landing emails | **Shipped** — `POST /api/waitlist` on StoryMagic; 6cubed.app form writes `print_interest` (CORS) |
+| API still `0` while `sqlite3` on volume showed rows | **Shipped** — lazy `DATA_DIR` in `getDb()` (Next route chunks cached wrong cwd at module load) |
 
-**Verify:** Submit email on [6cubed.app](https://6cubed.app) → `./scripts/query_storybook_waitlist_summary.sh` count increases; `/api/checkout/ready` shows `waitlistCount` ≥ 1.
+**Verify:** `curl -sS https://storybook.6cubed.app/api/checkout/ready` → `waitlistCount` matches `./scripts/query_storybook_waitlist_summary.sh`.
 
 ---
 

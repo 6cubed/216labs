@@ -2,11 +2,17 @@ import Database from "better-sqlite3";
 import { existsSync, mkdirSync, statSync, unlinkSync } from "fs";
 import { join } from "path";
 
-const DATA_DIR = process.env.DATA_DIR || join(process.cwd(), "data");
-const DB_PATH = join(DATA_DIR, "storybook.db");
+/** Resolve at connection time — Next standalone can load route chunks before cwd/env are final. */
+function resolveDataDir(): string {
+  return process.env.DATA_DIR?.trim() || join(process.cwd(), "data");
+}
 
-if (!existsSync(DATA_DIR)) {
-  mkdirSync(DATA_DIR, { recursive: true });
+function resolveDbPath(): string {
+  const dataDir = resolveDataDir();
+  if (!existsSync(dataDir)) {
+    mkdirSync(dataDir, { recursive: true });
+  }
+  return join(dataDir, "storybook.db");
 }
 
 export interface StoryPage {
@@ -39,13 +45,14 @@ export interface Order {
 }
 
 let _db: Database.Database | null = null;
+let _dbPath: string | null = null;
 
 /** Drop corrupt zero-byte DB files (can appear after volume mount before first write). */
-function ensureDbFileReady(): void {
-  if (!existsSync(DB_PATH)) return;
+function ensureDbFileReady(dbPath: string): void {
+  if (!existsSync(dbPath)) return;
   try {
-    if (statSync(DB_PATH).size === 0) {
-      unlinkSync(DB_PATH);
+    if (statSync(dbPath).size === 0) {
+      unlinkSync(dbPath);
     }
   } catch {
     /* ignore */
@@ -58,13 +65,24 @@ export function warmDb(): void {
 }
 
 export function getDb(): Database.Database {
-  if (!_db) {
-    ensureDbFileReady();
-    _db = new Database(DB_PATH);
-    _db.pragma("journal_mode = WAL");
-    _db.pragma("foreign_keys = ON");
-    initSchema(_db);
+  const dbPath = resolveDbPath();
+  if (_db && _dbPath === dbPath) {
+    return _db;
   }
+  if (_db) {
+    try {
+      _db.close();
+    } catch {
+      /* ignore */
+    }
+    _db = null;
+  }
+  ensureDbFileReady(dbPath);
+  _db = new Database(dbPath);
+  _dbPath = dbPath;
+  _db.pragma("journal_mode = WAL");
+  _db.pragma("foreign_keys = ON");
+  initSchema(_db);
   return _db;
 }
 
