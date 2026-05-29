@@ -3220,6 +3220,7 @@ def _now_text() -> str:
     lines.append("• Admin todos: https://admin.6cubed.app/todos")
     lines.append("• Admin leads: https://admin.6cubed.app/leads")
     lines.append("• Checkout setup: https://admin.6cubed.app/checkout-setup")
+    lines.append("• Telegram: /firstsale /merch /waitlist /checkout")
     lines.append("• Homepage: https://6cubed.app/")
 
     return "\n".join(lines).strip()

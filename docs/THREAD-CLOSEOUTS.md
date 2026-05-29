@@ -121,6 +121,36 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Production snapshot (2026-05-29 ~02:25 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **You** — `/firstsale` → Payment Link on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
+| Ops | **Shipped** — merch warmup no longer false-fails revenue probe; FirstSaleBanner → Leads blast |
+
+---
+
+## Pocket bridge restart exit 143 — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| Bridge restart task exits **143** (SIGTERM) | Expected when a new `./scripts/pocket-cursor-bridge.sh` supersedes the prior process — not a crash if `pocket_cursor.py` is running afterward |
+
+**Verify:** `pgrep -fl pocket_cursor.py` shows one process; Telegram `/status` responds.
+
+---
+
+## Merch catalog vs shippable SKUs — **CLOSED**
+
+| Question | Answer |
+|----------|--------|
+| What merch is for sale? | **Designed catalog** at [merch.6cubed.app](https://merch.6cubed.app) (tees, hoodie, cap, stickers, tote, mug, socks) — Buy routes to StoryMagic until Printful URL is set |
+| Is it cool? | Brand/copy/UI yes; **not shippable apparel** until `NEXT_PUBLIC_MERCH_STORE_URL` on Checkout setup |
+
+**Verify:** Telegram `/merch` or [`docs/MERCH-FIRST-SALE.md`](MERCH-FIRST-SALE.md).
+
+---
+
 ## Production snapshot (2026-05-29 ~01:55 UTC)
 
 | Highest leverage | Blocker |

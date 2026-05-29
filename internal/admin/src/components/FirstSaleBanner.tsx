@@ -33,13 +33,25 @@ export async function FirstSaleBanner() {
           ) : null}
         </p>
         <p className="text-xs text-muted mt-1 max-w-3xl">
-          Visitors see <strong>Preorder now</strong> on the preview page. Add Stripe webhook keys on{" "}
-          <Link href="/checkout-setup" className="underline text-accent">
-            Checkout setup
-          </Link>{" "}
-          when you want in-app checkout and paid rows in Orders.
+          Visitors see <strong>Preorder now</strong> on StoryMagic and{" "}
+          <a
+            href="https://6cubed.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-accent"
+          >
+            6cubed.app
+          </a>
+          . Email the waitlist from{" "}
+          <Link href="/leads" className="underline text-accent">
+            Leads → Copy preorder blast
+          </Link>
+          .
         </p>
         <div className="mt-3 flex flex-wrap gap-3 text-xs">
+          <Link href="/leads" className="font-semibold text-accent hover:underline">
+            Blast waitlist →
+          </Link>
           <Link href="/checkout-setup" className="font-semibold text-accent hover:underline">
             Checkout setup →
           </Link>
@@ -68,10 +80,11 @@ export async function FirstSaleBanner() {
         ) : null}
       </p>
       <p className="text-xs text-muted mt-1 max-w-3xl">
-        Edge is up; probes return JSON with <code className="text-[11px]">ready: false</code> until
-        Add Stripe <strong>test</strong> secret + webhook signing secret (2 keys), or set{" "}
-        <code className="text-[11px]">NEXT_PUBLIC_STORYBOOK_PREORDER_URL</code> for a Payment Link preorder button on StoryMagic.
-        Saving <code className="text-[11px]">STORYBOOK_*</code> hot-reloads storybook on this host.
+        Fastest path: Stripe Payment Link (~2 min) on{" "}
+        <Link href="/checkout-setup" className="underline text-accent">
+          Checkout setup
+        </Link>
+        . Telegram: <code className="text-[11px]">/firstsale</code>
       </p>
       {missing.length > 0 && (
         <p className="text-[11px] font-mono text-amber-200/80 mt-2">
@@ -92,12 +105,12 @@ export async function FirstSaleBanner() {
           Open Env →
         </Link>
         <a
-          href="https://dashboard.stripe.com/test/apikeys"
+          href="https://dashboard.stripe.com/test/payment-links/create"
           target="_blank"
           rel="noopener noreferrer"
           className="text-accent hover:underline"
         >
-          Stripe test keys
+          Create Payment Link
         </a>
         <a
           href="https://storybook.6cubed.app"

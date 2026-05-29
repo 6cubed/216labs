@@ -49,6 +49,9 @@ if d.get('operatorHint'):
     print('   hint:', d['operatorHint'])
 if d.get('missingKeys'):
     print('   missing:', ', '.join(d['missingKeys']))
+wc = d.get('waitlistCount')
+if wc is not None and wc > 0:
+    print('   waitlist:', wc, 'families')
 " 2>/dev/null || echo "  $body"
   fail=1
 }
@@ -56,12 +59,8 @@ if d.get('missingKeys'):
 check_json_ready "StoryMagic" "https://storybook.6cubed.app/api/checkout/ready"
 check_json_ready "1PageResearch" "https://1pageresearch.6cubed.app/api/checkout/ready"
 
-merch_html="$(curl -sS -m 25 -L "https://merch.6cubed.app/" 2>/dev/null || true)"
-if [[ -z "$merch_html" ]]; then
-  echo "[Merch] unreachable: https://merch.6cubed.app/"
-  fail=1
-else
-  merch_live="$(echo "$merch_html" | python3 -c "
+merch_classify() {
+  echo "$1" | python3 -c "
 import sys
 html = sys.stdin.read()
 warmup = 'Warming up merch' in html or ('Starting...' in html and '6³ wordmark' not in html)
@@ -79,7 +78,28 @@ elif live:
     print('live')
 else:
     print('unknown')
-" 2>/dev/null || echo "unknown")"
+" 2>/dev/null || echo "unknown"
+}
+
+merch_html=""
+merch_live="unknown"
+for attempt in 1 2 3; do
+  merch_html="$(curl -sS -m 25 -L "https://merch.6cubed.app/" 2>/dev/null || true)"
+  if [[ -z "$merch_html" ]]; then
+    merch_live="unreachable"
+    break
+  fi
+  merch_live="$(merch_classify "$merch_html")"
+  if [[ "$merch_live" != "warmup" || "$attempt" -eq 3 ]]; then
+    break
+  fi
+  sleep 18
+done
+
+if [[ "$merch_live" == "unreachable" || -z "$merch_html" ]]; then
+  echo "[Merch] unreachable: https://merch.6cubed.app/"
+  fail=1
+else
   case "$merch_live" in
     live)
       echo "[Merch] storefront URL appears configured"
@@ -89,8 +109,7 @@ else:
       fail=1
       ;;
     warmup)
-      echo "[Merch] activator warmup (retry probe in ~30s)"
-      fail=1
+      echo "[Merch] activator warmup after retries (not blocking StoryMagic first sale)"
       ;;
     *)
       echo "[Merch] could not confirm storefront (unexpected page)"
