@@ -171,6 +171,36 @@ for r in d.get('results') or []:
 fi
 
 echo
+echo "=== Droplet disk ==="
+DISK_LINE=""
+for attempt in 1 2 3; do
+  DISK_LINE=$(ssh "${SSH_OPTS[@]}" "$REMOTE" 'df -h / | tail -1' 2>/dev/null || true)
+  if [[ -n "$DISK_LINE" ]]; then
+    break
+  fi
+  [[ "$attempt" -lt 3 ]] && sleep 2
+done
+if [[ -n "$DISK_LINE" ]]; then
+  echo "  $DISK_LINE"
+  DISK_PCT=$(
+    echo "$DISK_LINE" | awk '{gsub(/%/,"",$5); print $5}' 2>/dev/null || echo "0"
+  )
+  if [[ "$DISK_PCT" =~ ^[0-9]+$ ]]; then
+    if [[ "$DISK_PCT" -ge 92 ]]; then
+      echo "  CRITICAL: root ≥92% — SSH/recover may flap; run ./scripts/prune-droplet-docker.sh $REMOTE" >&2
+      if [[ "${HEARTBEAT_AUTO_PRUNE_DISK:-}" == "1" && "$DISK_PCT" -ge 90 ]]; then
+        echo "  (HEARTBEAT_AUTO_PRUNE_DISK=1 — pruning…)" >&2
+        "$ROOT/scripts/prune-droplet-docker.sh" "$REMOTE" 2>&1 | sed 's/^/    /' || true
+      fi
+    elif [[ "$DISK_PCT" -ge 88 ]]; then
+      echo "  WARN: root ≥88% — ./scripts/prune-droplet-docker.sh $REMOTE before next recover" >&2
+    fi
+  fi
+else
+  echo "  (SSH unavailable — skip disk check)"
+fi
+
+echo
 if [[ "$smoke_ok" -eq 1 ]]; then
   echo "Lights on. Revenue: ./scripts/check-revenue-env-http.sh"
   exit 0

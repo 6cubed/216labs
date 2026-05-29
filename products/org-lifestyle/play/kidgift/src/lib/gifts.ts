@@ -130,3 +130,14 @@ export function storymagicUrl(age: number, interests: string[]): string {
   if (interests[0]) params.set("interest", interests[0]);
   return `https://storybook.6cubed.app?${params.toString()}`;
 }
+
+/** Payment Link with KidGift attribution (when admin preorder URL is live). */
+export function storymagicPreorderUrl(preorderUrl: string, age: number, interests: string[]): string {
+  const u = new URL(preorderUrl);
+  u.searchParams.set("utm_source", "kidgift");
+  u.searchParams.set("utm_medium", "preorder_cta");
+  u.searchParams.set("utm_campaign", "gift_finder");
+  u.searchParams.set("utm_content", String(age));
+  if (interests[0]) u.searchParams.set("utm_term", interests[0]);
+  return u.toString();
+}

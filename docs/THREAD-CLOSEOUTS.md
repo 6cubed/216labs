@@ -154,6 +154,27 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## Droplet disk pressure (~94%) — **BLOCKED (ops capacity)**
+
+| Symptom | Fix |
+|---------|-----|
+| Root **≥88–94%** full; prune frees little while only hot-pool containers run | **Shipped** — `heartbeat-stack.sh` prints disk line + WARN/CRITICAL + `./scripts/prune-droplet-docker.sh` hint |
+| Need more headroom | **You** — DO resize volume or remove unused images manually on VPS; optional `HEARTBEAT_AUTO_PRUNE_DISK=1` for auto-prune on heartbeat |
+
+**Verify:** `./scripts/heartbeat-stack.sh` shows `=== Droplet disk ===`; after CEO frees space, `df` use% &lt; 88%.
+
+---
+
+## Production snapshot (2026-05-30 ~00:00 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — `STORYBOOK_STRIPE_SECRET_KEY` → [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link** |
+| Revenue product | **Shipped** — KidGift premium CTA switches to **Preorder** when StoryMagic `preorderUrl` is live (UTM `kidgift/preorder_cta`) |
+| Ops | **Watch** — disk **~94%**; heartbeat now surfaces it every beat |
+
+---
+
 ## Production snapshot (2026-05-29 ~22:55 UTC)
 
 | Highest leverage | Blocker |

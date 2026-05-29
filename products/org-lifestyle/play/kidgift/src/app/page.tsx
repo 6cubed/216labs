@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { INTERESTS, storymagicUrl, type Budget, type GiftIdea } from "@/lib/gifts";
+import { useEffect, useState } from "react";
+import { INTERESTS, storymagicPreorderUrl, storymagicUrl, type Budget, type GiftIdea } from "@/lib/gifts";
+
+type CheckoutReady = {
+  preorderConfigured?: boolean;
+  preorderUrl?: string;
+  priceUsd?: string;
+};
 
 type SuggestResponse = {
   ok: boolean;
@@ -17,6 +23,20 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<SuggestResponse | null>(null);
+  const [checkout, setCheckout] = useState<CheckoutReady | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("https://storybook.6cubed.app/api/checkout/ready")
+      .then((r) => r.json())
+      .then((data: CheckoutReady) => {
+        if (!cancelled) setCheckout(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggleInterest(id: string) {
     setInterests((prev) =>
@@ -45,6 +65,13 @@ export default function Page() {
   }
 
   const smUrl = storymagicUrl(age, interests);
+  const preorderLive = Boolean(checkout?.preorderConfigured && checkout.preorderUrl?.trim());
+  const smCtaUrl = preorderLive
+    ? storymagicPreorderUrl(checkout!.preorderUrl!.trim(), age, interests)
+    : smUrl;
+  const smCtaLabel = preorderLive
+    ? `Preorder hardcover — $${checkout?.priceUsd ?? "24.99"}`
+    : "Create free preview →";
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
@@ -177,7 +204,7 @@ export default function Page() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
               <span style={{ fontWeight: 700 }}>{result.storymagic.priceHint}</span>
               <a
-                href={smUrl}
+                href={smCtaUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -190,7 +217,7 @@ export default function Page() {
                   fontSize: "0.9rem",
                 }}
               >
-                Create free preview →
+                {smCtaLabel}
               </a>
             </div>
           </div>
