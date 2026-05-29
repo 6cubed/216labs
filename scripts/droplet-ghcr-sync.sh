@@ -14,7 +14,7 @@ set -euo pipefail
 ROOT="${SYNC_PROJECT_ROOT:-/opt/216labs}"
 # zurichrunclubs: GHCR :latest can lag CI; periodic pull was recreating containers with stale images over laptop deploys.
 # Spine + revenue hot pool: periodic sync must not recreate these (use SYNC_SERVICE=admin explicitly).
-EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch,zurichrunclubs}"
+EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch,kidgift,zurichrunclubs}"
 SYNC_SERVICE_RAW="${SYNC_SERVICE:-}"
 SYNC_SERVICE_LOWER=""
 if [ -n "$SYNC_SERVICE_RAW" ]; then

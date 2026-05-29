@@ -13,7 +13,7 @@ set -euo pipefail
 TO="/usr/bin/timeout"
 cd /opt/216labs
 
-HOT="${RECOVER_HOT_SERVICES:-caddy activator admin landing maxlearn storybook 1pageresearch cron-runner}"
+HOT="${RECOVER_HOT_SERVICES:-caddy activator admin landing maxlearn storybook 1pageresearch kidgift cron-runner}"
 MIN_PCT="${RECOVER_SHOWROOM_DISK_PCT:-88}"
 
 usepct="$(df / | tail -1 | awk "{print \$5}" | tr -d "%")"

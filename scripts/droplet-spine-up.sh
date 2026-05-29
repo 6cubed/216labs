@@ -14,7 +14,7 @@ git pull -q 2>/dev/null || true
 if [[ -f scripts/generate-caddyfile.py ]]; then
   $TO 120 python3 scripts/generate-caddyfile.py 2>&1 | tail -2 || true
 fi
-SERVICES="caddy activator admin landing maxlearn storybook 1pageresearch cron-runner"
+SERVICES="caddy activator admin landing maxlearn storybook 1pageresearch kidgift cron-runner"
 $TO 300 docker compose up -d $SERVICES 2>&1 | tail -6
 $TO 30 docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -2 \
   || $TO 30 docker compose restart caddy

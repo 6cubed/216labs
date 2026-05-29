@@ -144,6 +144,26 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
+## KidGift cold after showroom stop — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `edge-smoke` → `kidgift WARN cold/down HTTP 302` while StoryMagic funnel is live | **Shipped** — `kidgift` in revenue **hot pool** (`ACTIVATOR_PROTECTED_SERVICES`, `droplet-spine-up`, recover, showroom-stop, GHCR sync exclude) |
+
+**Verify:** `curl -sS https://kidgift.6cubed.app/healthz` → `{"ok":true,"service":"kidgift"}`; `./scripts/edge-smoke.sh` → `kidgift OK`.
+
+---
+
+## Production snapshot (2026-05-29 ~22:55 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — `STORYBOOK_STRIPE_SECRET_KEY` → [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link** |
+| Ops | **Watch** — droplet disk **~94%**; prune via `./scripts/prune-droplet-docker.sh` if SSH flaps during recover |
+| Product | **Shipped** — KidGift in revenue hot pool (spine/recover/activator protected) |
+
+---
+
 ## Production snapshot (2026-05-29 ~20:48 UTC)
 
 | Highest leverage | Blocker |
