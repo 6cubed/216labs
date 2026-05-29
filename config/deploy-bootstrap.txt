@@ -22,3 +22,4 @@ webgputrainer
 tigertank
 rentstock
 maxlearn
+kidgift

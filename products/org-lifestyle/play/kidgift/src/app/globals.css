@@ -1,0 +1,31 @@
+:root {
+  --purple: #7c3aed;
+  --purple-light: #ede9fe;
+  --pink: #ec4899;
+  --cream: #fffbf5;
+  --dark: #1e1b4b;
+  --muted: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--cream);
+  color: var(--dark);
+  line-height: 1.5;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--purple);
+}

@@ -6,6 +6,7 @@
 admin
 activator
 storybook
+kidgift
 ramblingradio
 stroll
 birdperch

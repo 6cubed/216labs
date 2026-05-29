@@ -754,6 +754,27 @@ impulse.6cubed.app {
 	}
 }
 
+kidgift.6cubed.app {
+	handle /api/* {
+		reverse_proxy kidgift:3000
+	}
+	handle /healthz {
+		reverse_proxy kidgift:3000
+	}
+	reverse_proxy kidgift:3000 {
+		@cold status 502 503 504
+		handle_response @cold {
+			redir "https://activator.6cubed.app/warmup?app=kidgift&dest=https%3A%2F%2Fkidgift.6cubed.app" 302
+		}
+	}
+	handle_errors {
+		@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`
+		handle @dial {
+			redir "https://activator.6cubed.app/warmup?app=kidgift&dest=https%3A%2F%2Fkidgift.6cubed.app" 302
+		}
+	}
+}
+
 labshq.6cubed.app {
 	handle /api/* {
 		reverse_proxy labshq:5000

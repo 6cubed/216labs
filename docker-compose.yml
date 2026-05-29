@@ -595,6 +595,23 @@ services:
       - "3000"
     mem_limit: 256m
 
+  kidgift:
+    image: 216labs/kidgift:latest
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: ./products/org-lifestyle/play/kidgift/Dockerfile
+    restart: unless-stopped
+    environment:
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID:-}
+      - PORT=3000
+      - NODE_ENV=production
+      - KIDGIFT_OPENAI_API_KEY=${OPENAI_API_KEY:-${KIDGIFT_OPENAI_API_KEY:-}}
+      - CLIENT_ERROR_REPORT_URL=${CLIENT_ERROR_REPORT_URL:-http://admin:3000/api/public/report-error}
+    expose:
+      - "3000"
+    mem_limit: 128m
+
   # ── HeartInk (Valentine cards) ────────────────────────────────
   valentine:
     image: 216labs/valentine:latest

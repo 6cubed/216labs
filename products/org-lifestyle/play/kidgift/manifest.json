@@ -1,0 +1,25 @@
+{
+  "id": "kidgift",
+  "name": "KidGift",
+  "tagline": "AI gift ideas for kids — find the perfect present in seconds",
+  "description": "Enter a child's age and interests to get curated gift ideas. Works instantly with built-in picks; optional OpenAI for richer suggestions. Upsells StoryMagic personalised storybooks as the premium gift.",
+  "category": "consumer",
+  "internal_port": 3000,
+  "memory_limit": "128m",
+  "docker_service": "kidgift",
+  "build_context": ".",
+  "build_dockerfile": "products/org-lifestyle/play/kidgift/Dockerfile",
+  "stack": {
+    "frontend": "Next.js (App Router)",
+    "backend": "Next.js API routes",
+    "database": null,
+    "other": ["Optional OpenAI GPT-4o-mini", "StoryMagic funnel"]
+  },
+  "env_vars": [
+    {
+      "key": "KIDGIFT_OPENAI_API_KEY",
+      "description": "Optional: OpenAI key for richer gift suggestions (falls back to curated picks without it)",
+      "is_secret": true
+    }
+  ]
+}

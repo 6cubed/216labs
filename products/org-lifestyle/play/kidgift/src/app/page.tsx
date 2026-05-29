@@ -1,0 +1,248 @@
+"use client";
+
+import { useState } from "react";
+import { INTERESTS, storymagicUrl, type Budget, type GiftIdea } from "@/lib/gifts";
+
+type SuggestResponse = {
+  ok: boolean;
+  gifts: GiftIdea[];
+  storymagic: GiftIdea;
+  source: "curated" | "openai";
+};
+
+export default function Page() {
+  const [age, setAge] = useState(7);
+  const [interests, setInterests] = useState<string[]>(["books"]);
+  const [budget, setBudget] = useState<Budget>("25to50");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<SuggestResponse | null>(null);
+
+  function toggleInterest(id: string) {
+    setInterests((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(0, 6)
+    );
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ age, interests, budget }),
+      });
+      const data = (await res.json()) as SuggestResponse & { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Request failed");
+      setResult(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const smUrl = storymagicUrl(age, interests);
+
+  return (
+    <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
+      <header style={{ textAlign: "center", marginBottom: "2rem" }}>
+        <p style={{ fontSize: "2rem", margin: "0 0 0.25rem" }}>🎁</p>
+        <h1 style={{ fontSize: "2rem", fontWeight: 800, margin: "0 0 0.5rem", color: "var(--purple)" }}>
+          KidGift
+        </h1>
+        <p style={{ color: "var(--muted)", margin: 0, maxWidth: 420, marginInline: "auto" }}>
+          Gift ideas for kids by age and interests — instant curated picks, optional AI polish.
+        </p>
+      </header>
+
+      <form
+        onSubmit={onSubmit}
+        style={{
+          background: "#fff",
+          borderRadius: 20,
+          padding: "1.5rem",
+          boxShadow: "0 8px 30px rgba(124,58,237,0.08)",
+          border: "1px solid var(--purple-light)",
+        }}
+      >
+        <label style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>
+          Age: <span style={{ color: "var(--purple)" }}>{age}</span>
+        </label>
+        <input
+          type="range"
+          min={1}
+          max={12}
+          value={age}
+          onChange={(e) => setAge(Number(e.target.value))}
+          style={{ marginBottom: "1.25rem" }}
+        />
+
+        <p style={{ fontWeight: 600, marginBottom: 8 }}>Interests</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: "1.25rem" }}>
+          {INTERESTS.map((item) => {
+            const on = interests.includes(item.id);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => toggleInterest(item.id)}
+                style={{
+                  border: on ? "2px solid var(--purple)" : "2px solid #e2e8f0",
+                  background: on ? "var(--purple-light)" : "#fff",
+                  borderRadius: 999,
+                  padding: "0.4rem 0.75rem",
+                  fontSize: "0.85rem",
+                }}
+              >
+                {item.emoji} {item.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <p style={{ fontWeight: 600, marginBottom: 8 }}>Budget</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: "1.25rem" }}>
+          {(
+            [
+              ["under25", "Under $25"],
+              ["25to50", "$25–50"],
+              ["50plus", "$50+"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setBudget(id)}
+              style={{
+                border: budget === id ? "2px solid var(--purple)" : "2px solid #e2e8f0",
+                background: budget === id ? "var(--purple-light)" : "#fff",
+                borderRadius: 10,
+                padding: "0.5rem 0.85rem",
+                fontSize: "0.9rem",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || interests.length === 0}
+          style={{
+            width: "100%",
+            padding: "0.85rem",
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(90deg, var(--purple), var(--pink))",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: "1rem",
+            opacity: loading || interests.length === 0 ? 0.6 : 1,
+          }}
+        >
+          {loading ? "Finding gifts…" : "Find gift ideas"}
+        </button>
+        {interests.length === 0 ? (
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: 8 }}>
+            Pick at least one interest.
+          </p>
+        ) : null}
+        {error ? <p style={{ color: "#dc2626", marginTop: 8, fontSize: "0.9rem" }}>{error}</p> : null}
+      </form>
+
+      {result ? (
+        <section style={{ marginTop: "2rem" }}>
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
+            {result.source === "openai" ? "AI suggestions" : "Curated picks"} for age {age}
+          </p>
+
+          <div
+            style={{
+              background: "linear-gradient(135deg, var(--purple), var(--pink))",
+              color: "#fff",
+              borderRadius: 16,
+              padding: "1.25rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <p style={{ margin: 0, fontSize: "0.75rem", opacity: 0.9, textTransform: "uppercase", letterSpacing: 1 }}>
+              Premium pick · {result.storymagic.tag}
+            </p>
+            <h2 style={{ margin: "0.35rem 0", fontSize: "1.25rem" }}>{result.storymagic.name}</h2>
+            <p style={{ margin: "0 0 0.75rem", opacity: 0.95, fontSize: "0.95rem" }}>{result.storymagic.why}</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+              <span style={{ fontWeight: 700 }}>{result.storymagic.priceHint}</span>
+              <a
+                href={smUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: "#fff",
+                  color: "var(--purple)",
+                  padding: "0.5rem 1rem",
+                  borderRadius: 10,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  fontSize: "0.9rem",
+                }}
+              >
+                Create free preview →
+              </a>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {result.gifts.map((g) => (
+              <article
+                key={g.name}
+                style={{
+                  background: "#fff",
+                  borderRadius: 14,
+                  padding: "1rem 1.15rem",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                  <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{g.name}</h3>
+                  {g.tag ? (
+                    <span
+                      style={{
+                        fontSize: "0.7rem",
+                        background: "var(--purple-light)",
+                        color: "var(--purple)",
+                        padding: "0.15rem 0.5rem",
+                        borderRadius: 999,
+                        alignSelf: "start",
+                      }}
+                    >
+                      {g.tag}
+                    </span>
+                  ) : null}
+                </div>
+                <p style={{ margin: "0.4rem 0", color: "var(--muted)", fontSize: "0.92rem" }}>{g.why}</p>
+                <p style={{ margin: 0, fontWeight: 600, fontSize: "0.85rem" }}>{g.priceHint}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <footer style={{ textAlign: "center", marginTop: "2.5rem", color: "var(--muted)", fontSize: "0.85rem" }}>
+        <p style={{ margin: 0 }}>
+          KidGift by{" "}
+          <a href="https://6cubed.app" style={{ color: "var(--purple)" }}>
+            216labs
+          </a>
+          {" · "}
+          <a href={smUrl} style={{ color: "var(--purple)" }}>
+            StoryMagic
+          </a>
+        </p>
+      </footer>
+    </main>
+  );
+}
