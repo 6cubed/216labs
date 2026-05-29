@@ -126,18 +126,18 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 | Symptom | Fix |
 |---------|-----|
 | `waitlistCount: 0` while admin Leads had landing emails | **Shipped** — `POST /api/waitlist` on StoryMagic; 6cubed.app form writes `print_interest` (CORS) |
-| API still `0` while `sqlite3` on volume showed rows | **Shipped** — lazy `DATA_DIR` in `getDb()` (Next route chunks cached wrong cwd at module load) |
+| API still `0` while `sqlite3` on volume showed rows | **Shipped** — lazy `DATA_DIR` + `/app/data` fallback, fresh readonly count in `countPrintInterests()`, `force-dynamic` on checkout/ready |
 
-**Verify:** `curl -sS https://storybook.6cubed.app/api/checkout/ready` → `waitlistCount` matches `./scripts/query_storybook_waitlist_summary.sh`.
+**Verify:** `curl -sS https://storybook.6cubed.app/api/checkout/ready` → `waitlistCount` matches `./scripts/query_storybook_waitlist_summary.sh`; [6cubed.app](https://6cubed.app) shows “N families on the waitlist” when N ≥ 1.
 
 ---
 
-## Production snapshot (2026-05-29 ~04:53 UTC)
+## Production snapshot (2026-05-29 ~06:25 UTC)
 
 | Highest leverage | Blocker |
 |------------------|---------|
 | **First StoryMagic sale** | **You** — Payment Link on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
-| Product | **Shipped** — unified landing → StoryMagic waitlist; stale revenue cron auto-refresh confirmed |
+| Product | **Shipped** — landing waitlist social proof from live `waitlistCount`; docs aligned to `/api/waitlist` |
 
 ---
 

@@ -35,9 +35,9 @@ curl -sS -X POST "https://storybook.6cubed.app/api/checkout" -H 'Content-Type: a
 
 **Blocker today:** merch and StoryMagic UI can ship without keys, but checkout stays disabled until the rows above are set in admin and images are redeployed.
 
-**UX when keys are missing:** StoryMagic calls `GET /api/checkout/ready` (`ready`, `preorderConfigured`, `preorderUrl` at runtime). Preview shows **Preorder now** when a Payment Link is set; otherwise waitlist. Merch Buy falls back to StoryMagic until `NEXT_PUBLIC_MERCH_STORE_URL` is set. Admin **Checkout setup** has an amber nav dot until StoryMagic has checkout or preorder live.
+**UX when keys are missing:** StoryMagic calls `GET /api/checkout/ready` (`ready`, `preorderConfigured`, `preorderUrl`, `waitlistCount` at runtime). Preview and [6cubed.app](https://6cubed.app) show waitlist social proof when `waitlistCount ≥ 1`. Preview shows **Preorder now** when a Payment Link is set; otherwise waitlist. Merch Buy falls back to StoryMagic until `NEXT_PUBLIC_MERCH_STORE_URL` is set. Admin **Checkout setup** has an amber nav dot until StoryMagic has checkout or preorder live.
 
-**Leads without Stripe:** StoryMagic stores **print interest** emails (`POST /api/print-interest`, table `print_interest` in `storybook.db`) and pings admin ingest with `[Print lead]`. **1PageResearch** accepts **free report requests** on `/generate` (`POST /api/request-free`) — review at `/admin/requests` when `ONEPAGE_ADMIN_SECRET` is set.
+**Leads without Stripe:** StoryMagic stores **print interest** in `print_interest` (`storybook.db`): **`POST /api/waitlist`** from 6cubed.app (CORS), or **`POST /api/print-interest`** after a generated preview — both ping admin ingest with `[Print lead]`. **1PageResearch** accepts **free report requests** on `/generate` (`POST /api/request-free`) — review at `/admin/requests` when `ONEPAGE_ADMIN_SECRET` is set.
 
 **Cold apps:** `/api/*` and `/healthz` bypass Activator warmup redirects (see `scripts/generate-caddyfile.py`) so checkout probes return JSON. If probes still fail, start the service: `docker compose up -d 1pageresearch storybook` — revenue apps use `activator_never_evict` where set in manifests.
 

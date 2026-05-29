@@ -229,14 +229,34 @@
 
     <script>
       (function () {
+        var row = document.getElementById('storymagicPreorderRow');
+        var btn = document.getElementById('storymagicPreorderBtn');
+        var copy = document.getElementById('storymagicCtaCopy');
+        var badge = document.querySelector('.featured .badge');
+        var featuredDesc = document.querySelector('.featured .desc');
+        var landingWaitlistCount = 0;
+
+        function applyWaitlistSocialProof(count) {
+          landingWaitlistCount = count;
+          if (!count || count < 1 || !copy) return;
+          if (row && row.style.display === 'block') return;
+          copy.textContent = count === 1
+            ? '1 family on the waitlist — join them or try a free AI preview first.'
+            : count + ' families on the waitlist — join them or try a free AI preview first.';
+          if (featuredDesc) {
+            featuredDesc.textContent =
+              'Free AI preview in minutes · printed hardcover $24.99 · ' +
+              count + '+ families waiting for print.';
+          }
+        }
+
         fetch('https://storybook.6cubed.app/api/checkout/ready')
           .then(function (r) { return r.json(); })
           .then(function (d) {
-            if (!d || d.ready || !d.preorderConfigured || !d.preorderUrl) return;
-            var row = document.getElementById('storymagicPreorderRow');
-            var btn = document.getElementById('storymagicPreorderBtn');
-            var copy = document.getElementById('storymagicCtaCopy');
-            var badge = document.querySelector('.featured .badge');
+            if (!d) return;
+            var wc = typeof d.waitlistCount === 'number' ? d.waitlistCount : 0;
+            applyWaitlistSocialProof(wc);
+            if (d.ready || !d.preorderConfigured || !d.preorderUrl) return;
             if (!row || !btn) return;
             try {
               var u = new URL(d.preorderUrl);
@@ -259,6 +279,10 @@
             if (badge) badge.textContent = 'Preorder live';
           })
           .catch(function () {});
+
+        window.__landingWaitlistBump = function () {
+          applyWaitlistSocialProof(Math.max(landingWaitlistCount, 1) + 1);
+        };
       })();
     </script>
 
@@ -295,6 +319,7 @@
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data && data.error ? data.error : ('HTTP ' + res.status));
             setStatus('Saved — we’ll email you when checkout opens.', true);
+            if (typeof window.__landingWaitlistBump === 'function') window.__landingWaitlistBump();
             form.reset();
           } catch (err) {
             setStatus('Failed: ' + (err && err.message ? err.message : 'unknown error'), false);

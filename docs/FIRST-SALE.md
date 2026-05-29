@@ -10,7 +10,7 @@
 | 2 | **Merch** | Storefront URL often set; traffic → Printful | Confirm `NEXT_PUBLIC_MERCH_STORE_URL` — see [`MERCH-FIRST-SALE.md`](MERCH-FIRST-SALE.md) |
 | 3 | **1PageResearch** | €1 report; free tier works today | `ONEPAGE_STRIPE_*` keys |
 
-Until StoryMagic can take money, the funnel is **waitlist** (`POST /api/print-interest`) or **Preorder now** when `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` is set (admin **Leads** + Stripe Payment Link). Admin shows a **First sale** banner (or green preorder banner) until checkout or preorder is live.
+Until StoryMagic can take money, the funnel is **waitlist** (`POST /api/waitlist` from 6cubed.app, or `POST /api/print-interest` after a preview) or **Preorder now** when `NEXT_PUBLIC_STORYBOOK_PREORDER_URL` is set (admin **Leads** + Stripe Payment Link). Admin shows a **First sale** banner (or green preorder banner) until checkout or preorder is live.
 
 **Paid traffic:** CEO playbook [`STORYMAGIC-ADS.md`](STORYMAGIC-ADS.md). **One-week test:** [`STORYMAGIC-WEEK-EXPERIMENT.md`](STORYMAGIC-WEEK-EXPERIMENT.md). GA4: `generate_start`, `story_preview_ready`, `waitlist_signup`, `preorder_click`, `begin_checkout`, `purchase`.
 
@@ -82,6 +82,6 @@ Repeat with **live** keys in Stripe, switch admin Env to `pk_live_` / `sk_live_`
 |-----|-----|
 | Merch storefront | `NEXT_PUBLIC_MERCH_STORE_URL` in `docs/REVENUE-ENV.md` |
 | 1PageResearch €1 report | `ONEPAGE_STRIPE_*` keys |
-| Leads without payment | **Landing** hire form → `lead_event` in `216labs.db` ([admin → Leads](https://admin.6cubed.app/leads)); Telegram **`lead-notify`** cron every 5m. StoryMagic `POST /api/print-interest`; 1Page free requests |
+| Leads without payment | **Landing** hire form → `lead_event` in `216labs.db` ([admin → Leads](https://admin.6cubed.app/leads)); Telegram **`lead-notify`** cron every 5m. StoryMagic `POST /api/waitlist` (landing) or `POST /api/print-interest` (after preview); 1Page free requests |
 
 **Monetization heartbeat:** this doc is the checklist; the commit that ships revenue is **keys in admin + redeploy**, not the markdown alone.
