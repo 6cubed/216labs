@@ -3282,24 +3282,18 @@ def _merch_text() -> str:
 def _checkout_text() -> str:
     """Telegram /checkout: revenue probes only (CEO first-sale path)."""
     lines: list[str] = ["💳 Checkout readiness"]
-    ok, out = _run_cmd_quick(["bash", "-lc", "./scripts/check-revenue-env-http.sh"], timeout_sec=22)
+    ok_sum, sum_out = _run_cmd_quick(
+        ["bash", "-lc", "./scripts/query_revenue_summary.sh"],
+        timeout_sec=20,
+    )
+    if sum_out:
+        lines.append(sum_out)
+    ok, out = _run_cmd_quick(["bash", "-lc", "./scripts/check-revenue-env-http.sh"], timeout_sec=45)
     if out:
+        lines.append("\n— probes —")
         lines.append(out)
     else:
         lines.append("(probe script produced no output)")
-    _ok_sm, sm_line = _run_cmd_quick(
-        [
-            "bash",
-            "-lc",
-            "curl -sS -m 12 https://storybook.6cubed.app/api/checkout/ready | python3 -c \""
-            "import sys,json; d=json.load(sys.stdin); "
-            "print('StoryMagic live:', 'checkout open' if d.get('ready') else "
-            "('preorder live' if d.get('preorderConfigured') else 'needs Payment Link or Stripe keys'))\"",
-        ],
-        timeout_sec=16,
-    )
-    if sm_line:
-        lines.append(sm_line.strip())
     lines.append("\n🔗 Checkout setup: https://admin.6cubed.app/checkout-setup")
     lines.append("📚 StoryMagic: https://storybook.6cubed.app")
     return "\n".join(lines).strip()
