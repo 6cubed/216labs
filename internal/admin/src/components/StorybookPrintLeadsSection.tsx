@@ -1,6 +1,7 @@
 import type { StorybookPrintLead } from "@/lib/storybook";
 import { ExportStorybookWaitlistButton } from "@/components/ExportStorybookWaitlistButton";
 import { WaitlistPreorderBlastButton } from "@/components/WaitlistPreorderBlastButton";
+import { WaitlistLaunchBlastButton } from "@/components/WaitlistLaunchBlastButton";
 
 type Props = {
   leads: StorybookPrintLead[];
@@ -32,6 +33,9 @@ export function StorybookPrintLeadsSection({ leads, preorderUrl, priceUsd }: Pro
             preorderUrl={preorderUrl ?? ""}
             priceUsd={priceUsd}
           />
+          {!preorderUrl ? (
+            <WaitlistLaunchBlastButton leads={leads} priceUsd={priceUsd} />
+          ) : null}
           <ExportStorybookWaitlistButton leads={leads} />
         </div>
         </div>

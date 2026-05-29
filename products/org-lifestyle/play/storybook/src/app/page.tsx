@@ -55,6 +55,9 @@ export default function HomePage() {
   const [preorderUrl, setPreorderUrl] = useState("");
   const [waitlistCount, setWaitlistCount] = useState(0);
   const [friendReferral, setFriendReferral] = useState(false);
+  const [quickEmail, setQuickEmail] = useState("");
+  const [quickWaitlistSent, setQuickWaitlistSent] = useState(false);
+  const [quickWaitlistLoading, setQuickWaitlistLoading] = useState(false);
 
   useEffect(() => {
     captureUtmFromUrl();
@@ -219,6 +222,37 @@ export default function HomePage() {
       setError(msg);
     } finally {
       setInterestLoading(false);
+    }
+  }
+
+  async function handleQuickWaitlistSubmit() {
+    if (!quickEmail.trim()) return;
+    setQuickWaitlistLoading(true);
+    setError(null);
+    try {
+      const utm = getStoredUtm();
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: quickEmail.trim(),
+          utm_source: utm.utm_source ?? "storybook",
+          utm_medium: utm.utm_medium ?? "hero_waitlist",
+          utm_campaign: utm.utm_campaign ?? "email_only",
+        }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Could not save your email");
+      }
+      setQuickWaitlistSent(true);
+      setWaitlistCount((n) => n + 1);
+      trackStorybookEvent("waitlist_signup", { placement: "hero_email_only", ...utm });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+    } finally {
+      setQuickWaitlistLoading(false);
     }
   }
 
@@ -469,6 +503,39 @@ export default function HomePage() {
                         Preorder hardcover — ${bookPriceUsd}
                       </button>
                     </div>
+                  ) : null}
+
+                  {checkoutReady !== true && !quickWaitlistSent ? (
+                    <div className="pt-4 mt-2 border-t border-gray-100">
+                      <p className="text-xs text-gray-500 text-center mb-2">
+                        Not ready to generate? Get emailed when print checkout opens
+                        {waitlistCount >= 1 ? ` · ${waitlistCount} families waiting` : ""}.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="email"
+                          value={quickEmail}
+                          onChange={(e) => setQuickEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          required
+                          autoComplete="email"
+                          className="flex-1 px-4 py-3 rounded-xl border-2 border-story-purple-light focus:border-story-purple focus:outline-none text-gray-700 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleQuickWaitlistSubmit()}
+                          disabled={quickWaitlistLoading || !quickEmail.trim()}
+                          className="px-5 py-3 rounded-xl font-semibold text-sm bg-story-purple-light text-story-purple
+                            hover:bg-story-purple/15 disabled:opacity-50 whitespace-nowrap"
+                        >
+                          {quickWaitlistLoading ? "Saving…" : "Notify me"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : checkoutReady !== true && quickWaitlistSent ? (
+                    <p className="pt-4 mt-2 border-t border-gray-100 text-sm text-center text-story-purple font-medium">
+                      You&apos;re on the list — we&apos;ll email when printed checkout is live.
+                    </p>
                   ) : null}
                 </form>
               </div>

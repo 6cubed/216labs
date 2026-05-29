@@ -10,7 +10,7 @@ export async function OPTIONS(req: NextRequest) {
   return corsPreflight(req.headers.get("origin"));
 }
 
-/** Email-only waitlist from 6cubed.app (CORS). Counts toward checkout/ready waitlistCount. */
+/** Email-only waitlist from 6cubed.app or StoryMagic hero (CORS). Counts toward checkout/ready waitlistCount. */
 export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin");
 
