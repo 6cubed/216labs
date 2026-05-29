@@ -103,6 +103,20 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_print_interest_book ON print_interest(book_id);
   `);
   ensurePrintInterestUtmColumns(db);
+  ensureLandingWaitlistBook(db);
+}
+
+/** Placeholder book for homepage / 6cubed.app waitlist signups (no generated story yet). */
+export const LANDING_WAITLIST_BOOK_ID = "__landing_waitlist__";
+
+function ensureLandingWaitlistBook(db: Database.Database): void {
+  const row = db.prepare("SELECT 1 FROM books WHERE id = ? LIMIT 1").get(LANDING_WAITLIST_BOOK_ID);
+  if (row) return;
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO books (id, title, subtitle, child_name, age, topic, pages, created_at)
+     VALUES (?, ?, '', '', 0, '', '[]', ?)`
+  ).run(LANDING_WAITLIST_BOOK_ID, "6cubed landing waitlist", now);
 }
 
 function ensurePrintInterestUtmColumns(db: Database.Database) {

@@ -282,14 +282,14 @@
           btn.style.opacity = '0.7';
           setStatus('Saving…', true);
           try {
-            const res = await fetch('https://admin.6cubed.app/api/public/leads', {
+            const res = await fetch('https://storybook.6cubed.app/api/waitlist', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 email,
-                message: '[Landing] StoryMagic print waitlist',
-                kind: 'lead',
-                source_app_id: 'landing'
+                utm_source: 'landing',
+                utm_medium: 'waitlist_form',
+                utm_campaign: '6cubed_home'
               })
             });
             const data = await res.json().catch(() => ({}));
