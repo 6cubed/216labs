@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { StorybookPrintLeadsSection } from "@/components/StorybookPrintLeadsSection";
 import { getDb } from "@/lib/db";
+import {
+  fetchOnePageCheckoutWaitlist,
+  isOnePageCheckoutWaitlistLead,
+  isStorymagicPartnerLead,
+} from "@/lib/revenue-leads";
 import { fetchStorybookPrintLeads } from "@/lib/storybook";
 
 export const dynamic = "force-dynamic";
@@ -17,13 +22,6 @@ type LeadRow = {
 
 function safeTrim(s: unknown): string {
   return typeof s === "string" ? s.trim() : "";
-}
-
-/** Includes legacy rows stored as kind=lead before storymagic_partner was allowed. */
-function isStorymagicPartnerLead(r: LeadRow): boolean {
-  if (safeTrim(r.kind) === "storymagic_partner") return true;
-  const msg = safeTrim(r.message).toLowerCase();
-  return msg.includes("storymagic partnership inquiry");
 }
 
 async function storybookPaidPath(): Promise<{
@@ -53,13 +51,29 @@ async function storybookPaidPath(): Promise<{
   }
 }
 
+async function onepageCheckoutReady(): Promise<boolean> {
+  try {
+    const res = await fetch("https://1pageresearch.6cubed.app/api/checkout/ready", {
+      cache: "no-store",
+    });
+    const data = (await res.json()) as { ready?: boolean };
+    return Boolean(data.ready);
+  } catch {
+    return false;
+  }
+}
+
 export default async function LeadsPage() {
-  const [storybookPrintLeads, paidPath] = await Promise.all([
+  const [storybookPrintLeads, paidPath, onepageReady, onePageWaitlistLeads] = await Promise.all([
     fetchStorybookPrintLeads(),
     storybookPaidPath(),
+    onepageCheckoutReady(),
+    Promise.resolve(fetchOnePageCheckoutWaitlist()),
   ]);
   const needsPaidPath =
     storybookPrintLeads.length > 0 && !paidPath.ready && !paidPath.preorder;
+  const needsOnepageCheckout =
+    onePageWaitlistLeads.length > 0 && !onepageReady;
   const db = getDb();
   const rows = db
     .prepare(
@@ -71,7 +85,10 @@ export default async function LeadsPage() {
     .all() as LeadRow[];
 
   const partnerLeads = rows.filter(isStorymagicPartnerLead);
-  const ingestLeads = rows.filter((r) => !isStorymagicPartnerLead(r));
+  const onePageLeads = rows.filter(isOnePageCheckoutWaitlistLead);
+  const ingestLeads = rows.filter(
+    (r) => !isStorymagicPartnerLead(r) && !isOnePageCheckoutWaitlistLead(r)
+  );
 
   return (
     <section className="animate-fade-in space-y-6">
@@ -79,7 +96,7 @@ export default async function LeadsPage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Leads</h1>
           <p className="text-sm text-muted">
-            Hire form, StoryMagic B2B partnerships (6cubed.app), waitlist UTMs, and other funnels.
+            Hire form, StoryMagic B2B, 1Page €1 checkout waitlist, KidGift, and other funnels.
           </p>
         </div>
         <div className="text-xs text-muted">
@@ -107,6 +124,21 @@ export default async function LeadsPage() {
           </p>
           <p className="text-xs text-muted mt-1">
             Use <strong>Copy preorder blast</strong> below (includes BCC list + Payment Link with UTMs).
+          </p>
+        </div>
+      ) : null}
+
+      {needsOnepageCheckout ? (
+        <div className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm">
+          <p className="font-semibold text-cyan-100">
+            {onePageWaitlistLeads.length} waiting for 1PageResearch €1 checkout
+          </p>
+          <p className="text-xs text-muted mt-1">
+            Add <code className="text-[11px]">ONEPAGE_STRIPE_*</code> on{" "}
+            <Link href="/checkout-setup" className="underline text-accent">
+              Checkout setup
+            </Link>
+            , then email the list from the section below.
           </p>
         </div>
       ) : null}
@@ -153,6 +185,54 @@ export default async function LeadsPage() {
                     <td className="px-4 py-2">{safeTrim(r.message) || "—"}</td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      {onePageLeads.length > 0 ? (
+        <div className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 overflow-hidden">
+          <div className="px-4 py-3 border-b border-cyan-500/30">
+            <p className="font-semibold text-cyan-100">
+              1PageResearch €1 checkout — {onePageLeads.length}{" "}
+              {onePageLeads.length === 1 ? "signup" : "signups"}
+            </p>
+            <p className="text-xs text-muted mt-1">
+              From{" "}
+              <a className="underline" href="https://1pageresearch.6cubed.app/generate">
+                1pageresearch.6cubed.app/generate
+              </a>{" "}
+              “Notify me at launch”.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-[700px] w-full text-sm">
+              <thead className="bg-muted/20">
+                <tr className="text-left">
+                  <th className="px-4 py-2 font-semibold">When</th>
+                  <th className="px-4 py-2 font-semibold">Email</th>
+                  <th className="px-4 py-2 font-semibold">Topic interest</th>
+                </tr>
+              </thead>
+              <tbody>
+                {onePageLeads.map((r) => {
+                  const msg = safeTrim(r.message);
+                  const topic = msg.includes("topic:")
+                    ? msg.split("topic:").slice(1).join("topic:").trim()
+                    : "—";
+                  return (
+                    <tr key={r.id} className="border-t border-cyan-500/20">
+                      <td className="px-4 py-2 whitespace-nowrap text-muted">{safeTrim(r.created_at)}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <a className="underline" href={`mailto:${encodeURIComponent(safeTrim(r.email))}`}>
+                          {safeTrim(r.email)}
+                        </a>
+                      </td>
+                      <td className="px-4 py-2">{topic || "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

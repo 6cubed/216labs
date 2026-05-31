@@ -11,6 +11,7 @@ import {
   merchStorefrontLiveFromHtml,
 } from "@/lib/revenue-readiness";
 import { fetchStorybookPrintLeads } from "@/lib/storybook";
+import { countOnePageCheckoutWaitlist } from "@/lib/revenue-leads";
 
 export const dynamic = "force-dynamic";
 
@@ -111,6 +112,9 @@ export default async function CheckoutSetupPage() {
   const merchApp = REVENUE_APPS.find((a) => a.id === "merch")!;
   const merchStoreUrl = env.get("NEXT_PUBLIC_MERCH_STORE_URL") || "";
   const merchProbe = await probeMerchPage(merchApp.publicUrl);
+  const onePageWaitlistCount = countOnePageCheckoutWaitlist();
+  const needsOnepageCheckout =
+    onePageWaitlistCount > 0 && !(onepageProbe?.ready ?? false);
 
   return (
     <section className="animate-fade-in space-y-6">
@@ -350,6 +354,25 @@ export default async function CheckoutSetupPage() {
             Stripe dashboard →
           </a>
         </div>
+
+        {needsOnepageCheckout ? (
+          <div className="rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-3 py-2 text-xs">
+            <p className="font-semibold text-cyan-100">
+              {onePageWaitlistCount} on €1 checkout waitlist — cannot pay yet
+            </p>
+            <p className="text-muted mt-1">
+              Paste <code className="text-[10px]">ONEPAGE_STRIPE_*</code> below or in{" "}
+              <Link className="underline" href="/env">
+                Env
+              </Link>
+              . See signups on{" "}
+              <Link className="underline" href="/leads">
+                Leads
+              </Link>
+              .
+            </p>
+          </div>
+        ) : null}
 
         <div className="text-xs text-muted">
           Paste Stripe <strong>test</strong> keys first. On save, admin hot-reloads 1PageResearch on the droplet.
