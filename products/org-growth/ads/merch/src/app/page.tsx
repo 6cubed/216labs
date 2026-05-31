@@ -1,3 +1,4 @@
+import MerchFeaturedCheckout from "@/components/MerchFeaturedCheckout"
 import { categoryLabel, products, type MerchProduct } from "@/data/products"
 
 function CubeMark({ className }: { className?: string }) {
@@ -112,40 +113,7 @@ export default function MerchPage() {
         </p>
       </header>
 
-      <section
-        className="mb-10 rounded-2xl border border-fuchsia-500/25 bg-gradient-to-br from-fuchsia-950/40 to-cyan-950/30 p-5 sm:p-6"
-        aria-label="Paid products from 216Labs"
-      >
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-fuchsia-200/90 mb-2">
-          Checkout live now
-        </h2>
-        <p className="text-sm text-[var(--muted)] leading-relaxed max-w-2xl mb-4">
-          Want to support the project today? These paid products are shipping now. If a card routes you to
-          StoryMagic, you’ll complete checkout there.
-        </p>
-        <ul className="flex flex-col sm:flex-row flex-wrap gap-3 text-sm">
-          <li>
-            <a
-              href="https://storybook.6cubed.app?utm_source=merch&utm_medium=featured"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-medium text-zinc-100 hover:border-cyan-500/40 hover:text-cyan-200 transition-colors"
-            >
-              StoryMagic books (Stripe)
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://1pageresearch.6cubed.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-medium text-zinc-100 hover:border-fuchsia-500/40 hover:text-fuchsia-200 transition-colors"
-            >
-              1PageResearch reports
-            </a>
-          </li>
-        </ul>
-      </section>
+      <MerchFeaturedCheckout />
 
       <section aria-label="Product catalog" className="mb-16">
         <h2 className="sr-only">Products</h2>
@@ -198,10 +166,16 @@ export default function MerchPage() {
 
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)]/60 p-6 sm:p-8 mb-12">
         <h2 className="text-lg font-semibold text-zinc-100 mb-3">Wholesale &amp; custom runs</h2>
-        <p className="text-sm text-[var(--muted)] leading-relaxed max-w-2xl">
-          Need a batch for a meetup, conference, or team? Reach out through your usual 216Labs channel — we
-          can coordinate larger orders and custom colorways when inventory partners allow.
+        <p className="text-sm text-[var(--muted)] leading-relaxed max-w-2xl mb-4">
+          Need a batch for a meetup, conference, or team? We can coordinate larger orders and custom colorways
+          when inventory partners allow.
         </p>
+        <a
+          href="https://6cubed.app/#storymagic-partners?utm_source=merch&utm_medium=wholesale"
+          className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-4 py-2 text-sm font-medium text-emerald-200 hover:border-emerald-400/50 transition-colors"
+        >
+          StoryMagic B2B / partnership inquiry →
+        </a>
       </section>
 
       <footer className="border-t border-[var(--border)] pt-8 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between text-xs text-zinc-600">

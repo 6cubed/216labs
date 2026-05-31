@@ -2,6 +2,18 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-05-31 ~15:54 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → `STORYBOOK_STRIPE_SECRET_KEY` → **Create Payment Link** |
+| Product | **Shipped** — [merch.6cubed.app](https://merch.6cubed.app) featured band + B2B link: live **Preorder** CTA when Payment Link is set (no merch redeploy) |
+| Ops | **Watch** — droplet disk **~98%** after prune; CEO resize volume or remove unused images |
+
+**Verify:** After Payment Link save, open merch → featured shows **Preorder live**; wholesale → [6cubed.app partnership form](https://6cubed.app/#storymagic-partners).
+
+---
+
 ## Caddy crash after deploy (missing ADMIN_PASSWORD_HASH) — **CLOSED**
 
 | Symptom | Fix |

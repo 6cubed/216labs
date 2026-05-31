@@ -11,6 +11,8 @@ The catalog UI is live at [merch.6cubed.app](https://merch.6cubed.app). Buy butt
 
 Telegram: **`/merch`** for catalog + live status.
 
+The **Checkout live now** band on the merch homepage reads StoryMagic `/api/checkout/ready` in the browser — when a Payment Link is saved in admin, it switches to **Preorder StoryMagic — $24.99** with `utm_source=merch` (no merch image rebuild).
+
 ## Catalog (designed SKUs)
 
 | Item | From |
