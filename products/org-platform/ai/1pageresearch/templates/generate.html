@@ -259,11 +259,17 @@
     <p style="font-size: 0.8rem; color: var(--muted); margin-top: 0.6rem; text-align: center;">Secure payment via Stripe · Report generated immediately after payment</p>
   </div>
   {% else %}
-  <div class="primary-cta" style="padding: 0.85rem 1rem; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: var(--radius); margin-bottom: 2rem;">
-    <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5; margin: 0;">
+  <div class="primary-cta" style="padding: 0.85rem 1rem; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: var(--radius); margin-bottom: 1rem;">
+    <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5; margin: 0 0 0.85rem;">
       <strong>€1 checkout</strong> is being enabled in admin Env (<code style="font-size: 0.8em;">ONEPAGE_STRIPE_SECRET_KEY</code>).
       Use your own OpenAI key below or request a free report while we finish Stripe setup.
     </p>
+    <form id="checkoutNotifyForm" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+      <input id="checkoutNotifyEmail" type="email" autocomplete="email" required placeholder="you@email.com"
+             style="flex: 1 1 200px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 0.9rem; padding: 0.65rem 0.85rem; outline: none;" />
+      <button type="submit" class="btn" id="checkoutNotifyBtn" style="width: auto; padding: 0.65rem 1rem;">Notify me at launch</button>
+    </form>
+    <p id="checkoutNotifyStatus" style="font-size: 0.8rem; color: var(--muted); margin: 0.6rem 0 0;"></p>
   </div>
   {% endif %}
 
@@ -317,6 +323,10 @@
   const payBtn = document.getElementById('payBtn');
   const genWithKeyBtn = document.getElementById('genWithKeyBtn');
   const freeReqBtn = document.getElementById('freeReqBtn');
+  const checkoutNotifyForm = document.getElementById('checkoutNotifyForm');
+  const checkoutNotifyEmail = document.getElementById('checkoutNotifyEmail');
+  const checkoutNotifyBtn = document.getElementById('checkoutNotifyBtn');
+  const checkoutNotifyStatus = document.getElementById('checkoutNotifyStatus');
   const card = document.getElementById('progressCard');
   const stream = document.getElementById('rawStream');
   const doneBanner = document.getElementById('doneBanner');
@@ -412,6 +422,50 @@
     } finally {
       payBtn.disabled = false;
     }
+  }
+
+  async function notifyCheckoutLaunch(e) {
+    if (e) e.preventDefault();
+    const email = (checkoutNotifyEmail && checkoutNotifyEmail.value || '').trim();
+    if (!email) return;
+    const topic = input.value.trim();
+    if (checkoutNotifyBtn) checkoutNotifyBtn.disabled = true;
+    if (checkoutNotifyStatus) {
+      checkoutNotifyStatus.textContent = 'Saving…';
+      checkoutNotifyStatus.style.color = 'var(--muted)';
+    }
+    try {
+      const res = await fetch('https://admin.6cubed.app/api/public/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          message: topic
+            ? '1Page €1 checkout waitlist — topic: ' + topic.slice(0, 500)
+            : '1Page €1 checkout waitlist',
+          kind: 'lead',
+          source_app_id: '1pageresearch',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+      if (checkoutNotifyStatus) {
+        checkoutNotifyStatus.textContent = 'Saved — we’ll email when €1 checkout is live.';
+        checkoutNotifyStatus.style.color = 'var(--green)';
+      }
+      if (checkoutNotifyEmail) checkoutNotifyEmail.value = '';
+    } catch (err) {
+      if (checkoutNotifyStatus) {
+        checkoutNotifyStatus.textContent = 'Failed: ' + (err.message || 'unknown error');
+        checkoutNotifyStatus.style.color = 'var(--red)';
+      }
+    } finally {
+      if (checkoutNotifyBtn) checkoutNotifyBtn.disabled = false;
+    }
+  }
+
+  if (checkoutNotifyForm) {
+    checkoutNotifyForm.addEventListener('submit', notifyCheckoutLaunch);
   }
 
   async function requestFree() {
