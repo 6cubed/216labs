@@ -2,6 +2,18 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-05-31 ~17:58 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link** |
+| Product | **Shipped** — [kidgift.6cubed.app](https://kidgift.6cubed.app) results → StoryMagic waitlist (`utm_source=kidgift`, `results_waitlist`) |
+| Ops | **Watch** — droplet disk **~98%** (533M free) |
+
+**Verify:** KidGift → find gifts → **Join waitlist** → row on [admin Leads](https://admin.6cubed.app/leads) with campaign `gift_finder`.
+
+---
+
 ## Production snapshot (2026-05-31 ~15:54 UTC)
 
 | Highest leverage | Blocker |

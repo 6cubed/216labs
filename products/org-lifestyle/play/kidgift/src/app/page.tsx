@@ -24,6 +24,9 @@ export default function Page() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<SuggestResponse | null>(null);
   const [checkout, setCheckout] = useState<CheckoutReady | null>(null);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistStatus, setWaitlistStatus] = useState("");
+  const [waitlistSaving, setWaitlistSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +75,34 @@ export default function Page() {
   const smCtaLabel = preorderLive
     ? `Preorder hardcover — $${checkout?.priceUsd ?? "24.99"}`
     : "Create free preview →";
+
+  async function onWaitlistSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const email = waitlistEmail.trim();
+    if (!email) return;
+    setWaitlistSaving(true);
+    setWaitlistStatus("");
+    try {
+      const res = await fetch("https://storybook.6cubed.app/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          utm_source: "kidgift",
+          utm_medium: "results_waitlist",
+          utm_campaign: "gift_finder",
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Could not save");
+      setWaitlistStatus("You’re on the list — we’ll email when StoryMagic preorders open.");
+      setWaitlistEmail("");
+    } catch (err) {
+      setWaitlistStatus(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setWaitlistSaving(false);
+    }
+  }
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
@@ -255,6 +286,68 @@ export default function Page() {
               </article>
             ))}
           </div>
+
+          {!preorderLive ? (
+            <form
+              onSubmit={onWaitlistSubmit}
+              style={{
+                marginTop: "1.5rem",
+                background: "#fff",
+                borderRadius: 14,
+                padding: "1rem 1.15rem",
+                border: "1px solid var(--purple-light)",
+              }}
+            >
+              <p style={{ margin: "0 0 0.75rem", fontWeight: 600, fontSize: "0.95rem" }}>
+                Not ready for a preview? Get emailed when printed books go on sale.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  required
+                  placeholder="you@email.com"
+                  value={waitlistEmail}
+                  onChange={(e) => setWaitlistEmail(e.target.value)}
+                  style={{
+                    flex: "1 1 200px",
+                    padding: "0.6rem 0.75rem",
+                    borderRadius: 10,
+                    border: "1px solid #e2e8f0",
+                    fontSize: "0.95rem",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={waitlistSaving}
+                  style={{
+                    padding: "0.6rem 1rem",
+                    borderRadius: 10,
+                    border: "none",
+                    background: "var(--purple)",
+                    color: "#fff",
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    opacity: waitlistSaving ? 0.7 : 1,
+                  }}
+                >
+                  {waitlistSaving ? "Saving…" : "Join waitlist"}
+                </button>
+              </div>
+              {waitlistStatus ? (
+                <p
+                  style={{
+                    margin: "0.75rem 0 0",
+                    fontSize: "0.85rem",
+                    color: waitlistStatus.startsWith("You") ? "#059669" : "#dc2626",
+                  }}
+                >
+                  {waitlistStatus}
+                </p>
+              ) : null}
+            </form>
+          ) : null}
         </section>
       ) : null}
 
