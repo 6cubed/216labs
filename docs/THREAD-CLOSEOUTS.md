@@ -8,7 +8,7 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 |------------------|---------|
 | **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link** |
 | Product | **Shipped** — StoryMagic **hero waitlist** (above fold); `prune-droplet-docker.sh` aggressive prune when disk ≥88% |
-| Ops | **Watch** — disk was **~98%**; run `./scripts/prune-droplet-docker.sh` after heartbeat |
+| Ops | **Shipped** — aggressive prune freed disk **98% → 56%** (~11G); `prune-droplet-docker.sh` now auto-prunes at ≥88% |
 
 **Verify:** [storybook.6cubed.app](https://storybook.6cubed.app) hero shows **Join waitlist** when no Payment Link; `df /` use% drops after prune.
 
