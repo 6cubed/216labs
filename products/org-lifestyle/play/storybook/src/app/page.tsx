@@ -363,6 +363,37 @@ export default function HomePage() {
               <ShoppingCart className="w-4 h-4" />
               Preorder printed book — ${bookPriceUsd}
             </button>
+          ) : checkoutReady !== true && !quickWaitlistSent ? (
+            <div className="mt-6 max-w-md mx-auto">
+              <p className="text-white/75 text-sm mb-2">
+                Get emailed when printed books go on sale
+                {waitlistCount >= 1
+                  ? ` · ${waitlistCount} ${waitlistCount === 1 ? "family" : "families"} waiting`
+                  : ""}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="email"
+                  value={quickEmail}
+                  onChange={(e) => setQuickEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  className="flex-1 px-4 py-2.5 rounded-xl border-0 text-gray-800 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-story-yellow"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleQuickWaitlistSubmit()}
+                  disabled={quickWaitlistLoading || !quickEmail.trim()}
+                  className="px-5 py-2.5 rounded-xl font-bold text-sm bg-story-yellow text-story-purple shadow-md hover:bg-story-yellow-light disabled:opacity-50 whitespace-nowrap"
+                >
+                  {quickWaitlistLoading ? "Saving…" : "Join waitlist"}
+                </button>
+              </div>
+            </div>
+          ) : checkoutReady !== true && quickWaitlistSent ? (
+            <p className="mt-5 text-white/90 text-sm font-medium">
+              You&apos;re on the list — we&apos;ll email when checkout opens.
+            </p>
           ) : null}
           {waitlistCount >= 1 ? (
             <p className="mt-4 text-white/70 text-xs">
