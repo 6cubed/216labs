@@ -236,14 +236,14 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
-## Droplet disk pressure (~94%) — **BLOCKED (ops capacity)**
+## Droplet disk pressure (~94%) — **CLOSED (mitigated 2026-06-01)**
 
 | Symptom | Fix |
 |---------|-----|
-| Root **≥88–94%** full; prune frees little while only hot-pool containers run | **Shipped** — `heartbeat-stack.sh` prints disk line + WARN/CRITICAL + `./scripts/prune-droplet-docker.sh` hint |
-| Need more headroom | **You** — DO resize volume or remove unused images manually on VPS; optional `HEARTBEAT_AUTO_PRUNE_DISK=1` for auto-prune on heartbeat |
+| Root **≥88–98%** full; light prune freed almost nothing | **Shipped** — `prune-droplet-docker.sh` runs `docker system prune -af` when disk ≥88%; freed **~11G** (98% → 56%) |
+| Recurrence | **Watch** — `./scripts/heartbeat-stack.sh` disk line; optional `HEARTBEAT_AUTO_PRUNE_DISK=1`; DO volume resize if it climbs again |
 
-**Verify:** `./scripts/heartbeat-stack.sh` shows `=== Droplet disk ===`; after CEO frees space, `df` use% &lt; 88%.
+**Verify:** `./scripts/heartbeat-stack.sh` → `=== Droplet disk ===` use% **&lt; 88%**; `./scripts/prune-droplet-docker.sh root@46.101.88.197` when CRITICAL.
 
 ---
 
