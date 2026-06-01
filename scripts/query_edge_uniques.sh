@@ -25,6 +25,16 @@ if [ ! -f "$DB" ]; then
   exit 1
 fi
 
+HAS_TABLE="$(sqlite3 "$DB" "SELECT 1 FROM sqlite_master WHERE type='table' AND name='edge_visitor_day' LIMIT 1;" 2>/dev/null || true)"
+if [ "$HAS_TABLE" != "1" ]; then
+  echo "edge uniques not available in DB: missing table edge_visitor_day" >&2
+  echo "DB: $DB" >&2
+  echo "Next:" >&2
+  echo "  - On the droplet, ensure Caddy access logs + rollup cron are running (edge-visitor-rollup)" >&2
+  echo "  - Or point this script at a DB that has the rollup table via EDGE_UNIQUES_DB=/path/to/216labs.db" >&2
+  exit 2
+fi
+
 sqlite3 "$DB" "SELECT COUNT(DISTINCT visitor_hash) AS unique_visitors
 FROM edge_visitor_day
 WHERE app_id = '$APP_ID'

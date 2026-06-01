@@ -2,6 +2,18 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-06-01 ~04:54 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link** |
+| Ops | **OK** — disk **56%**; `revenue_env_last` refreshed by heartbeat |
+| DX | **Shipped** — edge uniques script self-diagnoses missing rollup table |
+
+**Verify:** `./scripts/query_edge_uniques.sh storybook 7` → exit **2** + guidance on laptop; count on droplet DB.
+
+---
+
 ## Production snapshot (2026-06-01 ~02:41 UTC)
 
 | Highest leverage | Blocker |
@@ -11,6 +23,16 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | Ops | **Shipped** — aggressive prune freed disk **98% → 56%** (~11G); `prune-droplet-docker.sh` now auto-prunes at ≥88% |
 
 **Verify:** [storybook.6cubed.app](https://storybook.6cubed.app) hero shows **Join waitlist** when no Payment Link; `df /` use% drops after prune.
+
+---
+
+## Edge uniques query “no such table” — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `./scripts/query_edge_uniques.sh <app> <days>` → `no such table: edge_visitor_day` | **Shipped** — script now detects missing table and prints the next move (rollup on droplet or `EDGE_UNIQUES_DB=...`). |
+
+**Verify:** Run `./scripts/query_edge_uniques.sh storybook 7` on a laptop DB without rollup → exits **2** with guidance (not sqlite error). Point at a rollup DB → prints a number.
 
 ---
 
