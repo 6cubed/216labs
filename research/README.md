@@ -2,6 +2,8 @@
 
 Each subdirectory is a **potential paper** or formal research thread. Every topic uses the same file layout so work can move from experiment → draft → publication without reinventing structure.
 
+For **standalone Colab experiments** (no paper draft required), use [`colabs/`](../colabs/) instead.
+
 ## Standard layout per topic
 
 | File | Purpose |

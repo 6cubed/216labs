@@ -14,6 +14,8 @@ The layout stays **client-agnostic**: manifests, one admin DB, one deploy path, 
 | **`internal/`** | Admin dashboard, quality (e.g. happypath), security (pipesecure), ops (cron-runner), platform (activator), etc. |
 | **`packages/`** | Shared libraries / design-system-style code (reserved; empty until extracted). |
 | **`config/`** | Deploy caps, bootstrap snippets, priority order, repo-level configuration. |
+| **`research/`** | Formal research threads (paper draft + bib + Colab repro). |
+| **`colabs/`** | Standalone Colab experiments (no paper layout required). |
 
 ### Public writing: Tigertank vs 216Labs blog
 
