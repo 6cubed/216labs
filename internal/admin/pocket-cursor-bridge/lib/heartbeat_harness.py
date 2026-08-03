@@ -28,6 +28,15 @@ DEFAULT_EXECUTION_FLOOR = (
     "or a doc that unlocks the next step. Status-only replies don't count. "
     "When blocked, name the blocker and the next concrete move."
 )
+DEFAULT_HARNESS_SELF_EDIT = (
+    "Harness self-edit: before you finish this beat, ask whether the heartbeat "
+    "instructions themselves should change. If this cycle revealed a missing habit, "
+    "stale prompt, weak Push bar, bad Reflect line, or wrong cadence note—update "
+    "internal/admin/pocket-cursor-bridge/lib/heartbeat_harness.json in the same ship "
+    "(hot-reload). Also fix .cursor/rules/pocket-cursor.mdc or heartbeat-*.mdc when "
+    "they contradict the harness. Do not churn every beat; only edit when the "
+    "instruction gap is real and the next agent would benefit."
+)
 DEFAULT_INTERVAL_SEC = 1800
 DEFAULT_FIRST_RUN_DELAY_SEC = 120
 MIN_INTERVAL_SEC = 300
@@ -168,6 +177,25 @@ def _closeouts_first_text() -> str:
     )
 
 
+def _harness_self_edit_enabled() -> bool:
+    env = os.environ.get("POCKET_HEARTBEAT_HARNESS_SELF_EDIT", "").strip().lower()
+    if env in ("0", "false", "no", "off"):
+        return False
+    if env in ("1", "true", "yes", "on"):
+        return True
+    return _truthy(_harness.get("harness_self_edit_enabled"), True)
+
+
+def _harness_self_edit_text() -> str:
+    env = os.environ.get("POCKET_HEARTBEAT_HARNESS_SELF_EDIT_TEXT", "").strip()
+    if env:
+        return env
+    raw = _harness.get("harness_self_edit_text")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return DEFAULT_HARNESS_SELF_EDIT
+
+
 def pick_reflect_prompt() -> str:
     """Random critical-thinking nudge (reflect / prioritize / ideate / execute)."""
     return random.choice(_reflect_prompts())
@@ -186,6 +214,8 @@ def compose_message(base: str | None = None) -> tuple[str, str]:
         reflect_line = pick_reflect_prompt()
         parts.append(f"\n\n[Reflect] {reflect_line}")
     parts.append(f"\n\n[Push] {_execution_floor()}")
+    if _harness_self_edit_enabled():
+        parts.append(f"\n\n[Harness] {_harness_self_edit_text()}")
     return "".join(parts), reflect_line
 
 
@@ -248,6 +278,7 @@ def status_summary() -> str:
         f"Skip while generating: {'yes' if cfg.skip_when_generating else 'no'}",
         f"Telegram ping on send: {'yes' if cfg.notify_telegram else 'no'}",
         f"Reflect prompts: {'ON' if cfg.reflect_enabled else 'OFF'} ({n_reflect} in pool, random each beat)",
+        f"Harness self-edit: {'ON' if _harness_self_edit_enabled() else 'OFF'}",
         f"Base prompt: {cfg.message[:120]}{'…' if len(cfg.message) > 120 else ''}",
         "Edit lib/heartbeat_harness.json to change prompts/interval (hot-reload).",
         "Use /heartbeat on, /heartbeat off, or /heartbeat now",

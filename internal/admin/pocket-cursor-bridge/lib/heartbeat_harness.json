@@ -7,7 +7,9 @@
   "reflect_enabled": true,
   "closeouts_first_enabled": true,
   "closeouts_first_text": "Closeouts-first: before any new work, scan docs/THREAD-CLOSEOUTS.md. If any thread is still open/unclear, either (a) close it decisively as CLOSED with a verify step, or (b) mark it BLOCKED with the blocker + next concrete move. Then proceed.",
-  "execution_floor": "Ship something real this cycle—fix, feature, refactor, commit, push, deploy, or a doc that unlocks the next step. Status-only replies don't count. When blocked, name the blocker and the next concrete move. ~1 in 10 heartbeats should advance revenue (see .cursor/rules/heartbeat-monetization.mdc).",
+  "harness_self_edit_enabled": true,
+  "harness_self_edit_text": "Harness self-edit: before you finish this beat, ask whether the heartbeat instructions themselves should change. If this cycle revealed a missing habit, stale prompt, weak Push bar, bad Reflect line, or wrong cadence note—update internal/admin/pocket-cursor-bridge/lib/heartbeat_harness.json in the same ship (hot-reload). Also fix .cursor/rules/pocket-cursor.mdc or heartbeat-*.mdc when they contradict the harness. Do not churn every beat; only edit when the instruction gap is real and the next agent would benefit.",
+  "execution_floor": "Ship something real this cycle—fix, feature, refactor, commit, push, deploy, or a doc that unlocks the next step. Status-only replies don't count. When blocked, name the blocker and the next concrete move. ~1 in 10 heartbeats should advance revenue (see .cursor/rules/heartbeat-monetization.mdc). Include a harness self-edit in the same ship when the heartbeat instructions themselves are the gap.",
   "reflect_prompts": [
     "Reflect: what is the highest-leverage unfinished item right now, and what blocks it?",
     "Prioritize: name your top three outcomes for the next 30 minutes—pick the boldest one you can still land and start.",
@@ -29,7 +31,9 @@
     "Ideate: what's one experiment you could run in-repo in under 30 minutes that might pay off all week?",
     "Reflect: 216labs needs revenue for API tokens—what live app is closest to charging or converting traffic, and what's blocking it?",
     "Prioritize: this is a monetization beat (~1 in 10)—ship one paid-value slice (checkout, subscribe, merch link, affiliate, B2B lead) before more infra.",
-    "Ideate: smallest diff on a deployed app that could produce revenue or qualified leads within 30 days?"
+    "Ideate: smallest diff on a deployed app that could produce revenue or qualified leads within 30 days?",
+    "Reflect: did this heartbeat's instructions waste time or miss a habit—what one line in heartbeat_harness.json would fix that for the next beat?",
+    "Execute: improve the heartbeat harness itself (message, Push bar, Reflect pool, or closeouts text) if today's friction was process—not product."
   ],
-  "monetization_reflect_note": "Roughly 3 of 21 reflect lines are revenue-themed; agents should also follow .cursor/rules/heartbeat-monetization.mdc (≥1 revenue-focused heartbeat per 10)."
+  "monetization_reflect_note": "Roughly 3 of ~23 reflect lines are revenue-themed; agents should also follow .cursor/rules/heartbeat-monetization.mdc (≥1 revenue-focused heartbeat per 10)."
 }
