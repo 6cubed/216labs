@@ -2,6 +2,14 @@
 
 Use these files when you want a **small, client-agnostic** surface (fewer apps enabled by default) before publishing a community starter repo or trimming the portfolio.
 
+For a **local** plug-and-play stack (does not require copying these files first):
+
+```bash
+./scripts/bootstrap-toolkit.sh
+# optional: also apply these deploy-*.txt examples
+./scripts/bootstrap-toolkit.sh --starter-config
+```
+
 ## Apply
 
 From the repo root:

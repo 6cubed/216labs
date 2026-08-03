@@ -4,7 +4,7 @@ Long-form reference for layout, deploy, and day-two ops. The root [`README.md`](
 
 ## Design
 
-The layout stays **client-agnostic**: manifests, one admin DB, one deploy path, Caddy, optional activator cold-starts. **`products/org-platform/toolkit-demos/`** holds minimal hello-world apps (Next.js + Flask) that exercise the pipeline on a fresh install. Add your own apps under **`products/`** (or trim what ships by default). See **`docs/TOOLKIT.md`**, **`config/toolkit-default-enabled.txt`**, and **`config/examples/toolkit-starter/`** for greenfield and starter publishing.
+The layout stays **client-agnostic**: manifests, one admin DB, one deploy path, Caddy, optional activator cold-starts. **`products/org-platform/toolkit-demos/`** holds minimal hello-world apps (Next.js + Flask) that exercise the pipeline on a fresh install. **Plug and play locally:** `./scripts/bootstrap-toolkit.sh` (see **`docs/TOOLKIT.md`**). Add your own apps under **`products/`** (or trim what ships by default). Starter deploy lists: **`config/toolkit-default-enabled.txt`**, **`config/examples/toolkit-starter/`**.
 
 ## Layout
 

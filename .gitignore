@@ -8,6 +8,9 @@ node_modules/
 .next/
 .env
 .env.local
+.env.toolkit
+.toolkit-admin-credentials
+Caddyfile.local
 # Deploy env overlay (may contain secrets); generated on droplet / from admin
 .env.admin
 __pycache__/

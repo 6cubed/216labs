@@ -1,0 +1,6 @@
+# Local toolkit overlay — used by ./scripts/bootstrap-toolkit.sh
+# Replaces only the Caddyfile bind mount so the committed production Caddyfile stays intact.
+services:
+  caddy:
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile

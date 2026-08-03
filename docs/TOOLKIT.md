@@ -2,6 +2,40 @@
 
 This monorepo is both a **production host** for many apps and a **reusable pattern**: one SQLite source of truth, one admin surface, one deploy script, Caddy + optional activator cold-starts, and `manifest.json` beside each app.
 
+## Plug and play (local)
+
+One command from a clone (Docker required):
+
+```bash
+./scripts/bootstrap-toolkit.sh
+```
+
+That script:
+
+1. Writes **`.env.toolkit`** (does not overwrite a production `.env`)
+2. Creates an admin basic-auth password (printed + saved in **`.toolkit-admin-credentials`**)
+3. Generates **`Caddyfile.local`** — HTTP only, demo allowlist (so Activator will not cold-start the whole portfolio)
+4. Builds and starts: `caddy`, `activator`, `admin`, `landing`, `hello-nextjs`, `hello-flask`
+5. Smoke-checks the local URLs
+
+| URL | What |
+|-----|------|
+| http://localhost/ | Landing |
+| http://admin.localhost/ | Admin (basic auth) |
+| http://hello-nextjs.localhost/ | Next.js demo |
+| http://hello-flask.localhost/ | Flask demo |
+
+`*.localhost` resolves to `127.0.0.1` on modern macOS/Linux — no `/etc/hosts` edit.
+
+Options:
+
+```bash
+./scripts/bootstrap-toolkit.sh --no-up           # prepare files only
+./scripts/bootstrap-toolkit.sh --starter-config  # also copy config/examples/toolkit-starter/*
+```
+
+Add your own app: `./scripts/new-app.sh myapp nextjs` (then wire compose + regenerate Caddy — see `scripts/ADDING_AN_APP.md`).
+
 ## Demo apps
 
 Under `products/org-platform/toolkit-demos/`:
@@ -13,34 +47,28 @@ Under `products/org-platform/toolkit-demos/`:
 
 They exist to prove the pipeline on a fresh machine. You can delete them once your own apps replace them, or keep them as regression checks.
 
-## Fresh clone: small local stack
+## Manual local steps (same as bootstrap)
 
-1. Copy env: `cp .env.example .env` and set `APP_HOST=localhost` (HTTP only for local Caddy; adjust as needed).
-2. Ensure `216labs.db` exists or let the **admin** container create it on first start (empty file is enough: `touch 216labs.db`).
-3. Regenerate the proxy config after adding or removing apps: `python3 scripts/generate-caddyfile.py`
-4. Bring up a **small** set of services (example):
+If you prefer not to use the script:
 
-   ```bash
-   docker compose up -d caddy activator admin landing hello-nextjs hello-flask
-   ```
-
-5. Open the admin UI and enable/disable apps as needed. Optional `config/deploy-bootstrap.txt` can pre-enable a few IDs on admin sync (leave empty in production; use toggles + CI).
+1. Copy env: `cp .env.example .env` and set `APP_HOST=localhost`
+2. `touch 216labs.db .env.admin`
+3. `APP_HOST=localhost TOOLKIT_LOCAL=1 python3 scripts/generate-caddyfile.py Caddyfile.local`
+4. Set `ADMIN_PASSWORD_HASH_B64` (see bootstrap script or `caddy hash-password`)
+5. `docker compose --env-file .env.toolkit -f docker-compose.yml -f docker-compose.toolkit.yml up -d --build caddy activator admin landing hello-nextjs hello-flask`
 
 Deploy without a local DB (e.g. CI) uses `config/toolkit-default-enabled.txt` — edit that file to change the default app set for no-DB runs.
 
-## Greenfield / community starter (next step)
+## Greenfield / community fork
 
-A follow-up workflow is: **fork or clone**, then **remove portfolio apps** you do not need, keep `internal/`, `scripts/`, `config/`, and the toolkit demos (or replace them), and publish as a separate repository for others to start from.
+To publish a trimmed starter from this repo:
 
-To approximate a **minimal deploy surface** before that split:
+1. Run `./scripts/bootstrap-toolkit.sh --starter-config` (or `./scripts/init-toolkit-starter-config.sh`) so `config/deploy-*.txt` match the small stack.
+2. Keep `internal/`, `scripts/`, `config/`, toolkit demos; remove portfolio apps you do not need.
+3. Point `deploy.sh` at **your** Git remote and server path with `DEPLOY_REPO` and `DEPLOY_APP_DIR` (defaults remain `git@github.com:6cubed/216labs.git` and `/opt/216labs`).
+4. Replace branding in `README.md` and manifests; keep the mechanics (manifests, deploy, admin).
 
-- Copy the example configs (see `config/examples/toolkit-starter/README.md`) over `config/deploy-priority.txt` (and optionally a minimal `deploy-bootstrap.txt`), then trim `docker-compose.yml` or rely on admin toggles + GHCR.
-
-- Point `deploy.sh` at **your** Git remote and server checkout path without editing the script: `DEPLOY_REPO` and `DEPLOY_APP_DIR` (defaults remain `git@github.com:6cubed/216labs.git` and `/opt/216labs`).
-
-- **Deploy / GHCR:** With `DEPLOY_IMAGE_SOURCE=local`, any `DEPLOY_RUNTIME_APPS=…` subset **always rebuilds** those apps from the current tree (`.deploy-hashes` does not skip them). With default GHCR pulls plus a subset, the droplet **force-recreates** only those services after `docker pull` so a new digest under `:latest` actually runs. If a package’s `:latest` still lags `main`, add its compose service name to `config/ghcr-always-include.txt` so **Publish images to GHCR** always rebuilds it on every push (remove names you do not need — heavy images cost CI time).
-
-- Replace branding strings in `README.md` and manifests with your org name; keep the **mechanics** (manifests, deploy, admin) unchanged.
+**Deploy / GHCR notes:** With `DEPLOY_IMAGE_SOURCE=local`, any `DEPLOY_RUNTIME_APPS=…` subset **always rebuilds** those apps from the current tree. With default GHCR pulls plus a subset, the droplet **force-recreates** those services after `docker pull`. Put critical services in `config/ghcr-always-include.txt` if `:latest` must rebuild on every push.
 
 ## Shared Python (HTTP)
 
@@ -48,5 +76,7 @@ To approximate a **minimal deploy surface** before that split:
 
 ## Related scripts
 
-- `./scripts/new-app.sh <id> [nextjs|flask|fastapi]` — scaffold another app under `products/org-platform/local/`.
-- `./scripts/init-toolkit-starter-config.sh` — optional; copies starter `deploy-*.txt` examples (see `config/examples/toolkit-starter/`).
+- `./scripts/bootstrap-toolkit.sh` — plug-and-play local stack
+- `./scripts/new-app.sh <id> [nextjs|flask|fastapi]` — scaffold under `products/org-platform/local/`
+- `./scripts/init-toolkit-starter-config.sh` — copy starter `deploy-*.txt` examples
+- `./scripts/local-toolkit-up.sh` — alias for bootstrap
