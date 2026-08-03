@@ -2,6 +2,18 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-08-03 ~19:05 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → Stripe secret + **Create Payment Link** (or paste Payment Link) |
+| Ops | **OK** — edge smoke green; disk **57%**; `revenue_env_last` refreshed this beat |
+| DX | **Shipped** — `./scripts/new-colab.sh` scaffolds `colabs/<id>` + index row; toolkit bootstrap + `colabs/carfac-vs-mel` already on main |
+
+**Verify:** [admin](https://admin.6cubed.app/) **401**; `./scripts/new-colab.sh demo-probe "smoke?"` creates `colabs/demo-probe/` (delete if unused); StoryMagic `/api/checkout/ready` flips when Payment Link/keys land.
+
+---
+
 ## Production snapshot (2026-08-03 ~18:50 UTC)
 
 | Highest leverage | Blocker |

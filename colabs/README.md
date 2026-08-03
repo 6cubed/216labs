@@ -16,6 +16,12 @@ colabs/<experiment-id>/
 
 Use a short kebab-case id (`mink-embed-probe`, `story-prompt-ab`).
 
+Scaffold:
+
+```bash
+./scripts/new-colab.sh my-experiment "One-line question?"
+```
+
 ## Open in Colab
 
 ```text

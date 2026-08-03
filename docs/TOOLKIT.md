@@ -78,5 +78,6 @@ To publish a trimmed starter from this repo:
 
 - `./scripts/bootstrap-toolkit.sh` — plug-and-play local stack
 - `./scripts/new-app.sh <id> [nextjs|flask|fastapi]` — scaffold under `products/org-platform/local/`
+- `./scripts/new-colab.sh <id> ["question"]` — scaffold a standalone Colab under `colabs/`
 - `./scripts/init-toolkit-starter-config.sh` — copy starter `deploy-*.txt` examples
 - `./scripts/local-toolkit-up.sh` — alias for bootstrap
