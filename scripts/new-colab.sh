@@ -20,7 +20,8 @@ if [[ -z "$EXP_ID" ]]; then
   exit 1
 fi
 
-if [[ ! "$EXP_ID" =~ ^[a-z0-9]+([_-][a-z0-9]+)*$ ]]; then
+# Allow leading underscore for private/template folders (e.g. _example).
+if [[ ! "$EXP_ID" =~ ^_?[a-z0-9]+([_-][a-z0-9]+)*$ ]]; then
   echo "ERROR: experiment-id must be lowercase kebab-case (got: $EXP_ID)" >&2
   exit 1
 fi
