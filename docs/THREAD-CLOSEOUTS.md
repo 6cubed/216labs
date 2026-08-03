@@ -2,6 +2,29 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-08-03 ~18:50 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → **Create Payment Link** |
+| Ops | **Shipped** — edge restored (Caddy auth); corrupt `216labs.db` restored from `bak.202606010218`; cron-runner healthy |
+| Product | **Shipped** — KidGift waitlist social proof + GA4 (`waitlist_signup` / `preorder_click` / `storymagic_cta_click`) |
+| DX | **Shipped** — Pocket Cursor bridge Glass UI (TipTap + sidebar agents); unmuted |
+
+**Verify:** [admin](https://admin.6cubed.app/) **401**; [kidgift](https://kidgift.6cubed.app/) **200**; Telegram injects into mirrored Cursor chat after Glass restart.
+
+---
+
+## Telegram bridge silent / tab not found (Glass UI) — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| Bridge `.muted`; `chat scan (0)`; `ERROR: tab not found` | Glass Agents sidebar + TipTap composer selectors in `chat_detection.py` / `pocket_cursor.py`; remove `.muted`; restart bridge |
+
+**Verify:** Bridge log shows `chat scan: … (N)` with N>0; Telegram message injects into active agent chat.
+
+---
+
 ## Production snapshot (2026-06-01 ~04:54 UTC)
 
 | Highest leverage | Blocker |

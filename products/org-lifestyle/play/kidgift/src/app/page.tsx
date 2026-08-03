@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { INTERESTS, storymagicPreorderUrl, storymagicUrl, type Budget, type GiftIdea } from "@/lib/gifts";
+import { trackKidgiftEvent } from "@/lib/analytics";
 
 type CheckoutReady = {
   preorderConfigured?: boolean;
   preorderUrl?: string;
   priceUsd?: string;
+  waitlistCount?: number;
 };
 
 type SuggestResponse = {
@@ -24,6 +26,7 @@ export default function Page() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<SuggestResponse | null>(null);
   const [checkout, setCheckout] = useState<CheckoutReady | null>(null);
+  const [waitlistCount, setWaitlistCount] = useState(0);
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistStatus, setWaitlistStatus] = useState("");
   const [waitlistSaving, setWaitlistSaving] = useState(false);
@@ -33,7 +36,9 @@ export default function Page() {
     fetch("https://storybook.6cubed.app/api/checkout/ready")
       .then((r) => r.json())
       .then((data: CheckoutReady) => {
-        if (!cancelled) setCheckout(data);
+        if (cancelled) return;
+        setCheckout(data);
+        setWaitlistCount(typeof data.waitlistCount === "number" ? data.waitlistCount : 0);
       })
       .catch(() => {});
     return () => {
@@ -95,13 +100,26 @@ export default function Page() {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Could not save");
+      trackKidgiftEvent("waitlist_signup", {
+        placement: "kidgift_results",
+        utm_source: "kidgift",
+        utm_campaign: "gift_finder",
+      });
       setWaitlistStatus("You’re on the list — we’ll email when StoryMagic preorders open.");
       setWaitlistEmail("");
+      setWaitlistCount((n) => n + 1);
     } catch (err) {
       setWaitlistStatus(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setWaitlistSaving(false);
     }
+  }
+
+  function onStorymagicCtaClick() {
+    trackKidgiftEvent(preorderLive ? "preorder_click" : "storymagic_cta_click", {
+      placement: "kidgift_premium_pick",
+      child_age: age,
+    });
   }
 
   return (
@@ -238,6 +256,7 @@ export default function Page() {
                 href={smCtaUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={onStorymagicCtaClick}
                 style={{
                   background: "#fff",
                   color: "var(--purple)",
@@ -249,6 +268,9 @@ export default function Page() {
                 }}
               >
                 {smCtaLabel}
+                {!preorderLive && waitlistCount >= 1
+                  ? ` · ${waitlistCount} ${waitlistCount === 1 ? "family" : "families"} waiting`
+                  : ""}
               </a>
             </div>
           </div>
@@ -299,7 +321,11 @@ export default function Page() {
               }}
             >
               <p style={{ margin: "0 0 0.75rem", fontWeight: 600, fontSize: "0.95rem" }}>
-                Not ready for a preview? Get emailed when printed books go on sale.
+                Not ready for a preview? Get emailed when printed books go on sale
+                {waitlistCount >= 1
+                  ? ` — ${waitlistCount} ${waitlistCount === 1 ? "family" : "families"} already waiting`
+                  : ""}
+                .
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 <input

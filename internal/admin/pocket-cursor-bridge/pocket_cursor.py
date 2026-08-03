@@ -1445,27 +1445,42 @@ def _cdp_conn_for_telegram_send():
     return active_conn()
 
 
-def _cdp_activate_mirrored_tab(conn, pc_id: str | None) -> str:
+def _cdp_activate_mirrored_tab(conn, pc_id: str | None, chat_name: str | None = None) -> str:
     """Click the agent tab with data-pc-id=pc_id so input targets the same composer as the monitor.
 
-    cursor_get_turn_info scopes by composer id from mirrored_chat; querySelector('.aislash-editor-input')
-    alone uses whichever tab is focused — often the wrong chat in a multi-tab window.
+    cursor_get_turn_info scopes by composer id from mirrored_chat; querySelector on the editor
+    alone uses whichever chat is focused — often the wrong chat in a multi-chat window.
+    Supports legacy agent-tabs, editor-group tabs, and Glass sidebar rows.
     """
     if not pc_id or not conn:
         return 'OK'
     pid_js = json.dumps(pc_id)
+    name_js = json.dumps(chat_name or '')
     js = f"""
     (function() {{
         const pid = {pid_js};
+        const wantName = {name_js};
         const candidates = document.querySelectorAll('[data-pc-id="' + pid + '"]');
         let el = null;
         for (const c of candidates) {{
+            if (c.classList && c.classList.contains('glass-sidebar-agent-menu-btn')) {{ el = c; break; }}
             if (c.querySelector('a[aria-id="chat-horizontal-tab"]')) {{ el = c; break; }}
             if (c.querySelector('.composer-tab-label')) {{ el = c; break; }}
+        }}
+        if (!el && wantName) {{
+            for (const btn of document.querySelectorAll('.glass-sidebar-agent-menu-btn')) {{
+                const label = btn.querySelector('.ui-sidebar-menu-button-label')
+                           || btn.querySelector('.ui-sidebar-menu-button-content');
+                if (label && label.textContent.trim() === wantName) {{ el = btn; break; }}
+            }}
         }}
         if (!el) return 'ERROR: tab not found (pc_id=' + pid + ', n=' + candidates.length + ')';
         const a = el.querySelector('a[aria-id="chat-horizontal-tab"]');
         if (a) {{ a.click(); return 'OK'; }}
+        if (el.classList && el.classList.contains('glass-sidebar-agent-menu-btn')) {{
+            el.click();
+            return 'OK';
+        }}
         el.dispatchEvent(new MouseEvent('mousedown', {{bubbles: true, cancelable: true, button: 0}}));
         return 'OK';
     }})();
@@ -2134,10 +2149,13 @@ def cursor_paste_image(image_bytes, mime='image/png', filename='image.png'):
     conn = _cdp_conn_for_telegram_send()
 
     if mirrored_chat and mirrored_chat[1]:
-        tab_res = _cdp_activate_mirrored_tab(conn, mirrored_chat[1])
+        tab_res = _cdp_activate_mirrored_tab(
+            conn, mirrored_chat[1], mirrored_chat[2] if len(mirrored_chat) > 2 else None
+        )
         if isinstance(tab_res, str) and tab_res.startswith('ERROR'):
-            return tab_res
-        time.sleep(0.2)
+            print(f"[sender] tab activate skipped: {tab_res}")
+        else:
+            time.sleep(0.2)
 
     # Focus editor first
     focus_result = cdp_eval_on(conn, """
@@ -2148,6 +2166,11 @@ def cursor_paste_image(image_bytes, mime='image/png', filename='image.png'):
                 for (const ed of all) {
                     if (ed.contentEditable === 'true') { editor = ed; break; }
                 }
+            }
+            if (!editor) {
+                editor = document.querySelector('.ui-prompt-input-editor__input[contenteditable="true"]')
+                      || document.querySelector('.composer-bar .tiptap.ProseMirror[contenteditable="true"]')
+                      || document.querySelector('.composer-bar [contenteditable="true"]');
             }
             if (!editor) return 'ERROR: no editor';
             editor.focus();
@@ -2186,6 +2209,11 @@ def cursor_paste_image(image_bytes, mime='image/png', filename='image.png'):
                     if (ed.contentEditable === 'true') {{ editor = ed; break; }}
                 }}
             }}
+            if (!editor) {{
+                editor = document.querySelector('.ui-prompt-input-editor__input[contenteditable="true"]')
+                      || document.querySelector('.composer-bar .tiptap.ProseMirror[contenteditable="true"]')
+                      || document.querySelector('.composer-bar [contenteditable="true"]');
+            }}
             if (!editor) return 'ERROR: no editor for paste';
 
             // Dispatch paste event
@@ -2207,23 +2235,28 @@ def cursor_click_send():
     """Click the send button in Cursor's editor. Used after image paste with no text."""
     conn = _cdp_conn_for_telegram_send()
     if mirrored_chat and mirrored_chat[1]:
-        tab_res = _cdp_activate_mirrored_tab(conn, mirrored_chat[1])
+        tab_res = _cdp_activate_mirrored_tab(
+            conn, mirrored_chat[1], mirrored_chat[2] if len(mirrored_chat) > 2 else None
+        )
         if isinstance(tab_res, str) and tab_res.startswith('ERROR'):
-            return tab_res
-        time.sleep(0.15)
+            print(f"[sender] tab activate skipped: {tab_res}")
+        else:
+            time.sleep(0.15)
     return cdp_eval_on(conn, """
         (function() {
             const selectors = [
+                '.ui-prompt-input-submit-button',
                 '.send-with-mode .anysphere-icon-button',
                 'button[aria-label="Send"]',
                 '.send-with-mode button',
             ];
             for (const sel of selectors) {
                 const btn = document.querySelector(sel);
-                if (btn) {
-                    setTimeout(() => btn.click(), 0);
-                    return 'OK: ' + sel;
-                }
+                if (!btn) continue;
+                const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+                if (aria.includes('stop')) continue;
+                setTimeout(() => btn.click(), 0);
+                return 'OK: ' + sel;
             }
             return 'ERROR: no send button';
         })();
@@ -2296,6 +2329,11 @@ def cursor_prefill_input(text, conn=None):
                             if (ed.contentEditable === 'true') { editor = ed; break; }
                         }
                     }
+                    if (!editor) {
+                        editor = document.querySelector('.ui-prompt-input-editor__input[contenteditable="true"]')
+                              || document.querySelector('.composer-bar .tiptap.ProseMirror[contenteditable="true"]')
+                              || document.querySelector('.composer-bar [contenteditable="true"]');
+                    }
                     if (!editor) return 'ERROR: no input editor found';
                     editor.focus();
                     editor.click();
@@ -2340,6 +2378,11 @@ def cursor_clear_input(conn=None):
                             if (ed.contentEditable === 'true') { editor = ed; break; }
                         }
                     }
+                    if (!editor) {
+                        editor = document.querySelector('.ui-prompt-input-editor__input[contenteditable="true"]')
+                              || document.querySelector('.composer-bar .tiptap.ProseMirror[contenteditable="true"]')
+                              || document.querySelector('.composer-bar [contenteditable="true"]');
+                    }
                     if (!editor) return 'NO_EDITOR';
                     if (!editor.textContent.trim()) return 'EMPTY';
                     editor.focus();
@@ -2380,10 +2423,14 @@ def cursor_send_message(text, raw=False, source_bracket: str = "Telegram"):
 
     # 0. Activate mirrored agent tab before cdp_lock (tab click uses cdp_eval_on → same lock)
     if mirrored_chat and mirrored_chat[1]:
-        tab_res = _cdp_activate_mirrored_tab(conn, mirrored_chat[1])
+        tab_res = _cdp_activate_mirrored_tab(
+            conn, mirrored_chat[1], mirrored_chat[2] if len(mirrored_chat) > 2 else None
+        )
         if isinstance(tab_res, str) and tab_res.startswith('ERROR'):
-            return tab_res
-        time.sleep(0.2)
+            # Glass layout / stale pc_id: fall through to currently focused composer
+            print(f"[sender] tab activate skipped: {tab_res}")
+        else:
+            time.sleep(0.2)
 
     with cdp_lock:
         # 1. Focus editor
@@ -2401,6 +2448,11 @@ def cursor_send_message(text, raw=False, source_bracket: str = "Telegram"):
                         for (const ed of all) {
                             if (ed.contentEditable === 'true') { editor = ed; break; }
                         }
+                    }
+                    if (!editor) {
+                        editor = document.querySelector('.ui-prompt-input-editor__input[contenteditable="true"]')
+                              || document.querySelector('.composer-bar .tiptap.ProseMirror[contenteditable="true"]')
+                              || document.querySelector('.composer-bar [contenteditable="true"]');
                     }
                     if (!editor) return 'ERROR: no input editor found';
                     editor.focus();
@@ -2451,19 +2503,26 @@ def cursor_send_message(text, raw=False, source_bracket: str = "Telegram"):
                             if (ed.contentEditable === 'true') { editor = ed; break; }
                         }
                     }
+                    if (!editor) {
+                        editor = document.querySelector('.ui-prompt-input-editor__input[contenteditable="true"]')
+                              || document.querySelector('.composer-bar .tiptap.ProseMirror[contenteditable="true"]')
+                              || document.querySelector('.composer-bar [contenteditable="true"]');
+                    }
                     if (!editor || !editor.textContent.trim()) return 'ERROR: text not inserted';
                     const selectors = [
+                        '.ui-prompt-input-submit-button',
                         '.send-with-mode .anysphere-icon-button',
                         'button[aria-label="Send"]',
                         '.send-with-mode button',
                     ];
                     for (const sel of selectors) {
                         const btn = document.querySelector(sel);
-                        if (btn) {
-                            // Async click — returns immediately, click fires on next microtask
-                            setTimeout(() => btn.click(), 0);
-                            return 'OK: ' + sel;
-                        }
+                        if (!btn) continue;
+                        const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+                        if (aria.includes('stop')) continue;
+                        // Async click — returns immediately, click fires on next microtask
+                        setTimeout(() => btn.click(), 0);
+                        return 'OK: ' + sel;
                     }
                     return 'ERROR: no send button';
                 })();
@@ -2497,7 +2556,9 @@ def cursor_get_active_conv():
     return cdp_eval("""
         (function() {
             const tab = document.querySelector('[class*="agent-tabs"] li[class*="checked"] a[aria-id="chat-horizontal-tab"]');
-            return tab ? tab.getAttribute('aria-label') : '';
+            if (tab) return tab.getAttribute('aria-label') || '';
+            const glass = document.querySelector('.glass-sidebar-agent-menu-btn[data-active="true"] .ui-sidebar-menu-button-label');
+            return glass ? glass.textContent.trim() : '';
         })();
     """) or ''
 
@@ -2507,10 +2568,20 @@ def cursor_list_convs():
     result = cdp_eval("""
         (function() {
             const tabs = document.querySelectorAll('[class*="agent-tabs"] li[class*="action-item"] a[aria-id="chat-horizontal-tab"]');
-            return JSON.stringify(Array.from(tabs).map((a, i) => ({
-                name: a.getAttribute('aria-label') || '',
-                active: a.closest('li').classList.contains('checked')
-            })));
+            if (tabs.length) {
+                return JSON.stringify(Array.from(tabs).map((a) => ({
+                    name: a.getAttribute('aria-label') || '',
+                    active: a.closest('li').classList.contains('checked')
+                })));
+            }
+            const glass = document.querySelectorAll('.glass-sidebar-agent-menu-btn');
+            return JSON.stringify(Array.from(glass).map((btn) => {
+                const label = btn.querySelector('.ui-sidebar-menu-button-label');
+                return {
+                    name: label ? label.textContent.trim() : '',
+                    active: btn.getAttribute('data-active') === 'true'
+                };
+            }).filter(x => x.name));
         })();
     """)
     try:
@@ -2524,10 +2595,18 @@ def cursor_switch_conv(index):
     return cdp_eval(f"""
         (function() {{
             const tabs = document.querySelectorAll('[class*="agent-tabs"] li[class*="action-item"] a[aria-id="chat-horizontal-tab"]');
-            if ({index} >= tabs.length) return 'ERROR: only ' + tabs.length + ' tabs open';
-            const tab = tabs[{index}];
-            tab.click();
-            return tab.getAttribute('aria-label') || 'OK';
+            if (tabs.length) {{
+                if ({index} >= tabs.length) return 'ERROR: only ' + tabs.length + ' tabs open';
+                const tab = tabs[{index}];
+                tab.click();
+                return tab.getAttribute('aria-label') || 'OK';
+            }}
+            const glass = Array.from(document.querySelectorAll('.glass-sidebar-agent-menu-btn'));
+            if ({index} >= glass.length) return 'ERROR: only ' + glass.length + ' chats open';
+            const btn = glass[{index}];
+            btn.click();
+            const label = btn.querySelector('.ui-sidebar-menu-button-label');
+            return (label && label.textContent.trim()) || 'OK';
         }})();
     """)
 
@@ -2943,9 +3022,12 @@ def cursor_get_turn_info(composer_prefix='', conn=None, iid=None):
                 });
             });
 
-            // Active conversation name from the checked tab (scoped to agent-tabs to avoid terminal tabs)
+            // Active conversation name (legacy agent-tabs or Glass sidebar)
             const convTab = document.querySelector('[class*="agent-tabs"] li[class*="checked"] a[aria-id="chat-horizontal-tab"]');
-            const convName = convTab ? convTab.getAttribute('aria-label') : '';
+            const glassLabel = document.querySelector('.glass-sidebar-agent-menu-btn[data-active="true"] .ui-sidebar-menu-button-label');
+            const convName = convTab
+                ? (convTab.getAttribute('aria-label') || '')
+                : (glassLabel ? glassLabel.textContent.trim() : '');
 
             return JSON.stringify({ turn_id: turnId, user_full: userFull, sections: sections, images: images, conv: convName });
         })();
@@ -3614,6 +3696,7 @@ def sender_thread():
                                     const candidates = document.querySelectorAll('[data-pc-id="{target_pc_id}"]');
                                     let el = null;
                                     for (const c of candidates) {{
+                                        if (c.classList && c.classList.contains('glass-sidebar-agent-menu-btn')) {{ el = c; break; }}
                                         // Agent-tab: <li> with chat link
                                         if (c.querySelector('a[aria-id="chat-horizontal-tab"]')) {{ el = c; break; }}
                                         // Editor-group tab: has .composer-tab-label
@@ -3623,6 +3706,11 @@ def sender_thread():
                                     // Agent-tab: click the <a> inside the <li>
                                     const a = el.querySelector('a[aria-id="chat-horizontal-tab"]');
                                     if (a) {{ a.click(); return a.getAttribute('aria-label') || 'OK'; }}
+                                    if (el.classList && el.classList.contains('glass-sidebar-agent-menu-btn')) {{
+                                        el.click();
+                                        const gl = el.querySelector('.ui-sidebar-menu-button-label');
+                                        return gl ? gl.textContent.trim() || 'OK' : 'OK';
+                                    }}
                                     // Editor-group tab: use mousedown (VS Code activates tabs on mousedown, not click)
                                     el.dispatchEvent(new MouseEvent('mousedown', {{bubbles: true, cancelable: true, button: 0}}));
                                     const label = el.querySelector('.label-name');
