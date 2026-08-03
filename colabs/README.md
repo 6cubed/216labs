@@ -32,6 +32,7 @@ Badge:
 
 | Folder | Question |
 |--------|----------|
+| [`carfac-vs-mel/`](carfac-vs-mel/) | What do CARFAC NAP and a mel spectrogram look like on the same clip? |
 | [`_example/`](_example/) | Template — copy and rename |
 
 ## Tips
