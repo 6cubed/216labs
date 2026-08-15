@@ -153,7 +153,13 @@ let _db: Database.Database | null = null;
 export function getDb(): Database.Database {
   if (!_db) {
     _db = new Database(getDatabasePath());
-    _db.pragma("journal_mode = WAL");
+    // Not WAL: 216labs.db is bind-mounted as a single file into admin,
+    // cron-runner and activator, so each container would get its own private
+    // -wal/-shm sidecar in its own filesystem layer. Concurrent writers then
+    // corrupt the shared file and host-side deploy scripts read it as
+    // "database disk image is malformed". DELETE keeps everything in one file.
+    _db.pragma("journal_mode = DELETE");
+    _db.pragma("busy_timeout = 5000");
     _db.pragma("foreign_keys = ON");
     initSchema(_db);
   }

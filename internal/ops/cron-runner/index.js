@@ -34,7 +34,9 @@ async function getDb() {
     mkdirSync(parent, { recursive: true });
   }
   const db = new Database(DATABASE_PATH);
-  db.pragma("journal_mode = WAL");
+  // Not WAL — see internal/admin/src/lib/db.ts: this file is bind-mounted
+  // individually into several containers, so WAL sidecars cannot be shared.
+  db.pragma("journal_mode = DELETE");
   db.pragma("busy_timeout = 5000");
   return {
     exec(sql) {
