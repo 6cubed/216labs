@@ -39,6 +39,8 @@ Badge:
 | Folder | Question |
 |--------|----------|
 | [`carfac-vs-mel/`](carfac-vs-mel/) | What do CARFAC NAP and a mel spectrogram look like on the same clip? |
+| [`carfac-sai-drone/`](carfac-sai-drone/) | What does a stabilized auditory image add over mel and CARFAC NAP on drone-recorded speech and distress calls? |
+| [`carfac-sai-underwater/`](carfac-sai-underwater/) | What does a CARFAC stabilized auditory image look like on hydrophone audio, and does it carry orca-call detection signal that mel does not? |
 | [`_example/`](_example/) | Template — copy and rename |
 
 ## Tips
