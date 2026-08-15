@@ -235,8 +235,20 @@ for app_id, docker_svc, port in entries:
         # Dial / DNS / no-backend failures: handle_errors — some Caddy builds use status 0 for dial errors.
         # Do not use a catch-all handle_errors: app 4xx/5xx responses must not redirect to warmup.
         # /api/* and /healthz skip Activator warmup so probes and webhooks get JSON/errors, not 302 HTML.
+        # zurichrunclubs GHCR :latest can lag for months and droplet-ghcr-sync
+        # excludes it — / would keep serving invented clubs. Exact `/` goes to
+        # public/timetable.html (real drop-in groups) until a fresh image is pulled.
+        zrc_home = []
+        if app_id == "zurichrunclubs":
+            zrc_home = [
+                "\t@zrc_home path /",
+                "\thandle @zrc_home {",
+                "\t\tredir /timetable.html 302",
+                "\t}",
+            ]
         lines += [
             f"{site(f'{app_id}.{domain}')} {{",
+            *zrc_home,
             "\thandle /api/* {",
             f"\t\treverse_proxy {docker_svc}:{port}",
             "\t}",

@@ -9,6 +9,8 @@ storybook
 kidgift
 # Human-visited FastAPI (Flutter web is not on GHCR; HTML is served by the API).
 anchor-api
+# Human-visited Next timetable — GHCR :latest was months stale; sync excludes the service.
+zurichrunclubs
 ramblingradio
 stroll
 birdperch

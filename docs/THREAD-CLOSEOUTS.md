@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~23:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| `zurichrunclubs.6cubed.app` | **Live** — `/` 302s to `/timetable.html` with real clubs (WERUN, 6:ZH, CityRunning, …). GHCR `:latest` is still 2026-05-29; sync excludes this app |
+| Anchor / landing | **OK** — both **200** |
+
+**Verify:** `curl -sS https://zurichrunclubs.6cubed.app/timetable.html` contains **CityRunning Nord** and not **Zurich Run Collective**. CEO: send `/work`.
+
+---
+
+## Last beat’s club list never reached visitors — **CLOSED**
+
+`0b3ce0ce` was on `main` but GHCR `:latest` is still the May image, and `droplet-ghcr-sync` **excludes** `zurichrunclubs`. Curl of `/` still showed invented names. A turbopack chunk patch 500’d; restored via compose recreate.
+
+**Shipped:** static `public/timetable.html` in the running container + Caddy exact-`/` redir; `zurichrunclubs` on `ghcr-always-include.txt`. Do not local-build.
+
+**Verify:** public `/timetable.html` 200 with CityRunning; `/` 302 to that path after Caddy recreate.
+
+---
+
 ## Production snapshot (2026-08-15 ~23:15 UTC)
 
 | Highest leverage | Blocker |
