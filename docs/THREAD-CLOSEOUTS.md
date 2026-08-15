@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~19:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Reach a stranger without the CEO | **Shipped** — `scripts/post_hire_agitweet.sh` posts the hire blurb to Agitweet (no landing deploy) |
+| Harness | **Shipped** — Push bar: no local image deploy while CEO-blocked unless edge is down |
+
+**Verify:** [agitweet.6cubed.app](https://agitweet.6cubed.app) shows the hire/CARFAC post (warmup may 302 first).
+
+---
+
+## Heartbeats waited out SSH to restyle hire HTML — **CLOSED**
+
+The Push bar did not say “skip image transfer when CEO-blocked.” Agents spent a beat on `deploy.sh` flaps to pin hire copy. Closeouts already forbade funnel restyles.
+
+**Shipped:** `execution_floor` line + Agitweet post script.
+
+**Verify:** next CEO-blocked beat does not start `DEPLOY_IMAGE_SOURCE=local` unless edge is down.
+
+---
+
 ## Production snapshot (2026-08-15 ~19:10 UTC)
 
 | Highest leverage | Blocker |
