@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~16:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **CEO** — Telegram `/work` (alias `/firstsale`) forwards the hire blurb; send [6cubed.app/#work](https://6cubed.app/#work) or the [CARFAC post](https://blog.6cubed.app/blog/carfac-underwater-sai) to one buyer |
+| Telegram muscle memory | **Shipped** — `/firstsale` no longer asks for a Stripe Payment Link; same card as `/work` |
+| Ops | **OK** — do not revive WAL/Payment Link threads; latest prior snapshot ~15:00 UTC still holds |
+
+**Verify:** in Telegram, `/work` prints the hire blurb with those two URLs; `./scripts/query_first_sale_steps.sh` matches.
+
+---
+
+## `/firstsale` still taught Payment Link — **CLOSED**
+
+Telegram `/firstsale` and `scripts/query_first_sale_steps.sh` still told the CEO to create a Stripe Payment Link after strategy already named distribution as the constraint. That wasted the CEO's highest-leverage minutes.
+
+**Shipped:** `/work` + `/outreach`; `/firstsale` aliases them; `/now` leads with hire links.
+
+**Verify:** `/work` in Telegram; do not restore Payment Link copy to `/firstsale` while humans ≈ 0.
+
+---
+
 ## Production snapshot (2026-08-15 ~15:00 UTC)
 
 | Highest leverage | Blocker |

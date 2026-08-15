@@ -35,5 +35,5 @@
     "Reflect: did this heartbeat's instructions waste time or miss a habit—what one line in heartbeat_harness.json would fix that for the next beat?",
     "Execute: improve the heartbeat harness itself (message, Push bar, Reflect pool, or closeouts text) if today's friction was process—not product."
   ],
-  "monetization_reflect_note": "Roughly 3 of ~23 reflect lines are revenue-themed; agents should also follow .cursor/rules/heartbeat-monetization.mdc (≥1 revenue-focused heartbeat per 10)."
+  "monetization_reflect_note": "Roughly 3 of ~23 reflect lines are revenue-themed; agents should also follow .cursor/rules/heartbeat-monetization.mdc (≥1 revenue-focused heartbeat per 10). When humans ≈ 0, Telegram /work (alias /firstsale) is the CEO outbound — do not tell them to create a Stripe Payment Link."
 }

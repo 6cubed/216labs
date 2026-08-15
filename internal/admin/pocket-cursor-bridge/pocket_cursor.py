@@ -115,8 +115,9 @@ def _ceo_inbox_mark_done(mid: str) -> None:
 
 
 def _repo_root() -> str:
-    # pocket_cursor.py lives at internal/admin/pocket-cursor-bridge/pocket_cursor.py
-    return str(BRIDGE_DIR.parent.parent.parent)
+    # Code lives at internal/admin/pocket-cursor-bridge/; do not use BRIDGE_DIR
+    # (federated instances point that at pocket-cursor-bridge-instances/<id>).
+    return str(BRIDGE_CODE_DIR.parent.parent.parent)
 
 
 def adminpass_reset(*, cid: int) -> None:
@@ -907,11 +908,13 @@ def tg_send_photo_bytes_with_keyboard(cid, photo_bytes, keyboard, filename='scre
 
 
 POCKET_CURSOR_COMMANDS = [
-    {'command': 'now', 'description': 'Quick snapshot: stack, revenue, leads, links'},
+    {'command': 'now', 'description': 'Quick snapshot: stack, leads, hire links'},
+    {'command': 'work', 'description': 'Forwardable hire blurb (web / retainer / audio-ML)'},
+    {'command': 'outreach', 'description': 'Alias for /work'},
+    {'command': 'firstsale', 'description': 'Alias for /work — send the hire offer to one person'},
     {'command': 'checkout', 'description': 'Paid checkout probes (StoryMagic, 1Page, merch)'},
-    {'command': 'revenue', 'description': 'Alias for /checkout (Stripe + StoryMagic live status)'},
+    {'command': 'revenue', 'description': 'Alias for /checkout (probe only — not the first-euro path)'},
     {'command': 'waitlist', 'description': 'StoryMagic waitlist count + paid-path status'},
-    {'command': 'firstsale', 'description': 'StoryMagic Payment Link steps (~2 min to first sale)'},
     {'command': 'experiment', 'description': 'Week revenue test: post URL + checklist (StoryMagic)'},
     {'command': 'merch', 'description': 'Merch catalog + storefront live vs StoryMagic fallback'},
     {'command': 'probe', 'description': 'Fast stack probe (edge + services + checkout)'},
@@ -3241,10 +3244,11 @@ def tg_pocket_commands_help_text():
 
 
 def _run_cmd_quick(cmd: list[str], timeout_sec: int = 12) -> tuple[bool, str]:
-    """Run a small local command and return (ok, stdout_or_err)."""
+    """Run a small local command from the repo root and return (ok, stdout_or_err)."""
     try:
         p = sp.run(
             cmd,
+            cwd=_repo_root(),
             stdout=sp.PIPE,
             stderr=sp.STDOUT,
             timeout=timeout_sec,
@@ -3299,11 +3303,11 @@ def _now_text() -> str:
 
     # Quick links.
     lines.append("\n🔗 Links")
+    lines.append("• Work with us: https://6cubed.app/#work")
+    lines.append("• Audio/ML proof: https://blog.6cubed.app/blog/carfac-underwater-sai")
     lines.append("• Admin overview: https://admin.6cubed.app/")
-    lines.append("• Admin todos: https://admin.6cubed.app/todos")
     lines.append("• Admin leads: https://admin.6cubed.app/leads")
-    lines.append("• Checkout setup: https://admin.6cubed.app/checkout-setup")
-    lines.append("• Telegram: /firstsale /experiment /merch /waitlist /checkout")
+    lines.append("• Telegram: /work /firstsale /now /checkout")
     lines.append("• Homepage: https://6cubed.app/")
 
     return "\n".join(lines).strip()
@@ -3331,20 +3335,28 @@ def _waitlist_text() -> str:
     return "\n".join(lines).strip()
 
 
-def _firstsale_text() -> str:
-    """Telegram /firstsale: CEO checklist for StoryMagic Payment Link."""
+def _work_text() -> str:
+    """Telegram /work and /firstsale: forwardable hire blurb (distribution, not Stripe)."""
     ok, out = _run_cmd_quick(
         ["bash", "-lc", "./scripts/query_first_sale_steps.sh"],
-        timeout_sec=28,
+        timeout_sec=18,
     )
     if out:
-        return "💰 " + out
+        return out
     return (
-        "💰 First sale — StoryMagic\n"
-        "1. https://dashboard.stripe.com/test/payment-links/create ($24.99)\n"
-        "2. https://admin.6cubed.app/checkout-setup → Save\n"
-        "Docs: docs/STORYMAGIC-WEEK-EXPERIMENT.md"
+        "First €1 — send this to one person (not Stripe).\n\n"
+        "--- copy / forward below ---\n"
+        "216Labs takes paid work: production web apps, AI retainers (€5–15k / monthly), "
+        "and specialist audio/ML pilots (CARFAC on hydrophone, drone, and bird audio).\n\n"
+        "Hire: https://6cubed.app/#work\n"
+        "Proof: https://blog.6cubed.app/blog/carfac-underwater-sai\n"
+        "---"
     )
+
+
+def _firstsale_text() -> str:
+    """Deprecated name — same as /work. Kept so the old muscle memory does the right thing."""
+    return _work_text()
 
 
 def _experiment_text() -> str:
@@ -3949,8 +3961,8 @@ def sender_thread():
                     tg_send(cid, _waitlist_text())
                     continue
 
-                if cmd == '/firstsale':
-                    tg_send(cid, _firstsale_text())
+                if cmd in ('/firstsale', '/work', '/outreach'):
+                    tg_send(cid, _work_text())
                     continue
 
                 if cmd == '/experiment':

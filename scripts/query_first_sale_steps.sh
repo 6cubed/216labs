@@ -1,43 +1,29 @@
 #!/usr/bin/env bash
-# StoryMagic first-sale checklist (Telegram /firstsale).
+# Outreach card (Telegram /firstsale and /work).
+# Stripe Payment Link is not the blocker — see docs/REVENUE-STRATEGY.md.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-echo "First sale — StoryMagic"
-echo ""
-
-READY_JSON="$(curl -sS -m 15 "https://storybook.6cubed.app/api/checkout/ready" 2>/dev/null || echo '{}')"
-python3 - <<'PY' "$READY_JSON"
-import json, sys
-raw = sys.argv[1] if len(sys.argv) > 1 else "{}"
+WAITLIST="$(curl -sS -m 8 "https://storybook.6cubed.app/api/checkout/ready" 2>/dev/null \
+  | python3 -c "import json,sys
 try:
-    d = json.loads(raw)
+    d=json.load(sys.stdin)
+    print(int(d.get('waitlistCount') or 0))
 except Exception:
-    d = {}
-if d.get("ready"):
-    print("Status: CHECKOUT OPEN")
-elif d.get("preorderConfigured"):
-    print("Status: PREORDER LIVE — blast waitlist + drive traffic")
-else:
-    print("Status: BLOCKED — enable preorder")
-    print("")
-    print("Fast path (if STORYBOOK_STRIPE_SECRET_KEY is in admin Env):")
-    print("  1. https://admin.6cubed.app/env — paste sk_test_… or sk_live_…")
-    print("  2. https://admin.6cubed.app — Create Payment Link on Overview or Checkout setup")
-    print("")
-    print("Parallel (no Stripe): B2B inquiries → https://6cubed.app/#storymagic-partners → admin Leads")
-    print("")
-    print("Manual fallback:")
-    print("  1. https://dashboard.stripe.com/test/payment-links/create")
-    print("  2. Paste URL on Checkout setup → Save")
-wc = d.get("waitlistCount")
-if wc:
-    print("")
-    print("Production waitlist:", wc, "families (public count)")
-PY
+    print(0)" 2>/dev/null || echo 0)"
 
-echo ""
-"$ROOT/scripts/query_storybook_waitlist_summary.sh" 2>/dev/null || true
-echo ""
-echo "Week experiment: docs/STORYMAGIC-WEEK-EXPERIMENT.md"
-echo "Local opener: ./scripts/open-first-sale.sh"
+cat <<EOF
+First €1 — send this to one person (not Stripe).
+
+Human visitors last 7 days: ~0. Waitlist: ${WAITLIST}.
+A checkout converts a fraction of visitors; any fraction of 0 is 0.
+
+--- copy / forward below ---
+216Labs takes paid work: production web apps, AI retainers (€5–15k / monthly), and specialist audio/ML pilots (CARFAC on hydrophone, drone, and bird audio).
+
+Hire: https://6cubed.app/#work
+Proof: https://blog.6cubed.app/blog/carfac-underwater-sai
+---
+
+Leads land in admin → Leads. Strategy: docs/REVENUE-STRATEGY.md
+Telegram: /work  (alias: /firstsale)
+EOF

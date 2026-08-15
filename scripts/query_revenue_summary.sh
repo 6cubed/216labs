@@ -23,14 +23,17 @@ if ready:
 elif pre:
     print("   Status: PREORDER LIVE (Payment Link)")
 else:
-    print("   Status: BLOCKED — Payment Link or STORYBOOK_STRIPE_* keys")
-    print("   Next: https://admin.6cubed.app/checkout-setup")
+    print("   Status: checkout not configured (ok — humans ≈ 0, Stripe is not the first-euro path)")
+    print("   When traffic exists: https://admin.6cubed.app/checkout-setup")
 if wc:
     print("   Waitlist: %s families" % wc)
 print("")
 print("2. Merch — Printful URL on Checkout setup (/merch)")
 print("3. 1PageResearch — ONEPAGE_STRIPE_* keys")
 print("")
-print("Telegram: /firstsale /checkout /waitlist")
-print("Playbook: docs/STORYMAGIC-WEEK-EXPERIMENT.md")
+print("Binding constraint: distribution, not Stripe. Humans last 7d ≈ 0.")
+print("First euro: send /work to one buyer — https://6cubed.app/#work")
+print("")
+print("Telegram: /work /firstsale /checkout /waitlist")
+print("Playbook: docs/REVENUE-STRATEGY.md")
 PY
