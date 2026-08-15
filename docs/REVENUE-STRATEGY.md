@@ -6,19 +6,25 @@
 
 216Labs has no payment problem. It has no audience.
 
-Six weeks of Caddy access logs (2026-07-04 → 2026-08-15, 93,737 requests) classified by the
+Every retained Caddy access log (2026-04-07 → 2026-08-15, 225,687 requests) reclassified by the
 bot filter now running in `edge-visitor-rollup`:
 
-| Surface | Human visitors | Bots |
+| Surface | Human visitors (all time) | Bots |
 |---|---:|---:|
-| `6cubed.app` (landing) | 3 | 1,697 |
-| `anchor.6cubed.app` | 3 | 130 |
-| `admin.6cubed.app` | 1 | 252 |
-| `zurichrunningclubs.6cubed.app` | 1 | 144 |
+| `6cubed.app` (landing) | 11 | 4,280 |
+| `anchor.6cubed.app` | 10 | 379 |
+| `zurichrunningclubs.6cubed.app` | 10 | 1,869 |
+| `admin.6cubed.app` (us) | 3 | 616 |
 | **Every other product** | **0** | **0** |
 
-**Eight human visitors in six weeks**, and some of those are us. The other ~59 shipped
-products were never requested by anyone — not by a human, not even by a crawler.
+| Window | Humans | Bots |
+|---|---:|---:|
+| Last 90 days | 18 | 5,443 |
+| Last 30 days | **4** | 1,435 |
+| Last 7 days | **0** | 803 |
+
+**Thirty-four human visitors in four months, zero in the last week**, and some of those are us.
+The other ~59 shipped products were never requested by anyone — not by a human, not even by a crawler.
 
 Corroborating signals, all from production:
 
@@ -31,9 +37,10 @@ Corroborating signals, all from production:
 ### Why this was invisible
 
 `edge_visitor_day` counted any successful `GET /` as a visitor. Scanners hammering `/`,
-`/wp-admin`, and `/.env` produced ~1,200 "monthly uniques" on
-[admin → Org metrics](https://admin.6cubed.app/org-metrics). That number was real enough to
-look like traction and wrong enough to justify 2.5 months of checkout plumbing.
+`/wp-admin`, and `/.env` produced **1,439 "monthly uniques"** on
+[admin → Org metrics](https://admin.6cubed.app/org-metrics) when the real figure was **4** — a
+360× overstatement. That number was real enough to look like traction and wrong enough to
+justify 2.5 months of checkout plumbing.
 
 The rollup now records `is_bot` per visitor (`ua`, `scanner`, or `no-assets` — a real browser
 fetches the page's JS and CSS; crawlers request `/` and vanish). Org metrics reports humans only.

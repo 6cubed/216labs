@@ -4,8 +4,9 @@
 
 ## Read this first
 
-**The binding constraint is distribution, not payment plumbing.** Measured 2026-08-15: **8 human
-visitors in 6 weeks** across the whole portfolio, 0 waitlist signups, 0 leads ever. See
+**The binding constraint is distribution, not payment plumbing.** Measured 2026-08-15 across every
+retained access log: **34 human visitors in 4 months, 4 in the last 30 days, 0 in the last 7** —
+whole portfolio, plus 0 waitlist signups and 0 leads ever. See
 `docs/REVENUE-STRATEGY.md`. Between 2026-05-29 and 2026-08-15 every production snapshot named
 "first StoryMagic sale — blocked on CEO Stripe Payment Link" as the top priority. That was wrong:
 a checkout converts a fraction of visitors, and any fraction of zero is zero.

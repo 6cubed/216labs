@@ -8,8 +8,8 @@ Every production snapshot from **2026-05-29 to 2026-08-15** named this as the to
 
 | Claim | Reality (measured 2026-08-15) |
 |-------|-------------------------------|
-| Sale is one Stripe Payment Link away | **8 human visitors in 6 weeks** across all 63 products; storybook had **0** |
-| ~1.2k monthly edge uniques = traction | `edge_visitor_day` counted scanners hitting `/`, `/wp-admin`, `/.env` as visitors |
+| Sale is one Stripe Payment Link away | **4 human visitors in 30 days, 0 in the last 7**, across all 63 products; storybook had **0** ever |
+| ~1.4k monthly edge uniques = traction | `edge_visitor_day` counted scanners hitting `/`, `/wp-admin`, `/.env` as visitors — a **360× overstatement** |
 | Waitlist is warming up | `waitlistCount: 0`; `lead_event` table was never created, so no lead has ever existed |
 | CEO is the blocker | Distribution is the blocker. A checkout converts a fraction of visitors; any fraction of 0 is 0 |
 
