@@ -27,6 +27,10 @@ CPU is fine. Needs **Python ≥ 3.11** (Colab default is fine). Sections 1–3 t
 
 Read-out is a logistic regression on 32×32 mean-pooled images, cross-validated **grouped by source WAV** so no model is tested on a recording it trained on. Tens of windows from one day at one hydrophone — a signal check, not a benchmark.
 
+## Paid pilots
+
+216Labs takes this as **labelled-audio detection work** (hydrophone PAM, drone, bird). Offer: [CARFAC pilots](../../docs/CARFAC-PILOTS.md). Start: [6cubed.app/#work](https://6cubed.app/#work). Write-up: [CARFAC SAI on underwater audio](https://blog.6cubed.app/blog/carfac-underwater-sai).
+
 ## Notes
 
 - **Time averaging is what costs the SAI.** A 2.45 s window contains a call lasting a fraction of a second; collapsing 122 SAI frames into one image discards the temporal envelope that makes it detectable. Marginalising over *channels* instead — keeping lag × time — recovers most of the gap, and the call's periodicity is plainly visible in that view while background ringing stays flat.

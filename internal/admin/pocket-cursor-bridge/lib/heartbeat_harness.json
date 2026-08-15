@@ -30,10 +30,10 @@
     "Reflect: what would you regret leaving uncommitted overnight?",
     "Ideate: what's one experiment you could run in-repo in under 30 minutes that might pay off all week?",
     "Reflect: 216labs needs revenue for API tokens—what live app is closest to charging or converting traffic, and what's blocking it?",
-    "Prioritize: this is a monetization beat (~1 in 10)—ship one paid-value slice (checkout, subscribe, merch link, affiliate, B2B lead) before more infra.",
+    "Prioritize: this is a monetization beat (~1 in 10)—when human visitors ≈ 0, ship distribution or a B2B lead path (research/colab CTA, directory listing, outbound), not checkout/merch. Checkout counts only when traffic is growing.",
     "Ideate: smallest diff on a deployed app that could produce revenue or qualified leads within 30 days?",
     "Reflect: did this heartbeat's instructions waste time or miss a habit—what one line in heartbeat_harness.json would fix that for the next beat?",
     "Execute: improve the heartbeat harness itself (message, Push bar, Reflect pool, or closeouts text) if today's friction was process—not product."
   ],
-  "monetization_reflect_note": "Roughly 3 of ~23 reflect lines are revenue-themed; agents should also follow .cursor/rules/heartbeat-monetization.mdc (≥1 revenue-focused heartbeat per 10). When humans ≈ 0, Telegram /work (alias /firstsale) is the CEO outbound — do not tell them to create a Stripe Payment Link."
+  "monetization_reflect_note": "Roughly 3 of ~23 reflect lines are revenue-themed; agents should also follow .cursor/rules/heartbeat-monetization.mdc (≥1 revenue-focused heartbeat per 10). When humans ≈ 0, Telegram /work (alias /firstsale) is the CEO outbound — do not tell them to create a Stripe Payment Link. Do not ship checkout/merch/paywall on a monetization beat while visitors are ~0; put the offer on a stranger-facing surface (research/colab, listing, outbound) instead."
 }

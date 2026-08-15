@@ -23,6 +23,10 @@ Samples from [DroneAudioSet](https://huggingface.co/datasets/ahlab-drone-project
 
 Both files run a fixed 152 s script: male speech (0–31 s), female speech (31–62 s), crying (62–92 s), other human sounds (92–122 s), non-human sounds (122–152 s). The drone recording is matched to the clean source by that script, not sample-aligned.
 
+## Paid pilots
+
+Same offer as the underwater notebook: labelled-audio detection on **your** files. [CARFAC pilots](../../docs/CARFAC-PILOTS.md) · [hire](https://6cubed.app/#work).
+
 ## Notes
 
 - The SAI is a trigger-aligned running autocorrelation of the NAP: cochlear channel × **lag**, one frame per ~46 ms. Voiced sound shows a comb of vertical ridges at its pitch period and multiples.

@@ -10,6 +10,10 @@
 
 CPU is fine. Needs **Python ≥ 3.11** (Colab default is fine). Installs [google/carfac](https://github.com/google/carfac) (NumPy) + librosa, loads a short public sample (or optional upload), then plots waveform + mel + CARFAC NAP.
 
+## Paid pilots
+
+If this frontend comparison is the start of a detection job (hydrophone, drone, bird), 216Labs sells time-boxed pilots: [CARFAC pilots](../../docs/CARFAC-PILOTS.md) · [6cubed.app/#work](https://6cubed.app/#work).
+
 ## Notes
 
 - CARFAC runs at **22.05 kHz** (library default); mel uses the same resampled mono clip.

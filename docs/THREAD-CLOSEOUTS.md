@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~21:10 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Audio/ML B2B path | **Shipped** — CARFAC Colabs + READMEs now link the [pilot offer](CARFAC-PILOTS.md) and `#work` |
+| Anchor / landing / zurichrunclubs | **OK** — 302 warmup / 200 / 200; no new 502s |
+
+**Verify:** GitHub `colabs/carfac-sai-underwater/README.md` contains `6cubed.app/#work`. Colab intro cells include **Paid detection pilots**.
+
+---
+
+## Monetization beats were told to ship checkout while humans ≈ 0 — **CLOSED**
+
+The ~1-in-10 reflect line listed "checkout, subscribe, merch" first. That contradicts `heartbeat-monetization.mdc` and produces Stripe work instead of a stranger-facing offer.
+
+**Shipped:** reflect line + `monetization_reflect_note` now say distribution/B2B while visitors are ~0. CARFAC Colabs (indexed, no deploy) carry the paid-pilot CTA.
+
+**Verify:** next monetization beat does not open Stripe keys.
+
+---
+
 ## Production snapshot (2026-08-15 ~20:40 UTC)
 
 | Highest leverage | Blocker |

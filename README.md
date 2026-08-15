@@ -24,7 +24,7 @@ We believe in a world where LLMs can guarantee incremental improvements to softw
 
 ## Work with us
 
-Need a production web app, an AI-feature retainer, or a specialist **audio/ML pilot** (CARFAC on hydrophone, drone, and bird audio)? One buyer is enough — [hire the lab](https://6cubed.app/#work). Proof: [CARFAC SAI on underwater audio](https://blog.6cubed.app/blog/carfac-underwater-sai).
+Need a production web app, an AI-feature retainer, or a specialist **audio/ML pilot** (CARFAC on hydrophone, drone, and bird audio)? One buyer is enough — [hire the lab](https://6cubed.app/#work). Proof: [CARFAC SAI on underwater audio](https://blog.6cubed.app/blog/carfac-underwater-sai). Pilot scope: [CARFAC pilots](docs/CARFAC-PILOTS.md).
 
 ## Get started (plug and play)
 
