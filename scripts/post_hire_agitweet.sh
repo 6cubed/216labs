@@ -17,7 +17,8 @@ if ! docker image inspect 216labs/agitweet:latest >/dev/null 2>&1; then
   docker pull ghcr.io/6cubed/216labs/agitweet:latest
   docker tag ghcr.io/6cubed/216labs/agitweet:latest 216labs/agitweet:latest
 fi
-docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build agitweet
+python3 scripts/export-env-admin-from-db.py 216labs.db > .env.admin
+docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate agitweet
 ok=0
 for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
   if docker compose exec -T agitweet python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/healthz', timeout=2).read()" >/dev/null 2>&1; then
