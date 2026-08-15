@@ -131,7 +131,9 @@ _scp_then_load() {
   local local_tar="$1"
   local remote_tar="$2"
   wait_remote_ssh || return 1
-  scp "${SSH_OPTS[@]}" "$local_tar" "$REMOTE:$remote_tar" || return 1
+  # Full-speed scp of an 50MB+ gzip knocks sshd over on 1GB RAM as soon as the
+  # probe succeeds. Cap ~512 KB/s (`-l` is Kbit/s).
+  scp -l 4096 "${SSH_OPTS[@]}" "$local_tar" "$REMOTE:$remote_tar" || return 1
   # scp of an 80MB+ gzip can knock sshd over while edge still serves; wait before load.
   wait_remote_ssh || return 1
   ssh "${SSH_OPTS[@]}" "$REMOTE" "docker load -i '$remote_tar' && rm -f '$remote_tar'"
