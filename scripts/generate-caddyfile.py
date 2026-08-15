@@ -245,7 +245,8 @@ for app_id, docker_svc, port in entries:
             site_open += [
                 "\t@zrc_home path /",
                 "\thandle @zrc_home {",
-                "\t\tredir /timetable.html 302",
+                "\t\trewrite * /timetable.html",
+                f"\t\treverse_proxy {docker_svc}:{port}",
                 "\t}",
             ]
         proxy_block = [

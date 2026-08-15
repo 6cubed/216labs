@@ -1545,7 +1545,8 @@ ytsync.6cubed.app {
 zurichrunclubs.6cubed.app {
 	@zrc_home path /
 	handle @zrc_home {
-		redir /timetable.html 302
+		rewrite * /timetable.html
+		reverse_proxy zurichrunclubs:3000
 	}
 	handle /api/* {
 		reverse_proxy zurichrunclubs:3000
