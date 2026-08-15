@@ -191,8 +191,12 @@ def get_status(app_id: str) -> Dict[str, object]:
 
 
 def db_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=15.0)
     conn.row_factory = sqlite3.Row
+    # Same constraint as admin/cron-runner: the DB file is bind-mounted alone,
+    # so WAL sidecars are private per container and fight the other writers.
+    conn.execute("PRAGMA busy_timeout = 15000")
+    conn.execute("PRAGMA journal_mode = DELETE")
     return conn
 
 
