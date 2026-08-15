@@ -1,5 +1,13 @@
 # First sale — unblock checkout this week
 
+> **Superseded as a priority (2026-08-15).** Checkout was never the blocker. Measured over six
+> weeks of access logs: **8 human visitors** across the entire portfolio, 0 waitlist signups,
+> 0 leads. A checkout converts a fraction of visitors and any fraction of zero is zero. Read
+> [`REVENUE-STRATEGY.md`](REVENUE-STRATEGY.md) first.
+>
+> The mechanics below stay accurate — use them **when there is traffic to convert**, and treat
+> setting the keys as a 20-minute task rather than a strategy.
+
 216labs has **live apps** and **lead capture** without Stripe.
 
 ## Closest to charging (May 2026)

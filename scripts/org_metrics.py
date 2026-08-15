@@ -161,25 +161,42 @@ def _db_metrics(root: Path, *, db_path: Path) -> DbMetrics:
     else:
         notes.append("client_error_event table missing; error metrics unavailable")
 
-    # Edge uniques: edge_visitor_day
+    # Edge uniques: edge_visitor_day.
+    # is_bot: 0 human, 1 bot/scanner, 2 recorded before bot filtering existed.
     if table_exists("edge_visitor_day"):
+        has_is_bot = any(
+            r[1] == "is_bot" for r in conn.execute("PRAGMA table_info(edge_visitor_day);").fetchall()
+        )
+        human_only = "AND is_bot = 0" if has_is_bot else ""
+        if not has_is_bot:
+            notes.append("edge_visitor_day predates bot filtering; counts include scanners")
         try:
             for days in (1, 7, 30):
                 row = conn.execute(
-                    """
+                    f"""
                     SELECT COUNT(DISTINCT visitor_hash) AS uniques
                     FROM edge_visitor_day
-                    WHERE day_utc >= date('now', ?);
+                    WHERE day_utc >= date('now', ?) {human_only};
                     """,
                     (f"-{days} days",),
                 ).fetchone()
                 data[f"edge_uniques_{days}d"] = int(row["uniques"] or 0)
 
+            if has_is_bot:
+                row = conn.execute(
+                    """
+                    SELECT COUNT(DISTINCT visitor_hash) AS bots
+                    FROM edge_visitor_day
+                    WHERE day_utc >= date('now', '-30 days') AND is_bot = 1;
+                    """
+                ).fetchone()
+                data["edge_bots_30d"] = int(row["bots"] or 0)
+
             top = conn.execute(
-                """
+                f"""
                 SELECT app_id, COUNT(DISTINCT visitor_hash) AS uniques
                 FROM edge_visitor_day
-                WHERE day_utc >= date('now', '-7 days')
+                WHERE day_utc >= date('now', '-7 days') {human_only}
                 GROUP BY app_id
                 ORDER BY uniques DESC, app_id ASC
                 LIMIT 10;

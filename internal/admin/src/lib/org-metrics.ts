@@ -20,9 +20,12 @@ export type OrgMetrics = {
   quality: {
     errors24h?: number;
     errors7d?: number;
+    /** Human visitors only (is_bot = 0). Bots are reported separately. */
     edgeUniques1d?: number;
     edgeUniques7d?: number;
     edgeUniques30d?: number;
+    edgeBots30d?: number;
+    edgeUnclassified30d?: number;
     topErrorApps24h?: Array<{ appId: string; n: number }>;
     topEdgeApps7d?: Array<{ appId: string; uniques: number }>;
   };
@@ -142,27 +145,37 @@ export function getOrgMetrics(db: Database.Database): OrgMetrics {
   }
 
   if (tableExists("edge_visitor_day")) {
-    const uniquesSinceDays = (days: number) =>
+    // is_bot: 0 human, 1 bot/scanner, 2 recorded before bot filtering existed.
+    // Counting bots as visitors previously made a zero-audience portfolio look
+    // like it had ~1.2k monthly users, so every headline number here is humans.
+    const uniquesSinceDays = (days: number, isBot: number) =>
       (db
         .prepare(
-          "SELECT COUNT(DISTINCT visitor_hash) AS uniques FROM edge_visitor_day WHERE day_utc >= date('now', ?);"
+          "SELECT COUNT(DISTINCT visitor_hash) AS uniques FROM edge_visitor_day WHERE day_utc >= date('now', ?) AND is_bot = ?;"
         )
-        .get(`-${days} days`) as { uniques: number }).uniques;
-    quality.edgeUniques1d = uniquesSinceDays(1);
-    quality.edgeUniques7d = uniquesSinceDays(7);
-    quality.edgeUniques30d = uniquesSinceDays(30);
+        .get(`-${days} days`, isBot) as { uniques: number }).uniques;
+    quality.edgeUniques1d = uniquesSinceDays(1, 0);
+    quality.edgeUniques7d = uniquesSinceDays(7, 0);
+    quality.edgeUniques30d = uniquesSinceDays(30, 0);
+    quality.edgeBots30d = uniquesSinceDays(30, 1);
+    quality.edgeUnclassified30d = uniquesSinceDays(30, 2);
     quality.topEdgeApps7d = db
       .prepare(
         `
         SELECT app_id AS appId, COUNT(DISTINCT visitor_hash) AS uniques
         FROM edge_visitor_day
-        WHERE day_utc >= date('now', '-7 days')
+        WHERE day_utc >= date('now', '-7 days') AND is_bot = 0
         GROUP BY app_id
         ORDER BY uniques DESC, app_id ASC
         LIMIT 10;
         `
       )
       .all() as Array<{ appId: string; uniques: number }>;
+    if (quality.edgeUnclassified30d) {
+      notes.push(
+        `${quality.edgeUnclassified30d} visitors recorded before bot filtering are excluded from human counts`
+      );
+    }
   } else {
     notes.push("edge_visitor_day missing; edge uniques metrics unavailable");
   }

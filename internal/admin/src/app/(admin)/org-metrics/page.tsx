@@ -60,7 +60,12 @@ export default async function OrgMetricsPage() {
           )} internal`}
         />
         <MetricCard label="Errors (24h)" value={fmt(m.quality.errors24h)} href="/errors" />
-        <MetricCard label="Edge uniques (7d)" value={fmt(m.quality.edgeUniques7d)} href="/cron" />
+        <MetricCard
+          label="Human visitors (7d)"
+          value={fmt(m.quality.edgeUniques7d)}
+          sublabel={`${fmt(m.quality.edgeBots30d)} bots blocked (30d)`}
+          href="/cron"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -81,7 +86,9 @@ export default async function OrgMetricsPage() {
         </div>
 
         <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Top edge uniques (7d)</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">
+            Top apps by human visitors (7d)
+          </h3>
           {m.quality.topEdgeApps7d?.length ? (
             <ul className="space-y-1 text-sm">
               {m.quality.topEdgeApps7d.map((r) => (

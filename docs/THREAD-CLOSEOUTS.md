@@ -2,11 +2,35 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## "First StoryMagic sale is blocked on the CEO's Payment Link" — **CLOSED (the premise was false)**
+
+Every production snapshot from **2026-05-29 to 2026-08-15** named this as the top priority. It was wrong.
+
+| Claim | Reality (measured 2026-08-15) |
+|-------|-------------------------------|
+| Sale is one Stripe Payment Link away | **8 human visitors in 6 weeks** across all 63 products; storybook had **0** |
+| ~1.2k monthly edge uniques = traction | `edge_visitor_day` counted scanners hitting `/`, `/wp-admin`, `/.env` as visitors |
+| Waitlist is warming up | `waitlistCount: 0`; `lead_event` table was never created, so no lead has ever existed |
+| CEO is the blocker | Distribution is the blocker. A checkout converts a fraction of visitors; any fraction of 0 is 0 |
+
+**Shipped this beat:** `edge-visitor-rollup` now classifies every visitor (`is_bot` + `bot_reason`:
+`ua` / `scanner` / `no-assets`); admin Org metrics reports **Human visitors** with bots excluded;
+`docs/REVENUE-STRATEGY.md` records the strategy; `heartbeat-monetization.mdc` now **forbids**
+checkout plumbing as a monetization beat while human visitors are ~0.
+
+**Verify:** [admin → Org metrics](https://admin.6cubed.app/org-metrics) shows **Human visitors (7d)**
+with a bots-blocked sublabel; `./scripts/query_edge_uniques.sh landing 30` prints humans/bots/unclassified.
+
+**Open (CEO):** pick the motion — **services**, **audio/ML consulting**, or **one consumer product**. See `docs/REVENUE-STRATEGY.md`.
+
+---
+
 ## Production snapshot (2026-08-15 ~13:20 UTC)
 
 | Highest leverage | Blocker |
 |------------------|---------|
-| **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → Stripe secret + **Create Payment Link** (unchanged; `revenue_env_last` issues 0, storybook checkout not ready) |
+| **Get one human in front of one product** | **CEO** — choose the motion (services / audio-ML consulting / one consumer product); see `docs/REVENUE-STRATEGY.md` |
+| Metrics | **Shipped** — edge rollup now excludes bots; Org metrics reports human visitors (was inflated ~150× by scanners) |
 | Ops | **Shipped** — `stack-health-check` internal admin probe no longer false-fails (see below); edge smoke green, disk **63%** |
 | Research / DX | **Shipped** — [`colabs/carfac-sai-underwater`](../colabs/carfac-sai-underwater/) — CARFAC **SAI** vs mel vs NAP on Orcasound hydrophone audio, with a grouped-CV detection probe |
 

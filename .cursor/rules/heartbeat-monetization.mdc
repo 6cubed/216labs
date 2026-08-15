@@ -1,30 +1,44 @@
----
-description: Heartbeats must regularly advance revenue, not only infra and observability.
-alwaysApply: true
----
-
 # Heartbeats — monetization floor
 
 216labs needs **revenue** to cover API tokens, hosting, and model spend. Technical heartbeats (errors, deploy, GHCR) are necessary but not sufficient.
+
+## Read this first
+
+**The binding constraint is distribution, not payment plumbing.** Measured 2026-08-15: **8 human
+visitors in 6 weeks** across the whole portfolio, 0 waitlist signups, 0 leads ever. See
+`docs/REVENUE-STRATEGY.md`. Between 2026-05-29 and 2026-08-15 every production snapshot named
+"first StoryMagic sale — blocked on CEO Stripe Payment Link" as the top priority. That was wrong:
+a checkout converts a fraction of visitors, and any fraction of zero is zero.
 
 ## Cadence
 
 - **At least 1 in every 10 heartbeats** should materially advance **making money** (not a status-only mention).
 - When the random `[Reflect]` prompt is revenue-themed (see `internal/admin/pocket-cursor-bridge/lib/heartbeat_harness.json`), treat that cycle as the monetization beat: **prioritize a shippable revenue path** unless production is on fire.
 
-## What counts as a monetization heartbeat
+## Check before doing revenue work
 
-- Wire or improve **checkout, pricing, paywall, affiliate, lead capture, or paid tier** on a live app.
-- Ship **merch / onefit / emailgpt / landing** CTAs that convert (clear offer, store link, subscribe flow).
-- Enable **Stripe / Resend / GA funnel** env + UI that was stubbed.
-- **Doc that unlocks the next revenue step** (pricing page copy, launch checklist, experiment design) when code needs product input.
-- Measure: link admin traffic, edge uniques, or conversion events before building more infra.
+Open [admin → Org metrics](https://admin.6cubed.app/org-metrics) and read **Human visitors (7d)**
+(humans only; bots are excluded since the `is_bot` rollup landed).
 
-## What does not count alone
+- **Human visitors ≈ 0** → the beat must advance **distribution or a non-traffic revenue path**. Payment/pricing/paywall work does **not** count.
+- **Human visitors > 0 and growing** → conversion work counts again: checkout, pricing, paid tier.
 
+## What counts when human visitors are ~0
+
+- Anything that puts a real product in front of a real stranger: outbound, a published piece with a distribution plan, a listing/directory submission, a partner or client conversation.
+- **Service and consulting revenue** — needs one buyer, not a thousand visitors. Currently the highest-EV path (`docs/REVENUE-STRATEGY.md`).
+- Turning existing research (CARFAC audio, birdperch) into a **paid pilot, grant, or client offer**.
+- Measurement that changes a decision — but only once. Do not rebuild dashboards every beat.
+
+## What does not count
+
+- Wiring Stripe keys, Payment Links, pricing pages, paywalls, or affiliate tags **while nobody is visiting**.
+- **Building another app.** 72 apps, 10 enabled, ~0 visitors, €0 revenue. App #73 has negative expected value.
 - Error reporting, deploy scripts, GHCR matrix, or probe lists **unless** they unblock a paid launch this week.
-- “We should monetize someday” without a commit, deploy, or concrete next move.
+- "We should monetize someday" without a commit, deploy, or concrete next move.
 
 ## When blocked
 
-Name the blocker (no Stripe keys, no product decision, no storefront URL) and the **next concrete move** (e.g. set `NEXT_PUBLIC_MERCH_STORE_URL`, add pricing section to onefit, ship tip jar on tortellini).
+Name the blocker and the **next concrete move**. If the blocker is the open strategy decision
+(services vs audio/ML consulting vs one consumer product), say so and pick the smallest reversible
+step that is useful under either choice — do not fall back to checkout plumbing to feel productive.

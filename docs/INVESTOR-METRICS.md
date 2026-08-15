@@ -26,7 +26,7 @@ python3 scripts/org_metrics.py --write quality-reports/org-metrics
   - Count of `manifest.json` under `products/` and `internal/` (proxy for shipped surfaces)
 - **Production signals (from `216labs.db`)**
   - **Error volume**: count of rows in `client_error_event` for last 24h and 7d
-  - **Edge uniques**: rolling distinct visitors from `edge_visitor_day` (1d/7d/30d) plus top apps
+  - **Human visitors**: rolling distinct visitors from `edge_visitor_day` where `is_bot = 0` (1d/7d/30d) plus top apps. Bots and scanners are counted separately and never reported as audience — see `docs/REVENUE-STRATEGY.md` for why this distinction matters.
   - **Enabled apps**: `apps.deploy_enabled` count (when present)
 
 ## Reading the results
@@ -34,7 +34,7 @@ python3 scripts/org_metrics.py --write quality-reports/org-metrics
 Good signs:
 
 - **Commits stay healthy** while **errors_24h** trends flat or down
-- **Edge uniques** grow faster than errors (quality doesn’t collapse under growth)
+- **Human visitors** grow faster than errors (quality doesn’t collapse under growth)
 - Enabled app count grows, while error concentration is limited to a few known targets (not a broad regression)
 
 Bad signs:

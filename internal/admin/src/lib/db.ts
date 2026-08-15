@@ -995,10 +995,30 @@ function ensureEdgeVisitorDayTable(db: Database.Database): void {
       app_id TEXT NOT NULL,
       day_utc TEXT NOT NULL,
       visitor_hash TEXT NOT NULL,
+      is_bot INTEGER NOT NULL DEFAULT 0,
+      bot_reason TEXT,
       PRIMARY KEY (app_id, day_utc, visitor_hash)
     );
     CREATE INDEX IF NOT EXISTS idx_edge_visitor_day_app_day ON edge_visitor_day(app_id, day_utc);
   `);
+  // is_bot: 0 human, 1 bot/scanner, 2 recorded before bot filtering existed.
+  try {
+    const cols = db.prepare("PRAGMA table_info(edge_visitor_day);").all() as Array<{
+      name: string;
+    }>;
+    if (!cols.some((c) => c.name === "is_bot")) {
+      db.exec("ALTER TABLE edge_visitor_day ADD COLUMN is_bot INTEGER NOT NULL DEFAULT 0;");
+      db.exec("UPDATE edge_visitor_day SET is_bot = 2;");
+    }
+    if (!cols.some((c) => c.name === "bot_reason")) {
+      db.exec("ALTER TABLE edge_visitor_day ADD COLUMN bot_reason TEXT;");
+    }
+    db.exec(
+      "CREATE INDEX IF NOT EXISTS idx_edge_visitor_day_bot ON edge_visitor_day(is_bot, day_utc);"
+    );
+  } catch {
+    // legacy DB without the table yet
+  }
 }
 
 function ensureEdgeVisitorRollupCronJob(db: Database.Database): void {

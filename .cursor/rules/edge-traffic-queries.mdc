@@ -1,13 +1,23 @@
----
-description: How to answer “unique users / traffic this week” for any shipped app
-alwaysApply: true
----
-
 # Edge traffic (per-app unique visitors)
 
 Coarse **edge** metrics live in **`216labs.db`** table **`edge_visitor_day`**, filled by cron job **`edge-visitor-rollup`** from Caddy’s JSON **`access.log`** (Docker volume **`caddy_access_logs`**). **`app_id`** is the manifest id (subdomain label), e.g. `onefit`, `landing` for root `6cubed.app` / `www`.
 
-**Rolling N-day distinct “visitors”** (hash of IP + User-Agent per UTC day):
+## Bots are excluded — always count humans only
+
+Most traffic to 6cubed.app is scanners. Counting them made a zero-audience portfolio look like it
+had ~1.2k monthly users and misdirected months of work (see `docs/REVENUE-STRATEGY.md`).
+
+**`is_bot`**: `0` human · `1` bot/scanner · `2` recorded before bot filtering existed (not counted as either).
+**`bot_reason`**: `ua` (non-browser or known crawler), `scanner` (requested `/.env`, `/wp-admin`, …), `no-assets` (never fetched the page’s JS/CSS, so it did not render).
+
+```sql
+SELECT COUNT(DISTINCT visitor_hash) FROM edge_visitor_day
+WHERE app_id = 'onefit' AND is_bot = 0 AND day_utc >= date('now', '-7 days');
+```
+
+Omitting `is_bot = 0` gives a bot count, not an audience.
+
+**Rolling N-day breakdown** (humans / bots / unclassified):
 
 ```bash
 ./scripts/query_edge_uniques.sh <app_id> <days>
@@ -15,11 +25,6 @@ Coarse **edge** metrics live in **`216labs.db`** table **`edge_visitor_day`**, f
 
 Example: `./scripts/query_edge_uniques.sh onefit 7`
 
-**Raw SQL** (same idea):
+CEO-facing surface: [admin → Org metrics](https://admin.6cubed.app/org-metrics) → **Human visitors (7d)**.
 
-```sql
-SELECT COUNT(DISTINCT visitor_hash) FROM edge_visitor_day
-WHERE app_id = 'onefit' AND day_utc >= date('now', '-7 days');
-```
-
-This is **not** logged-in users or GA4; it is an **edge approximation**. If the rollup job is disabled or logs are empty, counts will be low/zero until Caddy + cron-runner have run on the droplet.
+This is an **edge approximation**, not logged-in users or GA4. If the rollup job is disabled or logs are empty, counts will be low/zero until Caddy + cron-runner have run on the droplet.

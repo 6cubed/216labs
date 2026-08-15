@@ -35,7 +35,20 @@ if [ "$HAS_TABLE" != "1" ]; then
   exit 2
 fi
 
-sqlite3 "$DB" "SELECT COUNT(DISTINCT visitor_hash) AS unique_visitors
-FROM edge_visitor_day
-WHERE app_id = '$APP_ID'
-  AND day_utc >= date('now', '-$DAYS days');"
+HAS_IS_BOT="$(sqlite3 "$DB" "SELECT 1 FROM pragma_table_info('edge_visitor_day') WHERE name='is_bot' LIMIT 1;" 2>/dev/null || true)"
+if [ "$HAS_IS_BOT" != "1" ]; then
+  echo "warning: DB predates bot filtering; counts include scanners" >&2
+  sqlite3 "$DB" "SELECT COUNT(DISTINCT visitor_hash) FROM edge_visitor_day
+  WHERE app_id = '$APP_ID' AND day_utc >= date('now', '-$DAYS days');"
+  exit 0
+fi
+
+# is_bot: 0 human, 1 bot/scanner, 2 recorded before bot filtering existed.
+sqlite3 -header -column "$DB" "SELECT
+  SUM(CASE WHEN is_bot = 0 THEN 1 ELSE 0 END) AS humans,
+  SUM(CASE WHEN is_bot = 1 THEN 1 ELSE 0 END) AS bots,
+  SUM(CASE WHEN is_bot = 2 THEN 1 ELSE 0 END) AS unclassified
+FROM (
+  SELECT DISTINCT visitor_hash, is_bot FROM edge_visitor_day
+  WHERE app_id = '$APP_ID' AND day_utc >= date('now', '-$DAYS days')
+);"

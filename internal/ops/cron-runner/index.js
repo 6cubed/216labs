@@ -98,6 +98,8 @@ function ensureCronRunnerMigrations(db) {
       app_id TEXT NOT NULL,
       day_utc TEXT NOT NULL,
       visitor_hash TEXT NOT NULL,
+      is_bot INTEGER NOT NULL DEFAULT 0,
+      bot_reason TEXT,
       PRIMARY KEY (app_id, day_utc, visitor_hash)
     );
     CREATE INDEX IF NOT EXISTS idx_edge_visitor_day_app_day ON edge_visitor_day(app_id, day_utc);
@@ -114,6 +116,24 @@ function ensureCronRunnerMigrations(db) {
     );
     CREATE INDEX IF NOT EXISTS idx_client_error_app_time ON client_error_event(app_id, occurred_at);
   `);
+  // is_bot: 0 human, 1 bot/scanner, 2 recorded before bot filtering existed.
+  // Rows already in the table were counted without any bot check, so they are
+  // marked unknown rather than silently inflating the human visitor count.
+  try {
+    const cols = db.prepare("PRAGMA table_info(edge_visitor_day)").all();
+    if (!cols.some((c) => c.name === "is_bot")) {
+      db.exec("ALTER TABLE edge_visitor_day ADD COLUMN is_bot INTEGER NOT NULL DEFAULT 0");
+      db.exec("UPDATE edge_visitor_day SET is_bot = 2");
+    }
+    if (!cols.some((c) => c.name === "bot_reason")) {
+      db.exec("ALTER TABLE edge_visitor_day ADD COLUMN bot_reason TEXT");
+    }
+    db.exec(
+      "CREATE INDEX IF NOT EXISTS idx_edge_visitor_day_bot ON edge_visitor_day(is_bot, day_utc)"
+    );
+  } catch (e) {
+    console.error("[schema] edge_visitor_day is_bot migration failed:", e.message);
+  }
   db.exec(`
     INSERT OR IGNORE INTO cron_jobs (id, name, description, schedule, enabled) VALUES
     ('telegram-daily-digest', 'Daily codebase digest', 'Summarise repo activity and open PRs/issues; post to Telegram.', '0 9 * * *', 0),

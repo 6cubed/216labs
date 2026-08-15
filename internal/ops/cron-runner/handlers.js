@@ -351,6 +351,36 @@ function visitorHash(clientIp, userAgent) {
   return createHash("sha256").update(`${ip}|${ua}`, "utf8").digest("hex").slice(0, 32);
 }
 
+const BOT_UA_PATTERN =
+  /(bot|crawl|spider|scrape|scan|curl|wget|python|go-http|java\/|libwww|okhttp|axios|node-fetch|headless|phantom|monitor|uptime|probe|preview|fetcher|slurp|semrush|ahrefs|bytespider|gptbot|claudebot|perplexity|censys|zgrab|masscan|nmap|expanse|paloalto|httpx|nuclei|internet-measurement|dataprovider|netcraft|builtwith|feedly|rss)/i;
+
+// A real browser renders the page, so it also requests the page's assets.
+// Crawlers and spoofed-UA botnets request "/" and disappear.
+const ASSET_URI_PATTERN =
+  /(^\/_next\/static|\.(js|mjs|css|woff2?|ttf|png|jpg|jpeg|gif|svg|webp)(\?|$))/i;
+
+// Paths nobody browsing the site would request. Anything asking for these is a
+// vulnerability scanner, so every hit from that visitor is treated as a bot even
+// when it also requests "/" with a browser-shaped User-Agent.
+const SCANNER_URI_PATTERN =
+  /^\/(wp-|xmlrpc\.php|\.env|\.git|\.aws|\.ssh|\.vscode|\.well-known\/security|config\.|phpmyadmin|admin\.php|vendor\/|cgi-bin|actuator|solr|boaform|hudson|jenkins|telescope|debug|server-status|\.DS_Store|backup|dump|shell|eval-stdin)/i;
+
+/**
+ * True when the User-Agent is not a real browser session.
+ *
+ * Real browsers all send a "Mozilla/..." prefix, so anything without it is a
+ * script. The extra checks catch scanners that fake a browser prefix, and the
+ * ones that stuff a URL into the User-Agent field.
+ */
+function isBotUserAgent(userAgent) {
+  const ua = String(userAgent || "").trim();
+  if (!ua) return true;
+  if (BOT_UA_PATTERN.test(ua)) return true;
+  if (/https?:\/\//i.test(ua)) return true;
+  if (!/^Mozilla\//i.test(ua)) return true;
+  return false;
+}
+
 function tsToDayUtc(ts) {
   const n = typeof ts === "number" ? ts : parseFloat(String(ts));
   if (!Number.isFinite(n)) return null;
@@ -405,10 +435,21 @@ export async function edgeVisitorRollup(db) {
   const text = buf.toString("utf8");
   const lines = text.split("\n");
   const insertStmt = db.prepare(
-    "INSERT OR IGNORE INTO edge_visitor_day (app_id, day_utc, visitor_hash) VALUES (?, ?, ?)"
+    "INSERT OR IGNORE INTO edge_visitor_day (app_id, day_utc, visitor_hash, is_bot, bot_reason) VALUES (?, ?, ?, ?, ?)"
+  );
+  const markBotStmt = db.prepare(
+    "UPDATE edge_visitor_day SET is_bot = 1, bot_reason = ? WHERE visitor_hash = ? AND is_bot = 0"
+  );
+  // A visit can straddle two batches: the page view lands in this run and the
+  // asset requests in the next. Seeing assets later clears the no-assets guess.
+  const clearNoAssetsStmt = db.prepare(
+    "UPDATE edge_visitor_day SET is_bot = 0, bot_reason = NULL WHERE visitor_hash = ? AND bot_reason = 'no-assets'"
   );
 
-  let processed = 0;
+  const records = [];
+  const scannerVisitors = new Set();
+  const assetVisitors = new Set();
+
   for (const line of lines) {
     if (!line.trim()) continue;
     let rec;
@@ -417,23 +458,46 @@ export async function edgeVisitorRollup(db) {
     } catch {
       continue;
     }
-    if (!shouldCountLine(rec)) continue;
     const req = rec.request;
-    const appId = hostToAppId(req.host, appHost);
-    if (!appId) continue;
+    if (!req || typeof req !== "object") continue;
 
     const clientIp = req.client_ip || req.remote_ip || "";
     const headers = req.headers && typeof req.headers === "object" ? req.headers : {};
     const rawUa = headers["User-Agent"] || headers["User-agent"] || "";
     const ua = Array.isArray(rawUa) ? rawUa[0] : rawUa;
+    const vh = visitorHash(clientIp, ua);
 
+    // Probes usually 404 and assets are not countable page views, so both
+    // signals are collected before shouldCountLine() filters the line out.
+    const uri = typeof req.uri === "string" ? req.uri : "";
+    if (SCANNER_URI_PATTERN.test(uri)) scannerVisitors.add(vh);
+    if (rec.status < 400 && ASSET_URI_PATTERN.test(uri)) assetVisitors.add(vh);
+
+    if (!shouldCountLine(rec)) continue;
+    const appId = hostToAppId(req.host, appHost);
+    if (!appId) continue;
     const dayUtc = tsToDayUtc(rec.ts);
     if (!dayUtc) continue;
 
-    const vh = visitorHash(clientIp, ua);
-    insertStmt.run(appId, dayUtc, vh);
+    records.push({ appId, dayUtc, vh, botUa: isBotUserAgent(ua) });
+  }
+
+  let processed = 0;
+  let humans = 0;
+  for (const r of records) {
+    let reason = null;
+    if (r.botUa) reason = "ua";
+    else if (scannerVisitors.has(r.vh)) reason = "scanner";
+    else if (!assetVisitors.has(r.vh)) reason = "no-assets";
+
+    insertStmt.run(r.appId, r.dayUtc, r.vh, reason ? 1 : 0, reason);
+    if (reason) markBotStmt.run(reason, r.vh);
+    else humans += 1;
     processed += 1;
   }
+  // A visitor can look human until it probes /.env later in the same batch.
+  for (const vh of scannerVisitors) markBotStmt.run("scanner", vh);
+  for (const vh of assetVisitors) clearNoAssetsStmt.run(vh);
 
   const newOffset = offset + buf.length;
   db.prepare("INSERT OR REPLACE INTO cron_runner_state (key, value) VALUES (?, ?)").run(
@@ -442,7 +506,9 @@ export async function edgeVisitorRollup(db) {
   );
 
   if (processed > 0) {
-    console.log(`[edge-visitor-rollup] ingested ${processed} qualifying lines`);
+    console.log(
+      `[edge-visitor-rollup] ingested ${processed} qualifying lines (${humans} human, ${processed - humans} bot)`
+    );
   }
   return "";
 }
