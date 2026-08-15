@@ -1,8 +1,31 @@
 #!/usr/bin/env bash
 # Publish the hire blurb to agitweet.6cubed.app (no landing/Telegram restyle).
 # Token stays on the droplet (sqlite → stdin into the container). Never printed.
+# Idempotent: if a recent public post already has 6cubed.app/#work, exit 0
+# without recreating the container.
 set -euo pipefail
 REMOTE="${1:-${POCKET_REMOTE:-root@46.101.88.197}}"
+
+already=$(
+  python3 - <<'PY' || true
+import json, sys, urllib.request
+try:
+    with urllib.request.urlopen("https://agitweet.6cubed.app/api/posts?limit=5", timeout=10) as resp:
+        data = json.loads(resp.read().decode("utf-8", errors="replace"))
+except Exception:
+    sys.exit(0)
+for post in (data.get("posts") or [])[:3]:
+    text = post.get("text") or ""
+    if "6cubed.app/#work" in text:
+        print("already posted id=%s" % post.get("id"))
+        sys.exit(0)
+sys.exit(0)
+PY
+)
+if [[ "$already" == already\ posted* ]]; then
+  echo "$already"
+  exit 0
+fi
 
 ssh \
   -o BatchMode=yes \
@@ -18,30 +41,120 @@ text = (
     "Hire: https://6cubed.app/#work\n"
     "Proof: https://blog.6cubed.app/blog/carfac-underwater-sai"
 )
+hire_mark = "6cubed.app/#work"
 
-subprocess.run(
-    ["bash", "-lc", """
-set -euo pipefail
-cd /opt/216labs
-if ! docker image inspect 216labs/agitweet:latest >/dev/null 2>&1; then
-  echo "==> pulling ghcr.io/6cubed/216labs/agitweet:latest"
-  docker pull ghcr.io/6cubed/216labs/agitweet:latest
-  docker tag ghcr.io/6cubed/216labs/agitweet:latest 216labs/agitweet:latest
-fi
-python3 scripts/export-env-admin-from-db.py 216labs.db > .env.admin
-docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate agitweet
-ok=0
-for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
-  if docker compose exec -T agitweet python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/healthz', timeout=2).read()" >/dev/null 2>&1; then
-    ok=1
-    break
-  fi
-  sleep 2
-done
-test "$ok" = 1
-"""],
-    check=True,
-)
+
+def _run(args, **kw):
+    return subprocess.run(args, cwd="/opt/216labs", **kw)
+
+
+def _healthy():
+    r = _run(
+        [
+            "docker",
+            "compose",
+            "exec",
+            "-T",
+            "agitweet",
+            "python3",
+            "-c",
+            "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/healthz', timeout=2).read()",
+        ],
+        capture_output=True,
+    )
+    return r.returncode == 0
+
+
+def _token_in_container():
+    r = _run(
+        [
+            "docker",
+            "compose",
+            "exec",
+            "-T",
+            "agitweet",
+            "python3",
+            "-c",
+            "import os; print('1' if os.environ.get('AGITWEET_API_TOKEN','').strip() else '0')",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    return r.returncode == 0 and (r.stdout or "").strip() == "1"
+
+
+def _recent_hire():
+    r = _run(
+        [
+            "docker",
+            "compose",
+            "exec",
+            "-T",
+            "agitweet",
+            "python3",
+            "-c",
+            "import json,urllib.request; d=json.loads(urllib.request.urlopen('http://127.0.0.1:5000/api/posts?limit=5', timeout=5).read()); print(json.dumps(d.get('posts') or []))",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode:
+        return None
+    try:
+        posts = json.loads(r.stdout or "[]")
+    except json.JSONDecodeError:
+        return None
+    for post in posts[:3]:
+        if hire_mark in (post.get("text") or ""):
+            return post.get("id")
+    return None
+
+
+if _run(["docker", "image", "inspect", "216labs/agitweet:latest"], capture_output=True).returncode != 0:
+    print("==> pulling ghcr.io/6cubed/216labs/agitweet:latest", flush=True)
+    _run(["docker", "pull", "ghcr.io/6cubed/216labs/agitweet:latest"], check=True)
+    _run(["docker", "tag", "ghcr.io/6cubed/216labs/agitweet:latest", "216labs/agitweet:latest"], check=True)
+
+need_recreate = not _healthy() or not _token_in_container()
+if need_recreate:
+    print("==> recreating agitweet so the API token is in the container", flush=True)
+    _run(
+        ["bash", "-lc", "python3 scripts/export-env-admin-from-db.py 216labs.db > .env.admin"],
+        check=True,
+    )
+    _run(
+        [
+            "docker",
+            "compose",
+            "--env-file",
+            ".env",
+            "--env-file",
+            ".env.admin",
+            "up",
+            "-d",
+            "--pull",
+            "never",
+            "--no-build",
+            "--force-recreate",
+            "agitweet",
+        ],
+        check=True,
+    )
+    ok = False
+    for _ in range(12):
+        if _healthy():
+            ok = True
+            break
+        import time
+
+        time.sleep(2)
+    if not ok:
+        sys.exit("agitweet did not become healthy")
+
+existing = _recent_hire()
+if existing is not None:
+    print("already posted id=%s" % existing)
+    sys.exit(0)
 
 inner = r"""
 import json, sys, urllib.error, urllib.request

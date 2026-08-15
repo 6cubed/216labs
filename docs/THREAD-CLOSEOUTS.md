@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~19:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Reach a stranger without the CEO | **Live** — Agitweet post **id=88** has the hire + CARFAC URLs |
+| Harness | **Shipped** — skip re-post / agitweet recreate when `/api/posts` already shows `#work` |
+
+**Verify:** `curl -sS https://agitweet.6cubed.app/api/posts?limit=1` text includes `6cubed.app/#work`. Do not run `post_hire_agitweet.sh` again unless that is gone.
+
+---
+
+## Nested `python -c` in `docker compose exec` ate the hire POST — **CLOSED**
+
+`scripts/post_hire_agitweet.sh` claimed a post; nested bash-heredoc `python -c` printed nothing. Working path: droplet Python reads `AGITWEET_API_TOKEN` from sqlite and pipes `token\\n{json}` into `compose exec -T`.
+
+**Shipped:** stdin post; script is idempotent (skip if recent post has `#work`; recreate only if token/health missing).
+
+**Verify:** public `/api/posts` id=88; rerunning the script prints `already posted id=88` and does not recreate.
+
+---
+
 ## Production snapshot (2026-08-15 ~19:40 UTC)
 
 | Highest leverage | Blocker |
