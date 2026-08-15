@@ -9,7 +9,8 @@
   "internal_port": 3000,
   "memory_limit": "256m",
   "docker_service": "blog",
-  "build_context": "./products/org-media/blog",
+  "build_context": ".",
+  "build_dockerfile": "products/org-media/blog/Dockerfile",
   "stack": {
     "frontend": "Next.js 14",
     "backend": null,
