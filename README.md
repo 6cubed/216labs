@@ -7,7 +7,7 @@
 <h3 align="center">216labs</h3>
 
 <p align="center">
-  <em>Production-grade vibes.</em>
+  <em>From the slop, structure will emerge</em>
 </p>
 
 <p align="center">
