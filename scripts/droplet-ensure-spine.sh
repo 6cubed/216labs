@@ -105,12 +105,9 @@ for svc in landing storybook maxlearn 1pageresearch cron-runner; do
 done
 
 # git pull replaces Caddyfile (new inode); reload reads the stale bind mount.
-# Recreate caddy so the new file is mounted.
-if [ -f "$ROOT/scripts/generate-caddyfile.py" ] && command -v python3 &>/dev/null; then
-  python3 "$ROOT/scripts/generate-caddyfile.py" 2>&1 | tail -1 || true
-  if is_running caddy; then
-    "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy 2>&1 | tail -3 || true
-  fi
+# Recreate only when the generated file actually changed — not every 20-min sync.
+if [ -f "$ROOT/scripts/lib/recreate-caddy-if-caddyfile-changed.sh" ]; then
+  SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/lib/recreate-caddy-if-caddyfile-changed.sh" || true
 fi
 
 if [ -f "$ROOT/scripts/stop-disabled-compose-apps.sh" ]; then

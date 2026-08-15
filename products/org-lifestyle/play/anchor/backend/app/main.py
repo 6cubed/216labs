@@ -136,22 +136,26 @@ HOME_HTML = """<!doctype html>
       send.disabled = false;
     });
 
+    async function startAt(la, ln, msg) {
+      lat = la;
+      lng = ln;
+      status.textContent = msg;
+      compose.hidden = false;
+      try {
+        await register();
+        await load();
+      } catch (err) {
+        status.innerHTML = "<span class=err>" + err.message + "</span>";
+      }
+    }
+    const zurichLat = 47.3769, zurichLng = 8.5417;
     if (!navigator.geolocation) {
-      status.innerHTML = "<span class=err>This browser cannot share location.</span>";
+      startAt(zurichLat, zurichLng, "Showing Zurich (this browser has no geolocation).");
     } else {
-      navigator.geolocation.getCurrentPosition(async function (pos) {
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
-        status.textContent = "Within 5 km of you.";
-        compose.hidden = false;
-        try {
-          await register();
-          await load();
-        } catch (err) {
-          status.innerHTML = "<span class=err>" + err.message + "</span>";
-        }
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        startAt(pos.coords.latitude, pos.coords.longitude, "Within 5 km of you.");
       }, function () {
-        status.innerHTML = "<span class=err>Location permission is required to see nearby posts.</span>";
+        startAt(zurichLat, zurichLng, "Showing Zurich — enable location for your area.");
       }, { enableHighAccuracy: false, timeout: 10000 });
     }
   </script>

@@ -28,6 +28,7 @@ Do not spend the heartbeat on unrelated refactors while `admin.6cubed.app` and S
 | `edge-smoke` all `000` / unreachable | Caddy down or whole VPS wedged |
 | `admin` 401 but other hosts timeout | Partial stack — run recover compose up |
 | `int <svc>: FAIL` while ext is `OK (308)` | Usually the **probe**, not the service — internal probes must hit cheap endpoints (see `docs/STACK-HEALTH.md`) |
+| `edge_proxy` / ext FAIL `ECONNREFUSED` `:80` while SSH OK | Caddy mid-recreate from GHCR sync. Recreate Caddy **only when the Caddyfile changed** (`scripts/lib/recreate-caddy-if-caddyfile-changed.sh`). |
 
 ## After lights are on
 

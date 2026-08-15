@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~01:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Edge `edge_proxy` | **Shipped** — Caddy is recreated only when the Caddyfile changes (was every GHCR sync) |
+| Anchor | **Live** — feed still 200; denied location falls back to Zurich |
+
+**Verify:** next `droplet-ghcr-sync` log contains `Caddyfile unchanged — skip recreate`. `curl -sS https://anchor.6cubed.app/` contains **Showing Zurich**. CEO: send `/work`.
+
+---
+
+## Periodic GHCR sync took the public edge down — **CLOSED**
+
+Cron `edge_proxy` / ECONNREFUSED `:80` while admin/activator were 200: `droplet-ghcr-sync` and `ensure-spine` force-recreated Caddy on every 20-minute tick (and twice per tick). Recover then flapped SSH.
+
+**Shipped:** `scripts/lib/recreate-caddy-if-caddyfile-changed.sh`; Anchor Zurich fallback when geolocation is denied.
+
+**Verify:** Caddy stays up across a no-op sync; Anchor HTML contains `Showing Zurich`.
+
+---
+
 ## Production snapshot (2026-08-16 ~00:45 UTC)
 
 | Highest leverage | Blocker |
