@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 
-import { clubs, dayFull, dayOrder, type RunClub } from "@/data/clubs";
+import { announcedThisWeek, clubs, dayFull, dayOrder, type RunClub } from "@/data/clubs";
 
 export const dynamic = "force-dynamic";
 
@@ -60,12 +60,11 @@ export default function Page() {
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1rem 3rem" }}>
       <h1 style={{ marginTop: 0, fontSize: "2rem" }}>Zurich Run Clubs</h1>
       <p style={{ color: "#9eb4e8", fontSize: "0.95rem", marginTop: "-0.25rem" }}>
-        {clubs.length} sessions — days across the top, start times down the side (school-style grid).
+        {clubs.length} recurring sessions — days across the top, start times down the side.
       </p>
       <p style={{ color: "#c8d6ff", maxWidth: 880 }}>
-        Each cell lists runs starting that day at that time. Links open filtered listings, hashtag feeds, club search, or
-        official program pages — not generic app homepages. Use the destination’s calendar or date filter to verify that
-        week’s session before you head out.
+        Real drop-in groups with a club, Meetup, or store page — not invented names or hashtag searches. Open the link
+        and confirm that week’s start before you go; weather, holidays, and race weeks move sessions.
       </p>
 
       <section
@@ -186,11 +185,21 @@ export default function Page() {
         </table>
       </section>
 
-      <p style={{ marginTop: "1rem", color: "#9eb4e8", fontSize: "0.92rem" }}>
-        Note: replace placeholder club names and listing URLs in <code style={{ color: "#c8d6ff" }}>src/data/clubs.ts</code>{" "}
-        with real clubs and permalinks (Meetup events, Strava club pages, public Telegram/Instagram posts) when you have
-        them. Run clubs often change for weather, routes, or race-day adjustments — always double-check on the source.
-      </p>
+      <section style={{ marginTop: "1.75rem", maxWidth: 880 }}>
+        <h2 style={{ fontSize: "1.15rem", margin: "0 0 0.5rem" }}>Announced each week</h2>
+        <ul style={{ margin: 0, paddingLeft: "1.15rem", color: "#c8d6ff" }}>
+          {announcedThisWeek.map((item) => (
+            <li key={item.club} style={{ marginBottom: "0.65rem" }}>
+              <span style={{ fontWeight: 700, color: "#f2f6ff" }}>{item.club}</span>
+              {" — "}
+              {item.note}{" "}
+              <a href={item.evidenceUrl} target="_blank" rel="noreferrer" style={{ color: "#9fbeff" }}>
+                {item.linkLabel} →
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }

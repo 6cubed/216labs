@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~23:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| `zurichrunclubs.6cubed.app` | **Shipped** — timetable is real drop-in clubs (WERUN, 6:ZH, CityRunning, On Lab, District, ZH3, FRC) with Meetup/store permalinks; curator `src/data/clubs.ts` note removed |
+| Anchor / landing | **OK** — both **200**; leftovers still stopped |
+
+**Verify:** public `/` lists **CityRunning Nord** (not “Zurich Run Collective”) and does **not** mention `src/data/clubs.ts`. Live after GHCR sync of `zurichrunclubs`. CEO: send `/work`.
+
+---
+
+## Fake clubs on the only geo host that had humans — **CLOSED**
+
+The page that already had visitors told people to edit `src/data/clubs.ts` and linked Instagram hashtag searches for invented names. Edge was 200; the product was still a placeholder.
+
+**Shipped:** replace rows with recurring Zurich groups and permalinks; add Strava/ASVZ “announced each week”.
+
+**Verify:** `curl -sS https://zurichrunclubs.6cubed.app/` contains `CityRunning` and not `Zurich Run Collective`.
+
+---
+
 ## Production snapshot (2026-08-15 ~22:40 UTC)
 
 | Highest leverage | Blocker |

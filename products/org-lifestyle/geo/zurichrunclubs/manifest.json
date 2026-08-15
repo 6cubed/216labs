@@ -2,7 +2,7 @@
   "id": "zurichrunclubs",
   "name": "Zurich Run Clubs",
   "tagline": "Concise weekly timetable for Zurich running clubs",
-  "description": "One-page timetable with evidence-style links (Meetup/Strava searches, hashtag feeds, program pages). Curators replace placeholders with permalinks to recurring events or club pages where possible.",
+  "description": "One-page timetable of recurring Zurich drop-in run clubs with Meetup, Strava, and store permalinks. Confirm each session on the destination.",
   "category": "consumer",
   "internal_port": 3000,
   "memory_limit": "128m",
