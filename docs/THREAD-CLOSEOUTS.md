@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~20:10 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Reach a stranger without the CEO | **Live in volume** — hire is agitweet **id=88**; public `/api/posts` 302s because the app is cold |
+| Harness | **Shipped** — 302 to activator ≠ missing hire; do not start agitweet to re-check |
+
+**Verify:** `./scripts/post_hire_agitweet.sh` prints `already posted id=88 (volume; not starting agitweet)` while `curl -I https://agitweet.6cubed.app/api/posts` is 302.
+
+---
+
+## Public `/api/posts` 302 would wake Agitweet every heartbeat — **CLOSED**
+
+`urlopen` follows activator warmup, JSON parse fails, and the script treated that as “not posted” then `--force-recreate`. Hire was already in `products/org-social/agitweet/data/agitweet.db`.
+
+**Shipped:** no-follow-redirect public check; volume sqlite is source of truth; cold app is not started.
+
+**Verify:** script skip line above; homepage still contains `Pinned — hire`.
+
+---
+
 ## Production snapshot (2026-08-15 ~19:45 UTC)
 
 | Highest leverage | Blocker |

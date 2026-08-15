@@ -1,22 +1,34 @@
 #!/usr/bin/env bash
 # Publish the hire blurb to agitweet.6cubed.app (no landing/Telegram restyle).
 # Token stays on the droplet (sqlite → stdin into the container). Never printed.
-# Idempotent: if a recent public post already has 6cubed.app/#work, exit 0
-# without recreating the container.
+# Idempotent: if the volume DB already has 6cubed.app/#work, exit 0 without
+# starting or recreating the container. A public 302 to activator is "cold",
+# not "missing hire" — urllib follows redirects and would otherwise wake it.
 set -euo pipefail
 REMOTE="${1:-${POCKET_REMOTE:-root@46.101.88.197}}"
 
 already=$(
   python3 - <<'PY' || true
-import json, sys, urllib.request
+import json, sys, urllib.error, urllib.request
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+url = "https://agitweet.6cubed.app/api/posts?limit=5"
 try:
-    with urllib.request.urlopen("https://agitweet.6cubed.app/api/posts?limit=5", timeout=10) as resp:
+    opener = urllib.request.build_opener(_NoRedirect)
+    with opener.open(url, timeout=10) as resp:
         data = json.loads(resp.read().decode("utf-8", errors="replace"))
+except urllib.error.HTTPError as e:
+    loc = (e.headers.get("Location") or "") if e.headers else ""
+    if e.code in (301, 302, 303, 307, 308) and ("activator" in loc or "warmup" in loc):
+        sys.exit(0)
+    sys.exit(0)
 except Exception:
     sys.exit(0)
-for post in (data.get("posts") or [])[:3]:
-    text = post.get("text") or ""
-    if "6cubed.app/#work" in text:
+for post in (data.get("posts") or [])[:5]:
+    if "6cubed.app/#work" in (post.get("text") or ""):
         print("already posted id=%s" % post.get("id"))
         sys.exit(0)
 sys.exit(0)
@@ -33,7 +45,7 @@ ssh \
   -o ServerAliveInterval=5 \
   -o StrictHostKeyChecking=accept-new \
   "$REMOTE" python3 - <<'PY'
-import json, sqlite3, subprocess, sys
+import json, os, sqlite3, subprocess, sys
 
 text = (
     "216Labs takes paid work: production web apps, AI retainers "
@@ -42,6 +54,28 @@ text = (
     "Proof: https://blog.6cubed.app/blog/carfac-underwater-sai"
 )
 hire_mark = "6cubed.app/#work"
+volume_db = "/opt/216labs/products/org-social/agitweet/data/agitweet.db"
+
+
+def _hire_in_volume():
+    if not os.path.isfile(volume_db):
+        return None
+    try:
+        con = sqlite3.connect(volume_db)
+        row = con.execute(
+            "SELECT id FROM posts WHERE instr(text, ?) > 0 ORDER BY id DESC LIMIT 1",
+            (hire_mark,),
+        ).fetchone()
+        con.close()
+        return row[0] if row else None
+    except sqlite3.Error:
+        return None
+
+
+existing = _hire_in_volume()
+if existing is not None:
+    print("already posted id=%s (volume; not starting agitweet)" % existing)
+    sys.exit(0)
 
 
 def _run(args, **kw):
@@ -83,40 +117,16 @@ def _token_in_container():
     return r.returncode == 0 and (r.stdout or "").strip() == "1"
 
 
-def _recent_hire():
-    r = _run(
-        [
-            "docker",
-            "compose",
-            "exec",
-            "-T",
-            "agitweet",
-            "python3",
-            "-c",
-            "import json,urllib.request; d=json.loads(urllib.request.urlopen('http://127.0.0.1:5000/api/posts?limit=5', timeout=5).read()); print(json.dumps(d.get('posts') or []))",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if r.returncode:
-        return None
-    try:
-        posts = json.loads(r.stdout or "[]")
-    except json.JSONDecodeError:
-        return None
-    for post in posts[:3]:
-        if hire_mark in (post.get("text") or ""):
-            return post.get("id")
-    return None
-
+if not _healthy():
+    print("agitweet cold and no hire in volume; will not wake the container this beat")
+    sys.exit(0)
 
 if _run(["docker", "image", "inspect", "216labs/agitweet:latest"], capture_output=True).returncode != 0:
     print("==> pulling ghcr.io/6cubed/216labs/agitweet:latest", flush=True)
     _run(["docker", "pull", "ghcr.io/6cubed/216labs/agitweet:latest"], check=True)
     _run(["docker", "tag", "ghcr.io/6cubed/216labs/agitweet:latest", "216labs/agitweet:latest"], check=True)
 
-need_recreate = not _healthy() or not _token_in_container()
-if need_recreate:
+if not _token_in_container():
     print("==> recreating agitweet so the API token is in the container", flush=True)
     _run(
         ["bash", "-lc", "python3 scripts/export-env-admin-from-db.py 216labs.db > .env.admin"],
@@ -140,21 +150,16 @@ if need_recreate:
         ],
         check=True,
     )
+    import time
+
     ok = False
     for _ in range(12):
         if _healthy():
             ok = True
             break
-        import time
-
         time.sleep(2)
     if not ok:
         sys.exit("agitweet did not become healthy")
-
-existing = _recent_hire()
-if existing is not None:
-    print("already posted id=%s" % existing)
-    sys.exit(0)
 
 inner = r"""
 import json, sys, urllib.error, urllib.request
