@@ -4,27 +4,27 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
-## Production snapshot (2026-08-15 ~14:20 UTC)
+## Production snapshot (2026-08-15 ~15:00 UTC)
 
 | Highest leverage | Blocker |
 |------------------|---------|
 | **Get one human in front of a paid offer** | **CEO** — send [6cubed.app/#work](https://6cubed.app/#work) or the [CARFAC post](https://blog.6cubed.app/blog/carfac-underwater-sai) to one buyer |
-| Ops | **Shipped this beat** — `live-apps` is a read-only SELECT (was writing on every probe → `SQLITE_BUSY` → `int admin: FAIL (HTTP 500)`); `deploy.sh` copies a gzip tar instead of piping through sshd (1GB droplet was `connection refused` mid-transfer) |
-| Distribution | **Live** — work form + CARFAC proof URL from the previous beat |
+| Ops | **Shipped** — `live-apps` is a cheap SELECT; activator+cron-runner both force `journal_mode=DELETE`; `deploy.sh` copies a gzip tar and does **not** prune on every transfer |
+| Distribution | **Live** — work form + CARFAC proof URL |
 
-**Verify:** `./scripts/heartbeat-stack.sh` → `int admin: OK (200)`; local `DEPLOY_IMAGE_SOURCE=local DEPLOY_RUNTIME_APPS=admin ./deploy.sh` transfers without killing SSH.
+**Verify:** `./scripts/heartbeat-stack.sh` → `int admin: OK (200)`; on the droplet, cron-runner `PRAGMA journal_mode` is `delete` and `integrity_check` is `ok`.
 
 ---
 
-## `int admin: FAIL (HTTP 500)` on live-apps — **CLOSED**
+## `int admin: FAIL (HTTP 500)` / WAL flip-flop — **CLOSED**
 
 | Symptom | Fix |
 |---------|-----|
-| `stack_health_last` → `int admin: FAIL (HTTP 500)` while `ext admin: OK (308)` and `GET https://admin.6cubed.app/api/public/live-apps` is 200 | **Shipped** — `getPublicLiveApps()` no longer runs `syncTopLevelProjects` / bootstrap writes. Probe is `SELECT id, name, tagline, description`. `getDb()` no longer keeps a poisoned singleton if `initSchema` throws `SQLITE_BUSY`. |
+| Stack-health `int admin: FAIL (HTTP 500)` while edge `live-apps` sometimes 200 | Probe was **writing** (project sync) on every GET → `SQLITE_BUSY`. Now a read-only SELECT, no sync on worker start, retries + last-good cache. |
+| `PRAGMA journal_mode` kept returning **wal** after admin/cron-runner were switched to DELETE | **Activator** never set DELETE. Old **cron-runner** image (2026-08-03) still ran `journal_mode = WAL` on every start. Both images rolled this beat. |
+| Host `PRAGMA journal_mode=DELETE` while containers were up | **Do not.** Private WAL sidecars + a host-side mode change → `SQLITE_CORRUPT` → cron-runner crash loop → sshd `connection refused`. Recover: reboot, then change mode **from inside** a writer container. |
 
-Admin logs showed `SQLITE_BUSY` and `no such column: last_runtime_error` (ALTER skipped on a busy first start, then the half-open connection was reused).
-
-**Verify:** `docker logs` admin has no new `SQLITE_BUSY` on `/api/public/live-apps`; stack-health `int admin: OK (200)`.
+**Verify:** `int admin: OK (200)`; `journal_mode=delete`; cron-runner not restarting.
 
 ---
 
@@ -32,9 +32,9 @@ Admin logs showed `SQLITE_BUSY` and `no such column: last_runtime_error` (ALTER 
 
 | Symptom | Fix |
 |---------|-----|
-| `ssh: connection refused` for ~60s during `DEPLOY_IMAGE_SOURCE=local` while edge still 200 | **Shipped** — `deploy.sh` gzip-saves to a temp tar, `scp`s, then `docker load` from disk. Waits for SSH after prune and between retries. |
+| `ssh: connection refused` during `DEPLOY_IMAGE_SOURCE=local` while edge still 200 | **Shipped** — gzip tar + scp + `docker load` from disk. Do **not** `docker prune` on every transfer (1GB RAM); prune only at disk ≥88%. |
 
-**Verify:** next single-app local deploy prints `gzip file, sequential`, does **not** prune when disk is under 88%, and completes.
+**Verify:** next local deploy prints `gzip file, sequential` and does not print `Pruning dangling images` unless disk is critical.
 
 ---
 
