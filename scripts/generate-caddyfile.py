@@ -235,51 +235,20 @@ for app_id, docker_svc, port in entries:
         # Dial / DNS / no-backend failures: handle_errors — some Caddy builds use status 0 for dial errors.
         # Do not use a catch-all handle_errors: app 4xx/5xx responses must not redirect to warmup.
         # /api/* and /healthz skip Activator warmup so probes and webhooks get JSON/errors, not 302 HTML.
-        # zurichrunclubs GHCR :latest can lag for months and droplet-ghcr-sync
-        # excludes it — / would keep serving invented clubs. Exact `/` goes to
-        # public/timetable.html (real drop-in groups) until a fresh image is pulled.
-        # reverse_proxy must live in a catch-all handle or it wins over the redir.
-        zrc_home = app_id == "zurichrunclubs"
-        site_open = [f"{site(f'{app_id}.{domain}')} {{"]
-        if zrc_home:
-            site_open += [
-                "\t@zrc_home path /",
-                "\thandle @zrc_home {",
-                "\t\trewrite * /timetable.html",
-                f"\t\treverse_proxy {docker_svc}:{port}",
-                "\t}",
-            ]
-        proxy_block = [
+        lines += [
+            f"{site(f'{app_id}.{domain}')} {{",
             "\thandle /api/* {",
             f"\t\treverse_proxy {docker_svc}:{port}",
             "\t}",
             "\thandle /healthz {",
             f"\t\treverse_proxy {docker_svc}:{port}",
             "\t}",
-        ]
-        if zrc_home:
-            proxy_block += [
-                "\thandle {",
-                f"\t\treverse_proxy {docker_svc}:{port} {{",
-                "\t\t\t@cold status 502 503 504",
-                "\t\t\thandle_response @cold {",
-                f'\t\t\t\tredir "{warm}" 302',
-                "\t\t\t}",
-                "\t\t}",
-                "\t}",
-            ]
-        else:
-            proxy_block += [
-                f"\treverse_proxy {docker_svc}:{port} {{",
-                "\t\t@cold status 502 503 504",
-                "\t\thandle_response @cold {",
-                f'\t\t\tredir "{warm}" 302',
-                "\t\t}",
-                "\t}",
-            ]
-        lines += [
-            *site_open,
-            *proxy_block,
+            f"\treverse_proxy {docker_svc}:{port} {{",
+            "\t\t@cold status 502 503 504",
+            "\t\thandle_response @cold {",
+            f'\t\t\tredir "{warm}" 302',
+            "\t\t}",
+            "\t}",
             "\thandle_errors {",
             "\t\t@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`",
             "\t\thandle @dial {",

@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~00:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| `zurichrunclubs.6cubed.app` | **Live** — GHCR 2026-08-15 image; Next `/` is real clubs (no Caddy rewrite) |
+| Anchor | **OK** — 200 from GHCR image (not docker cp) |
+
+**Verify:** `curl -sS https://zurichrunclubs.6cubed.app/` is ~60k HTML with **CityRunning Nord**, not the 9k static snapshot. CEO: send `/work`.
+
+---
+
+## Targeted GHCR pull synced the wrong app — **CLOSED**
+
+`SYNC_SERVICE=zurichrunclubs` pulled **anchor-api** (first non-excluded running service) then `break`, so the August timetable image never replaced the May container. Admin “Pull latest” had the same bug.
+
+**Shipped:** `droplet-ghcr-sync.sh` skips every other running service when `SYNC_SERVICE` is set; pulled `zurichrunclubs`; removed the Caddy `/` → `/timetable.html` rewrite now that native Next has the clubs.
+
+**Verify:** public `/` length is tens of KB (Next grid), contains CityRunning, not `src/data/clubs.ts`.
+
+---
+
 ## Production snapshot (2026-08-15 ~23:45 UTC)
 
 | Highest leverage | Blocker |
