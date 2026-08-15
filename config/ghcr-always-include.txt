@@ -7,6 +7,8 @@ admin
 activator
 storybook
 kidgift
+# Human-visited FastAPI (Flutter web is not on GHCR; HTML is served by the API).
+anchor-api
 ramblingradio
 stroll
 birdperch

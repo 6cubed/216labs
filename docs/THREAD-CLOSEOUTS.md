@@ -4,6 +4,26 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~22:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| `anchor.6cubed.app` | **Live** — FastAPI HTML `/` is **200** (was 502, then empty 302/404) |
+| GHCR | **Shipped** — `anchor-api` is always-include so the homepage does not depend on a one-off `docker cp` |
+
+**Verify:** `curl -sS https://anchor.6cubed.app/` contains `Anchor` and is not a 302 to activator.
+
+---
+
+## Anchor warmup 302 was not a finished ship — **CLOSED**
+
+Caddy reached a stale GHCR image with no `GET /`, so the public host 404'd after start. The HTML from 7634c51f was copied into the running container; `config/ghcr-always-include.txt` now lists `anchor-api`.
+
+**Verify:** public `/` 200 with `<h1>Anchor</h1>`; zurichrunclubs still 200.
+
+---
+
 ## Production snapshot (2026-08-15 ~22:10 UTC)
 
 | Highest leverage | Blocker |

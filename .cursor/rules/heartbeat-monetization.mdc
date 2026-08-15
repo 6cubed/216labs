@@ -32,7 +32,7 @@ Open [admin → Org metrics](https://admin.6cubed.app/org-metrics) and read **Hu
 - Admin **Overview** (`FirstSaleBanner`, `RevenueNextStepCard`) must match `/work` while humans ≈ 0. Do not restore Payment Link as the default dashboard CTA.
 - Turning existing research (CARFAC audio, birdperch) into a **paid pilot, grant, or client offer**. The public Colabs and `docs/CARFAC-PILOTS.md` are that offer — keep the hire link on those surfaces; do not hide it behind the blog or landing only.
 - Public hire/proof surfaces (landing `#work`, blog cards) must stay visible when sibling apps are cold. Do not leave the homepage empty behind activator warmup.
-- A **502 on a host that already had humans** (today: `anchor.6cubed.app`, `zurichrunclubs.6cubed.app`) is a distribution bug. Fix Caddy/warmup; do not spend the beat on another hire-script pass.
+- A **502 on a host that already had humans** (today: `anchor.6cubed.app`, `zurichrunclubs.6cubed.app`) is a distribution bug. Fix Caddy/warmup; a 302 to activator is not finished until the dest returns **200**.
 - Deep links into a cold app (e.g. the CARFAC post) must keep their path through Activator warmup. A dest that strips to the app origin dumps the buyer on the index.
 - Measurement that changes a decision — but only once. Do not rebuild dashboards every beat.
 
