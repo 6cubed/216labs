@@ -12,6 +12,11 @@ ssh \
   "$REMOTE" bash -s <<'REMOTE'
 set -euo pipefail
 cd /opt/216labs
+if ! docker image inspect 216labs/agitweet:latest >/dev/null 2>&1; then
+  echo "==> pulling ghcr.io/6cubed/216labs/agitweet:latest"
+  docker pull ghcr.io/6cubed/216labs/agitweet:latest
+  docker tag ghcr.io/6cubed/216labs/agitweet:latest 216labs/agitweet:latest
+fi
 docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build agitweet
 ok=0
 for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
