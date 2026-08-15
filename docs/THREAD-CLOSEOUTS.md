@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~18:10 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **CEO** — Telegram `/work`; send [6cubed.app/#work](https://6cubed.app/#work) (homepage now always lists the CARFAC post even when blog is cold) |
+| Homepage blog module empty | **Shipped** — landing pins CARFAC + two posts when `blog:3000/api/feed` is down (activator warmup HTML is not JSON) |
+| Ops | **OK** — do not revive WAL / Payment Link / deploy-tar threads |
+
+**Verify:** [6cubed.app](https://6cubed.app/) “Latest from the blog” shows the CARFAC title while `https://blog.6cubed.app/api/feed` still 302s to activator.
+
+---
+
+## Homepage hid the CARFAC proof while blog was cold — **CLOSED**
+
+The hire form’s proof URL lived in a blog feed that goes empty whenever the blog container is stopped. Public `/api/feed` 302s to activator HTML, so urllib cannot parse it. Visitors saw “Blog feed loads when the blog service is reachable.”
+
+**Shipped:** static fallback posts on landing, CARFAC first.
+
+**Verify:** homepage lists CARFAC without waiting for blog warmup.
+
+---
+
 ## Production snapshot (2026-08-15 ~17:40 UTC)
 
 | Highest leverage | Blocker |

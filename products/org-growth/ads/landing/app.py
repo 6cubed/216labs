@@ -46,10 +46,39 @@ def _fetch_live_apps():
 
 
 def _fetch_blog_feed():
-    """Latest posts from the blog service (same Docker network) or public URL fallback."""
+    """Latest posts from the blog service (same Docker network).
+
+    Blog is often cold (Caddy → activator warmup). Public https://blog.6cubed.app/api/feed
+    then returns HTML, not JSON, so there is no useful public fallback. Pin the hire-proof
+    posts so 6cubed.app never looks like the lab has no writing.
+    """
     url = os.environ.get("BLOG_FEED_URL", "http://blog:3000/api/feed").strip()
-    data = fetch_json(url, timeout=4, default=None)
-    return normalize_blog_items(data, max_items=10) if data is not None else []
+    data = fetch_json(url, timeout=2, default=None)
+    items = normalize_blog_items(data, max_items=10) if data is not None else []
+    return items if items else list(_FALLBACK_BLOG_POSTS)
+
+
+# Shown when the blog container is stopped. Keep CARFAC first — it is the audio/ML proof URL.
+_FALLBACK_BLOG_POSTS = [
+    {
+        "title": "What a cochlear model hears underwater (and what it does not)",
+        "excerpt": "CARFAC SAI vs mel on Orcasound hydrophone audio. A sendable URL for audio/ML pilots.",
+        "date": "2026-08-15",
+        "url": "https://blog.6cubed.app/blog/carfac-underwater-sai",
+    },
+    {
+        "title": "Speed at scale: when 10 visionaries want 1:1 velocity",
+        "excerpt": "How to keep Pocket Cursor cadence while scaling to many parallel product goals.",
+        "date": "2026-05-28",
+        "url": "https://blog.6cubed.app/blog/multi-vp-velocity-in-a-telegram-native-org",
+    },
+    {
+        "title": "Pocket Cursor heartbeat: periodic agent nudges from your phone",
+        "excerpt": "Telegram-driven heartbeats so the lab keeps shipping when nobody is at the keyboard.",
+        "date": "2026-05-18",
+        "url": "https://blog.6cubed.app/blog/pocket-cursor-heartbeat-harness",
+    },
+]
 
 
 @app.route("/health")
