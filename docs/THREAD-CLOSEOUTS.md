@@ -18,6 +18,31 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
+## Recurring `216labs.db` "database disk image is malformed" — **CLOSED (root cause found)**
+
+`216labs.db` is bind-mounted **as a single file** into `admin`, `cron-runner` and `activator`.
+In **WAL** mode each container creates its own `-wal`/`-shm` sidecar **inside its own filesystem
+layer**, so the three writers never see each other's locks or committed pages.
+
+Observed live 2026-08-15: cron-runner holding a **4.8 MB private WAL**, admin a separate **342 KB**
+one, against the same 2.6 MB file, plus a **stale host-side `-wal` from Aug 3**. Containers read the
+DB fine; every **host** reader failed with `malformed`, which is what broke `deploy.sh` at
+`export-env-admin-from-db.py`. This is the source of the `216labs.db.corrupt.*` snapshots dating to April.
+
+| Why earlier fixes did not hold | Fix |
+|---|---|
+| May 2026 dropped the `-wal`/`-shm` compose mounts and set `journal_mode=DELETE` **on the DB** | `admin/src/lib/db.ts` and `cron-runner/index.js` still ran `pragma("journal_mode = WAL")` on **every container start**, silently reverting it |
+
+**Shipped:** both now set `journal_mode = DELETE` (plus `busy_timeout`) with the reason in a comment.
+Production recovered in place — `wal_checkpoint(TRUNCATE)` from the container that held the live WAL,
+mode switched to DELETE, stale host sidecars moved to `/opt/216labs/_stale/`. No data lost
+(`env_vars` 171, `apps` 72 before and after).
+
+**Verify:** on the droplet `sqlite3 /opt/216labs/216labs.db "PRAGMA integrity_check; PRAGMA journal_mode;"`
+→ `ok` / `delete`, and no `216labs.db-wal` appears next to it after containers restart.
+
+---
+
 ## "First StoryMagic sale is blocked on the CEO's Payment Link" — **CLOSED (the premise was false)**
 
 Every production snapshot from **2026-05-29 to 2026-08-15** named this as the top priority. It was wrong.
