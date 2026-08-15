@@ -327,13 +327,11 @@ function initSchema(db: Database.Database) {
     );
   `);
   seedTodoColumnsIfEmpty(db);
-
-  syncTopLevelProjects(db);
-  backfillAppAnalytics(db);
-  backfillKnownPorts(db);
-  ensureAdminAlwaysEnabled(db);
-  ensureBootstrapFromFile(db);
   seedInfraEnvDefaults(db);
+  // Do not syncTopLevelProjects / bootstrap here. initSchema runs on every
+  // Node worker start; those writes held DELETE-mode locks so live-apps
+  // (stack-health probe) returned SQLITE_BUSY / HTTP 500. Sync stays on
+  // getAllApps() for the dashboard.
 }
 
 /** Default admin logging channel and cron-runner URL. Only sets when value is empty. */
