@@ -49,11 +49,16 @@ export function storybookPreorderConfigured(env: Map<string, string>): boolean {
   return Boolean(env.get(STORYBOOK_PREORDER_ENV_KEY)?.trim());
 }
 
-/** True when StoryMagic has no checkout and no preorder (CEO should open Checkout setup). */
+/**
+ * Amber-dot Checkout setup only when there is demand to convert.
+ * A missing Payment Link is not “attention” while waitlist is 0 (humans ≈ 0).
+ */
 export function storymagicNeedsRevenueAttention(
   env: Map<string, string>,
-  cron: RevenueCronSnapshot | null
+  cron: RevenueCronSnapshot | null,
+  waitlistCount = 0
 ): boolean {
+  if (waitlistCount <= 0) return false;
   const story = cron?.results.find((r) => r.id === "storybook");
   if (story?.ready === true) return false;
   if (storybookPreorderConfigured(env) || story?.preorderConfigured === true) {

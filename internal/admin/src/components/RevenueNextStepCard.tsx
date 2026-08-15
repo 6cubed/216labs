@@ -12,46 +12,29 @@ export function RevenueNextStepCard({
   checkoutReady,
   preorderLive,
   waitlistCount,
-  stripeSecretSet = false,
 }: Props) {
   if (checkoutReady) return null;
 
-  if (preorderLive) {
+  if (preorderLive && waitlistCount > 0) {
     return (
       <section className="animate-fade-in mb-6 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-5 py-4">
-        <h2 className="text-sm font-semibold text-emerald-100">StoryMagic — preorder live</h2>
+        <h2 className="text-sm font-semibold text-emerald-100">StoryMagic — demand to convert</h2>
         <p className="text-xs text-muted mt-1 max-w-3xl">
-          Payment Link is active on StoryMagic and{" "}
-          <a
-            href="https://6cubed.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-accent"
-          >
-            6cubed.app
-          </a>
-          .
-          {waitlistCount > 0
-            ? ` ${waitlistCount} waitlist email${waitlistCount === 1 ? "" : "s"} ready to convert.`
-            : " Drive traffic — GA4 tracks preorder_click."}
+          Preorder is live and {waitlistCount} waitlist email
+          {waitlistCount === 1 ? "" : "s"} can be blasted.
         </p>
         <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold">
-          {waitlistCount > 0 ? (
-            <Link href="/leads" className="text-accent hover:underline">
-              Copy preorder blast →
-            </Link>
-          ) : null}
+          <Link href="/leads" className="text-accent hover:underline">
+            Copy preorder blast →
+          </Link>
           <a
-            href="https://storybook.6cubed.app"
+            href="https://6cubed.app/#work"
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted hover:text-foreground"
           >
-            Test checkout flow
+            Hire form
           </a>
-          <Link href="/checkout-setup" className="text-muted hover:text-foreground">
-            Checkout setup
-          </Link>
         </div>
       </section>
     );
@@ -60,49 +43,38 @@ export function RevenueNextStepCard({
   return (
     <section className="animate-fade-in mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-5 py-4">
       <h2 className="text-sm font-semibold text-amber-100">
-        Closest to revenue: StoryMagic ($24.99 hardcover)
+        Closest to revenue: one hire, not a Payment Link
       </h2>
-        <p className="text-xs text-muted mt-1 max-w-3xl">
-        Funnel is live (preview, waitlist, UTMs, landing CTA, referrals). Blocker: enable StoryMagic{" "}
-        <strong className="text-foreground/90">preorder</strong>
-        {stripeSecretSet
-          ? " — open Checkout setup and click Create Payment Link (one click)."
-          : " — add STORYBOOK_STRIPE_SECRET_KEY in Env, then Create Payment Link on Checkout setup (~2 min)."}
-        {" "}Then Telegram <code className="text-[11px]">/experiment</code> for this week&apos;s post.
-        {waitlistCount > 0
-          ? ` ${waitlistCount} production waitlist email${waitlistCount === 1 ? "" : "s"}.`
-          : null}
+      <p className="text-xs text-muted mt-1 max-w-3xl">
+        Humans last 7 days ≈ 0. Send Telegram <code className="text-[11px]">/work</code> to one
+        buyer — production web / AI retainer / CARFAC audio-ML pilot.
+        {preorderLive
+          ? " StoryMagic preorder is already live; it cannot convert traffic you do not have."
+          : " Checkout plumbing is a 20-minute task for when there is traffic."}
       </p>
       <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold">
-        <Link href="/checkout-setup" className="text-accent hover:underline">
-          {stripeSecretSet ? "Create Payment Link (one click) →" : "Checkout setup →"}
+        <a
+          href="https://6cubed.app/#work"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent hover:underline"
+        >
+          Hire form →
+        </a>
+        <a
+          href="https://blog.6cubed.app/blog/carfac-underwater-sai"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent hover:underline"
+        >
+          CARFAC proof →
+        </a>
+        <Link href="/leads" className="text-muted hover:text-foreground">
+          Leads
         </Link>
-        {!stripeSecretSet ? (
-          <Link href="/env" className="text-accent hover:underline">
-            Add Stripe secret →
-          </Link>
-        ) : null}
-        <a
-          href="https://dashboard.stripe.com/test/payment-links/create"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-muted hover:text-foreground"
-        >
-          Stripe dashboard
-        </a>
-        {waitlistCount > 0 ? (
-          <Link href="/leads" className="text-muted hover:text-foreground">
-            View waitlist ({waitlistCount})
-          </Link>
-        ) : null}
-        <a
-          href="https://storybook.6cubed.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-muted hover:text-foreground"
-        >
-          StoryMagic
-        </a>
+        <Link href="/checkout-setup" className="text-muted hover:text-foreground">
+          Checkout setup
+        </Link>
       </div>
     </section>
   );

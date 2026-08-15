@@ -39,7 +39,8 @@ Exception: CEO explicitly says they are in **engineering mode** ("I'll run it", 
 | Org / investor metrics | [admin → Org metrics](https://admin.6cubed.app/org-metrics) |
 | Errors & reliability | [admin → Errors](https://admin.6cubed.app/errors) |
 | Portfolio & deploy | [admin → Overview](https://admin.6cubed.app/) / [Applications](https://admin.6cubed.app/applications) |
-| Revenue / Stripe readiness | [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) (then Env) |
+| Hire / first euro (humans ≈ 0) | Telegram `/work` · [6cubed.app/#work](https://6cubed.app/#work) · [admin → Overview](https://admin.6cubed.app/) |
+| Revenue / Stripe readiness | [admin → Checkout setup](https://admin.6cubed.app/checkout-setup) (then Env) — only when there is traffic to convert |
 | Edge / cron health | [admin → Cron](https://admin.6cubed.app/cron) |
 | Quick stack pulse (Telegram) | Bridge `/now` (no repo commands for CEO) |
 

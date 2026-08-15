@@ -3,7 +3,6 @@ import { getAllEnvVars } from "@/lib/db";
 import { fetchStorybookPrintLeads, productionWaitlistLeads } from "@/lib/storybook";
 import {
   getRevenueReadiness,
-  STORYBOOK_CHECKOUT_REQUIRED_KEYS,
   storybookPreorderConfigured,
 } from "@/lib/revenue-readiness";
 
@@ -16,35 +15,19 @@ export async function FirstSaleBanner() {
   const preorderLive = storybookPreorderConfigured(envMap);
   const waitlistAll = await fetchStorybookPrintLeads();
   const waitlist = productionWaitlistLeads(waitlistAll);
-  const stripeSecretSet = Boolean(envMap.get("STORYBOOK_STRIPE_SECRET_KEY")?.trim());
-  const story = data.apps.find((a) => a.id === "storybook");
-  const missing = STORYBOOK_CHECKOUT_REQUIRED_KEYS.filter(
-    (key) => !story?.keys.find((k) => k.key === key)?.set
-  );
 
-  if (preorderLive) {
+  if (preorderLive && waitlist.length > 0) {
     return (
       <div className="mb-6 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-4 py-3">
         <p className="text-sm font-semibold text-emerald-100/95">
-          StoryMagic preorder is live (Payment Link)
-          {waitlist.length > 0 ? (
-            <span className="font-normal text-muted">
-              {" "}
-              · {waitlist.length} on waitlist
-            </span>
-          ) : null}
+          StoryMagic preorder is live
+          <span className="font-normal text-muted">
+            {" "}
+            · {waitlist.length} on waitlist
+          </span>
         </p>
         <p className="text-xs text-muted mt-1 max-w-3xl">
-          Visitors see <strong>Preorder now</strong> on StoryMagic and{" "}
-          <a
-            href="https://6cubed.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-accent"
-          >
-            6cubed.app
-          </a>
-          . Email the waitlist from{" "}
+          Demand exists — email the waitlist from{" "}
           <Link href="/leads" className="underline text-accent">
             Leads → Copy preorder blast
           </Link>
@@ -54,16 +37,13 @@ export async function FirstSaleBanner() {
           <Link href="/leads" className="font-semibold text-accent hover:underline">
             Blast waitlist →
           </Link>
-          <Link href="/checkout-setup" className="font-semibold text-accent hover:underline">
-            Checkout setup →
-          </Link>
           <a
-            href="https://storybook.6cubed.app"
+            href="https://6cubed.app/#work"
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted hover:text-foreground"
           >
-            Test StoryMagic
+            Hire form
           </a>
         </div>
       </div>
@@ -73,78 +53,43 @@ export async function FirstSaleBanner() {
   return (
     <div className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3">
       <p className="text-sm font-semibold text-amber-100/95">
-        First sale — StoryMagic checkout is one Env save away
+        First euro — send /work to one buyer
         {waitlist.length > 0 ? (
           <span className="font-normal text-muted">
             {" "}
-            · {waitlist.length} on waitlist
+            · {waitlist.length} on StoryMagic waitlist
           </span>
         ) : null}
       </p>
       <p className="text-xs text-muted mt-1 max-w-3xl">
-        {stripeSecretSet ? (
-          <>
-            Fastest path:{" "}
-            <Link href="/checkout-setup" className="underline text-accent">
-              Checkout setup
-            </Link>{" "}
-            → <strong>Create Payment Link ($24.99)</strong> (one click).
-          </>
-        ) : (
-          <>
-            Fastest path: add <code className="text-[11px]">STORYBOOK_STRIPE_SECRET_KEY</code> in{" "}
-            <Link href="/env" className="underline text-accent">
-              Env
-            </Link>
-            , then one-click Payment Link on{" "}
-            <Link href="/checkout-setup" className="underline text-accent">
-              Checkout setup
-            </Link>
-            .
-          </>
-        )}{" "}
-        Telegram: <code className="text-[11px]">/firstsale</code>
-        {waitlistAll.length > waitlist.length ? (
-          <span className="text-muted/80">
-            {" "}
-            ({waitlistAll.length} rows in DB incl. test emails)
-          </span>
-        ) : null}
+        Human visitors last 7 days ≈ 0. A checkout converts a fraction of zero.
+        Telegram <code className="text-[11px]">/work</code> (alias{" "}
+        <code className="text-[11px]">/firstsale</code>) is the forwardable hire blurb.
+        {preorderLive ? " StoryMagic preorder is already live for when traffic exists." : null}
       </p>
-      {missing.length > 0 && (
-        <p className="text-[11px] font-mono text-amber-200/80 mt-2">
-          Missing: {missing.join(", ")}
-        </p>
-      )}
       <div className="mt-3 flex flex-wrap gap-3 text-xs">
-        <Link
-          href="/checkout-setup"
-          className="font-semibold text-accent hover:underline"
-        >
-          Checkout setup →
-        </Link>
-        <Link
-          href="/env"
-          className="font-semibold text-accent hover:underline"
-        >
-          Open Env →
-        </Link>
         <a
-          href="https://dashboard.stripe.com/test/payment-links/create"
+          href="https://6cubed.app/#work"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-accent hover:underline"
+          className="font-semibold text-accent hover:underline"
         >
-          Create Payment Link
+          Hire form →
         </a>
         <a
-          href="https://storybook.6cubed.app"
+          href="https://blog.6cubed.app/blog/carfac-underwater-sai"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-muted hover:text-foreground"
+          className="font-semibold text-accent hover:underline"
         >
-          Try StoryMagic
+          CARFAC proof →
         </a>
+        <Link href="/leads" className="text-muted hover:text-foreground">
+          Leads
+        </Link>
+        <Link href="/checkout-setup" className="text-muted hover:text-foreground">
+          Checkout setup (when there is traffic)
+        </Link>
       </div>
     </div>
   );

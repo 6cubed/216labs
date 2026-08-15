@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~17:10 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **CEO** — Telegram `/work`; send [6cubed.app/#work](https://6cubed.app/#work) or the [CARFAC post](https://blog.6cubed.app/blog/carfac-underwater-sai) to one buyer |
+| Admin Overview CTA | **Shipped** — banner + next-step card match `/work`, not Payment Link, while waitlist is 0 |
+| Ops | **OK** — do not revive WAL / Payment Link threads |
+
+**Verify:** [admin.6cubed.app](https://admin.6cubed.app/) shows **First euro — send /work**; Checkout setup amber dot is off until waitlist > 0.
+
+---
+
+## Admin Overview still taught Payment Link — **CLOSED**
+
+Telegram `/work` was already the outbound tool, but every admin page load still said “create a Stripe Payment Link.” That undoes the CEO’s muscle memory.
+
+**Shipped:** `FirstSaleBanner` + `RevenueNextStepCard` hire-first; nav amber-dot only when waitlist has demand.
+
+**Verify:** Overview hire CTA; `/checkout-setup` still exists for when there is traffic.
+
+---
+
 ## Production snapshot (2026-08-15 ~16:45 UTC)
 
 | Highest leverage | Blocker |

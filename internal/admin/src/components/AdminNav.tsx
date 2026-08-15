@@ -29,7 +29,7 @@ type AdminNavProps = {
   errorSignalCount?: number;
   /** When set, the Errors tab links here (e.g. /errors?app=blog). */
   errorsHref?: string;
-  /** Highlight Checkout setup when StoryMagic has no paid path yet. */
+  /** Highlight Checkout setup only when there is waitlist demand and no paid path. */
   revenueAttention?: boolean;
 };
 
@@ -91,7 +91,7 @@ export function AdminNav({
               {showRevenueDot ? (
                 <span
                   className="w-2 h-2 rounded-full bg-amber-400 shrink-0"
-                  title="StoryMagic needs Payment Link or Stripe keys"
+                  title="Waitlist has demand and StoryMagic still has no paid path"
                   aria-label="Revenue setup needed"
                 />
               ) : null}
