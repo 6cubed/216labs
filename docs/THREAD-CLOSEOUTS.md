@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~17:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **CEO** — Telegram `/work`; send [6cubed.app/#work](https://6cubed.app/#work) or the [CARFAC post](https://blog.6cubed.app/blog/carfac-underwater-sai) to one buyer |
+| Local deploy SSH flap | **Shipped** — `deploy.sh` splits scp / `docker load -i`, long-waits SSH, keeps gzip tars on failure |
+| Admin Overview | **Live** — hire CTA (prior beat) |
+
+**Verify:** next `DEPLOY_IMAGE_SOURCE=local` run either loads the image after a flap or prints `Keeping gzip tars in /tmp/216labs-xfer.*` instead of deleting them.
+
+---
+
+## `deploy.sh` deleted gzip tars after 6 SSH flaps — **CLOSED**
+
+2026-08-15 ~17:21: local admin transfer failed `attempt 6/6`, then SSH was up 0s later. The script had already `rm -rf` the 86MB gzip, so the follow-up had to `docker save` again.
+
+**Shipped:** wait between scp and load; 5-minute extra SSH wait; keep tars on failure.
+
+**Verify:** failure path prints the tar directory; success path still `docker load -i`.
+
+---
+
 ## Production snapshot (2026-08-15 ~17:10 UTC)
 
 | Highest leverage | Blocker |

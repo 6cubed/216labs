@@ -22,7 +22,7 @@ Do not spend the heartbeat on unrelated refactors while `admin.6cubed.app` and S
 | Signal | Likely cause |
 |--------|----------------|
 | SSH auth OK then "Timeout, server not responding" | Disk ~95% full or OOM; prune + reboot |
-| `ssh: connection refused` during **image transfer** while edge still 200 | Piped `docker save \| ssh \| docker load` OOMed sshd, or `docker prune` on 1GB RAM. `deploy.sh` now scp's a gzip tar and skips prune unless disk ≥88%. Retry; do not reboot solely for this. |
+| `ssh: connection refused` during **image transfer** while edge still 200 | Piped `docker save \| ssh \| docker load` OOMed sshd, or `docker prune` on 1GB RAM. `deploy.sh` scp's a gzip tar, waits again before `docker load -i`, keeps the local tar if transfer fails, and does a long SSH wait + one extra try. Retry; do not reboot solely for this. |
 | cron-runner restart loop + SSH down, edge still 200 | Usually `SQLITE_CORRUPT` from changing `journal_mode` **on the host** while containers hold private WAL files. Reboot, then set DELETE **from inside** cron-runner/admin. Never `PRAGMA journal_mode=DELETE` from the host. |
 | `edge-smoke` all `000` / unreachable | Caddy down or whole VPS wedged |
 | `admin` 401 but other hosts timeout | Partial stack — run recover compose up |

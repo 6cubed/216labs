@@ -19,7 +19,8 @@ set -euo pipefail
 #   is not left running behind an old container.
 # - DEPLOY_FORCE_LOCAL_REBUILD=1 still forces every service in the current pull/build list to rebuild
 #   when using local mode (full or subset catalogue).
-# Operational note: run this script from your own shell or CI when rolling the droplet—agents default to push-only.
+# Single-app agent rollouts use DEPLOY_RUNTIME_APPS + DEPLOY_IMAGE_SOURCE=local (see
+# .cursor/rules/single-app-auto-deploy.mdc). Full-catalogue deploys stay push-then-GHCR unless asked.
 # 216labs.db holds app state and env_vars (secrets); it is never overwritten by
 # this script. A timestamped backup is made on the server before each deploy.
 # Toggle apps on/off via the admin dashboard at https://admin.6cubed.app
@@ -93,16 +94,47 @@ _remote_image_id() {
 
 # Piped `docker save | zstd | ssh | docker load` OOMs sshd on the 1GB droplet
 # (2026-08-15: connection refused for ~60s after each pipe). Copy a gzip tar
-# then `docker load` from disk instead.
+# then `docker load -i` from disk instead. A large scp can still bounce sshd;
+# wait again before load, and keep the local tar if the whole transfer fails.
 wait_remote_ssh() {
   local i
   for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24; do
     if ssh "${SSH_OPTS[@]}" "$REMOTE" 'echo ok' >/dev/null 2>&1; then
       return 0
     fi
+    if [ "$i" = 6 ] || [ "$i" = 12 ] || [ "$i" = 18 ] || [ "$i" = 24 ]; then
+      echo "==> SSH still down (${i}×5s) on $REMOTE..." >&2
+    fi
     sleep 5
   done
   return 1
+}
+
+wait_remote_ssh_long() {
+  local max="${WAIT_MAX_SEC:-300}"
+  local elapsed=0
+  echo "==> Waiting up to ${max}s for SSH on $REMOTE..." >&2
+  while [ "$elapsed" -lt "$max" ]; do
+    if ssh "${SSH_OPTS[@]}" "$REMOTE" 'echo ok' >/dev/null 2>&1; then
+      echo "==> SSH up after ${elapsed}s." >&2
+      return 0
+    fi
+    sleep 10
+    elapsed=$((elapsed + 10))
+    echo "  still down (${elapsed}s)..." >&2
+  done
+  echo "==> SSH did not recover within ${max}s." >&2
+  return 1
+}
+
+_scp_then_load() {
+  local local_tar="$1"
+  local remote_tar="$2"
+  wait_remote_ssh || return 1
+  scp "${SSH_OPTS[@]}" "$local_tar" "$REMOTE:$remote_tar" || return 1
+  # scp of an 80MB+ gzip can knock sshd over while edge still serves; wait before load.
+  wait_remote_ssh || return 1
+  ssh "${SSH_OPTS[@]}" "$REMOTE" "docker load -i '$remote_tar' && rm -f '$remote_tar'"
 }
 
 transfer_image_via_file() {
@@ -111,19 +143,20 @@ transfer_image_via_file() {
   local slug
   slug=$(printf '%s' "$TAG" | tr '/:' '__')
   local remote_tar="/tmp/216labs-xfer-${slug}.tar.gz"
-  local ok=0
   local tattempt
   for tattempt in 1 2 3 4 5 6; do
-    if wait_remote_ssh \
-      && scp "${SSH_OPTS[@]}" "$local_tar" "$REMOTE:$remote_tar" \
-      && ssh "${SSH_OPTS[@]}" "$REMOTE" "docker load < '$remote_tar' && rm -f '$remote_tar'"; then
-      ok=1
-      break
+    if _scp_then_load "$local_tar" "$remote_tar"; then
+      return 0
     fi
     echo "==> Transfer $TAG failed (attempt $tattempt/6); waiting for SSH..." >&2
     sleep 8
   done
-  [ "$ok" -eq 1 ]
+  echo "==> Transfer $TAG still failing; long SSH wait then one more try..." >&2
+  if wait_remote_ssh_long && _scp_then_load "$local_tar" "$remote_tar"; then
+    return 0
+  fi
+  echo "ERROR: could not transfer $TAG. Gzip tar kept at $local_tar" >&2
+  return 1
 }
 
 _prune_remote_disk_if_low() {
@@ -573,13 +606,15 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
       slug=$(printf '%s' "$TAG" | tr '/:' '__')
       echo "  -> $TAG"
       if ! transfer_image_via_file "$TAG" "$XFER_DIR/${slug}.tar.gz"; then
-        echo "ERROR: could not transfer $TAG after 6 attempts." >&2
+        echo "ERROR: could not transfer $TAG after retries." >&2
         xfer_ok=0
         break
       fi
     done
-    rm -rf "$XFER_DIR"
-    if [ "$xfer_ok" -ne 1 ]; then
+    if [ "$xfer_ok" -eq 1 ]; then
+      rm -rf "$XFER_DIR"
+    else
+      echo "==> Keeping gzip tars in $XFER_DIR — scp + docker load -i when SSH is back (do not rebuild)." >&2
       exit 1
     fi
     # Persist source hashes so next deploy can skip unchanged apps
