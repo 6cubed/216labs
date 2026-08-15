@@ -6,7 +6,8 @@
 # Env:
 #   SYNC_PROJECT_ROOT — default /opt/216labs
 #   SYNC_EXCLUDE_SERVICES — comma-separated compose service names to never touch (default: caddy,activator)
-#   SYNC_SERVICE — optional: only sync this compose service (must be running; case-insensitive)
+#   SYNC_SERVICE — optional: only sync this compose service (must be running; case-insensitive).
+#                  Skips every other running service. Overrides SYNC_EXCLUDE_SERVICES for that name.
 #   SYNC_SKIP_IF_DISK_PCT_GE — skip image pulls when root use% >= this (default 90; 0 = disable)
 
 set -euo pipefail
@@ -128,10 +129,15 @@ pull_and_tag() {
 }
 
 PS_OUT=$(docker compose --env-file .env --env-file .env.admin ps --status running --format '{{.Service}}|{{.Image}}' 2>/dev/null || true)
+MATCHED=0
 while IFS='|' read -r svc img; do
   [ -z "${svc:-}" ] && continue
   [ -z "${img:-}" ] && continue
-  if is_excluded "$svc"; then
+  lower=$(echo "$svc" | tr '[:upper:]' '[:lower:]')
+  if [ -n "$SYNC_SERVICE_LOWER" ]; then
+    # Targeted pull: this service only (even if it is on the periodic exclude list).
+    [ "$lower" = "$SYNC_SERVICE_LOWER" ] || continue
+  elif is_excluded "$svc"; then
     continue
   fi
   if ! short=$(short_from_image "$img"); then
