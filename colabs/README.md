@@ -36,6 +36,8 @@ Badge:
 
 ## Index
 
+Paid labelled-audio detection on your files: [CARFAC pilots](../docs/CARFAC-PILOTS.md) · [6cubed.app/#work](https://6cubed.app/#work).
+
 | Folder | Question |
 |--------|----------|
 | [`carfac-vs-mel/`](carfac-vs-mel/) | What do CARFAC NAP and a mel spectrogram look like on the same clip? |

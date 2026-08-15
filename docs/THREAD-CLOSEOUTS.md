@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~01:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Distribution without CEO | **Shipped** — hire/CARFAC on Colab index + live Anchor footer (Agitweet hire already id=88) |
+| Edge | **OK** — last GHCR sync skipped Caddy recreate |
+
+**Verify:** `curl -sS https://anchor.6cubed.app/` contains `paid work / CARFAC`. GitHub `colabs/README.md` contains `6cubed.app/#work`. CEO: send `/work`.
+
+---
+
+## Monetization beat opened Storybook checkout — **CLOSED**
+
+Closest to charging while humans ≈ 0 is hire/CARFAC, not `storybook: checkout not ready`. Agitweet already has the hire post; public `/api/posts` 302s because the app is cold.
+
+**Shipped:** Colab index CTA; Anchor footer link to `#work`. Did not start agitweet. Did not restyle landing.
+
+**Verify:** Anchor HTML contains `CARFAC`; colabs README contains `#work`.
+
+---
+
 ## Production snapshot (2026-08-16 ~01:15 UTC)
 
 | Highest leverage | Blocker |

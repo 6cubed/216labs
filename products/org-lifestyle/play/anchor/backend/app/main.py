@@ -73,7 +73,7 @@ HOME_HTML = """<!doctype html>
     <button type="submit" id="send">Post</button>
   </form>
   <div id="feed"></div>
-  <p class="muted" style="margin-top:2rem"><a href="https://6cubed.app">216Labs</a></p>
+  <p class="muted" style="margin-top:2rem"><a href="https://6cubed.app">216Labs</a> · <a href="https://6cubed.app/#work">paid work / CARFAC pilots</a></p>
   <script>
     const feed = document.getElementById("feed");
     const status = document.getElementById("status");
