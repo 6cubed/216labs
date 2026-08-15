@@ -107,11 +107,10 @@ wait_remote_ssh() {
 
 transfer_image_via_file() {
   local TAG="$1"
+  local local_tar="$2"
   local slug
   slug=$(printf '%s' "$TAG" | tr '/:' '__')
-  local local_tar="/tmp/216labs-xfer-${slug}.$$.tar.gz"
   local remote_tar="/tmp/216labs-xfer-${slug}.tar.gz"
-  docker save "$TAG" | gzip -1 > "$local_tar"
   local ok=0
   local tattempt
   for tattempt in 1 2 3 4 5 6; do
@@ -124,7 +123,6 @@ transfer_image_via_file() {
     echo "==> Transfer $TAG failed (attempt $tattempt/6); waiting for SSH..." >&2
     sleep 8
   done
-  rm -f "$local_tar"
   [ "$ok" -eq 1 ]
 }
 
@@ -555,26 +553,35 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
   if [ ${#IMAGES_TO_TRANSFER[@]} -eq 0 ]; then
     echo "==> All images up to date on server, skipping transfer"
   else
+    # Gzip locally first so we do not sit on the droplet during save.
+    # Do not prune on every transfer: docker prune on 1GB RAM knocks sshd over
+    # (connection refused for a minute while edge still serves). Disk prune
+    # only when root is ≥88% (_prune_remote_disk_if_low).
     _prune_remote_disk_if_low
-    # Free disk on server before transfer. Use dangling-only image prune — NOT `prune -a`:
-    # tagged 216labs/* images must stay on disk when a container is stopped, or the next
-    # deploy has nothing to run (e.g. activator cold-start) until a full rebuild+transfer.
-    echo "==> Pruning dangling images on server (keeps tagged 216labs images)..."
-    ssh_retry "Prune dangling images on server" ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -f 2>/dev/null; echo "Prune done"' 2>/dev/null || true
-    echo "==> Waiting for SSH after prune..."
-    wait_remote_ssh || echo "==> WARN: SSH still flapping after prune; transfer will retry" >&2
 
-    # One image per transfer so the droplet never needs enough free space for a multi-image
-    # tarball unpack at once (25GB disks fill up on `docker save a b c ... | load`).
-    # File copy, not a pipe: a 1GB droplet OOMs sshd on `docker save | ssh | docker load`.
-    echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (gzip file, sequential)..."
+    XFER_DIR=$(mktemp -d /tmp/216labs-xfer.XXXXXX)
+    echo "==> Saving ${#IMAGES_TO_TRANSFER[@]} image(s) to gzip tars..."
     for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
+      slug=$(printf '%s' "$TAG" | tr '/:' '__')
+      echo "  gzip $TAG"
+      docker save "$TAG" | gzip -1 > "$XFER_DIR/${slug}.tar.gz"
+    done
+
+    echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (gzip file, sequential)..."
+    xfer_ok=1
+    for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
+      slug=$(printf '%s' "$TAG" | tr '/:' '__')
       echo "  -> $TAG"
-      if ! transfer_image_via_file "$TAG"; then
+      if ! transfer_image_via_file "$TAG" "$XFER_DIR/${slug}.tar.gz"; then
         echo "ERROR: could not transfer $TAG after 6 attempts." >&2
-        exit 1
+        xfer_ok=0
+        break
       fi
     done
+    rm -rf "$XFER_DIR"
+    if [ "$xfer_ok" -ne 1 ]; then
+      exit 1
+    fi
     # Persist source hashes so next deploy can skip unchanged apps
     for svc in "${SERVICES_TO_BUILD[@]}"; do
       IFS=: read -r NAME CTX DFILE <<< "$svc"

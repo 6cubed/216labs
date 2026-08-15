@@ -34,7 +34,7 @@ Admin logs showed `SQLITE_BUSY` and `no such column: last_runtime_error` (ALTER 
 |---------|-----|
 | `ssh: connection refused` for ~60s during `DEPLOY_IMAGE_SOURCE=local` while edge still 200 | **Shipped** — `deploy.sh` gzip-saves to a temp tar, `scp`s, then `docker load` from disk. Waits for SSH after prune and between retries. |
 
-**Verify:** next single-app local deploy prints `gzip file, sequential` and completes.
+**Verify:** next single-app local deploy prints `gzip file, sequential`, does **not** prune when disk is under 88%, and completes.
 
 ---
 
