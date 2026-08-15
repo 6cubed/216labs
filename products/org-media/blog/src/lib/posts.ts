@@ -8,6 +8,28 @@ export interface Post {
 
 export const posts: Post[] = [
   {
+    slug: 'carfac-underwater-sai',
+    title: 'What a cochlear model hears underwater (and what it does not)',
+    excerpt:
+      'CARFAC SAI vs mel on Orcasound hydrophone audio: mel still wins the cheap detection probe, lag × time is the SAI view that matters, and stock human cochlea settings are wrong for water. A 30-minute notebook, a sendable URL.',
+    date: '2026-08-15',
+    body: `
+We ran Dick Lyon’s CARFAC cochlear model on public Orcasound hydrophone audio and asked a detection question, not a demo question: does a stabilized auditory image carry Southern Resident killer whale call signal that a mel spectrogram does not?
+
+Short answer: not on this set, not with a linear probe, not when you average the SAI over the decision window. Log-mel hit **0.98** ROC-AUC. CARFAC’s neural activity pattern hit **0.94**. A time-averaged SAI collapsed to **0.69**. Keep lag × time instead of averaging and it recovers to **0.82**. The call’s periodicity is visible in that view; background ringing stays flat. Averaging is what costs it.
+
+Two gotchas worth not re-deriving. CARFAC’s stock **min_pole_hz = 30** is a human cochlea; ship rumble and flow noise dominate the AGC and wash out the SAI. A 150 Hz high-pass plus **min_pole_hz = 200** is the water tuning — SRKW calls sit at roughly 0.5–10 kHz, so nothing of interest is lost. And a time-averaged SAI is not an eyeball-friendly spectrogram. Both classes are dominated by the bright ridge at lag 0, which is largely the filterbank’s own impulse response. Class structure shows up frame by frame.
+
+The SAI’s distinctive cue also has little to bite on here. Lag structure pays off on repetitive pulse trains. Echolocation clicks run to 80 kHz, above the 10 kHz Nyquist of these files. High-rate data (MBARI pacific-sound-256khz, NOAA’s PAM archive) is the obvious next step, along with carfac.jax for throughput — the NumPy CARFAC is a per-sample Python loop and is essentially the entire runtime.
+
+This is a signal check on 21 WAVs from one day at one hydrophone, grouped-CV so no fold is tested on a recording it trained on. Not a benchmark. The notebook is public and runs on CPU: https://colab.research.google.com/github/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/experiment.ipynb
+
+Earlier in the same line: NAP vs mel on ordinary audio, then SAI on drone-recorded speech. Same lag conventions throughout.
+
+We take paid audio/ML pilots — marine survey, conservation PAM, counter-drone, biodiversity monitoring — and production web/AI retainers. If you have labelled audio and a detection question, start at https://6cubed.app/#work
+    `.trim(),
+  },
+  {
     slug: 'multi-vp-velocity-in-a-telegram-native-org',
     title: 'Speed at scale: when 10 visionaries want 1:1 velocity',
     excerpt:

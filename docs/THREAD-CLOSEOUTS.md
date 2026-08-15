@@ -2,6 +2,22 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+**How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
+
+## Production snapshot (2026-08-15 ~13:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **CEO** — pick the motion (services / audio-ML consulting / one consumer product); until then, heartbeats ship **sendable URLs + outbound**, not checkout plumbing |
+| Distribution | **Shipped this beat** — [6cubed.app/#work](https://6cubed.app/#work) hire form above the fold; [blog: CARFAC underwater SAI](https://blog.6cubed.app/blog/carfac-underwater-sai) as the audio/ML proof URL; README Work with us |
+| Ops | **OK** — edge smoke green; `int admin: OK (200)`; disk **64%** |
+
+**Verify:** [6cubed.app](https://6cubed.app/#work) shows **Work with us** above the blog module; [blog post](https://blog.6cubed.app/blog/carfac-underwater-sai) **200**; a test hire email appears on [admin → Leads](https://admin.6cubed.app/leads).
+
+**Open (CEO):** send the work URL or the CARFAC post to one real buyer this week.
+
+---
+
 ## "First StoryMagic sale is blocked on the CEO's Payment Link" — **CLOSED (the premise was false)**
 
 Every production snapshot from **2026-05-29 to 2026-08-15** named this as the top priority. It was wrong.
@@ -297,18 +313,26 @@ steady-noise clips (skip `SAI_WARMUP_S`), and `carfac.sai` puts zero lag at colu
 
 ---
 
-## StoryMagic preorder (Payment Link) — **BLOCKED (CEO)**
+## StoryMagic preorder (Payment Link) — **SUPERSEDED (2026-08-15)**
+
+Stripe Payment Link is **not** the blocker. See the top of this file and `docs/REVENUE-STRATEGY.md`: **8 human visitors in 6 weeks**, waitlist 0, leads 0. Checkout plumbing while humans ≈ 0 does not count as a monetization beat.
+
+The product path still exists (Checkout setup → Payment Link) for when there is traffic. Do not reopen this thread as the top priority.
+
+What was already shipped (kept so we do not rebuild it):
 
 | Item | Status |
 |------|--------|
 | UI + hot-reload on save | **Shipped** — inline save on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
 | One-click Payment Link | **Shipped** — when `STORYBOOK_STRIPE_SECRET_KEY` in Env → **Create Payment Link** on Checkout setup |
 | Runtime URL on site | **Shipped** — client reads `preorderUrl` from `/api/checkout/ready` (no image rebuild after Env save) |
-| Money | **You** — Env secret + one click **or** manual Stripe link paste |
+| Money | **Not the constraint** — set keys when humans > 0 |
 
-**Verify:** `./scripts/check-revenue-env-http.sh` → preorder LIVE; StoryMagic **Preorder now** opens your link.
+---
 
-Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYBOOK_STRIPE_WEBHOOK_SECRET` on same page.
+## StoryMagic week experiment — **SUPERSEDED (2026-08-15)**
+
+Same finding: a week experiment that starts with a Payment Link still needs strangers. Distribution first. `/experiment` remains available; do not treat it as the heartbeat default.
 
 ---
 
@@ -498,15 +522,9 @@ Full checkout + admin Orders: still need `STORYBOOK_STRIPE_SECRET_KEY` + `STORYB
 
 ---
 
-## StoryMagic week experiment — **BLOCKED (CEO)**
+## StoryMagic week experiment (2026-05-29) — **SUPERSEDED**
 
-| Step | Action |
-|------|--------|
-| 1 | `./scripts/storymagic-week-experiment.sh` or Telegram **`/experiment`** |
-| 2 | Payment Link on [Checkout setup](https://admin.6cubed.app/checkout-setup) |
-| 3 | Post tracked URL · share links after previews |
-
-**Verify:** `Paid path: preorder live` from `./scripts/query_storybook_waitlist_summary.sh`; heartbeat shows `storybook: preorder live` or waitlist count.
+See the 2026-08-15 entry at the top. Historical steps: `/experiment` then Payment Link then tracked URL. Do not treat as the current blocker.
 
 ---
 

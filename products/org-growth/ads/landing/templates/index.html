@@ -4,8 +4,41 @@
 {% block title %}216Labs{% endblock %}
 {% block content %}
     <h1 style="background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">216Labs</h1>
-    <p class="lead">At 216Labs we are building the toolkit for production grade vibes. One monorepo, one deploy, a growing set of apps and tools.</p>
+    <p class="lead">From the slop, structure will emerge. Production web apps, AI retainers, and specialist audio/ML — one lab, one deploy.</p>
     <p class="repo-link" style="margin-bottom:2rem"><a href="https://github.com/6cubed/216labs" target="_blank" rel="noopener noreferrer" style="color: var(--accent2); text-decoration:none; font-weight:800;">216labs on GitHub</a></p>
+
+    <section class="section" id="work">
+      <h2>Work with us</h2>
+      <div class="featured" style="cursor:default">
+        <span class="badge">Open for work</span>
+        <span class="name" style="display:block;font-size:1.15rem">Hire the lab — one buyer, not a thousand visitors</span>
+        <span class="desc">
+          Production web delivery and AI-feature retainers (€5–15k / monthly), or a paid audio/ML pilot
+          (CARFAC on hydrophone, drone, and bird audio). Drop an email. It lands in admin Leads.
+        </span>
+      </div>
+      <div class="cta-card">
+        <div style="display:flex; flex-direction:column; gap:0.6rem;">
+          <div style="font-size:0.95rem; color: var(--text); font-weight:600;">What do you want built?</div>
+          <div style="font-size:0.85rem; color: var(--muted);">
+            Web app, AI retainer, or audio/ML pilot — one line is enough. We reply with next steps.
+          </div>
+          <form id="leadForm" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.25rem;">
+            <input id="leadEmail" name="email" type="email" autocomplete="email" required
+                   placeholder="you@domain.com"
+                   style="width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid var(--border); background:#0f0f13; color:var(--text); outline:none;" />
+            <textarea id="leadMsg" name="message" rows="3" placeholder="Web app / retainer / audio-ML pilot — plus a one-liner (optional)"
+                      style="width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid var(--border); background:#0f0f13; color:var(--text); outline:none; resize:vertical;"></textarea>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button id="leadBtn" type="submit" class="btn">Send</button>
+              <a class="btn secondary" href="https://blog.6cubed.app/blog/carfac-underwater-sai" target="_blank" rel="noopener noreferrer">Audio/ML proof →</a>
+              <div id="leadStatus" style="font-size:0.85rem; color: var(--muted); align-self:center;"></div>
+            </div>
+            <div style="font-size:0.8rem; color: var(--muted);">No spam. One message when we reply.</div>
+          </form>
+        </div>
+      </div>
+    </section>
 
     <section class="section">
       <h2>Latest from the blog</h2>
@@ -109,7 +142,7 @@
 
     <section class="section">
       <h2>Shop &amp; paid products</h2>
-      <a class="featured" href="https://storybook.6cubed.app?utm_source=landing&amp;utm_medium=featured&amp;utm_campaign=6cubed_home" target="_blank" rel="noopener noreferrer">
+      <a id="storymagicFeatured" class="featured" href="https://storybook.6cubed.app?utm_source=landing&amp;utm_medium=featured&amp;utm_campaign=6cubed_home" target="_blank" rel="noopener noreferrer">
         <span class="badge">Try it free</span>
         <span class="name" style="display:block;font-size:1.15rem">StoryMagic — personalised kids&apos; books</span>
         <span class="desc">Free AI preview in minutes · printed hardcover $24.99 · preorder or waitlist on StoryMagic.</span>
@@ -169,7 +202,7 @@
     </section>
 
     <section class="section">
-      <h2>Hire us / get updates</h2>
+      <h2>Partnerships</h2>
       <div class="links" style="gap:0.75rem">
         <div id="storymagic-partners" style="background: var(--surface); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius); padding: 1rem;">
           <div style="display:flex; flex-direction:column; gap:0.6rem;">
@@ -185,29 +218,6 @@
                         style="width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid var(--border); background:#0f0f13; color:var(--text); outline:none; resize:vertical;"></textarea>
               <button id="partnerBtn" type="submit" class="btn" style="width:fit-content;">Send partnership inquiry</button>
               <div id="partnerStatus" style="font-size:0.85rem; color: var(--muted);"></div>
-            </form>
-          </div>
-        </div>
-        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
-          <div style="display:flex; flex-direction:column; gap:0.6rem;">
-            <div style="font-size:0.95rem; color: var(--text); font-weight:600;">Want a fast build, a fix, or a launch?</div>
-            <div style="font-size:0.85rem; color: var(--muted);">
-              Drop your email and a one-liner. We’ll reply with next steps (or ship the fix if it’s in-scope).
-            </div>
-            <form id="leadForm" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.25rem;">
-              <input id="leadEmail" name="email" type="email" autocomplete="email" required
-                     placeholder="you@domain.com"
-                     style="width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid var(--border); background:#0f0f13; color:var(--text); outline:none;" />
-              <textarea id="leadMsg" name="message" rows="3" placeholder="What do you want built? (optional)"
-                        style="width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid var(--border); background:#0f0f13; color:var(--text); outline:none; resize:vertical;"></textarea>
-              <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                <button id="leadBtn" type="submit"
-                        style="cursor:pointer; padding:0.75rem 0.9rem; border-radius:10px; border:1px solid rgba(139, 92, 246, 0.55); background: rgba(139, 92, 246, 0.18); color: var(--text); font-weight:700;">
-                  Send
-                </button>
-                <div id="leadStatus" style="font-size:0.85rem; color: var(--muted); align-self:center;"></div>
-              </div>
-              <div style="font-size:0.8rem; color: var(--muted);">No spam. One message when we reply.</div>
             </form>
           </div>
         </div>
@@ -304,8 +314,9 @@
         var row = document.getElementById('storymagicPreorderRow');
         var btn = document.getElementById('storymagicPreorderBtn');
         var copy = document.getElementById('storymagicCtaCopy');
-        var badge = document.querySelector('.featured .badge');
-        var featuredDesc = document.querySelector('.featured .desc');
+        var featured = document.getElementById('storymagicFeatured');
+        var badge = featured ? featured.querySelector('.badge') : null;
+        var featuredDesc = featured ? featured.querySelector('.desc') : null;
         var landingWaitlistCount = 0;
 
         function applyWaitlistSocialProof(count) {

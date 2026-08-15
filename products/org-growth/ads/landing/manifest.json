@@ -1,7 +1,7 @@
 {
   "id": "landing",
   "name": "216Labs Landing",
-  "tagline": "At 216Labs we are building the toolkit for production grade vibes.",
+  "tagline": "From the slop, structure will emerge.",
   "description": "Root domain landing for 216Labs; lists apps with deploy toggled on in the workflow dashboard.",
   "category": "tool",
   "internal_port": 5000,

@@ -108,3 +108,7 @@ Which motion to run: **services**, **audio/ML consulting**, or **one consumer pr
 a CEO call because it determines where every subsequent heartbeat goes. Until it is made,
 heartbeats should default to distribution work, never checkout plumbing — see
 `.cursor/rules/heartbeat-monetization.mdc`.
+
+**Live offer URLs (shipped 2026-08-15):** [6cubed.app/#work](https://6cubed.app/#work) (hire form)
+and [CARFAC underwater SAI](https://blog.6cubed.app/blog/carfac-underwater-sai) (audio/ML proof).
+Send those; do not wait for another product surface.

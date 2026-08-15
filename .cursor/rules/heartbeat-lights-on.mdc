@@ -28,4 +28,4 @@ Do not spend the heartbeat on unrelated refactors while `admin.6cubed.app` and S
 
 ## After lights are on
 
-Revenue keys, deploys, and app fixes come next. See `heartbeat-monetization.mdc` for paid-checkout work.
+Distribution and paid work come next — see `heartbeat-monetization.mdc`. While human visitors are ~0, that means **sendable offers and outbound**, not Stripe keys or another app.

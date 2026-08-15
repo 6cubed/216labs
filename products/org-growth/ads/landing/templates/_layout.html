@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}216Labs{% endblock %}</title>
-  <meta name="description" content="{% block description %}At 216Labs we are building the toolkit for production grade vibes.{% endblock %}" />
+  <meta name="description" content="{% block description %}From the slop, structure will emerge. Production web apps, AI retainers, and specialist audio/ML from 216Labs.{% endblock %}" />
   {% include '_ga.html' %}
   {{ client_error_script_html | safe }}
   <style>
@@ -204,6 +204,7 @@
       <div class="brand"><a href="/">216Labs</a></div>
       <nav>
         <a href="/" class="{% if active_nav == 'home' %}active{% endif %}">Home</a>
+        <a href="/#work">Work with us</a>
         <a href="/about" class="{% if active_nav == 'about' %}active{% endif %}">About</a>
         <a href="/careers" class="{% if active_nav == 'careers' %}active{% endif %}">Careers</a>
         <a href="https://storybook.6cubed.app?utm_source=landing&utm_medium=nav" target="_blank" rel="noopener noreferrer">StoryMagic</a>
@@ -214,6 +215,7 @@
 
     <footer>
       <div class="foot-links">
+        <a href="/#work">Work with us</a>
         <a href="/about">About</a>
         <a href="/careers">Careers</a>
         <a href="https://bugbounty.6cubed.app">Bug bounty</a>

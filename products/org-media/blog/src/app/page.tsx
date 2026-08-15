@@ -9,7 +9,7 @@ export default function HomePage() {
           216Labs blog
         </Link>
         <p className="text-[var(--muted)] text-sm mt-1">
-          At 216Labs we are building the toolkit for production grade vibes.
+          From the slop, structure will emerge.
         </p>
       </header>
 

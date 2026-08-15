@@ -22,6 +22,10 @@
 
 We believe in a world where LLMs can guarantee incremental improvements to software projects for every next-token they sample, ultimately leading to the infinite internet improvement era.
 
+## Work with us
+
+Need a production web app, an AI-feature retainer, or a specialist **audio/ML pilot** (CARFAC on hydrophone, drone, and bird audio)? One buyer is enough — [hire the lab](https://6cubed.app/#work). Proof: [CARFAC SAI on underwater audio](https://blog.6cubed.app/blog/carfac-underwater-sai).
+
 ## Get started (plug and play)
 
 **Requires:** Docker Desktop (or Docker Engine + Compose V2) and Python 3.
