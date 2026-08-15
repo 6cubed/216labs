@@ -12,7 +12,8 @@ Production is a single DigitalOcean droplet (`46.101.88.197`). When edge or SSH 
 1. Run `./scripts/heartbeat-stack.sh` or `./scripts/heartbeat-recover.sh` (~10s smoke + auto recover when SSH works).
 2. If recover exits **2** (SSH down): **reboot the droplet in the DO console**, then `./scripts/wait-for-droplet.sh`.
 3. If the disk line prints `WARN: root ≥88%`, run `./scripts/prune-droplet-docker.sh root@46.101.88.197` **in that same beat** — do not defer it to the next wedge. It takes ~25s and typically frees several GB (2026-08-15: 89% → 63%).
-4. On the VPS, periodic `droplet-ghcr-sync.sh` **skips image pulls** when root disk is **≥90%** (`SYNC_SKIP_IF_DISK_PCT_GE`) so sync does not re-wedge a full disk.
+4. If the **cron snapshot** prints an `int <service>: FAIL` while edge is green, do not scroll past it. Green edge makes it look cosmetic, but `stack_health_last` uses the internal probes to pick a `diagnosis`, so a false FAIL sends the **next real outage** to the wrong recovery script. Fix the probe or the service in that beat. (2026-08-15: `int admin: FAIL (timeout)` for weeks — the probe was hitting the `force-dynamic` admin dashboard, which shells out to `docker ps`.)
+5. On the VPS, periodic `droplet-ghcr-sync.sh` **skips image pulls** when root disk is **≥90%** (`SYNC_SKIP_IF_DISK_PCT_GE`) so sync does not re-wedge a full disk.
 
 Do not spend the heartbeat on unrelated refactors while `admin.6cubed.app` and SSH are both down.
 
@@ -23,6 +24,7 @@ Do not spend the heartbeat on unrelated refactors while `admin.6cubed.app` and S
 | SSH auth OK then "Timeout, server not responding" | Disk ~95% full or OOM; prune + reboot |
 | `edge-smoke` all `000` / unreachable | Caddy down or whole VPS wedged |
 | `admin` 401 but other hosts timeout | Partial stack — run recover compose up |
+| `int <svc>: FAIL` while ext is `OK (308)` | Usually the **probe**, not the service — internal probes must hit cheap endpoints (see `docs/STACK-HEALTH.md`) |
 
 ## After lights are on
 

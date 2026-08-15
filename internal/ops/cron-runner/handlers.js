@@ -873,7 +873,16 @@ export async function stackHealthCheck(db) {
   }
 
   const internalTargets = [
-    { id: "admin", url: "http://admin:3000/", okStatuses: [200, 401] },
+    // Not the dashboard at "/": it is force-dynamic and shells out to `docker ps`
+    // plus several HTTP fan-outs, so it routinely blows past the timeout on a
+    // loaded droplet and reports a healthy admin as down. live-apps is one
+    // SQLite read, and is what probeAdminResilient() already uses.
+    {
+      id: "admin",
+      url: "http://admin:3000/api/public/live-apps",
+      okStatuses: [200, 401],
+      timeoutMs: 12_000, // headroom for a cold Next.js start
+    },
     { id: "activator", url: "http://activator:3040/healthz", okStatuses: [200] },
     {
       id: "storybook",
@@ -884,7 +893,7 @@ export async function stackHealthCheck(db) {
 
   for (const t of internalTargets) {
     try {
-      const res = await fetchTimeout(t.url, t.id === "admin" ? 12_000 : 8000);
+      const res = await fetchTimeout(t.url, t.timeoutMs ?? 8000);
       const text = t.needsReadyJson ? await res.text() : "";
       let ok = t.okStatuses ? t.okStatuses.includes(res.status) : res.ok;
       if (t.needsReadyJson) ok = text.includes('"ready"');

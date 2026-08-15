@@ -2,6 +2,48 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-08-15 ~13:20 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → Stripe secret + **Create Payment Link** (unchanged; `revenue_env_last` issues 0, storybook checkout not ready) |
+| Ops | **Shipped** — `stack-health-check` internal admin probe no longer false-fails (see below); edge smoke green, disk **63%** |
+| Research / DX | **Shipped** — [`colabs/carfac-sai-underwater`](../colabs/carfac-sai-underwater/) — CARFAC **SAI** vs mel vs NAP on Orcasound hydrophone audio, with a grouped-CV detection probe |
+
+**Verify:** after the droplet picks up the new `cron-runner` image, `./scripts/heartbeat-stack.sh` shows `int admin: OK` (was `FAIL (timeout)`).
+
+---
+
+## Stack-health internal admin probe false negative — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `stack_health_last` → `int admin: FAIL (The operation was aborted due to timeout)` while `ext admin: OK (308)` and the app is fine | **Shipped** — internal probe moved from `http://admin:3000/` to `http://admin:3000/api/public/live-apps` |
+
+The admin dashboard at `/` is `force-dynamic` and shells out to `docker ps` plus several HTTP fan-outs, so it blew past the probe timeout on a loaded droplet. `live-apps` is one SQLite read — the same endpoint `probeAdminResilient()` already uses, so the revenue probe reported admin healthy while stack-health reported it down.
+
+Not cosmetic: `diagnosis` is computed from `intCoreOk` (admin + activator). With admin stuck false, a real Caddy outage would have been classified as generic `degraded` and pointed at `droplet-recover.sh` instead of `edge_proxy` → `droplet-spine-up.sh`.
+
+**Rule of thumb, now in [`heartbeat-lights-on.mdc`](../.cursor/rules/heartbeat-lights-on.mdc):** internal probes must hit cheap endpoints, and an `int <svc>: FAIL` under a green edge gets investigated in that beat.
+
+**Verify:** `./scripts/heartbeat-stack.sh` → `int admin: OK (200)`.
+
+---
+
+## CARFAC colab thread — **CLOSED (third notebook shipped 2026-08-15)**
+
+| Notebook | Status |
+|----------|--------|
+| `colabs/carfac-vs-mel` (mel vs NAP) | **Shipped** |
+| `colabs/carfac-sai-drone` (adds SAI, drone SAR audio) | **Shipped** |
+| `colabs/carfac-sai-underwater` (SAI vs mel on hydrophone audio, detection probe) | **Shipped** — every cell executed against the real dataset on Python 3.12 before commit |
+
+Underwater findings worth not re-deriving: mel **0.98** AUC, NAP **0.94**, time-averaged SAI **0.69**, SAI kept as **lag × time 0.82** — averaging the SAI over the decision window is what costs it. CARFAC's stock `min_pole_hz = 30` is wrong for water (ship rumble dominates the AGC); use a 150 Hz high-pass plus `min_pole_hz = 200`. Data is Orcasound Pod.Cast from `s3://acoustic-sandbox`, public, no credentials.
+
+**Verify:** [Colab badge](https://colab.research.google.com/github/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/experiment.ipynb) → Runtime → Run all; sections 1–3 in ~2 min, probe ~10–20 min.
+
+---
+
 ## Production snapshot (2026-08-15 ~12:50 UTC)
 
 | Highest leverage | Blocker |
@@ -14,7 +56,7 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 ---
 
-## CARFAC colab thread — **CLOSED**
+## CARFAC colab thread (earlier close-out) — **SUPERSEDED** by the entry above
 
 | Item | Status |
 |------|--------|
