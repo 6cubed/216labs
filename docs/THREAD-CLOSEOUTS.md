@@ -2,6 +2,34 @@
 
 Decisive end states for recurring Telegram/chat threads so the next session does not re-litigate them.
 
+## Production snapshot (2026-08-15 ~12:50 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **First StoryMagic sale** | **CEO** — [Checkout setup](https://admin.6cubed.app/checkout-setup) → Stripe secret + **Create Payment Link** (still the only blocker; `revenue_env_last` issues 0, storybook checkout not ready) |
+| Ops | **Shipped** — edge smoke green; disk **89% → 63%** via `prune-droplet-docker.sh`; lights-on rule now says to prune on the ≥88% WARN instead of waiting for a wedge |
+| Research / DX | **Shipped** — [`colabs/carfac-sai-drone`](../colabs/carfac-sai-drone/) — CARFAC **stabilized auditory image** vs mel vs NAP on DroneAudioSet speech + distress-cry clips |
+
+**Verify:** `./scripts/heartbeat-stack.sh` disk line **< 88%**; [Colab badge](https://colab.research.google.com/github/6cubed/216labs/blob/main/colabs/carfac-sai-drone/experiment.ipynb) returns **200** and the notebook runs ~2 min on CPU.
+
+---
+
+## CARFAC colab thread — **CLOSED**
+
+| Item | Status |
+|------|--------|
+| `colabs/carfac-vs-mel` (mel vs NAP) | **Shipped** — on main |
+| `colabs/carfac-sai-drone` (adds SAI, drone SAR audio) | **Shipped** — executed end to end on Python 3.11 before commit; both figures render |
+| Audio source | DroneAudioSet samples via the authors' code repo (~52 MB), **not** the 23.5 h HF dataset (parquet shards ~120 MB each) |
+
+Two gotchas worth keeping: CARFAC's AGC settling transient makes frame 0 the loudest SAI frame on
+steady-noise clips (skip `SAI_WARMUP_S`), and `carfac.sai` puts zero lag at column
+`sai_width - 1 - future_lags`, so frames need flipping for lag to read left-to-right.
+
+**Verify:** Open the Colab badge in [`colabs/carfac-sai-drone/README.md`](../colabs/carfac-sai-drone/README.md); Runtime → Run all.
+
+---
+
 ## Production snapshot (2026-08-03 ~19:05 UTC)
 
 | Highest leverage | Blocker |
