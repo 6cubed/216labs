@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~19:10 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` is live; send [6cubed.app/#work](https://6cubed.app/#work) to one buyer. Do not restyle this funnel until that happens. |
+| Homepage Agitweet module | **Shipped** — pinned hire blurb when agitweet is cold (was “Loading…” / fetch error) |
+| Harness | **Shipped** — closeouts text forbids a third hire-funnel restyle while the CEO row is unchanged |
+
+**Verify:** [6cubed.app](https://6cubed.app/) Agitweet section shows the pinned hire text without JS.
+
+---
+
+## Homepage Agitweet died when the app was cold — **CLOSED**
+
+`/api/posts` bypasses warmup, so the landing fetch 502s and the module looked empty. Same class of bug as the cold blog feed.
+
+**Shipped:** server-rendered pinned hire card; live posts replace it when agitweet is warm.
+
+**Verify:** homepage HTML contains `Pinned — hire` and `6cubed.app/#work`.
+
+---
+
 ## Production snapshot (2026-08-15 ~18:40 UTC)
 
 | Highest leverage | Blocker |

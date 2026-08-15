@@ -88,8 +88,15 @@
             Open Agitweet →
           </a>
         </div>
-        <div id="agitweetStatus" class="empty-hint" style="margin-top:0.5rem;">Loading…</div>
-        <div id="agitweetPosts" style="display:flex; flex-direction:column; gap:0.6rem; margin-top:0.75rem;"></div>
+        <div id="agitweetStatus" class="empty-hint" style="margin-top:0.5rem;"></div>
+        <div id="agitweetPosts" style="display:flex; flex-direction:column; gap:0.6rem; margin-top:0.75rem;">
+          <div style="border:1px solid var(--border); border-radius:12px; padding:0.75rem 0.85rem; background:rgba(255,255,255,0.03);">
+            <div style="font-size:11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace; margin-bottom:0.35rem;">Pinned — hire</div>
+            <div style="font-size:0.95rem; white-space:pre-wrap; word-break:break-word;">216Labs takes paid work: production web apps, AI retainers (€5–15k / monthly), and CARFAC audio/ML pilots.
+Hire: https://6cubed.app/#work
+Proof: https://blog.6cubed.app/blog/carfac-underwater-sai</div>
+          </div>
+        </div>
       </div>
       <script>
         (function () {
@@ -111,10 +118,11 @@
             .then(data => {
               const posts = (data && data.posts) ? data.posts : [];
               if (!Array.isArray(posts) || posts.length === 0) {
-                statusEl.textContent = 'No posts yet.';
+                statusEl.textContent = '';
                 return;
               }
               statusEl.textContent = '';
+              listEl.innerHTML = '';
               posts.slice(0, 3).forEach(p => {
                 const text = esc(p.text);
                 const created = esc(p.created_at || '');
@@ -134,7 +142,7 @@
               });
             })
             .catch(() => {
-              statusEl.textContent = 'Could not load Agitweet posts.';
+              statusEl.textContent = '';
             });
         })();
       </script>
