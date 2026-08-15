@@ -71,7 +71,7 @@ if [[ -f scripts/generate-caddyfile.py ]]; then
 fi
 $TO 300 docker compose up -d caddy activator admin landing maxlearn storybook 1pageresearch kidgift cron-runner
 $TO 120 docker compose up -d --force-recreate activator
-$TO 30 docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -2 || docker compose restart caddy
+$TO 90 docker compose up -d --no-deps --force-recreate caddy
 $TO 45 docker compose ps caddy activator admin landing maxlearn storybook 1pageresearch kidgift cron-runner
 REMOTE_UP
 

@@ -936,12 +936,11 @@ echo "==> Final ensure: activator (cold-start)..."
 docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build activator 2>/dev/null || true
 
 if command -v python3 >/dev/null 2>&1 && [ -f scripts/generate-caddyfile.py ]; then
-  echo "==> Post-deploy: regenerate Caddyfile + reload"
+  echo "==> Post-deploy: regenerate Caddyfile + recreate caddy (reload keeps a stale inode after git pull)"
   python3 scripts/generate-caddyfile.py 2>&1 | tail -2 || true
 fi
 if docker compose --env-file .env --env-file .env.admin ps --status running --format '{{.Service}}' 2>/dev/null | grep -qx caddy; then
-  docker compose --env-file .env --env-file .env.admin exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -2 \
-    || docker compose --env-file .env --env-file .env.admin restart caddy
+  docker compose --env-file .env --env-file .env.admin up -d --no-deps --force-recreate caddy 2>&1 | tail -3 || true
 fi
 
 docker compose ps

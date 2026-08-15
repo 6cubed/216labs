@@ -104,11 +104,12 @@ for svc in landing storybook maxlearn 1pageresearch cron-runner; do
     "${COMPOSE[@]}" up -d --pull never --no-build "$svc" 2>/dev/null || true
 done
 
+# git pull replaces Caddyfile (new inode); reload reads the stale bind mount.
+# Recreate caddy so the new file is mounted.
 if [ -f "$ROOT/scripts/generate-caddyfile.py" ] && command -v python3 &>/dev/null; then
   python3 "$ROOT/scripts/generate-caddyfile.py" 2>&1 | tail -1 || true
   if is_running caddy; then
-    "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -1 \
-      || "${COMPOSE[@]}" restart caddy
+    "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy 2>&1 | tail -3 || true
   fi
 fi
 

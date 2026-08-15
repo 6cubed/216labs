@@ -41,6 +41,6 @@ curl -sS -X POST "https://storybook.6cubed.app/api/checkout" -H 'Content-Type: a
 
 **Cold apps:** `/api/*` and `/healthz` bypass Activator warmup redirects (see `scripts/generate-caddyfile.py`) so checkout probes return JSON. If probes still fail, start the service: `docker compose up -d 1pageresearch storybook` — revenue apps use `activator_never_evict` where set in manifests.
 
-**After Caddyfile regen:** `docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` on the droplet (or restart the `caddy` service).
+**After Caddyfile regen:** recreate **caddy** (`docker compose up -d --no-deps --force-recreate caddy`). Reload reads a stale bind-mount inode after `git pull`.
 
 **Droplet down / SSH timeout:** `./scripts/droplet-recover.sh` — see `docs/DROPLET-RECOVERY.md`.

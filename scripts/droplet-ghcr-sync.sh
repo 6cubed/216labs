@@ -163,14 +163,14 @@ if [ -f "$ROOT/scripts/lib/prune-ghcr-duplicate-tags.sh" ]; then
   prune_ghcr_duplicate_tags || true
 fi
 
-# Recreate of any app can leave Caddy on a stale config; regen + reload spine every sync.
+# Recreate of any app can leave Caddy on a stale config; regen + recreate caddy
+# (reload keeps the old Caddyfile inode after git pull).
 if [ -f "$ROOT/scripts/generate-caddyfile.py" ] && command -v python3 &>/dev/null; then
   echo "==> GHCR sync: regenerate Caddyfile"
   python3 "$ROOT/scripts/generate-caddyfile.py" 2>&1 | tail -2 || true
 fi
 if docker compose --env-file .env --env-file .env.admin ps --status running --format '{{.Service}}' 2>/dev/null | grep -qx caddy; then
-  docker compose --env-file .env --env-file .env.admin exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 | tail -2 \
-    || docker compose --env-file .env --env-file .env.admin restart caddy
+  docker compose --env-file .env --env-file .env.admin up -d --no-deps --force-recreate caddy 2>&1 | tail -3 || true
 fi
 if [ -f "$ROOT/scripts/droplet-ensure-spine.sh" ]; then
   SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/droplet-ensure-spine.sh" || true
