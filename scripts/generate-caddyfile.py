@@ -32,6 +32,15 @@ scheme = "http" if local_mode else "https"
 # Caddy: prefix site address with http:// to disable automatic HTTPS / ACME.
 site = (lambda host: f"http://{host}") if local_mode else (lambda host: host)
 
+
+def warmup_redir(app_id: str, dest_host: str) -> str:
+    """Activator URL. Caddy appends {http.request.uri.path} so deep links survive cold start."""
+    dest_enc = quote(f"{scheme}://{dest_host}", safe="")
+    return (
+        f"{scheme}://activator.{domain}/warmup?app={app_id}"
+        f"&dest={dest_enc}{{http.request.uri.path}}"
+    )
+
 # Default local allowlist keeps Activator from cold-starting the whole portfolio.
 DEFAULT_LOCAL_APP_IDS = {"landing", "hello-nextjs", "hello-flask", "activator"}
 caddy_app_ids_env = os.environ.get("CADDY_APP_IDS", "").strip()
@@ -160,8 +169,7 @@ if root_domain_app:
         rp = 0
     if rp > 0:
         for host in (domain, f"www.{domain}"):
-            dest_enc = quote(f"{scheme}://{host}", safe="")
-            warm = f"{scheme}://activator.{domain}/warmup?app={svc}&dest={dest_enc}"
+            warm = warmup_redir(svc, host)
             lines += [
                 f"{site(host)} {{",
                 *ACCESS_LOG_BLOCK,
@@ -207,8 +215,7 @@ for app_id, docker_svc, port in entries:
         p = 0
     use_warmup = app_id != "activator" and p > 0
     if use_warmup:
-        dest_enc = quote(f"{scheme}://{app_id}.{domain}", safe="")
-        warm = f"{scheme}://activator.{domain}/warmup?app={app_id}&dest={dest_enc}"
+        warm = warmup_redir(app_id, f"{app_id}.{domain}")
         # Upstream 502/503/504: handle_response (response came back from upstream).
         # Dial / DNS / no-backend failures: handle_errors — some Caddy builds use status 0 for dial errors.
         # Do not use a catch-all handle_errors: app 4xx/5xx responses must not redirect to warmup.

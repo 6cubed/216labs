@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~18:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **CEO** — Telegram `/work`; send [6cubed.app/#work](https://6cubed.app/#work) or the CARFAC post (warmup now returns to the article, not the blog index) |
+| Cold-start deep links | **Shipped** — Caddy warmup `dest` keeps `{http.request.uri.path}` |
+| Homepage CARFAC card | **Live** (prior beat) |
+
+**Verify:** `curl -I https://blog.6cubed.app/blog/carfac-underwater-sai` Location includes `/blog/carfac-underwater-sai` when blog is cold.
+
+---
+
+## Activator warmup dropped the article path — **CLOSED**
+
+A cold `blog.6cubed.app/blog/carfac-underwater-sai` 302ed to warmup with `dest=https://blog.6cubed.app`. After start, the buyer landed on the index. Activator already allowed paths; Caddy never passed them.
+
+**Shipped:** `scripts/generate-caddyfile.py` appends `{http.request.uri.path}` to dest.
+
+**Verify:** Location header on a cold deep link contains the original path.
+
+---
+
 ## Production snapshot (2026-08-15 ~18:10 UTC)
 
 | Highest leverage | Blocker |
