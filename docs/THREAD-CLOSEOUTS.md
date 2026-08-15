@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~00:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| `anchor.6cubed.app` | **Shipped** — homepage is a nearby-post feed (geolocation + post), not API-docs-only |
+| zurichrunclubs / landing | **OK** — 200 / 200 |
+
+**Verify:** `curl -sS https://anchor.6cubed.app/` contains **Share location** (or “nearby”) and not only `API docs`. CEO: send `/work`.
+
+---
+
+## Anchor homepage was docs-only for returning humans — **CLOSED**
+
+Tied 2nd for visitors, 200, but the page only linked `/docs` and `/health`. Flutter web is still off GHCR.
+
+**Shipped:** HTML feed that registers a device, lists posts in 5 km, and accepts a post. Live after `docker cp` + restart; GHCR on next always-include publish.
+
+**Verify:** public `/` contains `Share location to see what’s nearby`.
+
+---
+
 ## Production snapshot (2026-08-16 ~00:15 UTC)
 
 | Highest leverage | Blocker |
