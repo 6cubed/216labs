@@ -44,7 +44,7 @@ Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for tru
 | **Priors** | Flask, Google OAuth, Gemini | [priors.6cubed.app](https://priors.6cubed.app) |
 | **CalibratedAI** | Next.js, SQLite | [calibratedai.6cubed.app](https://calibratedai.6cubed.app) |
 | **Big Leroy's** | Flask, Google OAuth, SQLite | [bigleroys.6cubed.app](https://bigleroys.6cubed.app) |
-| **Anchor** | FastAPI + React | [anchor.6cubed.app](https://anchor.6cubed.app) |
+| **Anchor** | FastAPI (Flutter web is not on GHCR; Caddy serves the API) | [anchor.6cubed.app](https://anchor.6cubed.app) |
 | **1PageResearch** | Flask, SQLite | [1pageresearch.6cubed.app](https://1pageresearch.6cubed.app) |
 | **Artisanal Europe** | Next.js | [artisinaleurope.6cubed.app](https://artisinaleurope.6cubed.app) |
 | **Zurich Dating Game** | Next.js, SQLite | [thezurichdatinggame.6cubed.app](https://thezurichdatinggame.6cubed.app) |

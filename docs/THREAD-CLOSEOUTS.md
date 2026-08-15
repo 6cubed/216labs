@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~20:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| `anchor.6cubed.app` 502 | **Shipped** — Caddy now warms up FastAPI instead of dead `anchor-web` (not on GHCR) |
+| Agitweet hire | **Live in volume** — id=88; do not start a cold agitweet |
+
+**Verify:** `curl -I https://anchor.6cubed.app` is **302** to activator (not 502). HTML `/` lands after GHCR has the new `anchor-api` image.
+
+---
+
+## Anchor 502'd because Caddy still proxied Flutter web — **CLOSED**
+
+`anchor` had 10 human visitors (tied 2nd in the portfolio) and returned empty 502: no `anchor-web` image on the droplet, and GHCR skips that service. The hardcoded Caddy block had no activator fallback.
+
+**Shipped:** generate-caddyfile routes `anchor.6cubed.app` to `anchor-api:8000` with the same 502→warmup path as other apps; FastAPI serves `/`. Recreate **caddy** after git pull (reload is a stale inode).
+
+**Verify:** Location on a cold hit contains `warmup?app=anchor`.
+
+---
+
 ## Production snapshot (2026-08-15 ~20:10 UTC)
 
 | Highest leverage | Blocker |

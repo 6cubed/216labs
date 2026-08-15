@@ -86,15 +86,30 @@ lines = [
 ]
 
 # Anchor only in full (non-local) Caddyfiles — not part of the toolkit demo stack.
+# Flutter web (anchor-web) is omitted from GHCR, so HTML used to 502 when the
+# container was absent. Route everything to FastAPI and warmup like other apps.
 if allowlist is None or "anchor" in allowlist:
+    warm = warmup_redir("anchor", f"anchor.{domain}")
     lines += [
         f"{site(f'anchor.{domain}')} {{",
         *ACCESS_LOG_BLOCK,
         "\thandle /api/* {",
         "\t\treverse_proxy anchor-api:8000",
         "\t}",
-        "\thandle {",
-        "\t\treverse_proxy anchor-web:80",
+        "\thandle /healthz {",
+        "\t\treverse_proxy anchor-api:8000",
+        "\t}",
+        "\treverse_proxy anchor-api:8000 {",
+        "\t\t@cold status 502 503 504",
+        "\t\thandle_response @cold {",
+        f'\t\t\tredir "{warm}" 302',
+        "\t\t}",
+        "\t}",
+        "\thandle_errors {",
+        "\t\t@dial expression `{err.status_code} == 0 || {err.status_code} == 502 || {err.status_code} == 503 || {err.status_code} == 504`",
+        "\t\thandle @dial {",
+        f'\t\t\tredir "{warm}" 302',
+        "\t\t}",
         "\t}",
         "}",
         "",
