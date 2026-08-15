@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~21:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Anchor still 302 | **Cause** — LRU cap (10) was full of leftover **disabled** containers; no room to pull `anchor-api` |
+| Disabled apps occupying RAM | **Shipped** — stop `deploy_enabled=0` leftovers; reaper evicts them first |
+
+**Verify:** `valentine`, `tldrtech`, `workforce` are not in `docker compose ps` (running). `curl -I https://anchor.6cubed.app` still 302 until the next warmup pull; zurichrunclubs stays 200.
+
+---
+
+## Disabled apps filled the activator LRU cap — **CLOSED**
+
+`valentine` / `tldrtech` / `workforce` are `deploy_enabled=0` but were still running (`restart: unless-stopped`). Evictable count sat at the cap of 10, so a returning human on `anchor.6cubed.app` could not cold-start without evicting something else (including zurichrunclubs).
+
+**Shipped:** stop those three now; activator reaper evicts `deploy_enabled=0` before LRU.
+
+**Verify:** those three services are stopped; `free -m` available rises.
+
+---
+
 ## Production snapshot (2026-08-15 ~21:10 UTC)
 
 | Highest leverage | Blocker |

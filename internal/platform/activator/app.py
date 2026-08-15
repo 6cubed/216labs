@@ -17,7 +17,7 @@ from urllib import request as urlrequest
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
-# Showroom: compose sets ACTIVATOR_MAX_CONCURRENT_APPS (default 10) — LRU evicts least-recently-used apps to hotswap in the requested one; 0 = unlimited.
+# Showroom: compose sets ACTIVATOR_MAX_CONCURRENT_APPS (default 6) — LRU evicts least-recently-used apps to hotswap in the requested one; 0 = unlimited.
 
 PROJECT_ROOT = os.environ.get("ACTIVATOR_PROJECT_ROOT", "/workspace")
 DB_PATH = os.environ.get("ACTIVATOR_DB_PATH", os.path.join(PROJECT_ROOT, "216labs.db"))
@@ -26,7 +26,7 @@ START_TIMEOUT_SECONDS = int(os.environ.get("ACTIVATOR_START_TIMEOUT_SECONDS", "2
 DEPLOY_TRIGGER_URL = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_URL", "").strip()
 DEPLOY_TRIGGER_TOKEN = os.environ.get("ACTIVATOR_DEPLOY_TRIGGER_TOKEN", "").strip()
 
-# 0 = unlimited. Production compose defaults to 10 so cold starts can LRU-evict to make room.
+# 0 = unlimited. Production compose defaults to 6 so cold starts can LRU-evict to make room.
 MAX_CONCURRENT_APPS = int(os.environ.get("ACTIVATOR_MAX_CONCURRENT_APPS", "0"))
 REAPER_INTERVAL_SECONDS = int(os.environ.get("ACTIVATOR_REAPER_INTERVAL_SECONDS", "120"))
 REMOVE_IMAGE_ON_EVICT = os.environ.get("ACTIVATOR_REMOVE_IMAGE_ON_EVICT", "").strip().lower() in (
@@ -527,6 +527,21 @@ def get_last_accessed_at(app_id: str) -> Optional[str]:
         return None
 
 
+def app_deploy_enabled(app_id: str) -> Optional[bool]:
+    """True/False from apps.deploy_enabled; None if unknown or the column is missing."""
+    try:
+        with db_connection() as conn:
+            row = conn.execute(
+                "SELECT deploy_enabled FROM apps WHERE id = ?",
+                (app_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return int(row["deploy_enabled"] or 0) == 1
+    except (sqlite3.Error, TypeError, ValueError, KeyError):
+        return None
+
+
 def pick_lru_eviction_target(
     candidates: List[Tuple[str, str, Optional[str]]],
 ) -> Optional[str]:
@@ -583,11 +598,24 @@ def evict_docker_service(docker_service: str) -> None:
         )
 
 
+def evict_disabled_running_apps() -> None:
+    """Stop evictable containers whose apps.deploy_enabled is 0.
+
+    A full `docker compose up` (or leftover restart: unless-stopped) leaves
+    disabled apps running. They fill ACTIVATOR_MAX_CONCURRENT_APPS so a host
+    that actually had humans cannot cold-start.
+    """
+    for svc, aid, _accessed in list(get_evictable_running_candidates()):
+        if app_deploy_enabled(aid) is False:
+            evict_docker_service(svc)
+
+
 def evict_until_under_limit(max_slots: int) -> None:
     """Ensure fewer than max_slots evictable app containers are running."""
     if max_slots <= 0:
         return
     with _eviction_lock:
+        evict_disabled_running_apps()
         while True:
             candidates = get_evictable_running_candidates()
             if len(candidates) < max_slots:
@@ -605,6 +633,7 @@ def reaper_loop() -> None:
             if MAX_CONCURRENT_APPS <= 0:
                 continue
             with _eviction_lock:
+                evict_disabled_running_apps()
                 while True:
                     candidates = get_evictable_running_candidates()
                     if len(candidates) <= MAX_CONCURRENT_APPS:

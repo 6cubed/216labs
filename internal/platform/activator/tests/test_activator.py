@@ -156,6 +156,27 @@ class ActivatorTests(unittest.TestCase):
             c = activator.get_evictable_running_candidates()
         self.assertEqual(c, [])
 
+    def test_evict_disabled_running_apps_stops_only_disabled(self):
+        stopped = []
+
+        def fake_enabled(aid):
+            return {"valentine": False, "zurichrunclubs": True}.get(aid)
+
+        with patch.object(
+            activator,
+            "get_evictable_running_candidates",
+            return_value=[
+                ("valentine", "valentine", None),
+                ("zurichrunclubs", "zurichrunclubs", "2026-08-15"),
+            ],
+        ), patch.object(
+            activator, "app_deploy_enabled", side_effect=fake_enabled
+        ), patch.object(
+            activator, "evict_docker_service", side_effect=lambda svc: stopped.append(svc)
+        ):
+            activator.evict_disabled_running_apps()
+        self.assertEqual(stopped, ["valentine"])
+
     def test_ghcr_short_from_compose_image(self):
         self.assertEqual(activator.ghcr_short_from_compose_image("216labs/foo:latest"), "foo")
         self.assertEqual(
