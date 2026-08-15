@@ -73,6 +73,9 @@ $TO 300 docker compose up -d caddy activator admin landing maxlearn storybook 1p
 $TO 120 docker compose up -d --force-recreate activator
 $TO 90 docker compose up -d --no-deps --force-recreate caddy
 $TO 45 docker compose ps caddy activator admin landing maxlearn storybook 1pageresearch kidgift cron-runner
+if [[ -f scripts/stop-disabled-compose-apps.sh ]]; then
+  SYNC_PROJECT_ROOT=/opt/216labs bash scripts/stop-disabled-compose-apps.sh || true
+fi
 REMOTE_UP
 
 echo

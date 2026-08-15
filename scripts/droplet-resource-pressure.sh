@@ -130,6 +130,11 @@ evict_one() {
 
 echo "==> droplet-resource-pressure: min_free=${MIN_FREE_MB}MB max_evictable=${MAX_EVICTABLE:-0}"
 
+# Disabled leftovers fill the activator LRU cap (2026-08-15: valentine/tldrtech/workforce).
+if [ -f "$ROOT/scripts/stop-disabled-compose-apps.sh" ]; then
+  SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/stop-disabled-compose-apps.sh" || true
+fi
+
 echo "==> pressure: docker image prune (dangling)"
 docker image prune -f 2>/dev/null || true
 

@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~22:10 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Disabled leftovers returning on GHCR sync | **Shipped** — `stop-disabled-compose-apps.sh` on pressure / spine / recover (skips protected spine) |
+| Anchor / zurichrunclubs / landing | **OK** — 302 warmup / 200 / 200 |
+
+**Verify:** next `droplet-ghcr-sync` log contains `stop-disabled`; `valentine` stays stopped.
+
+---
+
+## GHCR sync would restart disabled leftovers — **CLOSED**
+
+Stopping valentine/tldrtech/workforce by hand did not compound: `restart: unless-stopped` plus a later compose up puts them back in the LRU cap. Pressure/spine scripts never looked at `deploy_enabled`.
+
+**Shipped:** `scripts/stop-disabled-compose-apps.sh` (cron-runner sqlite, skip protected). Wired into resource-pressure, ensure-spine, recover.
+
+**Verify:** script prints `stopped 0 leftover(s)` while those three are down; does not stop storybook/1pageresearch (protected, even if `deploy_enabled=0`).
+
+---
+
 ## Production snapshot (2026-08-15 ~21:40 UTC)
 
 | Highest leverage | Blocker |

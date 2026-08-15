@@ -113,4 +113,8 @@ if [ -f "$ROOT/scripts/generate-caddyfile.py" ] && command -v python3 &>/dev/nul
   fi
 fi
 
+if [ -f "$ROOT/scripts/stop-disabled-compose-apps.sh" ]; then
+  SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/stop-disabled-compose-apps.sh" || true
+fi
+
 echo "==> droplet-ensure-spine: ok"
