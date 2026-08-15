@@ -91,6 +91,43 @@ _remote_image_id() {
   ssh "${SSH_OPTS[@]}" "$REMOTE" "docker image inspect -f '{{.Id}}' '$1' 2>/dev/null" || true
 }
 
+# Piped `docker save | zstd | ssh | docker load` OOMs sshd on the 1GB droplet
+# (2026-08-15: connection refused for ~60s after each pipe). Copy a gzip tar
+# then `docker load` from disk instead.
+wait_remote_ssh() {
+  local i
+  for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+    if ssh "${SSH_OPTS[@]}" "$REMOTE" 'echo ok' >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
+}
+
+transfer_image_via_file() {
+  local TAG="$1"
+  local slug
+  slug=$(printf '%s' "$TAG" | tr '/:' '__')
+  local local_tar="/tmp/216labs-xfer-${slug}.$$.tar.gz"
+  local remote_tar="/tmp/216labs-xfer-${slug}.tar.gz"
+  docker save "$TAG" | gzip -1 > "$local_tar"
+  local ok=0
+  local tattempt
+  for tattempt in 1 2 3 4 5 6; do
+    if wait_remote_ssh \
+      && scp "${SSH_OPTS[@]}" "$local_tar" "$REMOTE:$remote_tar" \
+      && ssh "${SSH_OPTS[@]}" "$REMOTE" "docker load < '$remote_tar' && rm -f '$remote_tar'"; then
+      ok=1
+      break
+    fi
+    echo "==> Transfer $TAG failed (attempt $tattempt/6); waiting for SSH..." >&2
+    sleep 8
+  done
+  rm -f "$local_tar"
+  [ "$ok" -eq 1 ]
+}
+
 _prune_remote_disk_if_low() {
   local pct avail_kb
   read -r pct avail_kb < <(ssh "${SSH_OPTS[@]}" "$REMOTE" \
@@ -514,7 +551,7 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
   fi
 
   # ── Transfer images (built + server-side missing) ───────────
-  # Use zstd when available (faster than gzip). On server: apt install zstd.
+  # Gzip file + scp + `docker load` from disk. A pipe through sshd OOMs the 1GB droplet.
   if [ ${#IMAGES_TO_TRANSFER[@]} -eq 0 ]; then
     echo "==> All images up to date on server, skipping transfer"
   else
@@ -524,52 +561,20 @@ if [ "$IMAGE_SOURCE" = "local" ]; then
     # deploy has nothing to run (e.g. activator cold-start) until a full rebuild+transfer.
     echo "==> Pruning dangling images on server (keeps tagged 216labs images)..."
     ssh_retry "Prune dangling images on server" ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker container prune -f 2>/dev/null; docker image prune -f 2>/dev/null; echo "Prune done"' 2>/dev/null || true
+    echo "==> Waiting for SSH after prune..."
+    wait_remote_ssh || echo "==> WARN: SSH still flapping after prune; transfer will retry" >&2
 
-    USE_ZSTD=false
-    if command -v zstd &>/dev/null; then
-      if ssh "${SSH_OPTS[@]}" "$REMOTE" 'command -v zstd &>/dev/null' 2>/dev/null; then
-        USE_ZSTD=true
-      fi
-    fi
     # One image per transfer so the droplet never needs enough free space for a multi-image
     # tarball unpack at once (25GB disks fill up on `docker save a b c ... | load`).
-    if [ "$USE_ZSTD" = true ]; then
-      echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (zstd, sequential)..."
-      for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
-        echo "  -> $TAG"
-        ok=0
-        for tattempt in 1 2 3 4 5 6; do
-          if docker save "$TAG" | zstd -3 -T0 | ssh "${SSH_OPTS[@]}" "$REMOTE" 'zstd -d | docker load'; then
-            ok=1
-            break
-          fi
-          echo "==> Transfer $TAG failed (attempt $tattempt/6); retrying in 5s..." >&2
-          sleep 5
-        done
-        if [ "$ok" -ne 1 ]; then
-          echo "ERROR: could not transfer $TAG after 6 attempts." >&2
-          exit 1
-        fi
-      done
-    else
-      echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (sequential)..."
-      for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
-        echo "  -> $TAG"
-        ok=0
-        for tattempt in 1 2 3 4 5 6; do
-          if docker save "$TAG" | gzip | ssh "${SSH_OPTS[@]}" "$REMOTE" 'docker load'; then
-            ok=1
-            break
-          fi
-          echo "==> Transfer $TAG failed (attempt $tattempt/6); retrying in 5s..." >&2
-          sleep 5
-        done
-        if [ "$ok" -ne 1 ]; then
-          echo "ERROR: could not transfer $TAG after 6 attempts." >&2
-          exit 1
-        fi
-      done
-    fi
+    # File copy, not a pipe: a 1GB droplet OOMs sshd on `docker save | ssh | docker load`.
+    echo "==> Transferring ${#IMAGES_TO_TRANSFER[@]}/${#ALL_IMAGES[@]} images to $REMOTE (gzip file, sequential)..."
+    for TAG in "${IMAGES_TO_TRANSFER[@]}"; do
+      echo "  -> $TAG"
+      if ! transfer_image_via_file "$TAG"; then
+        echo "ERROR: could not transfer $TAG after 6 attempts." >&2
+        exit 1
+      fi
+    done
     # Persist source hashes so next deploy can skip unchanged apps
     for svc in "${SERVICES_TO_BUILD[@]}"; do
       IFS=: read -r NAME CTX DFILE <<< "$svc"

@@ -941,8 +941,8 @@ export async function stackHealthCheck(db) {
   const internalTargets = [
     // Not the dashboard at "/": it is force-dynamic and shells out to `docker ps`
     // plus several HTTP fan-outs, so it routinely blows past the timeout on a
-    // loaded droplet and reports a healthy admin as down. live-apps is one
-    // SQLite read, and is what probeAdminResilient() already uses.
+    // loaded droplet and reports a healthy admin as down. live-apps is a
+    // read-only SELECT (no project sync) — keep it that way.
     {
       id: "admin",
       url: "http://admin:3000/api/public/live-apps",

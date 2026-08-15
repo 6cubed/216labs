@@ -37,7 +37,7 @@ async function getDb() {
   // Not WAL — see internal/admin/src/lib/db.ts: this file is bind-mounted
   // individually into several containers, so WAL sidecars cannot be shared.
   db.pragma("journal_mode = DELETE");
-  db.pragma("busy_timeout = 5000");
+  db.pragma("busy_timeout = 15000");
   return {
     exec(sql) {
       db.exec(sql);

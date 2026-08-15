@@ -7,7 +7,7 @@ Public URLs can fail while app containers are still healthy behind Caddy. The cr
 | **External** | `https://admin.6cubed.app/`, `https://6cubed.app/` |
 | **Internal** (Docker network) | `http://admin:3000/api/public/live-apps`, `http://activator:3040/healthz`, `http://storybook:3000/api/checkout/ready` |
 
-Internal probes must hit **cheap** endpoints. The admin probe deliberately avoids the dashboard at `/`: it is `force-dynamic`, shells out to `docker ps` and fans out HTTP calls, so it times out on a loaded droplet and reports a healthy admin as down — which then misroutes `diagnosis` away from `edge_proxy` during a real Caddy outage.
+Internal probes must hit **cheap** endpoints. The admin probe is `GET /api/public/live-apps`: a read-only SQLite `SELECT` (no project sync). The dashboard at `/` is `force-dynamic`, shells out to `docker ps` and fans out HTTP calls, so it times out on a loaded droplet and reports a healthy admin as down — which then misroutes `diagnosis` away from `edge_proxy` during a real Caddy outage.
 
 Results are stored in `216labs.db` → `cron_runner_state.stack_health_last` and surfaced on the admin dashboard (**Stack / edge** metric).
 

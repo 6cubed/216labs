@@ -152,16 +152,26 @@ let _db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (!_db) {
-    _db = new Database(getDatabasePath());
-    // Not WAL: 216labs.db is bind-mounted as a single file into admin,
-    // cron-runner and activator, so each container would get its own private
-    // -wal/-shm sidecar in its own filesystem layer. Concurrent writers then
-    // corrupt the shared file and host-side deploy scripts read it as
-    // "database disk image is malformed". DELETE keeps everything in one file.
-    _db.pragma("journal_mode = DELETE");
-    _db.pragma("busy_timeout = 5000");
-    _db.pragma("foreign_keys = ON");
-    initSchema(_db);
+    const db = new Database(getDatabasePath());
+    try {
+      // Not WAL: 216labs.db is bind-mounted as a single file into admin,
+      // cron-runner and activator, so each container would get its own private
+      // -wal/-shm sidecar in its own filesystem layer. Concurrent writers then
+      // corrupt the shared file and host-side deploy scripts read it as
+      // "database disk image is malformed". DELETE keeps everything in one file.
+      db.pragma("journal_mode = DELETE");
+      db.pragma("busy_timeout = 15000");
+      db.pragma("foreign_keys = ON");
+      initSchema(db);
+      _db = db;
+    } catch (err) {
+      try {
+        db.close();
+      } catch {
+        /* ignore */
+      }
+      throw err;
+    }
   }
   return _db;
 }
@@ -875,17 +885,23 @@ export function getEnabledApps(): DbApp[] {
 
 /** Enabled apps for public listing (e.g. www landing); excludes dashboard and this page's service. */
 export function getPublicLiveApps(): DbApp[] {
-  const db = getDb();
-  syncTopLevelProjects(db);
-  ensureAdminAlwaysEnabled(db);
-  ensureBootstrapFromFile(db);
-  return db
-    .prepare(
-      `SELECT * FROM apps
-       WHERE deploy_enabled = 1 AND id NOT IN ('admin', 'landing')
-       ORDER BY name COLLATE NOCASE`,
-    )
-    .all() as DbApp[];
+  // Read-only and column-stable: stack-health and landing hit this every 15m.
+  // Do not sync/bootstrap here — those writes caused SQLITE_BUSY → HTTP 500
+  // and made `int admin: FAIL` while the edge was fine.
+  try {
+    const db = getDb();
+    return db
+      .prepare(
+        `SELECT id, name, tagline, description
+         FROM apps
+         WHERE deploy_enabled = 1 AND id NOT IN ('admin', 'landing')
+         ORDER BY name COLLATE NOCASE`,
+      )
+      .all() as DbApp[];
+  } catch (err) {
+    console.error("getPublicLiveApps failed", err);
+    return [];
+  }
 }
 
 export function setDeployEnabled(appId: string, enabled: boolean): void {

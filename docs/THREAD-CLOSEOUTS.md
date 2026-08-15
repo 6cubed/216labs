@@ -4,6 +4,40 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-15 ~14:20 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **CEO** — send [6cubed.app/#work](https://6cubed.app/#work) or the [CARFAC post](https://blog.6cubed.app/blog/carfac-underwater-sai) to one buyer |
+| Ops | **Shipped this beat** — `live-apps` is a read-only SELECT (was writing on every probe → `SQLITE_BUSY` → `int admin: FAIL (HTTP 500)`); `deploy.sh` copies a gzip tar instead of piping through sshd (1GB droplet was `connection refused` mid-transfer) |
+| Distribution | **Live** — work form + CARFAC proof URL from the previous beat |
+
+**Verify:** `./scripts/heartbeat-stack.sh` → `int admin: OK (200)`; local `DEPLOY_IMAGE_SOURCE=local DEPLOY_RUNTIME_APPS=admin ./deploy.sh` transfers without killing SSH.
+
+---
+
+## `int admin: FAIL (HTTP 500)` on live-apps — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `stack_health_last` → `int admin: FAIL (HTTP 500)` while `ext admin: OK (308)` and `GET https://admin.6cubed.app/api/public/live-apps` is 200 | **Shipped** — `getPublicLiveApps()` no longer runs `syncTopLevelProjects` / bootstrap writes. Probe is `SELECT id, name, tagline, description`. `getDb()` no longer keeps a poisoned singleton if `initSchema` throws `SQLITE_BUSY`. |
+
+Admin logs showed `SQLITE_BUSY` and `no such column: last_runtime_error` (ALTER skipped on a busy first start, then the half-open connection was reused).
+
+**Verify:** `docker logs` admin has no new `SQLITE_BUSY` on `/api/public/live-apps`; stack-health `int admin: OK (200)`.
+
+---
+
+## Piped local image transfer kills SSH — **CLOSED**
+
+| Symptom | Fix |
+|---------|-----|
+| `ssh: connection refused` for ~60s during `DEPLOY_IMAGE_SOURCE=local` while edge still 200 | **Shipped** — `deploy.sh` gzip-saves to a temp tar, `scp`s, then `docker load` from disk. Waits for SSH after prune and between retries. |
+
+**Verify:** next single-app local deploy prints `gzip file, sequential` and completes.
+
+---
+
 ## Production snapshot (2026-08-15 ~13:45 UTC)
 
 | Highest leverage | Blocker |
