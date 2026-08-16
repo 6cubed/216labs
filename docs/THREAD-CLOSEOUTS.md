@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~07:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| B2B without CEO | **Shipped** — paid-pilot issue on `research/` + mink README + colabs index |
+| Always-on | **OK** — cold-refs none; did not restyle landing |
+
+**Verify:** GitHub `research/README.md` contains `paid-pilot.yml`. CEO: send `/work`.
+
+---
+
+## Monetization beat: research/ had no lead path — **CLOSED**
+
+Colabs already linked `#work`. The paper-track index (`research/`) did not. Biodiversity/mink buyers who land on GitHub had no CEO-free inbox.
+
+**Shipped:** paid-pilot issue + CARFAC-PILOTS on research index and mink README; colabs index now includes the issue form. Did not restyle landing. Did not start birdperch or agitweet.
+
+**Verify:** https://github.com/6cubed/216labs/blob/main/research/README.md contains **paid-pilot**.
+
+---
+
 ## Production snapshot (2026-08-16 ~07:15 UTC)
 
 | Highest leverage | Blocker |

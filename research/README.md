@@ -4,6 +4,8 @@ Each subdirectory is a **potential paper** or formal research thread. Every topi
 
 For **standalone Colab experiments** (no paper draft required), use [`colabs/`](../colabs/) instead.
 
+Funded teams with labelled audio (hydrophone, drone, bird/mink): [CARFAC pilots](../docs/CARFAC-PILOTS.md) · [paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) (no landing form required).
+
 ## Standard layout per topic
 
 | File | Purpose |

@@ -30,3 +30,7 @@
 
 - **Bird vocalization classifier (Kaggle v4):** Avian label space (~eBird codes). **Unlikely** to emit a mink class OOTB; useful as a negative control.
 - **Perch 2.0:** Multi-taxa (includes some mammals) but **not a dedicated mink detector**. OOTB logits may be uncalibrated for rare mustelids; **agile modeling** (embed + few-shot labels) is the documented path if OOTB fails.
+
+## Paid detection pilots
+
+If you already have labelled field audio and a detection question, 216Labs sells time-boxed pilots: [CARFAC-PILOTS.md](../../docs/CARFAC-PILOTS.md) · [open a paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml).
