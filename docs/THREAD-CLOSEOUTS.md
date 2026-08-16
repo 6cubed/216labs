@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~09:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| GitHub Issues chooser had no offer links | **Shipped** — `ISSUE_TEMPLATE/config.yml` contact links |
+| Wrong-org scan | **Shipped** — heartbeat-stack flags `github.com/216labs` on always-on HTML |
+
+**Verify:** https://github.com/6cubed/216labs/issues/new/choose shows CARFAC offer sheet + Hire the lab. CEO: send `/work`.
+
+---
+
+## Unsolicited: Issues chooser + wrong-org scan — **CLOSED**
+
+Lights on, hire funnel already CEO-blocked, always-on HTML clean. GitHub “New issue” still offered a blank issue with no hire/offer pointers, and the stack scan would have missed last beat’s empty-org leftover.
+
+**Shipped:** `.github/ISSUE_TEMPLATE/config.yml`; heartbeat-stack flags `github.com/216labs`. Did not restyle landing.
+
+**Verify:** issues/new/choose lists the contact links; stack cold-refs line mentions `no github.com/216labs`.
+
+---
+
 ## Production snapshot (2026-08-16 ~09:15 UTC)
 
 | Highest leverage | Blocker |

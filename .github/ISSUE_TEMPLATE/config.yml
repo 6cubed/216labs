@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: CARFAC pilot offer sheet
+    url: https://github.com/6cubed/216labs/blob/main/docs/CARFAC-PILOTS.md
+    about: What a labelled-audio detection pilot includes (always 200 on GitHub)
+  - name: Hire the lab
+    url: https://6cubed.app/#work
+    about: Web apps and retainers — use this instead of a blank issue

@@ -238,7 +238,9 @@ class N(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *a, **k):
         return None
 cold = ('blog.6cubed.app', 'agitweet.6cubed.app', 'merch.6cubed.app', 'marketing.6cubed.app')
+wrong_org = re.compile(r'(?<!6cubed/)github[.]com/216labs')
 hits = []
+wrong = []
 for url in (
     'https://6cubed.app/',
     'https://6cubed.app/about',
@@ -259,12 +261,17 @@ for url in (
     refs = re.findall(r'''(?:href|src|action)\s*=\s*[\"']([^\"']+)[\"']''', b, re.I)
     refs += re.findall(r'''fetch\(\s*[\"']([^\"']+)[\"']''', b)
     bad = [u for u in refs if any(c in u for c in cold)]
+    gh = [u for u in refs if wrong_org.search(u)]
     if bad:
         hits.extend(bad)
         print('  ' + url + ' ' + ' '.join(bad))
         print('  (strip href/fetch — do not start those apps)')
-if not hits:
-    print('  (none — no href/fetch/src to blog, agitweet, merch, marketing)')
+    if gh:
+        wrong.extend(gh)
+        print('  ' + url + ' ' + ' '.join(gh))
+        print('  (wrong GitHub org — empty account that 200s; retarget to 6cubed/216labs)')
+if not hits and not wrong:
+    print('  (none — no href/fetch/src to blog, agitweet, merch, marketing; no github.com/216labs)')
 " || echo "  (scan failed)"
 
 echo
