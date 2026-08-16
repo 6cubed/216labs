@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~05:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Heartbeat process | **Shipped** — 302 on human host ≠ 302 on agitweet; harness-self-edit counts as the Push |
+| Edge | **OK** — three human hosts 200; hot pool only Anchor + Zurich |
+
+**Verify:** `heartbeat_harness.json` closeouts text contains **href AND fetch**. Public hosts unchanged this beat (no landing restyle). CEO: send `/work`.
+
+---
+
+## Closeouts forced a landing restyle every 30 minutes — **CLOSED**
+
+Today’s friction was process: “if hosts 200, ship visitor-facing” plus “302 until dest 200” made agents churn hire-adjacent HTML and miss leftover `fetch()` after dropping an href.
+
+**Shipped:** harness + monetization + pocket-cursor: sibling 302 = strip all references (do not start); harness-self-edit Reflect counts as the Push. Did not restyle landing. Did not start agitweet.
+
+**Verify:** next harness-self-edit beat does not docker-cp landing unless a leftover href/fetch remains.
+
+---
+
 ## Production snapshot (2026-08-16 ~05:15 UTC)
 
 | Highest leverage | Blocker |
