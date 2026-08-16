@@ -25,7 +25,7 @@ Both files run a fixed 152 s script: male speech (0–31 s), female speech (31�
 
 ## Paid pilots
 
-Same offer as the underwater notebook: labelled-audio detection on **your** files. [CARFAC pilots](../../docs/CARFAC-PILOTS.md) · [hire](https://6cubed.app/#work).
+Same offer as the underwater notebook: labelled-audio detection on **your** files. [CARFAC pilots](../../docs/CARFAC-PILOTS.md) · [paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) · [hire](https://6cubed.app/#work).
 
 ## Notes
 

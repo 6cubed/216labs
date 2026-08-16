@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~08:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Underwater Colab still linked the cold blog | **Shipped** — proof dest is GitHub README; paid-pilot in the intro cell |
+| Bird Perch footer | **Shipped** in-repo (did not start the app) |
+
+**Verify:** GitHub underwater `experiment.ipynb` has no `blog.6cubed.app`. CEO: send `/work`.
+
+---
+
+## Would have regretted the Colab still 302ing researchers overnight — **CLOSED**
+
+Always-on HTML was clean. The notebook researchers actually open still pointed proof at `blog.6cubed.app`. Bird Perch had no lead path for the next warmup.
+
+**Shipped:** notebook proof → GitHub README + paid-pilot issue; Bird Perch footer → CARFAC-PILOTS + issue form. Did not start blog or birdperch. Did not restyle landing `#work`.
+
+**Verify:** raw notebook on main contains `colabs/carfac-sai-underwater/README.md` and not `blog.6cubed.app/blog/carfac`.
+
+---
+
 ## Production snapshot (2026-08-16 ~07:45 UTC)
 
 | Highest leverage | Blocker |
