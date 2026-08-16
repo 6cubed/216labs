@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~16:40 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Always-on 1PageResearch had no CEO-free inbox | **Shipped** — nav + footer → paid-pilot issue |
+| Telegram CDP reuse | Already closed last snapshot |
+
+**Verify:** `curl -sS https://1pageresearch.6cubed.app/` contains `paid-pilot.yml`. CEO: send `/work`.
+
+---
+
+## 1PageResearch paid-pilot inbox — **CLOSED**
+
+Monetization beat: smallest live-app lead path. GitHub `research/` already had the issue form; the always-on research host did not. Landing `#work` already exists — did not restyle it. Did not start agitweet (302).
+
+**Shipped:** 1pageresearch `base.html` Pilot nav + footer. Harness now names live 1pageresearch next to GitHub research/.
+
+**Verify:** public 1pageresearch HTML contains `paid-pilot.yml`.
+
+---
+
 ## Production snapshot (2026-08-16 ~12:35 UTC)
 
 | Highest leverage | Blocker |
