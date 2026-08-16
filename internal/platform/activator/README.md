@@ -7,8 +7,8 @@
 The **showroom** is the ability to **browse 100+ apps** from one small droplet. You cannot keep every container **running** at once (RAM), but you **can** keep a **small hot pool** and **hotswap**: when someone opens an app that is not already up, the activator **evicts** the least-recently-used **evictable** container (if the pool is over cap), **pulls** the image from GHCR if needed (`ACTIVATOR_REGISTRY_PREFIX` → retag to `216labs/<service>:latest`), then **`compose up`** the requested service. That is **intentional churn** — not a mistake — so the **requested** demo wins over **idle** demos.
 
 - **`ACTIVATOR_MAX_CONCURRENT_APPS`** (compose default **6**) = max **evictable** app containers **running** at once (protected services do not count). Set **`0`** only if you want **no** LRU eviction (e.g. dev box or plenty of RAM) and accept many concurrent app processes.
-- **`ACTIVATOR_PROTECTED_SERVICES`** — edge stays up (`caddy`, `activator`, `admin`, `landing` by default); they are never LRU-stopped.
-- **`activator_never_evict` in `manifest.json`** — opt a specific product **out** of eviction when a cap is enabled (e.g. a flagship demo you always want to keep warm if it was touched recently).
+- **`ACTIVATOR_PROTECTED_SERVICES`** — edge + revenue spine stay up (`caddy`, `activator`, `admin`, `landing`, `cron-runner`, `storybook`, `maxlearn`, `1pageresearch`, `kidgift`, plus human-visited `anchor-api` and `zurichrunclubs`); they are never LRU-stopped.
+- **`activator_never_evict` in `manifest.json`** — opt a specific product **out** of eviction when a cap is enabled. Anchor and Zurich Run Clubs set this so a bot-woken extra cannot bump a host that already had humans.
 
 **Hotswapping** here means: **swap which app containers are running** inside the cap so the **current request** can be satisfied, including **pull-on-demand** from GHCR when the image is not on disk.
 

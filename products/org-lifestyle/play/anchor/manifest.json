@@ -8,6 +8,7 @@
   "health_path": "/api/v1/health",
   "memory_limit": "256m",
   "docker_service": "anchor-api",
+  "activator_never_evict": true,
   "build_context": "./products/org-lifestyle/play/anchor/backend",
   "stack": {
     "frontend": "React Native (Expo)",

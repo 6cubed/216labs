@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~04:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| LRU vs human hosts | **Shipped** — Anchor + Zurich `activator_never_evict`; nonessential extras stopped |
+| Homepage Open Agitweet | **Shipped** — dropped (was 302); did not start agitweet |
+
+**Verify:** `curl -sS https://6cubed.app/` has no `Open Agitweet`. Hot pool after sync is only human-visited (+ spine). CEO: send `/work`.
+
+---
+
+## Bot-woken extras could LRU-evict the hosts that had humans — **CLOSED**
+
+Hot pool was at cap 6 including aiart/pocket/tortellini/vc. Anchor and Zurich were evictable. Homepage “Open Agitweet →” still 302ed.
+
+**Shipped:** `activator_never_evict` on both human hosts; `stop-nonessential-compose-apps.sh` on GHCR sync; dropped the Agitweet href. Did not restyle `#work`. Did not start agitweet.
+
+**Verify:** public homepage has no `agitweet.6cubed.app?utm_source=landing`. Manifests contain `activator_never_evict`.
+
+---
+
 ## Production snapshot (2026-08-16 ~04:15 UTC)
 
 | Highest leverage | Blocker |

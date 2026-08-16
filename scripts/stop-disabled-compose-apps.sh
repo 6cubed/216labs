@@ -21,7 +21,7 @@ fi
 COMPOSE=(docker compose --env-file .env)
 [ -f .env.admin ] && COMPOSE+=(--env-file .env.admin)
 
-PROT_RAW="${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch,kidgift}"
+PROT_RAW="${ACTIVATOR_PROTECTED_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch,kidgift,anchor-api,zurichrunclubs}"
 
 is_protected() {
   local lower

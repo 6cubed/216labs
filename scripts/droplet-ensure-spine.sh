@@ -113,5 +113,8 @@ fi
 if [ -f "$ROOT/scripts/stop-disabled-compose-apps.sh" ]; then
   SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/stop-disabled-compose-apps.sh" || true
 fi
+if [ -f "$ROOT/scripts/stop-nonessential-compose-apps.sh" ]; then
+  SYNC_PROJECT_ROOT="$ROOT" bash "$ROOT/scripts/stop-nonessential-compose-apps.sh" || true
+fi
 
 echo "==> droplet-ensure-spine: ok"
