@@ -655,13 +655,30 @@ def _restore_mirrored_chat_from_disk(*, log: bool = True) -> bool:
             candidates = [(wid, instance_registry[wid])]
 
     for wid, info in candidates:
-        for pc_id, conv in info.get('convs', {}).items():
-            if pc_id == saved_pc_id or conv.get('name') == saved_name:
+        live = info.get('convs', {})
+        if saved_pc_id in live:
+            conv = live[saved_pc_id]
+            mirrored_chat = (wid, saved_pc_id, conv['name'])
+            active_instance_id = wid
+            ws = info['ws']
+            if log:
+                print(f"[cdp] Mirrored chat restored: {conv['name']}")
+            return True
+        for pc_id, conv in live.items():
+            if conv.get('active'):
                 mirrored_chat = (wid, pc_id, conv['name'])
                 active_instance_id = wid
                 ws = info['ws']
                 if log:
-                    print(f"[cdp] Mirrored chat restored: {conv['name']}")
+                    print(f"[cdp] Mirrored chat: active '{conv['name']}' (disk pc_id {saved_pc_id} gone)")
+                return True
+        for pc_id, conv in live.items():
+            if conv.get('name') == saved_name:
+                mirrored_chat = (wid, pc_id, conv['name'])
+                active_instance_id = wid
+                ws = info['ws']
+                if log:
+                    print(f"[cdp] Mirrored chat restored by name: {conv['name']}")
                 return True
         mirrored_chat = (wid, saved_pc_id, saved_name)
         active_instance_id = wid
@@ -1290,14 +1307,14 @@ def cdp_connect():
         sys.exit(1)
 
     for iid, info in instance_registry.items():
-        if info['workspace']:
-            try:
-                convs = list_chats(lambda js, c=info['ws']: cdp_eval_on(c, js))
-                info['convs'] = {c['pc_id']: {'name': c['name'], 'active': c['active'], 'msg_id': c.get('msg_id')} for c in convs}
-                names = [c['name'] for c in convs]
-                print(f"[cdp] Conversations in {info['workspace']}: {names}")
-            except Exception:
-                pass
+        try:
+            convs = list_chats(lambda js, c=info['ws']: cdp_eval_on(c, js))
+            info['convs'] = {c['pc_id']: {'name': c['name'], 'active': c['active'], 'msg_id': c.get('msg_id')} for c in convs}
+            names = [c['name'] for c in convs]
+            label = info['workspace'] or '(no workspace)'
+            print(f"[cdp] Conversations in {label}: {names}")
+        except Exception:
+            pass
 
     # Set active instance, then restore mirrored chat from .active_chat (pc_id on disk).
     active_instance_id = None
@@ -1467,11 +1484,12 @@ def _cdp_activate_mirrored_tab(conn, pc_id: str | None, chat_name: str | None = 
         let el = null;
         for (const c of candidates) {{
             if (c.classList && c.classList.contains('glass-sidebar-agent-menu-btn')) {{ el = c; break; }}
+            if (c.classList && c.classList.contains('ui-sidebar-menu-button')) {{ el = c; break; }}
             if (c.querySelector('a[aria-id="chat-horizontal-tab"]')) {{ el = c; break; }}
             if (c.querySelector('.composer-tab-label')) {{ el = c; break; }}
         }}
         if (!el && wantName) {{
-            for (const btn of document.querySelectorAll('.glass-sidebar-agent-menu-btn')) {{
+            for (const btn of document.querySelectorAll('.glass-sidebar-agent-menu-btn, .ui-sidebar-menu-button')) {{
                 const label = btn.querySelector('.ui-sidebar-menu-button-label')
                            || btn.querySelector('.ui-sidebar-menu-button-content');
                 if (label && label.textContent.trim() === wantName) {{ el = btn; break; }}
@@ -1480,7 +1498,7 @@ def _cdp_activate_mirrored_tab(conn, pc_id: str | None, chat_name: str | None = 
         if (!el) return 'ERROR: tab not found (pc_id=' + pid + ', n=' + candidates.length + ')';
         const a = el.querySelector('a[aria-id="chat-horizontal-tab"]');
         if (a) {{ a.click(); return 'OK'; }}
-        if (el.classList && el.classList.contains('glass-sidebar-agent-menu-btn')) {{
+        if (el.classList && (el.classList.contains('glass-sidebar-agent-menu-btn') || el.classList.contains('ui-sidebar-menu-button'))) {{
             el.click();
             return 'OK';
         }}
@@ -2702,15 +2720,71 @@ def cursor_get_turn_info(composer_prefix='', conn=None, iid=None):
                 return result.trim();
             }
 
+            function convNameFromSidebar() {
+                const lab = document.querySelector('.ui-sidebar-menu-button[data-active="true"] .ui-sidebar-menu-button-label')
+                         || document.querySelector('.glass-sidebar-agent-menu-btn[data-active="true"] .ui-sidebar-menu-button-label');
+                return lab ? lab.textContent.trim() : '';
+            }
+
+            // Cursor Agents (Glass) transcript: no .composer-human-ai-pair-container.
+            function extractFromTranscript(root) {
+                const msgs = [...root.querySelectorAll('[data-message-role="human"], [data-message-role="ai"]')];
+                let lastHuman = -1;
+                for (let i = 0; i < msgs.length; i++) {
+                    if (msgs[i].getAttribute('data-message-role') === 'human') lastHuman = i;
+                }
+                if (lastHuman < 0) {
+                    return { turn_id: '', user_full: '', sections: [], images: [], conv: convNameFromSidebar() };
+                }
+                const humanMsg = msgs[lastHuman];
+                const turnId = 'turn:' + (humanMsg.getAttribute('data-message-id') || '');
+                const lexical = humanMsg.querySelector('.aislash-editor-input-readonly, .ui-prompt-input-tiptap-readonly__content');
+                const userFull = lexical ? lexical.textContent.trim() : humanMsg.textContent.trim();
+                const images = [];
+                humanMsg.querySelectorAll('.context-pill-image img').forEach(img => {
+                    if (img.src) images.push(img.src);
+                });
+                const sections = [];
+                for (let i = lastHuman + 1; i < msgs.length; i++) {
+                    const msg = msgs[i];
+                    if (msg.getAttribute('data-message-role') === 'human') break;
+                    const msgId = msg.getAttribute('data-message-id') || '';
+                    const kind = msg.getAttribute('data-message-kind');
+                    if (kind === 'thinking') {
+                        const t = (msg.innerText || msg.textContent || '').trim();
+                        if (t) sections.push({ text: t, type: 'thinking', id: msgId || ('thinking:' + i) });
+                        continue;
+                    }
+                    const actionBtns = msg.querySelectorAll('[data-click-ready="true"]');
+                    if (actionBtns.length > 0) {
+                        const buttons = Array.from(actionBtns).map((btn, idx) => ({
+                            label: btn.innerText.trim().replace(/\\s+/g, ' '),
+                            index: idx
+                        }));
+                        sections.push({
+                            text: (msg.innerText || '').trim().slice(0, 500) || 'Confirm',
+                            type: 'confirmation',
+                            id: msgId || ('confirm:' + i),
+                            buttons: buttons
+                        });
+                        continue;
+                    }
+                    const md = msg.querySelector('.ui-markdown, .markdown-section');
+                    const text = md ? getSectionText(md) : (msg.innerText || msg.textContent || '').trim();
+                    if (text) sections.push({ text: text, type: 'text', id: msgId || ('text:' + i) });
+                }
+                return { turn_id: turnId, user_full: userFull, sections: sections, images: images, conv: convNameFromSidebar() };
+            }
+
             const composerPrefix = '__COMPOSER_PREFIX__';
             let scope = document;
             if (composerPrefix) {
                 const scoped = document.querySelector('[data-composer-id^="' + composerPrefix + '"]');
-                if (!scoped) return JSON.stringify({ turn_id: '', user_full: '', sections: [], images: [], conv: '' });
-                scope = scoped;
+                if (scoped) scope = scoped;
+                // Stale cid-* from .active_chat: Agents remounts composer-id; use visible pane.
             }
             const containers = scope.querySelectorAll('.composer-human-ai-pair-container');
-            if (containers.length === 0) return JSON.stringify({ turn_id: '', user_full: '', sections: [], images: [] });
+            if (containers.length === 0) return JSON.stringify(extractFromTranscript(scope));
 
             const last = containers[containers.length - 1];
 
@@ -5024,7 +5098,8 @@ def monitor_thread():
 
         except Exception as e:
             print(f"[monitor] Error: {e}", flush=True)
-            if "closed" in str(e).lower() or "socket" in str(e).lower():
+            err = str(e).lower()
+            if any(s in err for s in ("closed", "socket", "reset", "broken pipe", "errno 54", "errno 32", "going away")):
                 _health_check_all_cdp_connections()
             time.sleep(2)
 

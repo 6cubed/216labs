@@ -145,7 +145,8 @@ _LISTENER_JS = r"""
             }
         }
         // Glass Agents sidebar: active row carries data-active + composer id on .composer-bar
-        const glassActive = document.querySelector('.glass-sidebar-agent-menu-btn[data-active="true"]');
+        const glassActive = document.querySelector('.glass-sidebar-agent-menu-btn[data-active="true"]')
+                         || document.querySelector('.ui-sidebar-menu-button[data-active="true"]');
         if (glassActive) {
             const name = glassChatName(glassActive);
             if (name) {
@@ -170,14 +171,14 @@ _LISTENER_JS = r"""
                 return tabEl ? ensurePcId(tabEl) : '';
             }
         }
-        for (const btn of document.querySelectorAll('.glass-sidebar-agent-menu-btn')) {
+        for (const btn of document.querySelectorAll('.glass-sidebar-agent-menu-btn, .ui-sidebar-menu-button')) {
             if (glassChatName(btn) === name) return ensurePcId(btn);
         }
         return '';
     }
 
     function detectChat(el) {
-        const glassBtn = el.closest('.glass-sidebar-agent-menu-btn');
+        const glassBtn = el.closest('.glass-sidebar-agent-menu-btn, .ui-sidebar-menu-button');
         if (glassBtn) {
             const name = glassChatName(glassBtn);
             if (name) {
@@ -389,7 +390,7 @@ _LIST_CHATS_JS = r"""
         results.push(entry);
     });
 
-    // 3. Glass Agents sidebar (Cursor Agents / Glass layout)
+    // 3. Glass Agents sidebar (legacy class)
     document.querySelectorAll('.glass-sidebar-agent-menu-btn').forEach(btn => {
         const name = glassChatName(btn);
         if (!name) return;
@@ -412,6 +413,35 @@ _LIST_CHATS_JS = r"""
             // Avoid duplicating an editor-group / agent-tab entry with the same id
             return;
         }
+        usedPcIds.add(pcId);
+        const entry = { pc_id: pcId, name: name, active: isActive };
+        if (isActive && activeMsgId) entry.msg_id = activeMsgId;
+        results.push(entry);
+    });
+
+    // 4. Cursor Agents sidebar (current): DIV.ui-sidebar-menu-button, not glass-*
+    const SIDEBAR_CHROME = new Set(['New Chat', 'Search', 'Automations', 'Customize', 'Home']);
+    document.querySelectorAll('.ui-sidebar-menu-button').forEach(btn => {
+        if (btn.classList.contains('ui-sidebar-section-head')) return;
+        if (btn.getAttribute('aria-label') === 'Account menu') return;
+        const name = glassChatName(btn);
+        if (!name || SIDEBAR_CHROME.has(name)) return;
+        const isActive = btn.getAttribute('data-active') === 'true';
+        let pcId = btn.getAttribute('data-pc-id');
+        if (isActive) {
+            const cid = getComposerId();
+            if (cid) {
+                const newPcId = cidFromUuid(cid);
+                if (!usedPcIds.has(newPcId) || pcId === newPcId) {
+                    pcId = tagWithCid(btn, cid);
+                }
+            }
+        }
+        if (!pcId) {
+            pcId = 'pc-' + Math.random().toString(36).slice(2, 10);
+            btn.setAttribute('data-pc-id', pcId);
+        }
+        if (usedPcIds.has(pcId) && !isActive) return;
         usedPcIds.add(pcId);
         const entry = { pc_id: pcId, name: name, active: isActive };
         if (isActive && activeMsgId) entry.msg_id = activeMsgId;
