@@ -109,7 +109,8 @@ a CEO call because it determines where every subsequent heartbeat goes. Until it
 heartbeats should default to distribution work, never checkout plumbing — see
 `.cursor/rules/heartbeat-monetization.mdc`.
 
-**Live offer URLs (shipped 2026-08-15):** [6cubed.app/#work](https://6cubed.app/#work) (hire form),
+**Live offer URLs:** [6cubed.app/#work](https://6cubed.app/#work) (hire form),
+[paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) (CEO-free inbox),
 [CARFAC underwater SAI](https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md) (audio/ML proof),
-and [CARFAC pilots](CARFAC-PILOTS.md) (offer sheet linked from the public Colabs).
-Send those; do not wait for another product surface.
+and [CARFAC pilots](CARFAC-PILOTS.md) (offer sheet).
+Send `/work` or wait for a `pilot` issue; do not wait for another product surface.

@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~09:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| 1PageResearch GitHub nav → empty `github.com/216labs` | **Shipped** — retarget to `6cubed/216labs` |
+| Stranger inbox | Already on GitHub root README |
+
+**Verify:** `curl -sS https://1pageresearch.6cubed.app/` contains `github.com/6cubed/216labs` and not `github.com/216labs"`. CEO: send `/work`.
+
+---
+
+## Allowlist GitHub link went to the wrong org — **CLOSED**
+
+Highest-leverage unfinished item is still one buyer (CEO). Next leftover that was actually broken: 1PageResearch (always-on allowlist) linked GitHub to an empty `216labs` account that 200s.
+
+**Shipped:** nav → `https://github.com/6cubed/216labs`. Did not restyle landing `#work`. Did not start more apps.
+
+**Verify:** public 1pageresearch HTML contains `6cubed/216labs`.
+
+---
+
 ## Production snapshot (2026-08-16 ~08:45 UTC)
 
 | Highest leverage | Blocker |
