@@ -41,7 +41,7 @@
     </section>
 
     <section class="section">
-      <h2>Latest from the blog</h2>
+      <h2>Latest writing</h2>
       {% if blog_posts %}
       <div class="links">
         {% for post in blog_posts %}
@@ -55,9 +55,9 @@
         </a>
         {% endfor %}
       </div>
-      <p class="repo-link" style="margin-top:1rem"><a href="https://blog.6cubed.app" target="_blank" rel="noopener noreferrer">All posts on blog.6cubed.app →</a></p>
+      <p class="repo-link" style="margin-top:1rem"><a href="https://github.com/6cubed/216labs/blob/main/colabs/README.md" target="_blank" rel="noopener noreferrer">All notebooks on GitHub →</a></p>
       {% else %}
-      <p class="empty-hint">Blog feed loads when the blog service is reachable (<a href="https://blog.6cubed.app" target="_blank" rel="noopener noreferrer">blog.6cubed.app</a>).</p>
+      <p class="empty-hint">Writing lives in the public repo (<a href="https://github.com/6cubed/216labs/blob/main/colabs/README.md" target="_blank" rel="noopener noreferrer">colabs on GitHub</a>).</p>
       {% endif %}
     </section>
 

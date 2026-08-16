@@ -209,11 +209,20 @@ if [[ -n "$HOT_POOL" ]]; then
   python3 -c "
 import sys
 spine = set('caddy activator admin landing cron-runner storybook maxlearn 1pageresearch kidgift'.split())
+humans = set('anchor-api zurichrunclubs'.split())
 svcs = [s.strip() for s in sys.stdin.read().splitlines() if s.strip()]
 hot = [s for s in svcs if s.lower() not in spine]
+kept = [s for s in hot if s.lower() in humans]
+extra = [s for s in hot if s.lower() not in humans]
 if hot:
     print('  ' + ' '.join(hot))
-    print('  (' + str(len(hot)) + ' running, not spine — bot-woken apps fill LRU; do not start more)')
+    bits = []
+    if kept:
+        bits.append('human-visited: ' + ' '.join(kept))
+    if extra:
+        bits.append('other: ' + ' '.join(extra) + ' (often bot-woken)')
+    bits.append('do not start more')
+    print('  (' + '; '.join(bits) + ')')
 else:
     print('  (none — only spine)')
 " <<< "$HOT_POOL"

@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~03:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Landing “All posts on blog” | **Shipped** — index is GitHub colabs, not cold `blog.6cubed.app` |
+| Hot pool assumption | **Corrected** — `anchor-api` / `zurichrunclubs` are human-visited, not bot-woken |
+
+**Verify:** `curl -sS https://6cubed.app/` contains `All notebooks on GitHub` and does **not** contain `All posts on blog.6cubed.app`. CEO: send `/work`.
+
+---
+
+## “Latest from the blog” still dumped visitors on activator — **CLOSED**
+
+Fallback cards were already GitHub; the section footer still said **All posts on blog.6cubed.app** (302). Hot-pool copy treated human-visited hosts as bot-woken.
+
+**Shipped:** landing section → Latest writing / GitHub colabs. Stack hot pool splits human-visited vs other. Did not start blog or agitweet. Did not restyle `#work`.
+
+**Verify:** public homepage HTML contains `colabs/README.md` in the writing footer.
+
+---
+
 ## Production snapshot (2026-08-16 ~03:15 UTC)
 
 | Highest leverage | Blocker |
