@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~06:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Cold-ref miss after href drop | **Shipped** — `heartbeat-stack` prints href/fetch/src leftovers on always-on HTML |
+| Live leftovers | **None** — no cold href/fetch (hire-pin plaintext blog URL left alone) |
+
+**Verify:** `./scripts/heartbeat-stack.sh` prints `Cold refs on always-on HTML` and `(none`. CEO: send `/work`.
+
+---
+
+## Experiment: make the leftover-fetch miss mechanical — **CLOSED**
+
+Last night an agent dropped Open Agitweet and left `fetch(/api/posts)`. The week-long payoff is a stack line that flags href/fetch/src to blog/agitweet/merch/marketing. No landing restyle — no leftover href.
+
+**Shipped:** cold-ref scan in `heartbeat-stack.sh`. Did not start agitweet. Did not restyle `#work`.
+
+**Verify:** stack output contains `Cold refs` and `none`.
+
+---
+
 ## Production snapshot (2026-08-16 ~05:45 UTC)
 
 | Highest leverage | Blocker |

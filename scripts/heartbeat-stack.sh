@@ -231,6 +231,33 @@ else
 fi
 
 echo
+echo "=== Cold refs on always-on HTML ==="
+python3 -c "
+import re, urllib.request, urllib.error
+class N(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):
+        return None
+cold = ('blog.6cubed.app', 'agitweet.6cubed.app', 'merch.6cubed.app', 'marketing.6cubed.app')
+hits = []
+for url in ('https://6cubed.app/', 'https://6cubed.app/about'):
+    try:
+        r = urllib.request.build_opener(N).open(url, timeout=12)
+        b = r.read().decode('utf-8', 'replace')
+    except Exception as e:
+        print('  ' + url + ' ' + type(e).__name__)
+        continue
+    refs = re.findall(r'''(?:href|src|action)\s*=\s*[\"']([^\"']+)[\"']''', b, re.I)
+    refs += re.findall(r'''fetch\(\s*[\"']([^\"']+)[\"']''', b)
+    bad = [u for u in refs if any(c in u for c in cold)]
+    if bad:
+        hits.extend(bad)
+        print('  ' + url + ' ' + ' '.join(bad))
+        print('  (strip href/fetch — do not start those apps)')
+if not hits:
+    print('  (none — no href/fetch/src to blog, agitweet, merch, marketing)')
+" || echo "  (scan failed)"
+
+echo
 if [[ "$smoke_ok" -eq 1 ]]; then
   echo "Lights on. Revenue: ./scripts/check-revenue-env-http.sh"
   exit 0
