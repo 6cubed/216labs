@@ -1,0 +1,36 @@
+name: Paid audio/ML pilot
+description: Funded team with labelled audio — request a time-boxed CARFAC detection pilot
+title: "[Pilot] "
+labels: ["pilot"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        €5–15k labelled-audio detection on **your** files (hydrophone, drone, bird).
+        Offer sheet: [CARFAC-PILOTS.md](https://github.com/6cubed/216labs/blob/main/docs/CARFAC-PILOTS.md)
+        Proof: [underwater SAI results](https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md)
+  - type: input
+    id: email
+    attributes:
+      label: Work email
+      placeholder: you@org.com
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Marine / hydrophone PAM
+        - Drone / search-and-rescue
+        - Bird / biodiversity
+        - Other labelled audio
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Sensor, sample rate, and whether labels already exist
+      placeholder: e.g. hydrophone, 48 kHz, yes — call vs background on 40 hours
+    validations:
+      required: true

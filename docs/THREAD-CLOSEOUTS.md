@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~02:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Stranger → lead without CEO | **Shipped** — GitHub [paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) |
+| Landing dead shop/blog cards | **Shipped** — dropped merch/marketing (302); fallback cards are GitHub-only |
+
+**Verify:** issue form **200**. `curl -sS https://6cubed.app/` has `CARFAC-PILOTS.md` and does **not** contain `merch.6cubed.app`. CEO: send `/work`.
+
+---
+
+## Smallest revenue diff was a GitHub form, not another landing CTA — **CLOSED**
+
+Lead API already works (CORS 204 / 400). Merch and marketing 302 from the shop. Repo had no issue template and `gh` is unauthenticated (topics stay empty).
+
+**Shipped:** `.github/ISSUE_TEMPLATE/paid-pilot.yml`; landing shop drops cold merch/marketing; blog fallback cards 2–3 → GitHub offer + colabs index. Did not start merch, blog, or agitweet.
+
+**Verify:** [new paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) shows Work email + domain. Public homepage HTML contains `docs/CARFAC-PILOTS.md`.
+
+---
+
 ## Production snapshot (2026-08-16 ~02:15 UTC)
 
 | Highest leverage | Blocker |

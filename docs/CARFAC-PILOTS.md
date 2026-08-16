@@ -23,7 +23,7 @@ Same band as other 216Labs paid work: **€5–15k** for a pilot, or a monthly r
 
 ## Start
 
-Email via [6cubed.app/#work](https://6cubed.app/#work) (kind: audio/ML pilot). One line on the sensor, rate, and whether labels exist is enough.
+Email via [6cubed.app/#work](https://6cubed.app/#work) (kind: audio/ML pilot), or open a [paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml). One line on the sensor, rate, and whether labels exist is enough.
 
 Proof and notebooks (no account required):
 

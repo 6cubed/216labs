@@ -67,16 +67,16 @@ _FALLBACK_BLOG_POSTS = [
         "url": "https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md",
     },
     {
-        "title": "Speed at scale: when 10 visionaries want 1:1 velocity",
-        "excerpt": "How to keep Pocket Cursor cadence while scaling to many parallel product goals.",
-        "date": "2026-05-28",
-        "url": "https://blog.6cubed.app/blog/multi-vp-velocity-in-a-telegram-native-org",
+        "title": "CARFAC pilots — labelled-audio detection on your files",
+        "excerpt": "€5–15k time-boxed pilots for hydrophone, drone, and bird audio. Always on GitHub.",
+        "date": "2026-08-15",
+        "url": "https://github.com/6cubed/216labs/blob/main/docs/CARFAC-PILOTS.md",
     },
     {
-        "title": "Pocket Cursor heartbeat: periodic agent nudges from your phone",
-        "excerpt": "Telegram-driven heartbeats so the lab keeps shipping when nobody is at the keyboard.",
-        "date": "2026-05-18",
-        "url": "https://blog.6cubed.app/blog/pocket-cursor-heartbeat-harness",
+        "title": "Public CARFAC notebooks",
+        "excerpt": "Open-in-Colab demos: vs-mel, drone SAI, underwater SAI.",
+        "date": "2026-08-15",
+        "url": "https://github.com/6cubed/216labs/blob/main/colabs/README.md",
     },
 ]
 
