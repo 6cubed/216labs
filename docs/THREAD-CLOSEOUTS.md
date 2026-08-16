@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~10:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Cite this repository | **Shipped** — `CITATION.cff` (GitHub cite widget) |
+| In-repo leftovers were ad-hoc greps | **Shipped** — heartbeat-stack prints **Cold refs in-repo** |
+
+**Verify:** https://github.com/6cubed/216labs/blob/main/CITATION.cff exists. `python3 scripts/scan-cold-refs.py` prints none. CEO: send `/work`.
+
+---
+
+## Compounding: CITATION.cff + in-repo cold-ref scan — **CLOSED**
+
+Live always-on HTML was already clean. This week’s leftovers lived in cold-app templates and Colab markdown — the live scan cannot see them. Academic strangers also had no GitHub cite path.
+
+**Shipped:** `CITATION.cff`; `scripts/scan-cold-refs.py` wired into heartbeat-stack. Did not restyle landing. Did not start more apps.
+
+**Verify:** raw `CITATION.cff` on main; stack prints **Cold refs in-repo**.
+
+---
+
 ## Production snapshot (2026-08-16 ~09:45 UTC)
 
 | Highest leverage | Blocker |

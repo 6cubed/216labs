@@ -275,6 +275,10 @@ if not hits and not wrong:
 " || echo "  (scan failed)"
 
 echo
+echo "=== Cold refs in-repo (products/colabs/research) ==="
+python3 "$ROOT/scripts/scan-cold-refs.py" || true
+
+echo
 if [[ "$smoke_ok" -eq 1 ]]; then
   echo "Lights on. Revenue: ./scripts/check-revenue-env-http.sh"
   exit 0

@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: 216Labs CARFAC labelled-audio detection notebooks
+message: >-
+  If you use these notebooks, please cite this repository.
+  Funded teams with labelled audio can request a time-boxed
+  pilot via the paid-pilot issue template.
+type: software
+authors:
+  - name: 216Labs
+    website: https://6cubed.app
+repository-code: https://github.com/6cubed/216labs
+url: https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md
+abstract: >-
+  Public Colabs comparing CARFAC NAP and SAI to mel
+  spectrograms on hydrophone, drone search-and-rescue, and
+  ordinary audio — plus a time-boxed detection-pilot offer.
+keywords:
+  - CARFAC
+  - SAI
+  - bioacoustics
+  - PAM
+  - hydrophone
+date-released: "2026-08-16"
+preferred-citation:
+  type: software
+  title: CARFAC SAI on underwater audio
+  authors:
+    - name: 216Labs
+  url: https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md
+  repository-code: https://github.com/6cubed/216labs
