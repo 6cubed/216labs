@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~08:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| GitHub root README had no CEO-free inbox | **Shipped** — paid-pilot on root README + remaining Colabs |
+| Open issues #8 / #9 | **Skip** — stale quality-factory sweep; euromaxxers content (do not start) |
+
+**Verify:** https://github.com/6cubed/216labs/blob/main/README.md contains `paid-pilot.yml`. CEO: send `/work`.
+
+---
+
+## Root README was the missing stranger path — **CLOSED**
+
+Scanned git status (gitkeep noise), public issues (#8 May live-sweep of 68 cold apps, #9 euromaxxers), stack (lights on, cold-refs none). The GitHub front door still only linked `#work`.
+
+**Shipped:** paid-pilot on root README, underwater + vs-mel READMEs, drone/vs-mel notebooks. Did not restyle landing. Did not start euromaxxers.
+
+**Verify:** GitHub `README.md` contains `paid-pilot.yml`.
+
+---
+
 ## Production snapshot (2026-08-16 ~08:15 UTC)
 
 | Highest leverage | Blocker |

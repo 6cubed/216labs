@@ -12,7 +12,7 @@ CPU is fine. Needs **Python ≥ 3.11** (Colab default is fine). Installs [google
 
 ## Paid pilots
 
-If this frontend comparison is the start of a detection job (hydrophone, drone, bird), 216Labs sells time-boxed pilots: [CARFAC pilots](../../docs/CARFAC-PILOTS.md) · [6cubed.app/#work](https://6cubed.app/#work).
+If this frontend comparison is the start of a detection job (hydrophone, drone, bird), 216Labs sells time-boxed pilots: [CARFAC pilots](../../docs/CARFAC-PILOTS.md) · [paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) · [6cubed.app/#work](https://6cubed.app/#work).
 
 ## Notes
 
