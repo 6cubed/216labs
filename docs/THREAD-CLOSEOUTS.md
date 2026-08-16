@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~03:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Anchor empty Zurich feed | **Shipped** — empty copy + `/api/v1/posts/recent` fallback |
+| Observability | **Shipped** — `heartbeat-stack` prints evictable hot pool (pocket/tortellini/vc were bot-woken) |
+
+**Verify:** `curl -sS https://anchor.6cubed.app/` contains **No notes within 5 km**. `./scripts/heartbeat-stack.sh` prints `Evictable hot pool`. CEO: send `/work`.
+
+---
+
+## Heartbeat-stack hid bot-woken apps; Anchor feed was a blank page — **CLOSED**
+
+Lights-on looked empty while pocket, tortellini, and vc were running (deploy_enabled=1, bot hits). Zurich nearby API returned `[]`.
+
+**Shipped:** hot-pool line on heartbeat-stack; Anchor empty-state + `/recent`. Did not start agitweet. Did not add a hire CTA.
+
+**Verify:** public Anchor HTML contains `No notes within 5 km`. Stack output contains `Evictable hot pool`.
+
+---
+
 ## Production snapshot (2026-08-16 ~02:45 UTC)
 
 | Highest leverage | Blocker |

@@ -101,12 +101,9 @@ HOME_HTML = """<!doctype html>
       token = j.access_token;
     }
 
-    async function load() {
-      const r = await fetch("/api/v1/posts/?lat=" + lat + "&lng=" + lng);
-      if (!r.ok) throw new Error("Could not load posts");
-      const posts = await r.json();
+    function renderPosts(posts, emptyHtml) {
       if (!posts.length) {
-        feed.innerHTML = "<p class=muted>Nothing within 5 km yet. Be the first.</p>";
+        feed.innerHTML = emptyHtml;
         return;
       }
       feed.innerHTML = posts.map(function (p) {
@@ -114,6 +111,28 @@ HOME_HTML = """<!doctype html>
         const text = p.content.replace(/&/g,"&amp;").replace(/</g,"&lt;");
         return "<article class=post><div>" + text + "</div><div class=muted>" + when + "</div></article>";
       }).join("");
+    }
+
+    async function load() {
+      const r = await fetch("/api/v1/posts/?lat=" + lat + "&lng=" + lng);
+      if (!r.ok) throw new Error("Could not load posts");
+      const posts = await r.json();
+      if (posts.length) {
+        renderPosts(posts, "");
+        return;
+      }
+      const far = await fetch("/api/v1/posts/recent");
+      const elsewhere = far.ok ? await far.json() : [];
+      if (elsewhere.length) {
+        feed.innerHTML = "<p class=muted>No notes within 5 km. Latest elsewhere:</p>";
+        feed.innerHTML += elsewhere.map(function (p) {
+          const when = new Date(p.created_at).toLocaleString();
+          const text = p.content.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+          return "<article class=post><div>" + text + "</div><div class=muted>" + when + "</div></article>";
+        }).join("");
+        return;
+      }
+      renderPosts([], "<p class=muted>No notes within 5 km. Write one — anonymous, only people nearby will see it.</p>");
     }
 
     compose.addEventListener("submit", async function (e) {

@@ -201,6 +201,27 @@ else
 fi
 
 echo
+echo "=== Evictable hot pool ==="
+HOT_POOL=$(
+  ssh "${SSH_OPTS[@]}" "$REMOTE" 'cd /opt/216labs && docker compose --env-file .env ps --status running --format "{{.Service}}" 2>/dev/null' || true
+)
+if [[ -n "$HOT_POOL" ]]; then
+  python3 -c "
+import sys
+spine = set('caddy activator admin landing cron-runner storybook maxlearn 1pageresearch kidgift'.split())
+svcs = [s.strip() for s in sys.stdin.read().splitlines() if s.strip()]
+hot = [s for s in svcs if s.lower() not in spine]
+if hot:
+    print('  ' + ' '.join(hot))
+    print('  (' + str(len(hot)) + ' running, not spine — bot-woken apps fill LRU; do not start more)')
+else:
+    print('  (none — only spine)')
+" <<< "$HOT_POOL"
+else
+  echo "  (SSH unavailable — skip hot pool)"
+fi
+
+echo
 if [[ "$smoke_ok" -eq 1 ]]; then
   echo "Lights on. Revenue: ./scripts/check-revenue-env-http.sh"
   exit 0

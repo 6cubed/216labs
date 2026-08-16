@@ -100,6 +100,22 @@ async def list_posts(
     return [await _serialize_post(p, db) for p in page_posts]
 
 
+@router.get("/recent", response_model=list[PostResponse])
+async def list_recent(
+    page_size: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+    _: Optional[User] = Depends(get_current_user_optional),
+):
+    """Latest top-level posts anywhere — empty-radius fallback for the HTML feed."""
+    result = await db.execute(
+        select(Post)
+        .where(Post.parent_id.is_(None))
+        .order_by(Post.created_at.desc())
+        .limit(page_size)
+    )
+    return [await _serialize_post(p, db) for p in result.scalars().all()]
+
+
 @router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
     body: PostCreate,

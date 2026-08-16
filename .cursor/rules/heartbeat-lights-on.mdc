@@ -15,6 +15,7 @@ Production is a single DigitalOcean droplet (`46.101.88.197`). When edge or SSH 
 4. If the **cron snapshot** prints an `int <service>: FAIL` while edge is green, do not scroll past it. Green edge makes it look cosmetic, but `stack_health_last` uses the internal probes to pick a `diagnosis`, so a false FAIL sends the **next real outage** to the wrong recovery script. Fix the probe or the service in that beat. (2026-08-15: `int admin: FAIL (timeout)` for weeks — the probe was hitting the `force-dynamic` admin dashboard, which shells out to `docker ps`.)
 5. On the VPS, periodic `droplet-ghcr-sync.sh` **skips image pulls** when root disk is **≥90%** (`SYNC_SKIP_IF_DISK_PCT_GE`) so sync does not re-wedge a full disk.
 6. If `docker compose ps` shows apps with **`deploy_enabled=0`** still running (and they are not on the protected spine list), **stop them in that beat** (`scripts/stop-disabled-compose-apps.sh`). They fill `ACTIVATOR_MAX_CONCURRENT_APPS` so a host that actually had humans (anchor, zurichrunclubs) cannot cold-start. Periodic GHCR sync now runs that script; do not wait for the activator image.
+7. Read the **Evictable hot pool** line from `heartbeat-stack.sh`. Names there (pocket, tortellini, vc, …) are often bot-woken `deploy_enabled=1` apps. Do not start more apps that beat — they already fill LRU. Do not treat “lights on” as an empty droplet.
 
 Do not spend the heartbeat on unrelated refactors while `admin.6cubed.app` and SSH are both down.
 
