@@ -1038,19 +1038,31 @@ def detect_cdp_port(exit_on_fail=True):
     When exit_on_fail=False (used by background threads), returns None
     instead of calling sys.exit() so the caller can retry next cycle.
     """
+    def _page_score(port: int) -> int:
+        """Prefer a port that already has a titled Cursor page (Agents / workspace)."""
+        try:
+            targets = requests.get(f"http://localhost:{port}/json", timeout=2).json()
+        except Exception:
+            return -1
+        pages = [
+            t for t in targets
+            if t.get("type") == "page" and not str(t.get("url") or "").startswith("devtools://")
+        ]
+        if not pages:
+            return 0
+        titled = sum(1 for t in pages if str(t.get("title") or "").strip())
+        return 10 * titled + len(pages)
+
     forced = os.environ.get("POCKET_CDP_PORT", "").strip()
     if forced.isdigit():
         port = int(forced)
-        try:
-            resp = requests.get(f"http://localhost:{port}/json", timeout=2)
-            if resp.status_code == 200:
-                return port
-        except Exception:
-            pass
-        if exit_on_fail:
-            print(f"ERROR: POCKET_CDP_PORT={port} is not responding.")
-            sys.exit(1)
-        return None
+        score = _page_score(port)
+        if score > 0:
+            return port
+        if score == 0:
+            print(f"Warning: POCKET_CDP_PORT={port} has no Cursor pages; scanning other CDP ports.")
+        else:
+            print(f"Warning: POCKET_CDP_PORT={port} is not responding; scanning other CDP ports.")
 
     ports = get_used_ports()
     if not ports:
@@ -1060,13 +1072,17 @@ def detect_cdp_port(exit_on_fail=True):
             print("Or check status:              python start_cursor.py --check")
             sys.exit(1)
         return None
+
+    scored = []
     for port in ports:
-        try:
-            resp = requests.get(f'http://localhost:{port}/json', timeout=2)
-            if resp.status_code == 200:
-                return port
-        except Exception:
-            pass
+        s = _page_score(port)
+        if s >= 0:
+            scored.append((s, port))
+    scored.sort(reverse=True)
+    if scored and scored[0][0] > 0:
+        return scored[0][1]
+    for _score, port in scored:
+        return port
     if exit_on_fail:
         print("ERROR: Cursor process found but no CDP port is responding.")
         print(f"Ports in command line: {ports}")
@@ -1080,12 +1096,16 @@ def parse_instance_title(title):
     
     Title patterns:
         "Cursor"                                              → no workspace
+        "Cursor Agents"                                       → "Agents"
         "file.py - WorkspaceName - Cursor"                    → "WorkspaceName"
         "file.md - Name (Workspace) - Cursor"                 → "Name (Workspace)"
         "Interactive - file.py - WorkspaceName - Cursor"      → "WorkspaceName"
     
     Workspace is always the second-to-last segment before "- Cursor".
     """
+    stripped = title.strip()
+    if stripped in ("Cursor Agents", "Agents"):
+        return "Agents"
     parts = title.split(' - ')
     if len(parts) >= 3 and parts[-1].strip() == 'Cursor':
         return parts[-2]

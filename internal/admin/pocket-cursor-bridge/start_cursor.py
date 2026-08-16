@@ -10,15 +10,15 @@ existing shortcut.
 Usage:
     python start_cursor.py              # launch or report status
     python start_cursor.py --check      # just check if CDP is available
-    python start_cursor.py --port 9225  # force a specific port
+    python start_cursor.py --new-window # extra Cursor even if CDP already up
 
 Scenarios handled:
     A. Cursor not installed          → error with platform-specific hint
     B. No Cursor running             → fresh launch with CDP on port 9222
     C. Port 9222 taken (non-Cursor)  → auto-find next available port
-    D. Cursor running WITH CDP       → launch new window with free port;
-                                       verify merge (target count up) or
-                                       separate instance (new CDP endpoint)
+    D. Cursor running WITH CDP       → reuse that window (do not spawn a
+                                       second empty Cursor). Pass --new-window
+                                       to open another instance instead.
     E. Cursor running WITHOUT CDP    → inform user, exit (can't enable CDP
                                        on a running process; can't kill
                                        automatically due to unsaved work)
@@ -270,12 +270,20 @@ def main():
     if existing_ports:
         if '--port' in sys.argv:
             print(f"Note: --port is ignored when Cursor is already running (CDP on {existing_ports[0]}).")
-        # Cursor already running with CDP.
-        # On Windows, new windows merge into the existing process (one port).
-        # On other OSes, Electron may or may not merge — we handle both:
-        #   - Merged:   new page target appears on existing port
-        #   - Separate: new CDP endpoint appears on new_port
-        existing_port = existing_ports[0]
+        best_port = existing_ports[0]
+        best_n = count_page_targets(best_port)
+        for p in existing_ports[1:]:
+            n = count_page_targets(p)
+            if n > best_n:
+                best_port, best_n = p, n
+        if best_n > 0 and '--new-window' not in sys.argv:
+            print(f"Reusing Cursor CDP on port {best_port} ({best_n} window(s)).")
+            print("Pass --new-window to open another Cursor instead of attaching.")
+            print(f"\nCursor is ready with CDP on port {best_port}.")
+            print(f"Run: python -X utf8 pocket_cursor.py")
+            return
+        # No pages yet, or caller asked for another window.
+        existing_port = best_port
         new_port = find_available_port(quiet=True)
         print(f"Cursor already running with CDP on port {existing_port}.")
 

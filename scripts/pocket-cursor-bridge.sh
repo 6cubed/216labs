@@ -115,6 +115,7 @@ if [[ -n "${POCKET_CDP_PORT:-}" ]]; then
   echo "[pocket-cursor-bridge] CDP port: $POCKET_CDP_PORT"
 fi
 
+# Reuses a live CDP window (does not spawn a second empty Cursor unless --new-window).
 # Empty array + nounset: "${START_ARGS[@]}" errors on bash 4.4+; use + expansion.
 "$PY" -X utf8 start_cursor.py ${START_ARGS[@]+"${START_ARGS[@]}"}
 exec "$PY" -X utf8 pocket_cursor.py

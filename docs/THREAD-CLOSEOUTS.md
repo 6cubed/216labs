@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~12:35 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Telegram outbound silent after Cursor Agents UI change | **Shipped** — Agents sidebar + transcript; `start_cursor.py` reuses live CDP |
+| Restart spawned a second empty Cursor on 9222 | **Shipped** — reuse titled CDP; ignore empty `POCKET_CDP_PORT` |
+
+**Verify:** `python3 internal/admin/pocket-cursor-bridge/start_cursor.py --check` reports the Agents window (not a new empty port). Telegram mirrors this chat. CEO: send `/work`.
+
+---
+
+## Telegram Agents UI + empty-CDP restart — **CLOSED**
+
+Cursor Agents sidebar is `DIV.ui-sidebar-menu-button`, not `.glass-sidebar-agent-menu-btn`. Transcript uses `[data-message-role]` instead of pair-containers. A bridge restart then launched a second empty Cursor on 9222 and attached there → `No Cursor instances found`.
+
+**Shipped:** chat scan + turn extract; `start_cursor.py` reuses a CDP port that already has pages (`--new-window` to spawn); `detect_cdp_port` prefers a titled page and does not stick to an empty `POCKET_CDP_PORT`. Did not restyle landing. Did not start more apps.
+
+**Verify:** `start_cursor.py --check` + Telegram replies on this chat.
+
+---
+
 ## Production snapshot (2026-08-16 ~10:15 UTC)
 
 | Highest leverage | Blocker |
