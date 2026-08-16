@@ -80,13 +80,10 @@
     </section>
 
     <section class="section">
-      <h2>Latest from Agitweet</h2>
+      <h2>From the lab</h2>
       <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
-        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
-          <div style="font-size:0.95rem; font-weight:800;">Short posts from the lab</div>
-        </div>
-        <div id="agitweetStatus" class="empty-hint" style="margin-top:0.5rem;"></div>
-        <div id="agitweetPosts" style="display:flex; flex-direction:column; gap:0.6rem; margin-top:0.75rem;">
+        <div style="font-size:0.95rem; font-weight:800; margin-bottom:0.75rem;">Short posts from the lab</div>
+        <div style="display:flex; flex-direction:column; gap:0.6rem;">
           <div style="border:1px solid var(--border); border-radius:12px; padding:0.75rem 0.85rem; background:rgba(255,255,255,0.03);">
             <div style="font-size:11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace; margin-bottom:0.35rem;">Pinned — hire</div>
             <div style="font-size:0.95rem; white-space:pre-wrap; word-break:break-word;">216Labs takes paid work: production web apps, AI retainers (€5–15k / monthly), and CARFAC audio/ML pilots.
@@ -95,54 +92,6 @@ Proof: https://blog.6cubed.app/blog/carfac-underwater-sai</div>
           </div>
         </div>
       </div>
-      <script>
-        (function () {
-          const statusEl = document.getElementById('agitweetStatus');
-          const listEl = document.getElementById('agitweetPosts');
-          if (!statusEl || !listEl) return;
-
-          function esc(s) {
-            return String(s || '')
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-              .replace(/"/g, '&quot;')
-              .replace(/'/g, '&#39;');
-          }
-
-          fetch('https://agitweet.6cubed.app/api/posts?limit=3', { cache: 'no-store' })
-            .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
-            .then(data => {
-              const posts = (data && data.posts) ? data.posts : [];
-              if (!Array.isArray(posts) || posts.length === 0) {
-                statusEl.textContent = '';
-                return;
-              }
-              statusEl.textContent = '';
-              listEl.innerHTML = '';
-              posts.slice(0, 3).forEach(p => {
-                const text = esc(p.text);
-                const created = esc(p.created_at || '');
-                const id = esc(p.id);
-                const item = document.createElement('div');
-                item.style.border = '1px solid var(--border)';
-                item.style.borderRadius = '12px';
-                item.style.padding = '0.75rem 0.85rem';
-                item.style.background = 'rgba(255,255,255,0.03)';
-                item.innerHTML =
-                  '<div style="display:flex; justify-content:space-between; gap:0.75rem; flex-wrap:wrap; margin-bottom:0.35rem;">' +
-                    '<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace; font-size:11px; color: var(--muted);">' + created + '</div>' +
-                    '<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace; font-size:11px; color: rgba(255,255,255,0.45);">#' + id + '</div>' +
-                  '</div>' +
-                  '<div style="font-size:0.95rem; white-space:pre-wrap; word-break:break-word;">' + text + '</div>';
-                listEl.appendChild(item);
-              });
-            })
-            .catch(() => {
-              statusEl.textContent = '';
-            });
-        })();
-      </script>
     </section>
 
     <section class="section">

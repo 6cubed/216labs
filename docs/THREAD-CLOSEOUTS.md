@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~05:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Landing JS still woke Agitweet | **Shipped** — removed `/api/posts` fetch; static pin only |
+| Edge / hot pool | **OK** — only `anchor-api` + `zurichrunclubs` evictable |
+
+**Verify:** `curl -sS https://6cubed.app/` has no `agitweet.6cubed.app/api/posts`. CEO: send `/work`.
+
+---
+
+## Homepage fetch still started Agitweet — **CLOSED**
+
+Highest-leverage unfinished item is still CEO `/work`. Last beat dropped the Open Agitweet href but left `fetch(agitweet…/api/posts)`, which 302s to activator on every homepage load.
+
+**Shipped:** removed the fetch. Did not restyle the hire pin. Did not start agitweet.
+
+**Verify:** public homepage HTML contains no `agitweet.6cubed.app`.
+
+---
+
 ## Production snapshot (2026-08-16 ~04:45 UTC)
 
 | Highest leverage | Blocker |
