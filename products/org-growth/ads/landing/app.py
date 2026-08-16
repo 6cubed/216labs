@@ -28,8 +28,22 @@ def _inject_client_error_script():
     return {"client_error_script_html": client_error_script("landing")}
 
 
+# deploy_enabled=1 is not "up". Listing the catalogue dumps visitors on activator.
+# These hosts already return 200 without a warmup (spine + human-visited).
+_LIVE_NOW_IDS = frozenset(
+    {
+        "anchor",
+        "zurichrunclubs",
+        "storybook",
+        "kidgift",
+        "1pageresearch",
+        "maxlearn",
+    }
+)
+
+
 def _fetch_live_apps():
-    """Live app list from admin (Docker network) with public URL fallback."""
+    """Apps a stranger can open now — not the full deploy_enabled catalogue."""
     base = os.environ.get("ADMIN_INTERNAL_URL", "http://admin:3000").rstrip("/")
     url = f"{base}/api/public/live-apps"
     data = fetch_json(url, timeout=4, default=None)
@@ -42,7 +56,13 @@ def _fetch_live_apps():
     if not isinstance(data, dict):
         return []
     items = data.get("items") or []
-    return items if isinstance(items, list) else []
+    if not isinstance(items, list):
+        return []
+    return [
+        i
+        for i in items
+        if isinstance(i, dict) and str(i.get("id") or "").lower() in _LIVE_NOW_IDS
+    ]
 
 
 def _fetch_blog_feed():

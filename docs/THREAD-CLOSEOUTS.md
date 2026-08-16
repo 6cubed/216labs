@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~04:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Homepage Live apps | **Shipped** — always-200 allowlist only (was the enabled catalogue → 302) |
+| Closest to charging | Hire/CARFAC, not Storybook checkout (`checkout not ready` is not the blocker) |
+
+**Verify:** `curl -sS https://6cubed.app/` contains `zurichrunclubs` and does **not** contain `birdperch.6cubed.app` or `bugbounty.6cubed.app`. CEO: send `/work`.
+
+---
+
+## Live-apps catalogue converted humans into warmup — **CLOSED**
+
+Admin `GET /api/public/live-apps` is every `deploy_enabled=1` row. The homepage listed ~20 cold hosts (blog, birdperch, aiart, …). Closest to charging is still hire/CARFAC; Storybook checkout does not count while humans ≈ 0.
+
+**Shipped:** landing filters to anchor, zurichrunclubs, storybook, kidgift, 1pageresearch, maxlearn. Dropped footer bugbounty 302. Did not start those apps. Did not restyle `#work`.
+
+**Verify:** public homepage HTML has `anchor.6cubed.app` and no `birdperch.6cubed.app`.
+
+---
+
 ## Production snapshot (2026-08-16 ~03:45 UTC)
 
 | Highest leverage | Blocker |
