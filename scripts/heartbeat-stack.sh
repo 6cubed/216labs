@@ -239,7 +239,17 @@ class N(urllib.request.HTTPRedirectHandler):
         return None
 cold = ('blog.6cubed.app', 'agitweet.6cubed.app', 'merch.6cubed.app', 'marketing.6cubed.app')
 hits = []
-for url in ('https://6cubed.app/', 'https://6cubed.app/about'):
+for url in (
+    'https://6cubed.app/',
+    'https://6cubed.app/about',
+    'https://6cubed.app/careers',
+    'https://anchor.6cubed.app/',
+    'https://zurichrunclubs.6cubed.app/',
+    'https://storybook.6cubed.app/',
+    'https://kidgift.6cubed.app/',
+    'https://1pageresearch.6cubed.app/',
+    'https://maxlearn.6cubed.app/',
+):
     try:
         r = urllib.request.build_opener(N).open(url, timeout=12)
         b = r.read().decode('utf-8', 'replace')

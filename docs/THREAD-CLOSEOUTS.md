@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~06:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| MaxLearn footer → merch | **Shipped** — dropped cold href; scan now covers allowlist apps |
+| Last beat | Cold-ref scan on landing only — missed MaxLearn |
+
+**Verify:** `curl -sS https://maxlearn.6cubed.app/` has no `merch.6cubed.app`. Stack cold-refs `(none`. CEO: send `/work`.
+
+---
+
+## Last beat was a real ship; this beat found the scan’s blind spot — **CLOSED**
+
+Last heartbeat added a landing-only cold-ref scan (not status). MaxLearn, linked from the homepage, still had `href=merch.6cubed.app`.
+
+**Shipped:** dropped the Merch footer link; stack scan includes allowlist hosts. Did not start merch. Did not restyle `#work`.
+
+**Verify:** public MaxLearn HTML has no `merch.6cubed.app`.
+
+---
+
 ## Production snapshot (2026-08-16 ~06:15 UTC)
 
 | Highest leverage | Blocker |
