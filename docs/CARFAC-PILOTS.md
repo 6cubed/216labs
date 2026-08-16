@@ -1,6 +1,6 @@
 # CARFAC audio/ML pilots
 
-216Labs sells **labelled-audio detection pilots**, not another wrapper model. The public demos are the three CARFAC Colabs in this repo and the [underwater SAI write-up](https://blog.6cubed.app/blog/carfac-underwater-sai).
+216Labs sells **labelled-audio detection pilots**, not another wrapper model. The public demos are the three CARFAC Colabs in this repo — start with the [underwater SAI results](https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md) (always on GitHub; the blog write-up is the same notebook when that host is warm).
 
 ## Who this is for
 

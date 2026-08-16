@@ -29,7 +29,7 @@ Read-out is a logistic regression on 32×32 mean-pooled images, cross-validated 
 
 ## Paid pilots
 
-216Labs takes this as **labelled-audio detection work** (hydrophone PAM, drone, bird). Offer: [CARFAC pilots](../../docs/CARFAC-PILOTS.md). Start: [6cubed.app/#work](https://6cubed.app/#work). Write-up: [CARFAC SAI on underwater audio](https://blog.6cubed.app/blog/carfac-underwater-sai).
+216Labs takes this as **labelled-audio detection work** (hydrophone PAM, drone, bird). Offer: [CARFAC pilots](../../docs/CARFAC-PILOTS.md). Start: [6cubed.app/#work](https://6cubed.app/#work). Runnable: [Open in Colab](https://colab.research.google.com/github/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/experiment.ipynb).
 
 ## Notes
 

@@ -64,7 +64,7 @@ _FALLBACK_BLOG_POSTS = [
         "title": "What a cochlear model hears underwater (and what it does not)",
         "excerpt": "CARFAC SAI vs mel on Orcasound hydrophone audio. A sendable URL for audio/ML pilots.",
         "date": "2026-08-15",
-        "url": "https://blog.6cubed.app/blog/carfac-underwater-sai",
+        "url": "https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md",
     },
     {
         "title": "Speed at scale: when 10 visionaries want 1:1 velocity",

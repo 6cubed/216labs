@@ -110,6 +110,6 @@ heartbeats should default to distribution work, never checkout plumbing — see
 `.cursor/rules/heartbeat-monetization.mdc`.
 
 **Live offer URLs (shipped 2026-08-15):** [6cubed.app/#work](https://6cubed.app/#work) (hire form),
-[CARFAC underwater SAI](https://blog.6cubed.app/blog/carfac-underwater-sai) (audio/ML proof),
+[CARFAC underwater SAI](https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md) (audio/ML proof),
 and [CARFAC pilots](CARFAC-PILOTS.md) (offer sheet linked from the public Colabs).
 Send those; do not wait for another product surface.

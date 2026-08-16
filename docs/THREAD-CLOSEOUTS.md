@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~02:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Audio/ML proof dest | **Shipped** — landing + GitHub offer sheet point at the colab README (always 200), not cold `blog.6cubed.app` |
+| Edge | **OK** — three human hosts 200; agitweet `/api/posts` 302 left cold |
+
+**Verify:** `curl -sS https://6cubed.app/` contains `colabs/carfac-sai-underwater`. GitHub underwater README **200**. CEO: send `/work`.
+
+---
+
+## Landing Audio/ML proof dumped strangers on activator — **CLOSED**
+
+`blog.6cubed.app/blog/carfac-underwater-sai` is 302 whenever the blog is cold. Starting blog to “verify” the offer wastes RAM and contradicts the agitweet rule.
+
+**Shipped:** proof href on landing (and the cold-blog fallback card) → GitHub `colabs/carfac-sai-underwater/README.md`. Did not start blog or agitweet. Did not restyle `#work` copy.
+
+**Verify:** public `https://6cubed.app/` HTML contains `github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater`.
+
+---
+
 ## Production snapshot (2026-08-16 ~01:45 UTC)
 
 | Highest leverage | Blocker |
