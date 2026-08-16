@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-16 ~07:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Cold-app merch/blog hrefs | **Shipped** — stripped in facerate, labshq, tigertank (did not start them) |
+| Always-on leftovers | **None** — stack cold-refs still `(none` |
+
+**Verify:** repo grep has no `href=https://merch.6cubed.app` in facerate/labshq. Always-on hosts unchanged. CEO: send `/work`.
+
+---
+
+## Always-on scan is clean; bot-woken apps still pointed at merch — **CLOSED**
+
+Assumption that still holds: humans ≈ 0, `/work` is CEO-blocked, three human hosts 200. What changed: “always-on HTML is the only leftover surface” is false — facerate/labshq/tigertank still had merch/blog hrefs for the next warmup.
+
+**Shipped:** dropped those hrefs in-repo. Did not start those apps. Did not start merch/blog. Did not restyle landing.
+
+**Verify:** `rg 'href=.https://(merch|blog)\\.6cubed\\.app' products/org-lifestyle/play/{facerate,labshq,tigertank}` is empty.
+
+---
+
 ## Production snapshot (2026-08-16 ~06:45 UTC)
 
 | Highest leverage | Blocker |

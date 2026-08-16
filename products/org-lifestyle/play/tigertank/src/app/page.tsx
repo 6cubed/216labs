@@ -9,14 +9,14 @@ export default function HomePage() {
           Tigertank
         </Link>
         <p className="text-[var(--muted)] text-sm mt-1">
-          Speculative societal takes — more experimental than the{' '}
+          Speculative societal takes — more experimental than the rest of{' '}
           <a
-            href="https://blog.6cubed.app"
+            href="https://6cubed.app"
             className="text-[var(--accent)] hover:underline"
             target="_blank"
             rel="noreferrer"
           >
-            main blog
+            216Labs
           </a>
         </p>
       </header>
