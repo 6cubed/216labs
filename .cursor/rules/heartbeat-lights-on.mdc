@@ -10,7 +10,7 @@ Production is a single DigitalOcean droplet (`46.101.88.197`). When edge or SSH 
 ## First action each heartbeat
 
 1. Run `./scripts/heartbeat-stack.sh` or `./scripts/heartbeat-recover.sh` (~10s smoke + auto recover when SSH works).
-2. If recover exits **2** (SSH down): **reboot the droplet in the DO console**, then `./scripts/wait-for-droplet.sh`.
+2. If recover or stack exits **2** (SSH down — including **edge 200 / sshd refused**): **reboot** (`./scripts/droplet-reboot.sh` or DO console), then `./scripts/wait-for-droplet.sh`. Do not treat skipped cron/disk/hot-pool lines as lights-on.
 3. If the disk line prints `WARN: root ≥88%`, run `./scripts/prune-droplet-docker.sh root@46.101.88.197` **in that same beat** — do not defer it to the next wedge. It takes ~25s and typically frees several GB (2026-08-15: 89% → 63%).
 4. If the **cron snapshot** prints an `int <service>: FAIL` while edge is green, do not scroll past it. Green edge makes it look cosmetic, but `stack_health_last` uses the internal probes to pick a `diagnosis`, so a false FAIL sends the **next real outage** to the wrong recovery script. Fix the probe or the service in that beat. (2026-08-15: `int admin: FAIL (timeout)` for weeks — the probe was hitting the `force-dynamic` admin dashboard, which shells out to `docker ps`.)
 5. On the VPS, periodic `droplet-ghcr-sync.sh` **skips image pulls** when root disk is **≥90%** (`SYNC_SKIP_IF_DISK_PCT_GE`) so sync does not re-wedge a full disk.

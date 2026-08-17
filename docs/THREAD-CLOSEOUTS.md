@@ -4,6 +4,38 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~13:50 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Edge 200 / sshd refused | **Shipped** — DO reboot; recover+stack now exit 2 (not “Lights on”) |
+| Allowlist MaxLearn had no inbox | **Shipped** — footer → paid-pilot issue |
+
+**Verify:** `./scripts/heartbeat-stack.sh` prints cron/disk (SSH up), not skipped. `curl -sS https://maxlearn.6cubed.app/` contains `paid-pilot.yml`. CEO: send `/work`.
+
+---
+
+## Edge-up / SSH-down treated as lights-on — **CLOSED**
+
+`heartbeat-recover.sh` returned 0 as soon as edge-smoke passed, so a refused sshd with Caddy still 200 printed **Lights on** and skipped cron, disk, and the evictable pool. That hid the wedge this beat.
+
+**Shipped:** recover and stack exit **2** when edge is up and SSH is down; `droplet-reboot.sh` ran. Did not restyle landing.
+
+**Verify:** stack no longer prints Lights on while SSH is skipped.
+
+---
+
+## MaxLearn paid-pilot inbox — **CLOSED**
+
+Monetization beat: smallest live-app lead path. 1PageResearch already had the issue form; MaxLearn is on the homepage allowlist and had only StoryMagic / 1PageResearch hops. Did not restyle landing `#work`. Did not start agitweet.
+
+**Shipped:** maxlearn footer **Request a pilot** → `paid-pilot.yml`.
+
+**Verify:** public maxlearn HTML contains `paid-pilot.yml` after the image is live.
+
+---
+
 ## Production snapshot (2026-08-16 ~16:40 UTC)
 
 | Highest leverage | Blocker |

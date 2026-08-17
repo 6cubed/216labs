@@ -280,8 +280,12 @@ python3 "$ROOT/scripts/scan-cold-refs.py" || true
 
 echo
 if [[ "$smoke_ok" -eq 1 ]]; then
-  echo "Lights on. Revenue: ./scripts/check-revenue-env-http.sh"
-  exit 0
+  if ssh "${SSH_OPTS[@]}" "$REMOTE" 'echo ok' 2>/dev/null | grep -q '^ok$'; then
+    echo "Lights on. Revenue: ./scripts/check-revenue-env-http.sh"
+    exit 0
+  fi
+  echo "Edge up, SSH down — not lights-on. Reboot: ./scripts/droplet-reboot.sh"
+  exit 2
 fi
 
 if "$ROOT/scripts/heartbeat-recover.sh" "$REMOTE"; then

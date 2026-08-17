@@ -26,7 +26,13 @@ This script:
 
 ## If SSH still fails (or disk is 97%+)
 
-**Reboot first** — sshd/Docker often cannot recover in-place when root is full.
+**Reboot first** — sshd/Docker often cannot recover in-place when root is full. **Caddy 200 does not mean SSH is up.** `heartbeat-recover.sh` and `heartbeat-stack.sh` exit **2** when the edge is green but sshd refuses; do not treat skipped cron/disk/hot-pool lines as lights-on.
+
+1. **Dashboard:** [DigitalOcean droplets](https://cloud.digitalocean.com/droplets) → select **46.101.88.197** → **Power** → **Reboot** → wait ~2 minutes.
+2. **API (if you have a token):** `DIGITALOCEAN_ACCESS_TOKEN=… ./scripts/droplet-reboot.sh` (reboot, wait for SSH, then `droplet-recover.sh`). Token can live in repo `.env`.
+3. **After manual reboot:** `./scripts/wait-for-droplet.sh` polls SSH (default 10 min) then runs recover.
+4. **Recovery console** (if reboot is not enough): **Access** → launch console → `df -h /` then `docker system prune -af` (re-pull images on next deploy).
+5. When SSH works: `./scripts/droplet-recover.sh`
 
 1. **Dashboard:** [DigitalOcean droplets](https://cloud.digitalocean.com/droplets) → select **46.101.88.197** → **Power** → **Reboot** → wait ~2 minutes.
 2. **API (if you have a token):** `DIGITALOCEAN_ACCESS_TOKEN=… ./scripts/droplet-reboot.sh` (reboot, wait for SSH, then `droplet-recover.sh`). Token can live in repo `.env`.

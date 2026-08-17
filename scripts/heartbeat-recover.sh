@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Heartbeat recovery: edge smoke → SSH probe → droplet-recover when possible.
 # Usage: ./scripts/heartbeat-recover.sh [user@host]
-# Exit 0 = edge OK or recover succeeded; 1 = recover ran but smoke still bad; 2 = need DO reboot first.
+# Exit 0 = edge AND SSH OK, or recover succeeded; 1 = recover ran but smoke still bad; 2 = need DO reboot (including edge-up / sshd-down).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -10,9 +10,9 @@ SSH_OPTS=(-o ConnectTimeout=12 -o BatchMode=yes -o ServerAliveInterval=5 -o Serv
 
 echo "=== Heartbeat recover ==="
 
+edge_ok=0
 if "$ROOT/scripts/edge-smoke.sh"; then
-  echo "Edge OK — no recovery needed."
-  exit 0
+  edge_ok=1
 fi
 
 echo
@@ -20,6 +20,10 @@ echo
 
 echo
 if ssh "${SSH_OPTS[@]}" "$REMOTE" 'echo ok' 2>/dev/null | grep -q '^ok$'; then
+  if [[ "$edge_ok" -eq 1 ]]; then
+    echo "Edge OK and SSH up — no recovery needed."
+    exit 0
+  fi
   echo "SSH up — running droplet-recover..."
   if "$ROOT/scripts/droplet-recover.sh" "$REMOTE"; then
     echo "Recover finished."
@@ -30,7 +34,11 @@ if ssh "${SSH_OPTS[@]}" "$REMOTE" 'echo ok' 2>/dev/null | grep -q '^ok$'; then
 fi
 
 echo
-echo "SSH not usable — reboot the droplet first:" >&2
+if [[ "$edge_ok" -eq 1 ]]; then
+  echo "Edge up but SSH down (sshd refused or timed out) — not lights-on." >&2
+else
+  echo "SSH not usable — reboot the droplet first:" >&2
+fi
 echo "  https://cloud.digitalocean.com/droplets → 46.101.88.197 → Power → Reboot" >&2
 echo "  Then: ./scripts/wait-for-droplet.sh $REMOTE" >&2
 echo "  Or:   DIGITALOCEAN_ACCESS_TOKEN=… ./scripts/droplet-reboot.sh" >&2
