@@ -21,16 +21,20 @@ The layout stays **client-agnostic**: manifests, one admin DB, one deploy path, 
 
 Two Next.js publications serve different audiences. **Do not** put think-tank / policy / societal speculation essays in the factory blog.
 
+**Neither host is always-on.** `blog.6cubed.app` and `tigertank.6cubed.app` usually **302 to activator**. Do not start them to verify a doc. Public audio/ML proof that must stay 200 is GitHub [`colabs/carfac-sai-underwater`](https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater) and [`docs/carfac-pilots`](https://github.com/6cubed/216labs/tree/main/docs/carfac-pilots). Homepage Latest writing must be those GitHub dests, not a blog href.
+
 | Surface | URL | Purpose | Posts live in repo |
 |--------|-----|---------|---------------------|
-| **Tigertank** | [tigertank.6cubed.app](https://tigertank.6cubed.app) | Speculative “think tank” essays (policy, governance, fiscal ideas, housing, systems) | `products/org-lifestyle/play/tigertank/src/lib/posts.ts` — routes **`/`** and **`/read/[slug]`** (legacy **`/p/:slug`** redirects to **`/read/:slug`**) |
-| **216Labs blog** | [blog.6cubed.app](https://blog.6cubed.app) | Monorepo / factory essays: deploy, hosting, security, roadmap, vibe-coding practice | `products/org-media/blog/src/lib/posts.ts` — routes **`/`** and **`/blog/[slug]`** |
+| **Tigertank** | [tigertank.6cubed.app](https://tigertank.6cubed.app) (usually 302) | Speculative “think tank” essays (policy, governance, fiscal ideas, housing, systems) | `products/org-lifestyle/play/tigertank/src/lib/posts.ts` — routes **`/`** and **`/read/[slug]`** (legacy **`/p/:slug`** redirects to **`/read/:slug`**) |
+| **216Labs blog** | [blog.6cubed.app](https://blog.6cubed.app) (usually 302) | Monorepo / factory essays: deploy, hosting, security, roadmap, vibe-coding practice | `products/org-media/blog/src/lib/posts.ts` — routes **`/`** and **`/blog/[slug]`** |
 
 Caddy routes both like any other enabled app (`manifest.json` → `tigertank` / `blog`). When adding a long-form essay, pick the column first; duplicate publishing the same piece in both places is discouraged.
 
 ## Projects (public URLs)
 
 Stacks are indicative; trust each app’s `manifest.json` and Dockerfile for truth.
+
+**Always-on (200 without a warmup):** [6cubed.app](https://6cubed.app) (landing), [anchor.6cubed.app](https://anchor.6cubed.app), [zurichrunclubs.6cubed.app](https://zurichrunclubs.6cubed.app), [storybook.6cubed.app](https://storybook.6cubed.app), [kidgift.6cubed.app](https://kidgift.6cubed.app), [1pageresearch.6cubed.app](https://1pageresearch.6cubed.app), [maxlearn.6cubed.app](https://maxlearn.6cubed.app), plus spine (`admin`, Caddy, activator, cron-runner). Other rows below are usually **302 to activator** — do not start those containers to “verify” this table.
 
 | App | Stack (short) | URL |
 |-----|----------------|-----|

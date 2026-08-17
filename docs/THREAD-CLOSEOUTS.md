@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~16:30 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Handbook listed blog as a live public URL | **Shipped** — `docs/REPOSITORY.md` now says blog/tigertank are usually 302; always-on allowlist named |
+| Empty agimemes gallery | **BLOCKED (CEO)** — Env keys blank; do not start the app |
+
+**Verify:** in-repo `docs/REPOSITORY.md` says blog is usually 302. Human hosts still **200**. CEO: send `/work`.
+
+---
+
+## Handbook treated cold blog as live — **CLOSED**
+
+`docs/REPOSITORY.md` listed `blog.6cubed.app` / `tigertank.6cubed.app` and the full catalogue as public URLs with no 302 warning. Heartbeat harness still said `docs/CARFAC-PILOTS.md already 200` after the offer moved to `docs/carfac-pilots/`.
+
+**Shipped:** handbook names the always-on set; proof dest in harness is `tree/main/docs/carfac-pilots`. Did not start blog. Did not restyle `#work`.
+
+**Verify:** handbook paragraph contains “usually 302”; harness has no “CARFAC-PILOTS.md already 200”.
+
+---
+
 ## Production snapshot (2026-08-17 ~16:00 UTC)
 
 | Highest leverage | Blocker |
