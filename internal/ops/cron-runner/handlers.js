@@ -1156,15 +1156,36 @@ export async function agitweetAutopost(db) {
   if (!secret) {
     return "[Agitweet] skipped — set AGITWEET_API_TOKEN in admin Env";
   }
-  const res = await fetch(`${base.replace(/\/$/, "")}/api/internal/autopost`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${secret}`,
-      "Content-Type": "application/json",
-    },
-    body: "{}",
-    signal: AbortSignal.timeout(90_000),
-  });
+  let res;
+  try {
+    res = await fetch(`${base.replace(/\/$/, "")}/api/internal/autopost`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secret}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+      signal: AbortSignal.timeout(90_000),
+      redirect: "manual",
+    });
+  } catch (e) {
+    // Cold compose service: Docker DNS fails (EAI_AGAIN). Do not start agitweet.
+    const cause = e && typeof e === "object" ? e.cause : null;
+    const code = cause && typeof cause === "object" ? cause.code : "";
+    const msg = e instanceof Error ? e.message : String(e);
+    if (
+      code === "EAI_AGAIN" ||
+      code === "ENOTFOUND" ||
+      code === "ECONNREFUSED" ||
+      /fetch failed|EAI_AGAIN|ENOTFOUND|ECONNREFUSED/i.test(msg)
+    ) {
+      return "[Agitweet] skipped — service cold (do not start)";
+    }
+    throw e;
+  }
+  if (res.status >= 300 && res.status < 400) {
+    return "[Agitweet] skipped — service cold (do not start)";
+  }
   if (!res.ok) {
     const errBody = (await res.text()).slice(0, 160);
     return `[Agitweet] autopost failed HTTP ${res.status}: ${errBody}`;

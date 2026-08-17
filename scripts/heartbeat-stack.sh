@@ -15,8 +15,7 @@ fi
 
 echo
 echo "=== Droplet cron snapshot ==="
-# Read via cron-runner container: it uses WAL on 216labs.db; host sqlite3 can be stale or
-# TRUNCATE checkpoint while containers run risks corruption.
+# Read via cron-runner container (shared 216labs.db is DELETE journal, not WAL).
 CRON_SNAPSHOT=""
 for attempt in 1 2 3; do
   CRON_SNAPSHOT=$(
@@ -28,6 +27,11 @@ const out = {};
 for (const key of keys) {
   const row = db.prepare(\"SELECT value FROM cron_runner_state WHERE key = ? LIMIT 1\").get(key);
   if (row && row.value) out[key] = row.value;
+}
+out.jobs = {};
+for (const id of [\"edge-visitor-rollup\", \"agitweet-autopost\"]) {
+  const r = db.prepare(\"SELECT enabled, last_run_at FROM cron_jobs WHERE id = ?\").get(id);
+  if (r) out.jobs[id] = r;
 }
 console.log(JSON.stringify(out));
 "' 2>/dev/null || true
@@ -99,6 +103,11 @@ for key in ('stack_health_last', 'revenue_env_last'):
                     print(f\"    {rid}: {r.get('error') or r.get('status')}\")
             elif not r.get('ok'):
                 print(f\"    {rid}: {r.get('error') or r.get('status')}\")
+jobs = data.get('jobs') or {}
+rollup = jobs.get('edge-visitor-rollup') or {}
+if rollup.get('enabled') == 0:
+    print('  WARN: edge-visitor-rollup disabled — re-enable (human visitor counts freeze)')
+    print('  last_run_at:', rollup.get('last_run_at') or 'never')
 " 2>/dev/null || echo "  (could not parse cron snapshot)"
 else
   echo "  (SSH unavailable or DB unreadable — skip cron snapshot)"
@@ -138,6 +147,11 @@ const out = {};
 for (const key of keys) {
   const row = db.prepare(\"SELECT value FROM cron_runner_state WHERE key = ? LIMIT 1\").get(key);
   if (row && row.value) out[key] = row.value;
+}
+out.jobs = {};
+for (const id of [\"edge-visitor-rollup\", \"agitweet-autopost\"]) {
+  const r = db.prepare(\"SELECT enabled, last_run_at FROM cron_jobs WHERE id = ?\").get(id);
+  if (r) out.jobs[id] = r;
 }
 console.log(JSON.stringify(out));
 "' 2>/dev/null || true

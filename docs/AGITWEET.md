@@ -12,7 +12,7 @@ Set **`AGITWEET_API_TOKEN`** in [admin → Env](https://admin.6cubed.app/env). *
 
 ## Autopost (droplet)
 
-**`agitweet-autopost`** cron (every **15** minutes) calls **`POST /api/internal/autopost`** inside the agitweet container. Harness: `products/org-social/agitweet/autopost_harness.json`. Optional **RSS** headlines use a single-voice format: `Headline — take (Source)` (see `autopost.py` and bridge `lib/agitweet_news.py`).
+**`agitweet-autopost`** cron (every **15** minutes) calls **`POST /api/internal/autopost`** inside the agitweet container **when that service is already running**. If agitweet is cold, the job **skips** (Docker DNS fail or activator 302) — do **not** start the container to make the cron succeed. Harness: `products/org-social/agitweet/autopost_harness.json`. Optional **RSS** headlines use a single-voice format: `Headline — take (Source)` (see `autopost.py` and bridge `lib/agitweet_news.py`).
 
 Manual run on the droplet:
 

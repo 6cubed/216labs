@@ -4,6 +4,39 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~14:20 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Human-visitor rollup off since Aug 15 | **Shipped** — re-enabled `edge-visitor-rollup` (bot-filter image already live) |
+| agitweet-autopost DNS every 15m | **Shipped** — skip when cold; job disabled on droplet (do not start agitweet) |
+| `int admin: FAIL` | **Stale** — live probe 200; snapshot now OK |
+
+**Verify:** stack prints no rollup WARN. Agitweet `GET /api/posts` still 302 (cold). CEO: send `/work`.
+
+---
+
+## Edge-visitor rollup left disabled after bot-filter — **CLOSED**
+
+Paused 2026-08-15 so an old image would not re-pollute `is_bot`. The running cron-runner already has `isBotUserAgent`; the job stayed `enabled=0` for two days, so Org metrics froze.
+
+**Shipped:** `UPDATE cron_jobs SET enabled=1` for `edge-visitor-rollup`; heartbeat-stack WARNs if it is off. Did not restyle landing. Did not `./deploy.sh`.
+
+**Verify:** `last_run_at` newer than 2026-08-15 13:30; stack has no rollup WARN.
+
+---
+
+## agitweet-autopost on a cold container — **CLOSED**
+
+Cron POSTed `http://agitweet:5000` every 15m → `getaddrinfo EAI_AGAIN agitweet`. Starting the app would fill LRU. Public `/api/posts` is already 302 to activator.
+
+**Shipped:** handler returns skip on DNS/302; droplet job `enabled=0`. Do not start agitweet.
+
+**Verify:** `curl -sS -o /dev/null -w '%{http_code}\n' https://agitweet.6cubed.app/api/posts` → **302**.
+
+---
+
 ## Production snapshot (2026-08-17 ~14:15 UTC)
 
 | Highest leverage | Blocker |
