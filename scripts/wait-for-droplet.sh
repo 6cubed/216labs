@@ -15,7 +15,8 @@ echo "Waiting for SSH on $REMOTE (max ${MAX}s, interval ${INTERVAL}s)..."
 
 while [[ "$elapsed" -lt "$MAX" ]]; do
   if ssh "${SSH_OPTS[@]}" "$REMOTE" 'echo ok' 2>/dev/null | grep -q ok; then
-    echo "SSH up after ${elapsed}s — running droplet-recover..."
+    echo "SSH up after ${elapsed}s — settling 20s before recover (sshd still fragile)..."
+    sleep 20
     exec "$ROOT/scripts/droplet-recover.sh" "$REMOTE"
   fi
   sleep "$INTERVAL"

@@ -4,6 +4,29 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~14:00 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| SSH died again during recover prune at 84% | **Shipped** — skip Docker prune when disk <88% |
+| MaxLearn paid-pilot on main | **BLOCKED (SSH)** — live HTML still missing `paid-pilot.yml` |
+| 1PageResearch paid-pilot | **Live** — public HTML already has the issue form |
+
+**Verify:** `./scripts/heartbeat-stack.sh` prints cron/disk (SSH up). `curl -sS https://maxlearn.6cubed.app/` contains `paid-pilot.yml`. CEO: send `/work`.
+
+---
+
+## Recover prune after reboot killed sshd — **CLOSED**
+
+Reboot brought SSH back at 84% disk. `droplet-recover.sh` then ran `prune-droplet-docker.sh` (`docker system df` + GHCR tag prune) and sshd refused again. MaxLearn footer is on main but not live.
+
+**Shipped:** recover skips prune below 88%; wait-for-droplet settles 20s; `deploy.sh` aborts subset rollouts when it cannot read the server DB (no blog bootstrap catalogue). Did not restyle landing.
+
+**Verify:** after reboot, recover prints **Skip prune**; SSH stays up; stack is not skipped.
+
+---
+
 ## Production snapshot (2026-08-17 ~13:50 UTC)
 
 | Highest leverage | Blocker |

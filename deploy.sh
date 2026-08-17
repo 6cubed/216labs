@@ -226,6 +226,9 @@ compose_service_exists() {
 
 # The server's admin container is the authoritative source for which apps are enabled.
 # Fall back to the local DB (legacy), then to a hardcoded list.
+# FALLBACK_ENABLED=1 means we did not read the server DB — do not compose-up
+# toolkit/bootstrap (blog, tortellini, …) on a targeted DEPLOY_RUNTIME_APPS run.
+FALLBACK_ENABLED=0
 ADMIN_CTR=$(ssh "${SSH_OPTS[@]}" "$REMOTE" \
   "docker ps --filter name=216labs-admin-1 --format '{{.Names}}'" 2>/dev/null | head -1 || true)
 
@@ -241,6 +244,7 @@ rows.forEach(r => process.stdout.write(r.id + ' '));
   set -e
   echo "==> Deploy config (from server DB): ${ENABLED_APPS:-<empty>}"
   if [ "$_db_rc" -ne 0 ] || [ -z "$ENABLED_APPS" ]; then
+    FALLBACK_ENABLED=1
     echo "==> WARN: server admin DB query failed or returned no apps; falling back to toolkit defaults"
     TOOLKIT_DEFAULTS="config/toolkit-default-enabled.txt"
     if [ -f "$TOOLKIT_DEFAULTS" ]; then
@@ -256,6 +260,7 @@ elif [ -f "$DB_FILE" ]; then
   _db_rc=$?
   set -e
   if [ "$_db_rc" -ne 0 ] || [ -z "$ENABLED_APPS" ]; then
+    FALLBACK_ENABLED=1
     echo "==> WARN: local DB query failed or returned no apps; falling back to toolkit defaults"
     TOOLKIT_DEFAULTS="config/toolkit-default-enabled.txt"
     if [ -f "$TOOLKIT_DEFAULTS" ]; then
@@ -268,6 +273,7 @@ elif [ -f "$DB_FILE" ]; then
     echo "==> Deploy config (from local DB): $ENABLED_APPS"
   fi
 else
+  FALLBACK_ENABLED=1
   TOOLKIT_DEFAULTS="config/toolkit-default-enabled.txt"
   if [ -f "$TOOLKIT_DEFAULTS" ]; then
     ENABLED_APPS=$(grep -v '^[[:space:]]*#' "$TOOLKIT_DEFAULTS" | sed '/^[[:space:]]*$/d' | tr '\n' ' ')
@@ -276,6 +282,13 @@ else
     ENABLED_APPS="admin activator landing hello-nextjs hello-flask"
     echo "==> No DB found, using minimal toolkit defaults: $ENABLED_APPS"
   fi
+fi
+
+if [ "$FALLBACK_ENABLED" = 1 ] && [ -n "${DEPLOY_RUNTIME_APPS:-}" ]; then
+  echo "ERROR: SSH/admin DB unavailable; refusing toolkit+bootstrap fallback catalogue." >&2
+  echo "That list includes blog and other cold apps and fills the activator LRU." >&2
+  echo "Wait until ssh $REMOTE works, then retry. Gzip tars may already be in /tmp/216labs-xfer.*." >&2
+  exit 1
 fi
 
 if [[ " $ENABLED_APPS " != *" admin "* ]]; then

@@ -29,22 +29,19 @@ if ! ssh_retry 6 'echo ok' | grep -q ok; then
   exit 1
 fi
 
-echo "=== Disk before prune ==="
-ssh_retry 3 'df -h / | tail -1'
+echo "=== Disk ==="
+DISK_LINE="$(ssh_retry 3 'df -P / | awk "NR==2 {print}"' || true)"
+echo "${DISK_LINE:-<unreadable>}"
+usepct="$(printf '%s\n' "$DISK_LINE" | awk '{gsub(/%/,"",$5); print $5}')"
 
-echo "=== Prune (GHCR duplicates + dangling images) ==="
-"$ROOT/scripts/prune-droplet-docker.sh" "$REMOTE" || true
-
-# Extra prune when root FS is tight (docker ps can hang when disk is full).
-ssh_retry 2 'bash -s' <<'REMOTE_PRUNE'
+# docker system df / GHCR tag prune on 1GB RAM often kills sshd. Only prune when disk is the wedge.
+if [[ "${usepct:-0}" -ge 88 ]]; then
+  echo "=== Prune (disk ${usepct}% ≥88%) ==="
+  "$ROOT/scripts/prune-droplet-docker.sh" "$REMOTE" || true
+  ssh_retry 2 'bash -s' <<'REMOTE_PRUNE' || true
 set -euo pipefail
 TO="/usr/bin/timeout"
 cd /opt/216labs
-if [[ -f scripts/lib/prune-ghcr-duplicate-tags.sh ]]; then
-  # shellcheck source=/dev/null
-  source scripts/lib/prune-ghcr-duplicate-tags.sh
-  prune_ghcr_duplicate_tags || true
-fi
 usepct="$(df / | tail -1 | awk "{print \$5}" | tr -d "%")"
 if [[ "${usepct:-0}" -ge 88 ]]; then
   echo "Disk ${usepct}% — aggressive docker prune"
@@ -52,6 +49,9 @@ if [[ "${usepct:-0}" -ge 88 ]]; then
 fi
 df -h / | tail -1
 REMOTE_PRUNE
+else
+  echo "=== Skip prune (disk ${usepct:-?}% < 88%) — prune after reboot wedges sshd ==="
+fi
 
 echo "=== Showroom stop (disk ≥88%: drop demo containers, keep spine + revenue) ==="
 "$ROOT/scripts/droplet-showroom-stop.sh" "$REMOTE" || true
