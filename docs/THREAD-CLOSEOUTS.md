@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~14:45 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Empty agimemes gallery | **BLOCKED (CEO)** — `AGIMEMES_NEWS_API_KEY` + Imgflip keys blank; do not start the app |
+| Public `/config.json` dumped those secrets | **Shipped** — route removed; generate requires bearer |
+
+**Verify:** `curl -sS -o /dev/null -w '%{http_code}\n' https://agimemes.6cubed.app/` → **302** (cold). Do not follow. CEO: send `/work`; Env keys if the gallery should fill.
+
+---
+
+## agimemes `/config.json` leaked credentials — **CLOSED**
+
+While diagnosing an empty gallery, `GET /config.json` returned NewsAPI + Imgflip env values in JSON. `/tasks/meme_creation` was unauthenticated. App is **not** always-on (302 to activator).
+
+**Shipped:** removed `/config.json`; generate requires `Authorization: Bearer` (`CRON_RUNNER_SECRET`). Did not start agimemes. Did not `./deploy.sh`.
+
+**Verify:** after the image is live, `/config.json` is 404 (not a JSON secret dump). Until then, keep the host cold.
+
+---
+
 ## Production snapshot (2026-08-17 ~14:20 UTC)
 
 | Highest leverage | Blocker |

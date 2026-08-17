@@ -177,8 +177,8 @@
       </section>
     {% else %}
       <section class="empty-state">
-        <p><strong>No memes yet.</strong> The daily cron has not generated any records or credentials are missing.</p>
-        <p>Once `/tasks/meme_creation` runs successfully, your gallery appears here automatically.</p>
+        <p><strong>No memes yet.</strong> Headline + Imgflip credentials are not set in admin Env, so generation has never run.</p>
+        <p>Do not hit <code>/tasks/meme_creation</code> from the public internet — it requires a bearer token.</p>
       </section>
     {% endif %}
   </main>
