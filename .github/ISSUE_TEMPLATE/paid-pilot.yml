@@ -7,8 +7,8 @@ body:
     attributes:
       value: |
         €5–15k labelled-audio detection on **your** files (hydrophone, drone, bird).
-        Offer sheet: [CARFAC-PILOTS.md](https://github.com/6cubed/216labs/blob/main/docs/CARFAC-PILOTS.md)
-        Proof: [underwater SAI results](https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md)
+        Offer sheet: [CARFAC pilots](https://github.com/6cubed/216labs/tree/main/docs/carfac-pilots)
+        Proof: [underwater SAI results](https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater)
   - type: input
     id: email
     attributes:

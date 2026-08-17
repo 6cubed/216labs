@@ -90,7 +90,7 @@ _FALLBACK_BLOG_POSTS = [
         "title": "CARFAC pilots — labelled-audio detection on your files",
         "excerpt": "€5–15k time-boxed pilots for hydrophone, drone, and bird audio. Always on GitHub.",
         "date": "2026-08-15",
-        "url": "https://github.com/6cubed/216labs/tree/main/docs",
+        "url": "https://github.com/6cubed/216labs/tree/main/docs/carfac-pilots",
     },
     {
         "title": "Public CARFAC notebooks",

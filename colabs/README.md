@@ -36,7 +36,7 @@ Badge:
 
 ## Index
 
-Paid labelled-audio detection on your files: [CARFAC pilots](../docs/CARFAC-PILOTS.md) · [paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) · [6cubed.app/#work](https://6cubed.app/#work). Cite the notebooks: [CITATION.cff](../CITATION.cff).
+Paid labelled-audio detection on your files: [CARFAC pilots](../docs/carfac-pilots/) · [paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) · [6cubed.app/#work](https://6cubed.app/#work). Cite the notebooks: [CITATION.cff](../CITATION.cff).
 
 | Folder | Question |
 |--------|----------|

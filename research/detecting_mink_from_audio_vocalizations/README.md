@@ -33,4 +33,4 @@
 
 ## Paid detection pilots
 
-If you already have labelled field audio and a detection question, 216Labs sells time-boxed pilots: [CARFAC-PILOTS.md](../../docs/CARFAC-PILOTS.md) · [open a paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml).
+If you already have labelled field audio and a detection question, 216Labs sells time-boxed pilots: [CARFAC pilots](../../docs/carfac-pilots/) · [open a paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml).

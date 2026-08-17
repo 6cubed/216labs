@@ -111,6 +111,6 @@ heartbeats should default to distribution work, never checkout plumbing — see
 
 **Live offer URLs:** [6cubed.app/#work](https://6cubed.app/#work) (hire form),
 [paid-pilot issue](https://github.com/6cubed/216labs/issues/new?template=paid-pilot.yml) (CEO-free inbox),
-[CARFAC underwater SAI](https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md) (audio/ML proof),
-and [CARFAC pilots](CARFAC-PILOTS.md) (offer sheet).
+[CARFAC underwater SAI](https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater) (audio/ML proof),
+and [CARFAC pilots](carfac-pilots/) (offer sheet).
 Send `/work` or wait for a `pilot` issue; do not wait for another product surface.

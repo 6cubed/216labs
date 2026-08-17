@@ -9,7 +9,7 @@ authors:
   - name: 216Labs
     website: https://6cubed.app
 repository-code: https://github.com/6cubed/216labs
-url: https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md
+url: https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater
 abstract: >-
   Public Colabs comparing CARFAC NAP and SAI to mel
   spectrograms on hydrophone, drone search-and-rescue, and
@@ -26,5 +26,5 @@ preferred-citation:
   title: CARFAC SAI on underwater audio
   authors:
     - name: 216Labs
-  url: https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md
+  url: https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater
   repository-code: https://github.com/6cubed/216labs
