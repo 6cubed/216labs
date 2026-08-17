@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~17:30 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Next beat would re-add GitHub login-wall CTAs | **Shipped** — heartbeat-stack + in-repo scan flag `issues/new?template=paid-pilot` on always-on HTML |
+| Empty agimemes gallery | **BLOCKED (CEO)** — Env keys blank; do not start the app |
+
+**Verify:** `python3 scripts/scan-cold-refs.py` prints no always-on paid-pilot login wall. Live 1pageresearch/maxlearn still have `#work`. CEO: send `/work`.
+
+---
+
+## Always-on scan missed GitHub login-wall CTAs — **CLOSED**
+
+Last beat retargeted 1PageResearch/MaxLearn to `#work`. Cold-refs only looked for blog/merch/wrong-org, so the next agent could put `issues/new?template=paid-pilot` back (anonymous 302 to login).
+
+**Shipped:** heartbeat-stack and `scan-cold-refs.py` flag that href on always-on surfaces. Template stays on README/colabs/research. Did not restyle `#work`. Did not start agitweet.
+
+**Verify:** stack Cold refs line mentions no paid-pilot login wall.
+
+---
+
 ## Production snapshot (2026-08-17 ~17:00 UTC)
 
 | Highest leverage | Blocker |

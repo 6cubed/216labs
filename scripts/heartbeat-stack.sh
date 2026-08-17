@@ -255,6 +255,7 @@ cold = ('blog.6cubed.app', 'agitweet.6cubed.app', 'merch.6cubed.app', 'marketing
 wrong_org = re.compile(r'(?<!6cubed/)github[.]com/216labs')
 hits = []
 wrong = []
+walls = []
 human_fetch_fail = []
 humans = (
     'https://6cubed.app/',
@@ -285,6 +286,7 @@ for url in (
     refs += re.findall(r'''fetch\(\s*[\"']([^\"']+)[\"']''', b)
     bad = [u for u in refs if any(c in u for c in cold)]
     gh = [u for u in refs if wrong_org.search(u)]
+    wall = [u for u in refs if 'issues/new?template=paid-pilot' in u]
     if bad:
         hits.extend(bad)
         print('  ' + url + ' ' + ' '.join(bad))
@@ -293,11 +295,15 @@ for url in (
         wrong.extend(gh)
         print('  ' + url + ' ' + ' '.join(gh))
         print('  (wrong GitHub org — empty account that 200s; retarget to 6cubed/216labs)')
-if not hits and not wrong:
+    if wall:
+        walls.extend(wall)
+        print('  ' + url + ' ' + ' '.join(wall))
+        print('  (GitHub login wall — live dest is https://6cubed.app/#work; keep paid-pilot.yml on README/colabs/research)')
+if not hits and not wrong and not walls:
     if human_fetch_fail:
         print('  (href scan incomplete — human-visited host failed above)')
     else:
-        print('  (none — no href/fetch/src to blog, agitweet, merch, marketing; no github.com/216labs)')
+        print('  (none — no href/fetch/src to blog, agitweet, merch, marketing; no github.com/216labs; no paid-pilot login wall)')
 " || echo "  (scan failed)"
 
 echo

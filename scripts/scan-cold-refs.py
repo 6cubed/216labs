@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""In-repo cold-host and wrong-GitHub-org leftovers (href/src/fetch + markdown).
+"""In-repo cold-host, wrong-GitHub-org, and always-on paid-pilot login-wall leftovers.
 
 Live always-on HTML is scanned by heartbeat-stack.sh. This week's leftovers were
 in cold-app templates and Colab markdown — this scan covers those without starting
-the apps. Hire-pin plaintext (no href) is ignored on purpose.
+the apps. Hire-pin plaintext (no href) is ignored on purpose. Anonymous
+issues/new?template=paid-pilot 302s to GitHub login — flag that href on always-on
+apps (dest is 6cubed.app/#work). Keep the template on README/colabs/research.
 
 Usage: python3 scripts/scan-cold-refs.py
 """
@@ -21,6 +23,16 @@ FETCH = re.compile(r"""fetch\(\s*["']([^"']+)["']""")
 MARKDOWN = re.compile(r"\]\((https?://[^)\s]+)\)")
 EXTS = {".html", ".tsx", ".jsx", ".md", ".ipynb", ".vue", ".js"}
 SKIP_DIR = {"node_modules", ".git", ".next", "dist", "__pycache__"}
+LOGIN_WALL = "issues/new?template=paid-pilot"
+ALWAYS_ON_PREFIX = (
+    "products/org-growth/ads/landing/",
+    "products/org-lifestyle/play/anchor/",
+    "products/org-lifestyle/geo/zurichrunclubs/",
+    "products/org-lifestyle/play/storybook/",
+    "products/org-lifestyle/play/kidgift/",
+    "products/org-platform/ai/1pageresearch/",
+    "products/org-lifestyle/play/maxlearn/",
+)
 SELF_PREFIX = (
     "products/org-media/blog/",
     "products/org-growth/ads/merch/",
@@ -62,16 +74,24 @@ def main() -> int:
                 for url in refs_in(text):
                     cold = [c for c in COLD if c in url]
                     gh = bool(WRONG_ORG.search(url))
-                    if not cold and not gh:
+                    wall = LOGIN_WALL in url and any(rel.startswith(p) for p in ALWAYS_ON_PREFIX)
+                    if not cold and not gh and not wall:
                         continue
-                    why = ",".join(cold) if cold else "github.com/216labs"
+                    if wall:
+                        why = "paid-pilot login wall"
+                    elif cold:
+                        why = ",".join(cold)
+                    else:
+                        why = "github.com/216labs"
                     line = f"  {rel} {url} ({why})"
                     hits.append(line)
                     print(line)
+                    if wall:
+                        print("  (live dest is https://6cubed.app/#work; keep paid-pilot.yml on README/colabs/research)")
     if hits:
         print("  (strip href/markdown — do not start those apps)")
         return 1
-    print("  (none — no href/markdown to blog, agitweet, merch, marketing; no github.com/216labs)")
+    print("  (none — no href/markdown to blog, agitweet, merch, marketing; no github.com/216labs; no always-on paid-pilot login wall)")
     return 0
 
 
