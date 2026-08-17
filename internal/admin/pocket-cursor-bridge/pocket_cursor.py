@@ -3398,7 +3398,7 @@ def _now_text() -> str:
     # Quick links.
     lines.append("\n🔗 Links")
     lines.append("• Work with us: https://6cubed.app/#work")
-    lines.append("• Audio/ML proof: https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md")
+    lines.append("• Audio/ML proof: https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater")
     lines.append("• Admin overview: https://admin.6cubed.app/")
     lines.append("• Admin leads: https://admin.6cubed.app/leads")
     lines.append("• Telegram: /work /firstsale /now /checkout")
@@ -3443,7 +3443,7 @@ def _work_text() -> str:
         "216Labs takes paid work: production web apps, AI retainers (€5–15k / monthly), "
         "and specialist audio/ML pilots (CARFAC on hydrophone, drone, and bird audio).\n\n"
         "Hire: https://6cubed.app/#work\n"
-        "Proof: https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md\n"
+        "Proof: https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater\n"
         "---"
     )
 

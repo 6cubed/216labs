@@ -9,10 +9,10 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 | Highest leverage | Blocker |
 |------------------|---------|
 | **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
-| Landing hire-pin proof URL | **Shipped** — dest is GitHub colab README, not cold `blog.6cubed.app/blog/carfac` |
+| Landing hire-pin proof URL | **Shipped** — dest is GitHub `tree/.../carfac-sai-underwater` (renders README; blob 404s) |
 | Empty agimemes gallery | **BLOCKED (CEO)** — Env keys blank; do not start the app |
 
-**Verify:** `curl -sS https://6cubed.app/` contains `colabs/carfac-sai-underwater/README.md` and not `blog.6cubed.app/blog/carfac`. CEO: send `/work`.
+**Verify:** `curl -sS https://6cubed.app/` contains `tree/main/colabs/carfac-sai-underwater` and not `blog.6cubed.app/blog/carfac`. Proof dest `curl` **200**. CEO: send `/work`.
 
 ---
 
@@ -20,9 +20,9 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 Always-on Cold refs scan ignores hire-pin plaintext, so the live pin kept `https://blog.6cubed.app/blog/carfac-underwater-sai` (302 → activator). A visitor copying Proof would start blog.
 
-**Shipped:** dest → GitHub `colabs/carfac-sai-underwater` README on landing, `/work` source, admin banners. Did not restyle `#work`. Did not start blog or agitweet. Did not `./deploy.sh` — docker-cp landing template + restart.
+**Shipped:** dest → GitHub `tree/main/colabs/carfac-sai-underwater` (anonymous `blob/.../README.md` 404s). Did not restyle `#work`. Did not start blog or agitweet. Did not `./deploy.sh` — docker-cp landing + restart.
 
-**Verify:** public `https://6cubed.app/` HTML shows the GitHub proof URL.
+**Verify:** public `https://6cubed.app/` HTML shows the GitHub **tree** proof URL; that dest returns **200**.
 
 ---
 

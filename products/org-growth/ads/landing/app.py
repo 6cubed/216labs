@@ -84,19 +84,19 @@ _FALLBACK_BLOG_POSTS = [
         "title": "What a cochlear model hears underwater (and what it does not)",
         "excerpt": "CARFAC SAI vs mel on Orcasound hydrophone audio. A sendable URL for audio/ML pilots.",
         "date": "2026-08-15",
-        "url": "https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md",
+        "url": "https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater",
     },
     {
         "title": "CARFAC pilots — labelled-audio detection on your files",
         "excerpt": "€5–15k time-boxed pilots for hydrophone, drone, and bird audio. Always on GitHub.",
         "date": "2026-08-15",
-        "url": "https://github.com/6cubed/216labs/blob/main/docs/CARFAC-PILOTS.md",
+        "url": "https://github.com/6cubed/216labs/tree/main/docs",
     },
     {
         "title": "Public CARFAC notebooks",
         "excerpt": "Open-in-Colab demos: vs-mel, drone SAI, underwater SAI.",
         "date": "2026-08-15",
-        "url": "https://github.com/6cubed/216labs/blob/main/colabs/README.md",
+        "url": "https://github.com/6cubed/216labs/tree/main/colabs",
     },
 ]
 

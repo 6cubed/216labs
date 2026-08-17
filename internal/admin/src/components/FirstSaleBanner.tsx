@@ -77,7 +77,7 @@ export async function FirstSaleBanner() {
           Hire form →
         </a>
         <a
-          href="https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md"
+          href="https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater"
           target="_blank"
           rel="noopener noreferrer"
           className="font-semibold text-accent hover:underline"

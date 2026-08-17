@@ -21,7 +21,7 @@ A checkout converts a fraction of visitors; any fraction of 0 is 0.
 216Labs takes paid work: production web apps, AI retainers (€5–15k / monthly), and specialist audio/ML pilots (CARFAC on hydrophone, drone, and bird audio).
 
 Hire: https://6cubed.app/#work
-Proof: https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md
+Proof: https://github.com/6cubed/216labs/tree/main/colabs/carfac-sai-underwater
 ---
 
 Leads land in admin → Leads. Strategy: docs/REVENUE-STRATEGY.md
