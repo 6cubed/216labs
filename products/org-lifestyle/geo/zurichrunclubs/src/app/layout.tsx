@@ -22,6 +22,19 @@ export default function RootLayout({
       >
         <Ga4Script />
         {children}
+        <footer
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            padding: "0 1rem 2rem",
+            fontSize: "0.8rem",
+            color: "#8aa0d0",
+          }}
+        >
+          <a href="https://6cubed.app/#work" style={{ color: "#9fbeff" }}>
+            216Labs · paid work
+          </a>
+        </footer>
       </body>
     </html>
   );

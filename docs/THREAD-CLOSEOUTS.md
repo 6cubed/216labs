@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~18:05 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Zurich had humans but no hire href | **Shipped** — layout footer `6cubed.app/#work` live; no GHCR recreate |
+| Empty agimemes gallery | **BLOCKED (CEO)** — Env keys blank; do not start the app |
+
+**Verify:** `curl -sS https://zurichrunclubs.6cubed.app/` contains `6cubed.app/#work`. CEO: send `/work`.
+
+---
+
+## Zurich layout had no stranger lead path — **CLOSED**
+
+Human-visited host already returned 200 with CityRunning (~60k Next HTML) but no `#work` href. Anchor already has the hire link; landing restyle is CEO-blocked. Timetable restyle is forbidden.
+
+**Shipped:** one-line layout footer → `https://6cubed.app/#work`. Live via compiled-chunk patch + `docker compose restart` (same container, not `--force-recreate` / not `SYNC_SERVICE=zurichrunclubs`). Source is `products/org-lifestyle/geo/zurichrunclubs/src/app/layout.tsx`. Did not restyle `#work`. Did not start agitweet.
+
+**Verify:** public HTML contains `216Labs · paid work` and `6cubed.app/#work`.
+
+---
+
 ## Production snapshot (2026-08-17 ~17:30 UTC)
 
 | Highest leverage | Blocker |
