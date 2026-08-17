@@ -4,6 +4,19 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~14:05 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Recover `--force-recreate` caddy killed sshd | **Shipped** — recreate Caddy only if Caddyfile changed |
+| 1PageResearch paid-pilot | **Live** |
+| MaxLearn paid-pilot | **BLOCKED (SSH)** — image still 2 months old |
+
+**Verify:** SSH stays up after recover (no caddy recreate). `curl -sS https://maxlearn.6cubed.app/` contains `paid-pilot.yml` after a `--no-deps` image load. CEO: send `/work`.
+
+---
+
 ## Production snapshot (2026-08-17 ~14:00 UTC)
 
 | Highest leverage | Blocker |

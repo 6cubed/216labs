@@ -70,8 +70,11 @@ if [[ -f scripts/generate-caddyfile.py ]]; then
   $TO 120 python3 scripts/generate-caddyfile.py 2>&1 | tail -2 || true
 fi
 $TO 300 docker compose up -d caddy activator admin landing maxlearn storybook 1pageresearch kidgift cron-runner
-$TO 120 docker compose up -d --force-recreate activator
-$TO 90 docker compose up -d --no-deps --force-recreate caddy
+# Do not --force-recreate caddy/activator on every recover — that OOMs sshd on 1GB RAM
+# while edge still 200. Recreate Caddy only when the Caddyfile changed.
+if [[ -f scripts/lib/recreate-caddy-if-caddyfile-changed.sh ]]; then
+  SYNC_PROJECT_ROOT=/opt/216labs bash scripts/lib/recreate-caddy-if-caddyfile-changed.sh || true
+fi
 $TO 45 docker compose ps caddy activator admin landing maxlearn storybook 1pageresearch kidgift cron-runner
 if [[ -f scripts/stop-disabled-compose-apps.sh ]]; then
   SYNC_PROJECT_ROOT=/opt/216labs bash scripts/stop-disabled-compose-apps.sh || true
