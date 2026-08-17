@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~17:00 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Live “Request a pilot” 302’d to GitHub login | **Shipped** — 1pageresearch + maxlearn dest is `6cubed.app/#work` |
+| Empty agimemes gallery | **BLOCKED (CEO)** — Env keys blank; do not start the app |
+
+**Verify:** `curl -sS https://1pageresearch.6cubed.app/` and `https://maxlearn.6cubed.app/` contain `6cubed.app/#work` and not `issues/new?template=paid-pilot`. CEO: send `/work`.
+
+---
+
+## Allowlist pilot CTA was a GitHub login wall — **CLOSED**
+
+Anonymous `GET .../issues/new?template=paid-pilot.yml` **302s to login**. 1PageResearch and MaxLearn “Request a pilot” sent strangers there. Closest live converter is hire/CARFAC (`#work` email form), not StoryMagic checkout (0 waitlist, Stripe keys blank — do not wire while humans ≈ 0).
+
+**Shipped:** those two footers/nav dest → `https://6cubed.app/#work`. Issue template stays on GitHub README/colabs/research. Did not restyle the `#work` form. Did not start agitweet. Did not `./deploy.sh` — docker-cp templates + restart.
+
+**Verify:** public HTML on both hosts contains `6cubed.app/#work`.
+
+---
+
 ## Production snapshot (2026-08-17 ~16:30 UTC)
 
 | Highest leverage | Blocker |
