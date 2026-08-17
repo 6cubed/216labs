@@ -51,7 +51,7 @@ text = (
     "216Labs takes paid work: production web apps, AI retainers "
     "(€5–15k / monthly), CARFAC audio/ML pilots.\n"
     "Hire: https://6cubed.app/#work\n"
-    "Proof: https://blog.6cubed.app/blog/carfac-underwater-sai"
+    "Proof: https://github.com/6cubed/216labs/blob/main/colabs/carfac-sai-underwater/README.md"
 )
 hire_mark = "6cubed.app/#work"
 volume_db = "/opt/216labs/products/org-social/agitweet/data/agitweet.db"

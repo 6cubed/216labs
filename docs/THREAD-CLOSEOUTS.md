@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~15:20 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Landing hire-pin proof URL | **Shipped** — dest is GitHub colab README, not cold `blog.6cubed.app/blog/carfac` |
+| Empty agimemes gallery | **BLOCKED (CEO)** — Env keys blank; do not start the app |
+
+**Verify:** `curl -sS https://6cubed.app/` contains `colabs/carfac-sai-underwater/README.md` and not `blog.6cubed.app/blog/carfac`. CEO: send `/work`.
+
+---
+
+## Landing hire-pin pointed at cold blog — **CLOSED**
+
+Always-on Cold refs scan ignores hire-pin plaintext, so the live pin kept `https://blog.6cubed.app/blog/carfac-underwater-sai` (302 → activator). A visitor copying Proof would start blog.
+
+**Shipped:** dest → GitHub `colabs/carfac-sai-underwater` README on landing, `/work` source, admin banners. Did not restyle `#work`. Did not start blog or agitweet. Did not `./deploy.sh` — docker-cp landing template + restart.
+
+**Verify:** public `https://6cubed.app/` HTML shows the GitHub proof URL.
+
+---
+
 ## Production snapshot (2026-08-17 ~14:45 UTC)
 
 | Highest leverage | Blocker |
