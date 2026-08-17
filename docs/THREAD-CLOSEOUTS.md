@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~15:30 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Periodic GHCR sync 302’d Anchor | **Shipped** — `anchor-api` excluded like Zurich; skip recreate when image ID unchanged |
+| Empty agimemes gallery | **BLOCKED (CEO)** — Env keys blank; do not start the app |
+
+**Verify:** [anchor.6cubed.app](https://anchor.6cubed.app/) **200**. Next `216labs-ghcr-sync` journal line must not `Recreate` `anchor-api`. CEO: send `/work`.
+
+---
+
+## GHCR sync bounced Anchor every 20 minutes — **CLOSED**
+
+`SYNC_EXCLUDE_SERVICES` skipped Zurich but not `anchor-api`. The 15:26 UTC timer pulled GHCR and `--force-recreate`’d the running human-visited container; Caddy 302’d to activator until uvicorn came back (~10s).
+
+**Shipped:** exclude `anchor-api`; skip `--force-recreate` when the running image ID already matches `216labs/<svc>:latest`. Did not restyle `#work`. Did not `./deploy.sh`.
+
+**Verify:** `curl -sS -o /dev/null -w '%{http_code}\n' https://anchor.6cubed.app/` → **200**. Journal for the next timer has no `Container 216labs-anchor-api-1 Recreate`.
+
+---
+
 ## Production snapshot (2026-08-17 ~15:20 UTC)
 
 | Highest leverage | Blocker |

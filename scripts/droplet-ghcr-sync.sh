@@ -13,9 +13,9 @@
 set -euo pipefail
 
 ROOT="${SYNC_PROJECT_ROOT:-/opt/216labs}"
-# zurichrunclubs: GHCR :latest can lag CI; periodic pull was recreating containers with stale images over laptop deploys.
-# Spine + revenue hot pool: periodic sync must not recreate these (use SYNC_SERVICE=admin explicitly).
-EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch,kidgift,zurichrunclubs}"
+# zurichrunclubs + anchor-api: human-visited; periodic --force-recreate 302s returning visitors.
+# Spine + revenue hot pool: periodic sync must not recreate these (use SYNC_SERVICE=<svc> explicitly).
+EXCLUDE_RAW="${SYNC_EXCLUDE_SERVICES:-caddy,activator,admin,landing,cron-runner,storybook,maxlearn,1pageresearch,kidgift,zurichrunclubs,anchor-api}"
 SYNC_SERVICE_RAW="${SYNC_SERVICE:-}"
 SYNC_SERVICE_LOWER=""
 if [ -n "$SYNC_SERVICE_RAW" ]; then
@@ -144,14 +144,29 @@ while IFS='|' read -r svc img; do
     continue
   fi
 
+  cid=$(docker compose --env-file .env --env-file .env.admin ps -q "$svc" 2>/dev/null || true)
+  before=""
+  if [ -n "${cid:-}" ]; then
+    before=$(docker inspect -f '{{.Image}}' "$cid" 2>/dev/null || true)
+  fi
+
   echo "==> GHCR sync: $svc ($REG/$short:latest -> 216labs/$short:latest)"
   if ! pull_and_tag "$short"; then
     echo "WARN: pull failed for $short — skip" >&2
     continue
   fi
 
-  docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate "$svc"
   MATCHED=1
+  after=$(docker image inspect -f '{{.Id}}' "216labs/$short:latest" 2>/dev/null || true)
+  if [ -n "${before:-}" ] && [ -n "${after:-}" ] && [ "$before" = "$after" ]; then
+    echo "==> GHCR sync: $svc image unchanged — skip recreate"
+    if [ -n "$SYNC_SERVICE_LOWER" ]; then
+      break
+    fi
+    continue
+  fi
+
+  docker compose --env-file .env --env-file .env.admin up -d --pull never --no-build --force-recreate "$svc"
   if [ -n "$SYNC_SERVICE_LOWER" ]; then
     break
   fi

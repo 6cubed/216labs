@@ -255,6 +255,12 @@ cold = ('blog.6cubed.app', 'agitweet.6cubed.app', 'merch.6cubed.app', 'marketing
 wrong_org = re.compile(r'(?<!6cubed/)github[.]com/216labs')
 hits = []
 wrong = []
+human_fetch_fail = []
+humans = (
+    'https://6cubed.app/',
+    'https://anchor.6cubed.app/',
+    'https://zurichrunclubs.6cubed.app/',
+)
 for url in (
     'https://6cubed.app/',
     'https://6cubed.app/about',
@@ -271,6 +277,9 @@ for url in (
         b = r.read().decode('utf-8', 'replace')
     except Exception as e:
         print('  ' + url + ' ' + type(e).__name__)
+        if url.rstrip('/') in (h.rstrip('/') for h in humans) or url in humans:
+            human_fetch_fail.append(url)
+            print('  (human-visited host not 200 — fix dest; this is not a clean leftover scan)')
         continue
     refs = re.findall(r'''(?:href|src|action)\s*=\s*[\"']([^\"']+)[\"']''', b, re.I)
     refs += re.findall(r'''fetch\(\s*[\"']([^\"']+)[\"']''', b)
@@ -285,7 +294,10 @@ for url in (
         print('  ' + url + ' ' + ' '.join(gh))
         print('  (wrong GitHub org — empty account that 200s; retarget to 6cubed/216labs)')
 if not hits and not wrong:
-    print('  (none — no href/fetch/src to blog, agitweet, merch, marketing; no github.com/216labs)')
+    if human_fetch_fail:
+        print('  (href scan incomplete — human-visited host failed above)')
+    else:
+        print('  (none — no href/fetch/src to blog, agitweet, merch, marketing; no github.com/216labs)')
 " || echo "  (scan failed)"
 
 echo
