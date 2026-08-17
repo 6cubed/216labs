@@ -4,6 +4,28 @@ Decisive end states for recurring Telegram/chat threads so the next session does
 
 **How to read this file:** the **latest production snapshot at the top** is canonical. Do not revive **SUPERSEDED** or **CLOSED** threads. Older "BLOCKED (CEO) — Payment Link" rows below are historical; distribution is the constraint, not Stripe.
 
+## Production snapshot (2026-08-17 ~14:15 UTC)
+
+| Highest leverage | Blocker |
+|------------------|---------|
+| **Get one human in front of a paid offer** | **BLOCKED (CEO)** — `/work` still the send; do not restyle the funnel |
+| Allowlist inboxes | **Live** — 1pageresearch + maxlearn HTML contain `paid-pilot.yml` |
+| Recover force-recreate / prune | **Shipped** this beat — skip prune <88%; Caddy only if Caddyfile changed |
+
+**Verify:** `curl -sS https://1pageresearch.6cubed.app/` and `https://maxlearn.6cubed.app/` contain `paid-pilot.yml`. CEO: send `/work`.
+
+---
+
+## MaxLearn paid-pilot went live — **CLOSED**
+
+Footer was on main; the running image was 2 months old. After a gentler recover (no Caddy recreate), a `--no-deps` load of `216labs/maxlearn:latest` made the issue form public. Docker load flapped sshd again; edge stayed 200 — do not reboot solely for that.
+
+**Shipped:** public maxlearn HTML contains `paid-pilot.yml`. Did not restyle landing `#work`. Did not start agitweet.
+
+**Verify:** `curl -sS https://maxlearn.6cubed.app/` contains `paid-pilot.yml`.
+
+---
+
 ## Production snapshot (2026-08-17 ~14:05 UTC)
 
 | Highest leverage | Blocker |
